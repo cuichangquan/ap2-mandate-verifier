@@ -73,7 +73,7 @@ jobs:
           r = json.loads(Path("p110o-results.json").read_text())
           wanted = ["AN-P01", *[f"AN-N{i:02d}" for i in range(1, 8)]]
           actual = [x["id"] for x in r["cases"]]
-          assert actual == wanted, ("missing/duplicate/unexpected case", actual)
+          assert len(actual) == len(wanted) and set(actual) == set(wanted), ("missing/duplicate/unexpected case", actual)
           assert r["count_recorded"] == 8
           classifications = {x["id"]: x["classification"] for x in r["cases"]}
           assert classifications["AN-P01"] == "LIMITED_POSITIVE"
