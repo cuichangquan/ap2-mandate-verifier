@@ -22,7 +22,8 @@
 - [x] **P1-8完了（設計のみ）**：[HOST_REPLAY_LAB_DESIGN](HOST_REPLAY_LAB_DESIGN.md) — SQLiteとPostgreSQLを比較して**一時PG16**を採用候補に選定。2 worker、nonce CAS＋Checkout unique、commit前後crash/Retry、Fake Provider idempotency、費用/cleanup、HR01〜HR10試験順序とGO/HOLDを設計。**Host DB・新CI・新テストなし、34件すべてNOT RUN。**
 - [x] **P1-9a完了（隔離Host DB研究のみ）**：[HOST_REPLAY_P19A_EVIDENCE](HOST_REPLAY_P19A_EVIDENCE.md) — PostgreSQL 16.9とRuby 2独立worker、実DBロック競合測定、nonce CAS/Checkout unique/Outbox。**HR01/02/03/08の4ケース：CI 4 runs・108 assertions・0 failures/0 errors**（[Actions #38133951057](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38133951057)、[digest-pinned再検証 #38134040469](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38134040469)）。初回構文エラーのCI失敗も記録。**残り30 HostケースはNOT RUN、Gem/API/実決済は未実装**。
 - [x] **P1-9b完了（隔離Host PG16クラッシュ研究のみ）**：[HOST_REPLAY_P19B_EVIDENCE](HOST_REPLAY_P19B_EVIDENCE.md) — HR04（COMMIT前SIGKILL/全Rollback）・HR05（COMMIT ACK後SIGKILL/PENDING復元・再送STOP）**2 runs / 84 assertions成功**、P1-9a回帰4/108成功、計**6/34実測・残り28件未実行**（[CI #38134591784](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38134591784)）。
-- [ ] **P1-9c（次・別途明示承認後のみ）**：HR06 unknown COMMIT/DB timeout＋HR07 Fake Provider timeout/idempotencyを架空環境で限定検証。GCP/実決済/Receipt/Gemは未承認。
+- [x] **P1-9c完了（オフラインUnknown COMMIT/Mock Provider研究のみ）**：[HOST_REPLAY_P19C_EVIDENCE](HOST_REPLAY_P19C_EVIDENCE.md) — HR06（COMMIT非同期送信・ACK未受信で別DB回復／実lock_timeout `55P03`）、HR07（Mock Provider応答喪失＋同一key 2回試行／論理効果1件＋別key STOP）。**新2 runs /149 assertions、旧6 runs/192 assertionsの計8/34件PASS・341 assertions成功**（[CI #38135302918](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38135302918)）。**残る26件未実行**。
+- [ ] **P1-10a（次・別途明示承認後のみ）**：HR10のCheckout更新/失効とHost nonce消費の競合を隔離PG16で限定調査。外部Trust/Receipt/本番は今回のGO外。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 

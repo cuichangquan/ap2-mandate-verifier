@@ -263,3 +263,11 @@
 **限定Host DB研究としてHR04/HR05実測成功。** [HOST_REPLAY_P19B_EVIDENCE](HOST_REPLAY_P19B_EVIDENCE.md)、[Actions #38134591784](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38134591784)。実worker SIGKILLで**COMMIT前：nonce/checkout/operation/outboxが全Rollback→別worker新規再評価で正当Commit**、**COMMIT ACK後：operation/idempotency keyが永続化され、別の読み取り専用RecoveryがPENDINGで同じ参照を回収、Replay STOP**を観測。**HR04/05 2 runs /84 assertions/失敗・エラー0**、既存HR01/02/03/08 4 runs/108 assertionsもPASS。**Hostテスト34件中6件実測、残り28件未実行**。
 
 **境界:** ACKが失われCOMMIT結果不明となるHR06やProvider timeout/IdempotencyのHR07は**未試験**。AP2署名/Buyer信頼・失効、Receipt、実決済は対象外。N17 stateless HOST_BOUNDARYは残り、公式Python SDK中間hopの186 PASS / 2 FAILも未解決。G1〜G6/T1〜T5全達成ではない。**狭い研究CONDITIONAL GO、汎用Gem/API・本番統合HOLD、RubyGems公開・Production/実決済NO-GO。** 次の一件（新たな明示承認後のみ）：**P1-9c HR06/HR07のFake環境研究**。
+
+## 21. 2026-10-11 P1-9c Unknown COMMIT / Mock Provider Idempotency研究（最新）
+
+**HR06/HR07の限定オフライン実測PASS。** [HOST_REPLAY_P19C_EVIDENCE](HOST_REPLAY_P19C_EVIDENCE.md)、[GitHub Actions #38135302918](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38135302918)。HR06はlibpq COMMIT非同期送信後のACKを元workerが読まない故障、実SIGKILL、別DB接続でのcommit済operation/key再照会・PENDING復元・再送STOP、さらに実PG lock timeout（SQLSTATE55P03）→新operation作成禁止を測定。HR07は実Providerを使わず**同じ隔離PGの架空台帳**でレスポンス喪失を模擬し、**送信試行2回/架空論理効果1件**、同じoperation/key継続と別key STOPを確認。HR06/07は**2 runs /149 assertions/失敗0**、既存P1-9a/bの6 runs /192 assertionsもPASS。合計Host計34中**8件実測/26件未実行**。
+
+**限界:** HR06のCOMMIT結果不明はACKを**読まないがDB側がcommit成功した経路**に限定。DB rollback/ACK紛失の他形態、実TCP切断、実Providerのidempotency/二重課金保証やReceiptを実証していない。N17 stateless HOST_BOUNDARY継続、P1-4 G1〜G6/P1-7 T1〜T5未完。上流Python SDKの186 PASS/2 FAILも未解決。**限定研究GO、汎用Gem/API・本番Host統合HOLD、RubyGems公開/実決済/Production NO-GO。**
+
+**次の1件（別のユーザー明示承認のみ）：P1-10a** HR10（Checkout更新/失効とnonce消費のrace）を隔離PG16で検討・実測。外部信頼情報更新の一貫性はDB lockだけで保証できない。
