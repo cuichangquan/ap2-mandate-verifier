@@ -1,0 +1,82 @@
+name: P1-2 AP2 two-hop binding research
+
+on:
+  pull_request:
+    paths:
+      - 'research/p1_1/**'
+      - 'research/p1_2/**'
+      - '.github/workflows/p1-2-two-hop-research.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signed-open-to-closed:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: false
+      - name: Checkout pinned AP2 v0.2 Python SDK
+        shell: bash
+        run: |
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = "b4587ac1d055888a73b4b21750973cffba961793"
+      - name: Install direct Python dependency pins from upstream pyproject
+        shell: bash
+        working-directory: ${{ runner.temp }}/ap2
+        run: |
+          # Frozen uv.lock needs a private registry (401). Public PyPI with
+          # upstream pyproject direct pins; transitive lock not reproduced.
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple -e .
+          python -m pip freeze > "$GITHUB_WORKSPACE/p1-2-python-packages.txt"
+      - name: Python official SDK creates and verifies genuine two-hop chain
+        shell: bash
+        run: |
+          python -m py_compile research/p1_2/generate_two_hop_python.py
+          python research/p1_2/generate_two_hop_python.py "$RUNNER_TEMP/p1-2-chain.json"
+          test -s "$RUNNER_TEMP/p1-2-chain.json"
+          python research/p1_1/generate_python_sdjwt.py "$RUNNER_TEMP/p1-1-root.json"
+      - name: Install pinned Ruby JWS verifier
+        shell: bash
+        run: |
+          gem install jwt -v 3.3.0 --no-document
+          ruby -v
+          ruby -rjwt -e 'puts "JWT: #{Gem.loaded_specs.fetch("jwt").version}"'
+          ruby -c research/p1_1/root_sdjwt_research.rb
+          ruby -c research/p1_2/test_ruby_two_hop.rb
+      - name: Regression P1-1 root signature and disclosure
+        shell: bash
+        env:
+          AP2_P11_FIXTURES: ${{ runner.temp }}/p1-1-root.json
+        run: |
+          set -o pipefail
+          ruby research/p1_1/test_ruby_root_sdjwt.rb --verbose 2>&1 | tee p1-2-regression-p1-1.log
+      - name: P1-2 holder signature cnf sd_hash and aud nonce
+        shell: bash
+        env:
+          AP2_P12_FIXTURES: ${{ runner.temp }}/p1-2-chain.json
+        run: |
+          set -o pipefail
+          ruby research/p1_2/test_ruby_two_hop.rb --verbose 2>&1 | tee p1-2-ruby.log
+      - name: Upload research logs (no signing private keys)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-2-two-hop-test-logs
+          path: |
+            p1-2-ruby.log
+            p1-2-regression-p1-1.log
+            p1-2-python-packages.txt
+          if-no-files-found: warn
+          retention-days: 7
