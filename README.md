@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier for Ruby
 
-> **Status: research only — P1-5 signed security-negative observations: **6 RED** (unexpectedly accepted strict-profile inputs), 10 expected rejections, 1 valid control, 1 Host replay boundary. Generic Ruby Gem/API implementation HOLD; RubyGems release and production/real payments NO-GO. Historical P1-1–P1-3 regression: 43/43 PASS; this does not erase security REDs.**
+> **Status: research only.** P1-5 signed security-negative observations: **6 RED** (unexpectedly accepted strict-profile inputs), 10 expected rejections, 1 valid control, 1 Host replay boundary. Generic Ruby Gem/API implementation **HOLD**; RubyGems release and production/real payments **NO-GO**. Historical P1-1–P1-3 regression 43/43 PASS does not erase the security REDs.
 >
 > Independent, unofficial Ruby OSS exploration. Not affiliated with Google, the AP2 project, or FIDO Alliance.
 
