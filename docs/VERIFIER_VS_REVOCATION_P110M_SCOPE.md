@@ -25,7 +25,7 @@
 | **Bの厳密な外部失効機構（HC06）** | **HOLD** | C01〜C12契約・実Authority能力、Host全C経路強制・耐久/anti-rollback・署名proofの真正性、別プロセス/別DBレース・partition・ACK喪失・復旧。未知なら`R_effective`保留 |
 | **Production/GCP/決済/RubyGems/署名Receipt** | **NO-GO / NOT AUTHORIZED** | 本Step対象外、別途明示承認と個別安全判断を要する |
 
-**非本番限定とは:** 合成・偽データで境界を研究することであり、Merchantの現実の購入を実行することではない。P0-5bの旧`CONDITIONAL GO`はP1-0以降の隔離spikeを許す当時の個別判断（[RESEARCH_DECISION `9](RESEARCH_DECISION.md)）。後続の研究で新たな境界が判明し、**現行のGem/API・本番統合HOLD**を覆さない。現在の新規PoC着手は別途明示承認が必要。
+**非本番限定とは:** 合成・偽データで境界を研究することであり、Merchantの現実の購入を実行することではない。P0-5bの旧`CONDITIONAL GO`はP1-0以降の隔離spikeを許す当時の個別判断（[RESEARCH_DECISION section 9](RESEARCH_DECISION.md)）。後続の研究で新たな境界が判明し、**現行のGem/API・本番統合HOLD**を覆さない。現在の新規PoC着手は別途明示承認が必要。
 
 ## 3. 残るエビデンスと誤解防止
 
