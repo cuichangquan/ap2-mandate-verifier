@@ -1,0 +1,99 @@
+name: P1-10q GP01 Single Signed Constraint Observation (NOT safety PASS)
+
+on:
+  pull_request:
+    paths:
+      - "research/p1_10q/**"
+      - "research/p1_3/checkout_binding_research.rb"
+      - "research/p1_3/generate_merchant_checkout.py"
+      - "research/p1_2/two_hop_research.rb"
+      - "research/p1_1/root_sdjwt_research.rb"
+      - "research/shared/strict_json_research.rb"
+      - ".github/workflows/p1-10q-gp01-observation.yml"
+      - "docs/VERIFIER_P110Q_GP01_EVIDENCE.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gp01-one-signed-observation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout research branch without stored credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
+      - name: Checkout exact official AP2 v0.2.0 commit
+        shell: bash
+        run: |
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = "b4587ac1d055888a73b4b21750973cffba961793"
+      - name: Install official SDK direct requirements from public PyPI
+        shell: bash
+        working-directory: ${{ runner.temp }}/ap2
+        run: |
+          # Pin official source; private-registry uv.lock transitives NOT reproduced.
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple -e .
+          python -m pip freeze > "$GITHUB_WORKSPACE/p110q-packages.txt"
+      - name: Generate ONE authenticated synthetic Issuer Agent Merchant fixture
+        shell: bash
+        run: |
+          python -m py_compile research/p1_10q/generate_gp01.py
+          python research/p1_10q/generate_gp01.py "$RUNNER_TEMP/p110q-one-signed.json"
+          # Signing keys only in generator process memory, never checked in or uploaded.
+      - name: Install pinned Ruby JWT and syntax check
+        shell: bash
+        run: |
+          gem install jwt -v 3.3.0 --no-document
+          ruby -rjwt -e 'abort "wrong jwt" unless Gem.loaded_specs.fetch("jwt").version.to_s == "3.3.0"'
+          ruby -c research/p1_10q/observe_gp01.rb
+      - name: Observe current unmodified Ruby verifier EXACTLY ONCE
+        shell: bash
+        env:
+          AP2_P110Q_FIXTURE: ${{ runner.temp }}/p110q-one-signed.json
+          AP2_P110Q_REPORT: gp01-report.json
+        run: |
+          set -o pipefail
+          ruby research/p1_10q/observe_gp01.rb --verbose 2>&1 | tee gp01-observation.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          evidence = json.loads(Path("gp01-report.json").read_text())
+          assert evidence["fixed_ap2_sha"] == "b4587ac1d055888a73b4b21750973cffba961793"
+          assert evidence["probe"] == "GP01" and evidence["count"] == 1
+          assert evidence["fixture_issuer_agent_merchant_signatures_checked"] is True
+          assert evidence["root_disclosures_reverified_by_ruby"] is True
+          assert evidence["no_fix_applied_to_existing_verifier"] is True
+          outcome = evidence["result"]["outcome"]
+          if outcome == "ACCEPT":
+              assert evidence["result"]["security_assessment"] == "RED_HOLD"
+              print("::warning title=GP01 RED/HOLD::Unexpected ACCEPT of unknown signed nested Constraint by strict Ruby research profile; CI only confirms observation, NOT security PASS.")
+              print("GP01 RESULT: UNEXPECTED_ACCEPT / RED_HOLD — no remediation in this PR")
+          elif outcome == "REJECT":
+              assert evidence["result"]["security_assessment"] == "BOUNDED_REJECTION_ONLY"
+              print("GP01 RESULT: REJECTED — one synthetic input only; no generic safety conclusion")
+          else:
+              raise AssertionError(("unclassified or inconclusive observation", outcome))
+          print("GP01 OBSERVATION COMPLETE: 1 case, existing verifier unchanged")
+          PY
+      - name: Upload public-only sanitized evidence (never the signed fixture)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p110q-gp01-observation-only
+          path: |
+            gp01-report.json
+            gp01-observation.log
+            p110q-packages.txt
+          retention-days: 7
+          if-no-files-found: warn

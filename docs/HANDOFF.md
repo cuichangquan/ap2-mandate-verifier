@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-12
-状態：**P0完了、P1-0〜P1-10p研究完了。P1-10pはIssuer/Constraint残余Gapの設計レビューのみ、テスト追加0。** [P1-10p残余リスク表](VERIFIER_P110P_RESIDUAL_GAPS.md)：GP01〜GP09は新試験NOT RUN。最優先GP01はIssuer署名の既知Constraintに未知ネスト属性が追加された場合の**静的な受理可能性の疑い**であり、攻撃の実測ではない。P1-10o最終 [CI #38155050010](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38155050010) **8 runs/45 assertions/失敗0**は以前の独立研究。AN-N07は二度verify成功の**HOST_BOUNDARY**でreplay未防御。Host正本**9/34件・25 NOT RUN（過去12 runs/465 assertions）**、一般SD-JWT/Issuer、本番Gem/API・HC06はHOLD、RubyGems/決済/署名Receipt NO-GO。**次のおすすめはP1-10q：GP01だけの正署名合成負例観測（別承認）**。
+状態：**P0完了、P1-0〜P1-10qの限定研究実施。P1-10qは正署名GP01 1件でRubyが未知ネストConstraintを想定外ACCEPTしたため、セキュリティ判定RED/HOLD（既存Verifier未修正）。** [GP01証拠](VERIFIER_P110Q_GP01_EVIDENCE.md)、[最初の実測CI #38183751071](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38183751071) **1 run / 8 assertions（WorkflowのSUCCESSは観測成功のみ）**。P1-10oの別研究は8 runs/45 assertions・AN-N07 HOST_BOUNDARY、Host正本は9/34件実測・25 NOT RUN、外部HC06/HOST replay/一般Issuer/Gem API/本番統合HOLD、RubyGems公開/実決済/Receipt NO-GO。**次の一件はP1-10r：GP01限定Fail Closed対策（別承認）**。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10p静的Gapレビューまで / 次はP1-10q別承認】
+### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10q GP01反例の限定観測まで / 次はP1-10r別承認】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -169,8 +169,10 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - [VERIFIER_P110O_EVIDENCE.md](VERIFIER_P110O_EVIDENCE.md)：[修正後CI #38154695155](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154695155) **8 runs/45 assertions/0 errors/failures**。1限定正例、6拒否カテゴリ、AN-N07は**HOST_BOUNDARY**。前回#35 Codex P1のOpen→Closed共有claim保持漏れ修正を実署名の期限内Closed exp変更で確認。初回CIはPython結果一覧順の誤りでFAILし修正。**汎用Gem/API/本番/HC06はHOLD、決済・公開NO-GO。**
 - [x] **P1-10p（残余Issuer/Constraintリスクの静的レビューだけ）**
   - [VERIFIER_P110P_RESIDUAL_GAPS](VERIFIER_P110P_RESIDUAL_GAPS.md)：GP01〜GP09、新実測なし。GP01未知ネストConstraintの潜在的見落としは静的疑義のみ。
-- [ ] **P1-10q（次のおすすめ・明示承認後のみ）**
-  - GP01の1合成署名負例で既存RubyがACCEPT/REJECTするか隔離観測する研究のみ。予期しない受理はRED/HOLD記録とし、修正実装は別承認。
+- [x] **P1-10q（GP01 1件の署名済み未知ネストConstraintを観測、RED/HOLD）**
+  - [VERIFIER_P110Q_GP01_EVIDENCE](VERIFIER_P110Q_GP01_EVIDENCE.md)：CIで署名・Disclosure・チェーン真正性を検証してから**既存RubyがACCEPT**。1 run / 8 assertions、**SECURITY RED/HOLD**。既存Verifier修正なし。
+- [ ] **P1-10r（次のおすすめ・明示承認後のみ）**
+  - 既知Issuer profileのネストConstraint未知権限属性を拒否する限定研究修正＋**GP01 REDからREJECTへの回帰**。既存正常系にも影響しないことを検査。Gem/API/本番/GCP/決済はなし。
 
 
 
@@ -225,36 +227,32 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P1-10pの静的Gapレビューまで完了。次はP1-10q（別承認）**。最新のGitHub main/Open PR/Issueとレビュー結果を確認し、[GP01〜GP09残余リスク表](VERIFIER_P110P_RESIDUAL_GAPS.md)→[P1-10o実測](VERIFIER_P110O_EVIDENCE.md)→[P1-10n限定条件](VERIFIER_P110N_OFFLINE_POC_GATE.md)→[正式判断§36](RESEARCH_DECISION.md)を読む。§36は既存HOLD判断の正本で、P1-10p専用Gap表は新たな実装GOではない。
+**P1-10qのGP01署名付き反例は、Rubyで想定外ACCEPTしてSECURITY RED/HOLD。** GitHub最新main/Open PR/Issueを再確認し、[GP01証拠](VERIFIER_P110Q_GP01_EVIDENCE.md)→[静的Gap](VERIFIER_P110P_RESIDUAL_GAPS.md)→[前Stepの8-case証拠](VERIFIER_P110O_EVIDENCE.md)→[正式GO/HOLD判断§36](RESEARCH_DECISION.md)を読む。§36の汎用Gem/API/本番統合HOLDを変更しない。
 
-- **今の問題：** RubyはOpen/Closedトップレベルの許可キー集合を厳格チェックするが、既知Constraint内部の追加フィールド集合までは網羅していない可能性がある。GP01は静的疑義で、今回新実験NOT RUN。公式AP2 v0.2.0基準SHA `b4587ac1d055888a73b4b21750973cffba961793`。
-- **次の一件 P1-10q（ユーザー明示承認後のみ）：** 既知`checkout.allowed_merchants`に未知`policy_override`を含む架空のIssuer署名Rootを生成し、Disclosure digest/署名とAgent署名Closedを独立確認して、現行Ruby研究Verifierが受理するか拒否するかを**1件だけ専用の隔離CIで観測**。不適切なACCEPTなら**RED/HOLD**、修正・Gem化は別承認。
-- **守る証拠境界：** P1-10oのAN-P01＋AN-N01〜N07 **8 runs/45 assertions**（うちN07 HOST_BOUNDARY）。Host正本**9/34・25 NOT RUN**、P1-10iのH01旧Authority危険反例、C01〜C12外部契約OPEN、H07〜H12 NOT RUN、公式Python intermediate hop186 PASS/2 FAIL。Bの強いHC06失効保証HOLD。
-- **禁止：** 実Issuer/Authority、GCP、実Checkout/決済/Provider/Receipt、Gem/Public API、RubyGems公開、他OSS変更。P1-10qのテストも明示承認なしに実行しない。
+- 公式v0.2.0固定SHA `b4587ac1d055888a73b4b21750973cffba961793`。GP01合成Issuer/Agent/Merchant実署名、Open Constraint disclosure＋digestを正しく再署名した一例について、[CI #38183751071](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38183751071)は**1 run/8 assertions、Ruby ACCEPT、SECURITY RED/HOLD**。CI緑色は署名・観測できたことだけを示す。
+- P1-10qでは既存`research/p1_1`、`p1_2`、`p1_3`を**修正していない**。狭い固定Issuer profileのネストConstraint`policy_override`が黙って無視されたという**合成研究の反例**であり、実商用AP2/Issuer脆弱性と断定しない。
+- P1-10oの別CIは**8 runs/45 assertions**（AN-N07 HOST_BOUNDARY）。Host正本**9/34、25 NOT RUN**、HC06分散強失効HOLD、P1-10i H01危険反例、公式Python SDK中間hop186 PASS/2 FAIL。混算しない。
+- **次の一件（明示承認後のみ）：P1-10r。** 固定IssuerプロファイルにおけるConstraint内部未知フィールドへの限定Fail Closed対策を研究コードで検討し、**このGP01 RED fixtureでREJECT回帰**を測定する。正常signed fixtureの回帰も必要。**本Stepの自動修正・本番Gem/API/GCP/実決済/Receipt/公開は許可されない。**
 
-### 次のチャットに渡す指示文
+### 次のチャット用指示文
 
 ```text
-ap2-mandate-verifier P1-10qの限定研究を検討します。
+ap2-mandate-verifier P1-10rの研究用Fail Closed対策を検討する。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-まずGitHub最新main、Open PR/Issue、Codexレビューを確認。
+最初に最新main/Open PR/Issue・Codexレビューを確認し、
+docs/VERIFIER_P110Q_GP01_EVIDENCE.md
 docs/VERIFIER_P110P_RESIDUAL_GAPS.md
-docs/VERIFIER_P110O_EVIDENCE.md
-docs/RESEARCH_DECISION.md §36を読む。
+docs/RESEARCH_DECISION.md §36 を読む。
 
-P1-10pは新テスト・コード・CIなしの静的Gapレビューを完了。
-GP01はIssuer署名された既知Constraint内部の未知fieldを
-Rubyが見落とし得る静的リスク仮説であり、攻撃成功未実測。
-固定AP2 v0.2.0 commit:
-b4587ac1d055888a73b4b21750973cffba961793。
+P1-10qは固定AP2 v0.2.0の正しいIssuer/Agent/Merchant署名と
+Disclosureを持つGP01 1件で、既知Constraint内部の未知
+policy_override属性を現在のRuby研究VerifierがACCEPTした。
+SECURITY RED/HOLD（観測CIは1 run/8 assertionsでSUCCESS）。
+既存Verifierの修正なし。公式AP2一般脆弱性と断定しない。
 
-ユーザーが明示承認した場合だけ、GP01一件の合成オフライン
-正署名負例を観測。Issuer/Agent署名とDisclosureの整合性を
-独立に確かめた上で現行RubyのACCEPT/REJECTを記録し、
-不適切なACCEPTはRED/HOLDとする。修正は別承認。
-
-P1-10o過去8 runs/45 assertions、N07 HOST_BOUNDARY、
-Host正本9/34・25 NOT RUN、外部HC06 HOLDを維持。
-本番/Gem API、GCP、実決済、署名Receipt等は禁止。
+次の一件は固定IssuerプロファイルだけのネストConstraint
+未知属性のFail Closed対策＋GP01 RED再検証（別承認後のみ）。
+他の汎用Gem/API、本番Host、外部Authority/HC06、
+GCP、実決済・署名Receipt、公開・他OSS変更は禁止。
 ```
