@@ -167,7 +167,8 @@ class HostReplayPgResearchTest < Minitest::Test
   end
 
   def test_hr01_same_nonce_two_real_workers
-    tenant, checkout, (challenge) = seed_checkout("HR01")
+    tenant, checkout, challenges = seed_checkout("HR01")
+    challenge = challenges.fetch(0)
     first, second = race(tenant, checkout, challenge, challenge)
     assert_equal "COMMITTED", first.fetch("outcome")
     assert_equal 1, first.fetch("nonce_rows")
@@ -203,7 +204,8 @@ class HostReplayPgResearchTest < Minitest::Test
   end
 
   def test_hr03_zero_row_nonce_cas_must_stop
-    tenant, checkout, (challenge) = seed_checkout("HR03", state: "CONSUMED")
+    tenant, checkout, challenges = seed_checkout("HR03", state: "CONSUMED")
+    challenge = challenges.fetch(0)
     result = run_once(tenant, checkout, challenge)
     assert_equal "STOP", result.fetch("outcome")
     assert_equal "nonce_cas_zero", result.fetch("reason")
@@ -212,7 +214,8 @@ class HostReplayPgResearchTest < Minitest::Test
   end
 
   def test_hr08_replay_same_presentation_after_commit
-    tenant, checkout, (challenge) = seed_checkout("HR08")
+    tenant, checkout, challenges = seed_checkout("HR08")
+    challenge = challenges.fetch(0)
     first = run_once(tenant, checkout, challenge)
     second = run_once(tenant, checkout, challenge)
     assert_equal "COMMITTED", first.fetch("outcome")
