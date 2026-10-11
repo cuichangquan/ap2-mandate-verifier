@@ -16,7 +16,8 @@
 - [x] **P1-2完了**：[RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) — 固定AP2 v0.2公式Python SDK発行・Python検証済みOpen→ClosedをRubyで検証。Root `cnf`、Terminal ES256署名、`sd_hash`、Host `aud`/`nonce`の正負を確認 **15 runs/32 assertions、失敗0**。P1-1回帰 **10 runs/22 assertions、失敗0**（[CI](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38124823804)）。実Checkout JWTはダミー。
 - [x] **P1-3完了**：[RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) — 公式AP2 v0.2 Open→Closed＋**Merchant ES256署名済Checkout JWT**を生成し、Host JWT正本のバイト一致、SHA-256 hash、店舗/商品/数量/単純合計の厳格評価をRubyで確認。**18 runs/40 assertions、0 failures**、P1-2回帰15 PASS、P1-1回帰10 PASS（[GitHub Actions](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38126247946)）。SDK数量評価との差異を記録。
 - [x] **P1-4完了（静的レビューのみ）**：[SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) — P1-1〜P1-3コードに基づく**12項目のリスク登録＋6つのGem受入れゲート**。公開/汎用Gemの実装は**HOLD**、Production/実決済は**NO-GO**。研究テスト追加に限定したP1-5はGO候補（別途承認）。新CI・新攻撃実証はなし。
-- [ ] **P1-5（次・別途明示承認後のみ）**：既存研究Ruby/Python fixtureを使い、重複JSONキー/JOSE・Expired Terminal・未知/非開示Constraint・Host trust・resource上限・Failure/replay Host contractの**負例をテスト先行**で検証。REDはREDとして報告し、Gem/API/本番コードは作らない。
+- [x] **P1-5完了（テストのみ）**：[SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md)、[Actions #38127279271](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38127279271)。固定AP2 SDK＋Ruby研究コードの署名済負例**18件：GREEN 11（正例1/拒否10）、RED 6（想定外受理）、HOST_BOUNDARY 1、ERROR 0**。既存P1-1/2/3回帰43件はPASS。**汎用Gem/API実装HOLD、公開/本番NO-GO**。既存検証器は変更しない。
+- [ ] **P1-6（次・別途明示承認後のみ）**：実証された6 RED（重複JSON/JOSE、Closed期限/時刻、Merchant typ、未知Checkoutフィールド）を**研究用検証器だけ**で最小対策し、18負例＋43回帰を再実行。Host trust/replay/Receipt、Gem実装と公開は別途判断。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 

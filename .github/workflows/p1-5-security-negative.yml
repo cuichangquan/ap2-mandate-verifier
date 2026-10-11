@@ -1,0 +1,116 @@
+name: P1-5 Security Negative Research (RED is evidence)
+
+# Manual-only after first PR observation; avoid repeated dependency installs.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  observe-security-negatives:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: false
+      - name: Obtain pinned AP2 v0.2 Python SDK
+        shell: bash
+        run: |
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = "b4587ac1d055888a73b4b21750973cffba961793"
+      - name: Install pinned direct Python dependencies
+        shell: bash
+        working-directory: ${{ runner.temp }}/ap2
+        run: |
+          # Official uv.lock uses private registry. Direct pyproject pins only;
+          # not an upstream lockfile-reproduction claim.
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple -e .
+          python -m pip freeze > "$GITHUB_WORKSPACE/p1-5-python-packages.txt"
+      - name: Generate genuinely signed synthetic security-negatives
+        shell: bash
+        run: |
+          python -m py_compile research/p1_5/generate_signed_negatives.py
+          python research/p1_5/generate_signed_negatives.py "$RUNNER_TEMP/p1-5-fixtures.json"
+          python research/p1_3/generate_merchant_checkout.py "$RUNNER_TEMP/p1-3-fixtures.json"
+          python research/p1_2/generate_two_hop_python.py "$RUNNER_TEMP/p1-2-fixtures.json"
+          python research/p1_1/generate_python_sdjwt.py "$RUNNER_TEMP/p1-1-fixtures.json"
+      - name: Install pinned Ruby JWT dependency
+        shell: bash
+        run: |
+          gem install jwt -v 3.3.0 --no-document
+          ruby -v
+          ruby -rjwt -e 'puts "JWT: #{Gem.loaded_specs.fetch("jwt").version}"'
+          ruby -c research/p1_5/observe_security_negatives.rb
+      - name: Historical P1-1 regression
+        shell: bash
+        env:
+          AP2_P11_FIXTURES: ${{ runner.temp }}/p1-1-fixtures.json
+        run: |
+          set -o pipefail
+          ruby research/p1_1/test_ruby_root_sdjwt.rb --verbose 2>&1 | tee p1-5-p1-1-regression.log
+      - name: Historical P1-2 regression
+        shell: bash
+        env:
+          AP2_P12_FIXTURES: ${{ runner.temp }}/p1-2-fixtures.json
+        run: |
+          set -o pipefail
+          ruby research/p1_2/test_ruby_two_hop.rb --verbose 2>&1 | tee p1-5-p1-2-regression.log
+      - name: Historical P1-3 regression
+        shell: bash
+        env:
+          AP2_P13_FIXTURES: ${{ runner.temp }}/p1-3-fixtures.json
+        run: |
+          set -o pipefail
+          ruby research/p1_3/test_checkout_binding.rb --verbose 2>&1 | tee p1-5-p1-3-regression.log
+      - name: Observe NEW hostile signed vectors (RED step is intentional evidence)
+        id: negative
+        continue-on-error: true
+        shell: bash
+        env:
+          AP2_P15_FIXTURES: ${{ runner.temp }}/p1-5-fixtures.json
+          AP2_P15_RESULTS: p1-5-observations.json
+        run: |
+          set -o pipefail
+          ruby research/p1_5/observe_security_negatives.rb 2>&1 | tee p1-5-observations.log
+      - name: Preserve measured RED/ERROR results without masking them
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("p1-5-observations.json")
+          assert p.exists(), "No P1-5 observer report (probe crash?)"
+          report = json.loads(p.read_text())
+          assert report["case_count"] == 18, "Missing or skipped P1-5 cases"
+          tally = report["summary"]
+          print(f"SECURITY OBSERVATION: {tally} (GREEN=proper rejection; RED=unexpected acceptance; ERROR=unexpected exception)")
+          print("RED/ERROR is NOT approval, not a clean security test pass.")
+          for row in report["cases"]:
+              if row["verdict"] in ("RED", "ERROR"):
+                  print(f"BLOCKER: {row['id']}: {row['policy']} -> {row['verdict']} ({row['observed']})")
+          assert tally["ERROR"] == 0, "Probe errors require separate investigation"
+          PY
+      - name: Upload evidence logs, not ephemeral issuer private keys
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-5-security-negative-evidence
+          path: |
+            p1-5-observations.json
+            p1-5-observations.log
+            p1-5-p1-1-regression.log
+            p1-5-p1-2-regression.log
+            p1-5-p1-3-regression.log
+            p1-5-python-packages.txt
+          retention-days: 7
+          if-no-files-found: warn
