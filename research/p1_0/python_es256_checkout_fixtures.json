@@ -1,0 +1,116 @@
+{
+  "fixture_origin": "generated-with-Python-cryptography-46.0.4-for-research-not-upstream-test-vectors",
+  "ap2_protocol_commit": "b4587ac1d055888a73b4b21750973cffba961793",
+  "p256_public_jwk": {
+    "kty": "EC",
+    "crv": "P-256",
+    "x": "ADbgzrZ-pOkO0jm006yfi_kpuEc5_frCU4_t20NSWdg",
+    "y": "ZVCp7SxAVYciae_-lLS7vVLeqY_wvn6kkvniybznMhg"
+  },
+  "wrong_p256_public_jwk": {
+    "kty": "EC",
+    "crv": "P-256",
+    "x": "8B4Sxv5HbOvWjYWLYPKvZQvLt-yEJQmP6iIl-8YFVXY",
+    "y": "oC0l20aUogTFpFWdLB6Lv4x6_7AlH5nuUvRq56hesdw"
+  },
+  "checkout_jwt": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJjaGVja291dF9pZCI6InJlc2VhcmNoLWNoZWNrb3V0LTAwMSIsIml0ZW1zIjpbeyJpZCI6IlNLVS0wMDEiLCJxdWFudGl0eSI6MX1dLCJtZXJjaGFudF9pZCI6InJlc2VhcmNoLXN0b3JlIn0.blhFP0f6ZaZ7F_Js_sNGoHSz23D7UbAOMJ5NR6MvjqHUOFBZ5Ajrd9Q0GSdPig5JERxW7xbFcn14rkVxsUxnAg",
+  "checkout_hash_sha256_b64url": "Otc54q2hGeahs30sJbfYIOEiHvevGzErUciWGVPanaE",
+  "altered_checkout_jwt_same_signature": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJjaGVja291dF9pZCI6InJlc2VhcmNoLWNoZWNrb3V0LTAwMSIsIml0ZW1zIjpbeyJpZCI6IlNLVS0wMDEiLCJxdWFudGl0eSI6MX1dLCJtZXJjaGFudF9pZCI6ImF0dGFja2VyLXN0b3JlIn0.blhFP0f6ZaZ7F_Js_sNGoHSz23D7UbAOMJ5NR6MvjqHUOFBZ5Ajrd9Q0GSdPig5JERxW7xbFcn14rkVxsUxnAg",
+  "altered_signature_checkout_jwt": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJjaGVja291dF9pZCI6InJlc2VhcmNoLWNoZWNrb3V0LTAwMSIsIml0ZW1zIjpbeyJpZCI6IlNLVS0wMDEiLCJxdWFudGl0eSI6MX1dLCJtZXJjaGFudF9pZCI6InJlc2VhcmNoLXN0b3JlIn0.blhFP0f6ZaZ7F_Js_sNGoHSz23D7UbAOMJ5NR6MvjqHUOFBZ5Ajrd9Q0GSdPig5JERxW7xbFcn14rkVxsUxnAw",
+  "valid_open_checkout": {
+    "vct": "mandate.checkout.open.1",
+    "cnf": {
+      "jwk": {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "ADbgzrZ-pOkO0jm006yfi_kpuEc5_frCU4_t20NSWdg",
+        "y": "ZVCp7SxAVYciae_-lLS7vVLeqY_wvn6kkvniybznMhg"
+      }
+    },
+    "constraints": [
+      {
+        "type": "checkout.line_items",
+        "items": [
+          {
+            "id": "line-1",
+            "acceptable_items": [
+              {
+                "id": "SKU-001",
+                "title": "Demo Widget"
+              }
+            ],
+            "quantity": 1
+          }
+        ]
+      }
+    ]
+  },
+  "invalid_open_checkout_empty_constraints": {
+    "vct": "mandate.checkout.open.1",
+    "cnf": {
+      "jwk": {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "ADbgzrZ-pOkO0jm006yfi_kpuEc5_frCU4_t20NSWdg",
+        "y": "ZVCp7SxAVYciae_-lLS7vVLeqY_wvn6kkvniybznMhg"
+      }
+    },
+    "constraints": []
+  },
+  "invalid_open_checkout_quantity_zero": {
+    "vct": "mandate.checkout.open.1",
+    "cnf": {
+      "jwk": {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "ADbgzrZ-pOkO0jm006yfi_kpuEc5_frCU4_t20NSWdg",
+        "y": "ZVCp7SxAVYciae_-lLS7vVLeqY_wvn6kkvniybznMhg"
+      }
+    },
+    "constraints": [
+      {
+        "type": "checkout.line_items",
+        "items": [
+          {
+            "id": "line-1",
+            "acceptable_items": [
+              {
+                "id": "SKU-001",
+                "title": "Demo Widget"
+              }
+            ],
+            "quantity": 0
+          }
+        ]
+      }
+    ]
+  },
+  "invalid_open_checkout_vct": {
+    "vct": "mandate.checkout.open",
+    "cnf": {
+      "jwk": {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "ADbgzrZ-pOkO0jm006yfi_kpuEc5_frCU4_t20NSWdg",
+        "y": "ZVCp7SxAVYciae_-lLS7vVLeqY_wvn6kkvniybznMhg"
+      }
+    },
+    "constraints": [
+      {
+        "type": "checkout.line_items",
+        "items": [
+          {
+            "id": "line-1",
+            "acceptable_items": [
+              {
+                "id": "SKU-001",
+                "title": "Demo Widget"
+              }
+            ],
+            "quantity": 1
+          }
+        ]
+      }
+    ]
+  }
+}
