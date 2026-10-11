@@ -62,7 +62,7 @@ class P110RFixedSignedNestedConstraintRegressionTest < Minitest::Test
 
   def test_known_good_signed_checkout_still_returns_evidence_not_allow
     f = P110R::POS
-    result = P110R.verify(f, checkout_key: "host_checkout_jwt", checkout_wire: nil)
+    result = P110R.verify(f, checkout_key: "host_checkout_jwt")
     assert_equal "checkout-001", result.fetch(:checkout_id)
     assert_equal "merchant-allowed", result.fetch(:merchant_id)
     assert_equal 2400, result.fetch(:amount_minor)
