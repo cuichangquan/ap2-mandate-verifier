@@ -10,7 +10,8 @@
 - [x] 最小のVerifier API案・スコープ・未保証項目を**設計としてのみ整理**（[API_PROPOSAL](API_PROPOSAL.md)）。公開API未確定、未実装。
 - [x] P0-5でGO/HOLD/NO-GOを評価し、**HOLD**を記録（[RESEARCH_DECISION](RESEARCH_DECISION.md)）。Ruby実装は未承認。
 - [x] **P0-5a完了（公式pytest 186 PASS / 2 FAIL、実署名負例12 PASS、先行限定11 PASS）**。[実測記録](PYTHON_BASELINE_VERIFICATION.md)。公式uv.lockはprivate registry 401のためpyproject直接依存を公開PyPIから取得。**Gem実装HOLD継続**。
-- [ ] **P0-5b（次）**：実測結果に基づきIssuer trust、aud/nonce、必須開示、Checkout JWT/hash、Host認可の**最小Fail Closed Profileを設計**し、GO/HOLD再判定。Ruby Gem実装は別途承認後。
+- [x] **P0-5b完了**：[Fail Closed Profile](FAIL_CLOSED_PROFILE.md)でIssuer trust、terminal aud/nonce、required disclosure、Checkout原文・hash、Host認可を限定し、[RESEARCH_DECISION](RESEARCH_DECISION.md) §9で**非本番Ruby PoCだけCONDITIONAL GO**（汎用Gem・本番利用はHOLD/NO-GO）。
+- [ ] **P1-0（次・別の明示承認後のみ）**：Gem雛形や公開APIを作らず、固定Python fixtureでRuby JWS/JWK・SHA-256 Hash・Open JSON Schemaを確認するオフライン互換性Spike。成果物案：`docs/RUBY_FEASIBILITY_SPIKE.md`。失敗時はHOLD。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 
