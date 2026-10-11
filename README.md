@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier for Ruby
 
-> **Status: research/design only.** P1-10e documents independent Authority/Host fault-injection plans (**DESIGN ONLY, NOT RUN**). Prior PG16 Host research exercised **9/34 canonical cases** (12 runs / 465 assertions); **25 NOT RUN**. P1-10c's single-process synthetic model (8 runs / 94 assertions) is not cross-service proof. HC06 distributed safety **HOLD**. **No generic Ruby Gem/API**; implementation **HOLD**, RubyGems release and production/real payments **NO-GO**.
+> **Status: research/design only.** P1-10f evaluates a local two-process/two-PG16 synthetic Authority/Host harness for E-R01/R02 (**feasibility decision only; NOT BUILT / NOT RUN**). Prior PG16 Host research exercised **9/34 canonical cases** (12 runs / 465 assertions); **25 NOT RUN**. P1-10c's 8 runs/94 assertions used a single Ruby process and do not prove cross-service atomicity. HC06 distributed safety **HOLD**. **No generic Ruby Gem/API**; implementation **HOLD**, RubyGems release and production/real payments **NO-GO**.
 >
 > Independent, unofficial Ruby OSS exploration. Not affiliated with Google, the AP2 project, or FIDO Alliance.
 
@@ -89,6 +89,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [HC06 Offline Synthetic Evidence — P1-10c eight model tests, two expected unsafe counterexamples; not a full HC06 proof](docs/HOST_EXTERNAL_REVOCATION_P110C_EVIDENCE.md)
 - [HC06 Cross-Service Protocol Design — P1-10d Authority reservations, durable Host COMMIT, revocation timing and failure matrix (DESIGN ONLY)](docs/HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md)
 - [HC06 Independent Failure-Injection Test Plan — P1-10e revocation during reservation, unknown COMMIT, reservation timeout (DESIGN ONLY, NOT RUN)](docs/HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md)
+- [HC06 Minimal Independent Harness Decision — P1-10f E-R01/R02 local two-process/two-PG16 feasibility assessment (DESIGN ONLY, NOT RUN)](docs/HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)

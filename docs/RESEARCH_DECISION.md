@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§26（P1-10e）：独立した架空Authority/Hostの障害注入テスト計画のみ完了（NOT RUN）。既存Host正本9/34件実測・25件NOT RUN、HC06の分散安全性HOLD。汎用Gem/API実装HOLD、公開/本番/実決済NO-GO。**
+> **最新判定は§27（P1-10f）：E-R01/R02の独立ハーネス構築は条件付き推奨だが、実装未承認・NOT RUN。既存Host正本9/34件実測・25件NOT RUN、HC06分散安全性HOLD。汎用Gem/API実装HOLD、公開/本番/実決済NO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -321,3 +321,13 @@ R_requestの受付とR_effectiveの失効完了を混同しない。COMMIT応答
 **判定：P1-10e計画文書のみCONDITIONAL GO。HC06分散安全性・Gem/API・本番Host連携HOLD、RubyGems公開・Production/実決済/署名Receipt NO-GO。** 自己レビューは独立セキュリティ監査ではない。
 
 **次のおすすめ1件（別途明示承認後）：P1-10f** — E-R01/E-R02に限定し、独立プロセス・独立永続ストアのオフライン実験環境を作るか、barrier/通信障害注入方式と費用・制約を先に採否判断する。自動着手しない。
+
+## 27. 2026-10-11 P1-10f HC06 E-R01/R02の最小独立ハーネス採否判断（最新・設計のみ）
+
+**資料のみ、環境・コード・CI・新規実測なし。** [HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION](HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION.md)に、P1-10eのE-R01（C先行、失効はpending）／E-R02（耐久abortが先、遅延stale C拒否）を独立して観測するため、Ruby worker別OSプロセス＋別PG16インスタンス/耐久領域×2の**ローカル限定研究環境を第一候補**と評価。単一Mutex/共有DBは独立性の証拠にならず、共通ローカル物理ホストの障害ドメインも残る。
+
+**採否：CONDITIONAL GOは将来のハーネス研究案への評価のみ。実装GOではない。** Hostの最終Cを防ぐ全経路共通のdurable abort gateと、Authority側でR_effectiveを確定するための耐久的な因果/通信証拠、隔離PG16×2とfault barrier/cleanupの実現可能性の3ゲートを要求する。未達ならSTOP/再設計。R_request受付≠R_effective完了であり、即時取消を実現したとは言わない。将来の合成テストPASSが本番Authorityの線形化保証を証明することもない。追加GCP費用を発生させない案だが、ローカル計算資源、電力、実装/運用コストは未測定。新CIは未実行で無料枠を断定しない。
+
+**過去証拠は不変：** PostgreSQL16 Host正本**9/34件、25件NOT RUN、12 runs/465 assertions PASS**。P1-10cの8 runs/94 assertionsは単一プロセスの合成研究。今回のE-R01/R02をPASSと数えない。HC06分散安全性、N17 HOST_BOUNDARY、P1-4 G1〜G6/P1-7 T1〜T5、公式Python SDKの**186 PASS/2 FAIL**は継続。**汎用Gem/API・本番Host統合HOLD、RubyGems公開・Production/実決済/署名Receipt NO-GO。** メンテナ自己レビューは独立セキュリティ監査ではない。
+
+**次のおすすめ1件（別途ユーザー明示承認後のみ）：P1-10g** — 上記着手ゲート成立時のみ、E-R01/R02用の独立ローカルPG16/worker障害注入実験を最小実装・実測する。未成立なら設計課題へ戻す。GCP・外部Authority・Gem・本番・決済は別承認。
