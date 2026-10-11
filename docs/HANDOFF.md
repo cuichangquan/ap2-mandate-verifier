@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**P0-1〜P0-5b・P1-0〜P1-4完了。P1-4は静的セキュリティレビュー（リスク12件＋ゲート6件）と最新GO/HOLDを記録**。**次はP1-5オフライン負例テスト（別途承認必須）**。非本番研究PoCのみCONDITIONAL GO、汎用Gem実装/公開APIはHOLD、production/実決済はNO-GO。P1-3の既存回帰は18/15/10件成功、P1-4新規CI/攻撃再現は**未実施**。Gem実装/公開/本番安全性検証も未実施。
+状態：**P0-1〜P0-5b・P1-0〜P1-5完了。P1-5は署名付きセキュリティ負例18ケースでGREEN 11 / RED 6 / Host replay境界1 / ERROR 0、P1-1〜P1-3回帰43件PASS**。次は**P1-6：研究用6 RED対策（別途承認必須）**。現状の研究用Verifierには想定外の受理が残る。**汎用Gem/API実装HOLD、RubyGems公開・Production/実決済NO-GO**。GCP/実決済/Host replay/Receiptは未実施。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -13,7 +13,7 @@
 
 1. [README](../README.md) — Gemの目的・利用シーン・非スコープ
 2. [PROJECT](PROJECT.md) — D001〜D006、責務境界、独立OSS方針
-3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) / [RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) / [SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) — Ruby Root/2hop/Checkoutの限定研究とP1-4の安全負債/Gem判定
+3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) / [RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) / [SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) / [SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md) — Ruby Root/2hop/Checkout、P1-4静的レビュー、P1-5 RED 6の実測
 4. [OFFICIAL_SOURCES](OFFICIAL_SOURCES.md) — AP2/FIDO/IETFの一次資料・ウォッチリスト
 5. [RESEARCH_PLAN](RESEARCH_PLAN.md) — Phase 0〜3 の全体工程
 6. [SECURITY_BOUNDARY](SECURITY_BOUNDARY.md) — 未信頼Mandateの扱いとFail Closed
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-4完了 / 次はP1-5】
+### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-5完了 / 次はP1-6】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -113,9 +113,16 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - **GO候補：** オフライン負例研究P1-5のみ（別の承認が必要）。**HOLD：** 汎用Gem/API実装。**NO-GO：** RubyGems公開・Production/実決済。
   - P1-4自身では**CI/新しい攻撃実験/Gem実装なし**。前回のRoot/2hop/Checkout既存回帰は10/15/18テストPASSのまま。
 
-- [ ] **P1-5：Security Gateの研究用負例テスト（次の1件／明示承認後のみ）**
-  - 重複JSONキー/JOSE、Expired Terminal、hidden/unknown Constraint、Host trust/key-binding、入れ子/巨大入力、failure/nonce-replay責務を固定fixtureでテスト先行。期待拒否を満たさなければ**REDの実測**として記録。
-  - **成果物案：** `docs/SECURITY_NEGATIVE_TESTS.md` + 研究用テストのみ。Gem/API、本番、GCP、実決済、Host永続stateの実装は禁止。
+- [x] **P1-5：本物の署名付きセキュリティ負例をテスト先行で観測（完了：[SECURITY_NEGATIVE_TESTS.md](SECURITY_NEGATIVE_TESTS.md)）**
+  - 固定AP2 v0.2 Python SDKとMerchant実署名JWTを使用。**18ケース：GREEN 11（正例1/拒否10）/ RED 6 / HOST_BOUNDARY 1 / ERROR 0**。[CI #38127279271](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38127279271)。
+  - **6 REDは残存:** 重複`merchant.id`、重複`alg`、Closed`exp`期限切れ、Closed内部未来`iat`、JWT想定外`typ`、未知Checkoutフィールドが、署名付き状態で不適切に受理。全AP2規格の脆弱性/実決済攻撃とは断言しない。
+  - 既存P1-1回帰10/10、P1-2 15/15、P1-3 18/18成功。**検証器本体変更なし**。CI観測stepはREDで意図的に失敗、Artifact保全のためworkflowはsuccess扱いなので**「セキュリティ全部PASS」としない**。
+  - Host原子的nonce/replay、Receipt、Issuer trust運用、一般的Decoy/Deep JSON/SD-JWT完全性は未検証。Gem/API/ProductionはHOLD/NO-GO。
+
+- [ ] **P1-6：6 REDに対する狭い研究用対策・再検証（次の1件／別途明示承認）**
+  - 署名済JWTの重複JSONキー/JOSE拒否、Closed内部時刻/期限、Merchant `typ`、strict Checkout未知fieldを研究Verifierに限定して対策。18負例＋43回帰の結果を再実行/記録。
+  - **成果物案：** `docs/SECURITY_HARDENING_RESEARCH.md` と研究コード/テストのみ。Gem雛形/API/RubyGems、GCP/実決済、Host永続nonce/Receiptは禁止。
+
 
 
 
@@ -167,36 +174,36 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P0-1〜P0-5b、P1-0〜P1-4完了。** 最新[SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md)は**静的レビュー**。現行P1-1〜P1-3のRoot署名、Agent 2hop、Merchant JWT/Checkout Hash/制約の研究テストは10+15+18件PASSしたが、P1-4で新しい負例CIは実行していない。
+**P0-1〜P0-5b、P1-0〜P1-5完了。最新はP1-5署名付き負例実測。** [SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md)、[RESEARCH_DECISION](RESEARCH_DECISION.md) §15、[P1-4レビュー](SECURITY_GAP_REVIEW.md)を必ず参照。
 
-**P1-4の最新判定:** [RESEARCH_DECISION](RESEARCH_DECISION.md) §14。オフライン研究Spike・P1-5テスト強化のみCONDITIONAL GO（ユーザーの別承認が必要）。**汎用AP2 Ruby Gem/APIの実装開始HOLD、RubyGems公開/本番/実決済NO-GO**。Risk S01〜S12、Gate G1〜G6を読むこと。既存の固定AP2 v0.2 SHA `b4587ac1d055888a73b4b21750973cffba961793` と公式pytest 186 PASS / 2 FAIL（過去実測）は不変。
+**最重要結果:** GitHub Actions [#38127279271](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38127279271)で、固定AP2 v0.2 Python SDK署名済Open/Closed＋Merchant実署名JWTによる**18観測、GREEN 11 / RED 6 / HOST_BOUNDARY 1 / ERROR 0**。既存Ruby回帰43テストはPASS。**6件の想定外受理（RED）は未修正。** REDはduplicate Merchant JSON `id`、JOSE `alg` duplicate、Expired Closed `exp`、未来Closed `iat`、想定外Merchant JWT `typ`、未知Checkoutフィールド。初期Strict Profileのfail-closed policyに対する結果であり、一般AP2仕様違反や実決済攻撃成功とは言わない。
 
-**未検証の優先領域:** 重複JSON/JWS header、Root/Terminal/Closed期限境界、partially hidden Constraint、Host Issuer/Merchant identity・公開鍵の信頼束縛、深い/巨大入力での例外、Hostのatomic replay/nonce管理と署名Receiptの責任契約。コードレビューからの推測と確定した脆弱性を混同しない。
+**実行環境:** GitHub Actions GitHub-hosted Ubuntu/Ruby3.3 + `jwt 3.3.0`、Python3.11・固定SDK SHA `b4587ac1d055888a73b4b21750973cffba961793`。P1-5 observerはRED時に**exit 1**、workflowはログ保全のためそのstepだけ`continue-on-error: true`。全体successと安全性PASSを混同しない。研究用CIはマージ時点で**手動起動専用**。
 
-**次の1件（新たなユーザー承認後のみ）:** **P1-5：静的レビューで挙げた優先負例を既存研究コードへテスト先行で追加し、PASS/FAIL/REDを実測する**。まずP1-1〜P1-3の固定Python署名fixture・Rubyの負例を再利用。失敗を隠さず、`docs/SECURITY_NEGATIVE_TESTS.md`へ記録。Gem雛形/正式API/本番実装・GCP/実決済・ActingFor/a2a-rails変更は禁止。
+**判断:** 汎用Gem/API実装**HOLD**、公開・Production/実決済**NO-GO**。研究用の最小対策P1-6のみCONDITIONAL GO候補。Issuer trust key-ID管理、unknown SD-JWT layout、atomic nonce/replay、Revocation/Receiptと実Host認可は未実装。
+
+**次の1件（別のユーザー明示承認後のみ）：P1-6。** 既存Ruby研究Verifierを限定して6 REDをGREENにするための最小修正、P1-5 18ケース＋過去43回帰を再実行。結果を`docs/SECURITY_HARDENING_RESEARCH.md`に記録。Gem/公開API/実決済/GCP/Host永続state・他OSS変更は禁止。
 
 ### 次チャット用指示文
 
 ```text
-ap2-mandate-verifier P1-5を開始します。
+ap2-mandate-verifier P1-6を開始します。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-最新main、Issue、Open PRを確認し、
-docs/SECURITY_GAP_REVIEW.md、docs/RESEARCH_DECISION.md §14、
-docs/RUBY_CHECKOUT_BINDING_SPIKE.md、docs/FAIL_CLOSED_PROFILE.md、
-research/p1_1〜p1_3のテストと生成器を読んでください。
+最新main/Issue/Open PRを確認し、
+docs/SECURITY_NEGATIVE_TESTS.md、docs/SECURITY_GAP_REVIEW.md、
+docs/RESEARCH_DECISION.md §15、research/p1_5/observe_security_negatives.rb、
+research/p1_5/generate_signed_negatives.py と P1-1〜P1-3の研究コードを読む。
 
-P1-4では12セキュリティギャップと6受入れゲートを定義し、
-汎用Ruby Gem/API実装をHOLDと判断しました。新しいCI実測はまだありません。
+P1-5では署名付き負例18観測中6 RED（予期しないACCEPTED）を実測。
+過去43回帰はPASS。CIがsuccessでもP1-5 observer stepはREDでexit 1。
+今回は研究コードだけで6 REDをFail Closedへ修正し、
+同じ18負例（N00〜N17）と43既存回帰を再実行してください。
+Root/Terminal署名・JWT original bytes/Hashの完全性を保ったまま、
+JSON重複キー、Closed内部iat/exp、JOSE typ、未知Checkout fieldを対策。
+Hostのatomic replay/失効/Receiptは別責務のままにしてください。
 
-P1-5では、JSON重複キー/JOSE、Terminal/Closed expiration、
-未開示・未知SD-JWT権限制約、Host鍵/Issuer ID束縛、
-巨大/深い入力・例外、Host nonce/replayの責務を対象に
-既存研究コードを使った負例テストを先に実装・実測。
-不適切に受理したテストはREDとして記録し、勝手にPASS扱いしません。
-成果物は docs/SECURITY_NEGATIVE_TESTS.md と研究用テスト。
-小さなPRでレビュー、mainへ反映してください。
-
-Gem雛形・公開API・RubyGems、GCP/実決済・Hostの永続state、
-他OSS変更は禁止。Gem実装GOへの自動移行も禁止。
+docs/SECURITY_HARDENING_RESEARCH.mdにGREEN/RED/ERRORを証拠付きで記録。
+Gem/API/公開/Production・実決済・GCP・他OSS変更は禁止。
+次段階への自動GO判断をしない。PRレビュー後mainへマージ。
 ```
