@@ -1,10 +1,7 @@
 name: P1-5 Security Negative Research (RED is evidence)
 
+# Manual-only after first PR observation; avoid repeated dependency installs.
 on:
-  pull_request:
-    paths:
-      - 'research/p1_5/**'
-      - '.github/workflows/p1-5-security-negative.yml'
   workflow_dispatch:
 
 permissions:
