@@ -257,3 +257,9 @@
 **判断:** 研究用P1-9aはPASS/限定GO（実際のDB競合・失敗分岐を実測した範囲に限る）。Gem/public API実装と全面的Host統合は**HOLD**、RubyGems公開・実決済・本番は**NO-GO**。P1-4のG1〜G6およびP1-7のT1〜T5を完全クリアしたと主張しない。
 
 **次の一件（新しいユーザー明示承認後のみ）：P1-9b。** HR04/HR05の**COMMIT前/後プロセスクラッシュ**と原子Rollback/復元を同じ一時PG16環境で実測。HR06/HR07の不明commit・Provider retry、署名ReceiptやGem化はさらに後の独立タスクとする。
+
+## 20. 2026-10-11 P1-9b COMMIT前後クラッシュ・Host復元の限定実測（最新）
+
+**限定Host DB研究としてHR04/HR05実測成功。** [HOST_REPLAY_P19B_EVIDENCE](HOST_REPLAY_P19B_EVIDENCE.md)、[Actions #38134591784](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38134591784)。実worker SIGKILLで**COMMIT前：nonce/checkout/operation/outboxが全Rollback→別worker新規再評価で正当Commit**、**COMMIT ACK後：operation/idempotency keyが永続化され、別の読み取り専用RecoveryがPENDINGで同じ参照を回収、Replay STOP**を観測。**HR04/05 2 runs /84 assertions/失敗・エラー0**、既存HR01/02/03/08 4 runs/108 assertionsもPASS。**Hostテスト34件中6件実測、残り28件未実行**。
+
+**境界:** ACKが失われCOMMIT結果不明となるHR06やProvider timeout/IdempotencyのHR07は**未試験**。AP2署名/Buyer信頼・失効、Receipt、実決済は対象外。N17 stateless HOST_BOUNDARYは残り、公式Python SDK中間hopの186 PASS / 2 FAILも未解決。G1〜G6/T1〜T5全達成ではない。**狭い研究CONDITIONAL GO、汎用Gem/API・本番統合HOLD、RubyGems公開・Production/実決済NO-GO。** 次の一件（新たな明示承認後のみ）：**P1-9c HR06/HR07のFake環境研究**。

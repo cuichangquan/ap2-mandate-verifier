@@ -82,6 +82,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [Host Security Test Plan — P1-7 34 planned race, trust, context and Receipt cases (NOT run)](docs/HOST_SECURITY_TEST_PLAN.md)
 - [Host Replay Lab Design — P1-8 PostgreSQL 16, two workers, crash/retry test plan (DESIGN ONLY, NOT RUN)](docs/HOST_REPLAY_LAB_DESIGN.md)
 - [Host Replay PG16 Evidence — P1-9a four isolated Host DB cases PASS; remaining 30 NOT RUN](docs/HOST_REPLAY_P19A_EVIDENCE.md)
+- [Host Crash Recovery Evidence — P1-9b HR04/HR05 real SIGKILL and durable PG recovery; 6/34 Host cases exercised](docs/HOST_REPLAY_P19B_EVIDENCE.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)
