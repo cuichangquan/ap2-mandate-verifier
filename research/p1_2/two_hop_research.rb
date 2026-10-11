@@ -53,6 +53,18 @@ module AP2TwoHopResearch
         closed_exp - closed_iat <= 7200
       raise Rejected, "Closed outside issuer Root validity" unless
         closed_iat >= root.fetch("iat") && closed_exp <= root.fetch("exp")
+      # AP2 R06: Claims shared by Open and Closed (other than type/vct) must
+      # retain their signed values. A shorter but valid Closed exp is NOT
+      # a license to override the Issuer's originally authorized claims.
+      # Strict research profile: equality of root iat/exp is required; no
+      # arbitrary extension fields or extra hops are supported here.
+      %w[iat exp].each do |claim|
+        raise Rejected, "Closed changed a fixed Open claim" unless
+          closed.fetch(claim) == root.fetch(claim)
+      end
+      other_shared = (root.keys & closed.keys) - %w[vct iat exp]
+      raise Rejected, "Closed overwrote a signed Open claim" unless
+        other_shared.all? { |claim| root[claim] == closed[claim] }
       raise Rejected, "terminal must not delegate again" if closed.key?("cnf")
       raise Rejected, "missing checkout information" unless closed["checkout_jwt"].is_a?(String) &&
         !closed["checkout_jwt"].empty? && closed["checkout_hash"].is_a?(String) &&
