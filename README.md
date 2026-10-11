@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier for Ruby
 
-> **Status: research/PoC only — P1-2 pinned AP2 Open→Closed 2-hop Ruby cryptographic binding passed 15 tests (0 failures), plus P1-1 regression 10 passed. Merchant-signed Checkout JWT, final authorization, production assurance and full AP2 verifier remain NOT implemented. Offline limited research PoC CONDITIONAL GO; generic Gem/release HOLD, production NO-GO.**
+> **Status: research/PoC only — P1-3 verified a merchant-signed Checkout JWT against Host original, checkout_hash and restricted one-line merchant/SKU/quantity/total constraints: 18 PASS; P1-2 regression 15 PASS, P1-1 regression 10 PASS. Generic Gem/API and final payment authorization remain NOT implemented; nonproduction research only. Generic release HOLD, production NO-GO.**
 >
 > Independent, unofficial Ruby OSS exploration. Not affiliated with Google, the AP2 project, or FIDO Alliance.
 
@@ -74,6 +74,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [Ruby interoperability feasibility — P1-0 ES256/JWK + Checkout Hash + official schema: 14 PASS](docs/RUBY_FEASIBILITY_SPIKE.md)
 - [Ruby SD-JWT Root & Disclosure — P1-1 pinned Python SDK issuance, hidden constraint fail closed: 10 PASS](docs/RUBY_SDJWT_RESEARCH.md)
 - [Ruby two-hop delegation — P1-2 pinned Python signed Open→Closed, cnf/sd_hash/aud/nonce: 15 PASS](docs/RUBY_DELEGATION_SPIKE.md)
+- [Ruby Merchant Checkout binding — P1-3 signed Checkout JWT, Host exact bytes, hash, restricted merchant/SKU/quantity/amount: 18 PASS](docs/RUBY_CHECKOUT_BINDING_SPIKE.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)
