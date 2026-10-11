@@ -1,8 +1,8 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§33（P1-10l）：固定AP2 v0.2.0仕様/SDKではMandate検証・Checkout binding・Receipt等はSUPPORTED、独立Host–Authorityの強い失効協調C01〜C12の完全な標準契約はNOT SPECIFIED（照合した公式ファイルに限定）、実事業者実装はUNKNOWN。C01〜C12外部回答OPEN、Host正本9/34・25 NOT RUN、HC06・Gem/API本番統合HOLD、RubyGems公開/実決済NO-GO。**
+> **最新判定は§34（P1-10m）：A. Merchant側Checkout Mandate暗号Verifier（VerifiedEvidence/Rejectionのみ）と、B. Host/独立Authorityの強い分散失効制御（HC06）を別責務として設計上分離。Aの狭い非本番PoCは条件付き研究候補だが本Stepで実装GOなし。B/HC06・汎用Gem/API・本番Host統合HOLD、RubyGems公開/実決済/署名Receipt NO-GO。Host正本9/34・25 NOT RUN不変。**
 
-**判断日:** 2026-10-11 JST  
+**判断日:** 2026-10-12 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
 **推奨する次の研究:** AP2公式Python SDK `v0.2.0` 固定ソースを**隔離・オフライン中心**に実行し、公式テストと優先負例を検証して再判定する。**この文書のマージは実装承認や次タスクの自動実行ではない。**
 
@@ -403,3 +403,15 @@ guardは**別Host DBへの直接的な信頼済み読取り**で成立する人�
 **Go/HOLD:** 本PJが限定Verfierを将来検討する責務と、Host/Authority強い分散失効を別責務に明確化する。実装GOは**出していない**。HC06 FULL HOLD、Gem/public API・本番統合HOLD、RubyGems公開/Production/実決済/署名Receipt NO-GO。Host正本**9/34件、25 NOT RUN（12 runs/465 assertions）**、P1-10c 8 runs/94 assertions、P1-10g 2 runs/118 assertions、P1-10i 6 runs/178 assertionsは別証拠。H01旧Authorityは**R_effective後にC成功の危険反例**。H07〜H12、N17 HOST_BOUNDARY、G1〜G6/T1〜T5、公式Python SDK中間hop186 PASS/2 FAILは未解決。
 
 **次のおすすめ1件（別途ユーザー明示承認後のみ）：P1-10m** — Merchant Checkout Mandate暗号VerifierとHost/Authority分散強失効を分ける**非実装スコープ/GO-HOLD表だけ**をまとめる。新コード/CI/GCP/外部サービス/決済/公開Gemには進まない。
+
+## 34. 2026-10-12 P1-10m 暗号VerifierとHost/Authority強失効のスコープ分離（最新・設計のみ）
+
+[VERIFIER_VS_REVOCATION_P110M_SCOPE](VERIFIER_VS_REVOCATION_P110M_SCOPE.md)で責務・入出力・所有者・GO/HOLDの一枚表を確定した（**設計方針だけ**）。**A. Merchant Checkout Mandate暗号Verifier候補**は、Host指定のIssuer/鍵・期待aud/nonce・正本Checkout JWTに対して固定AP2 v0.2のchain/PoP/constraints/署名/hash/開示を照合し、**VerifiedEvidenceまたはRejectionの証拠だけ**を返す想定。**Host**は最新業務状態、最終ALLOW、nonceの原子的使用・operation/outbox、replay/失効等を別に管理。**B. Host↔独立Authority HC06**は全C経路のdurable terminal gate、真のHost proof、P/R_effective直列化・anti-rollbackを要求する**別研究トラック**。実決済/Checkout Receipt生成、汎用Gemの公開APIも別判断である。
+
+**旧P0-5b §9のCONDITIONAL GO**は限定非本番offline spikeの当時の条件付き検討であり、現在の新規PoC実装の自動承認ではない。Aに限定すること自体でAの本番安全性が保証されるわけではなく、Bを除外してもHostは未知の失効状態/二重実行を許可してはいけない。P1-10lで確認されたAP2標準のMerchant検証義務と、C01〜C12の固定版でNOT SPECIFIEDな完全な強失効協調を取り違えない。C01〜C12の外部契約は全件OPEN/UNCONFIRMED、実Authority能力UNKNOWN。
+
+**P1-10mの追加コード/CI/テスト/クラウド/署名鍵/外部API/実決済/Gem変更は0件**。Host正本**9/34実測・25 NOT RUN、従来12 runs/465 assertions**。P1-10c合成8 runs/94 assertions、P1-10g別PG16合成2 runs/118 assertions、P1-10i別PG16合成6 runs/178 assertionsを混算しない。H01旧経路は失効後C成功の**危険反例**。H07〜H12 NOT RUN、N17 HOST_BOUNDARY、P1-4 G1〜G6/P1-7 T1〜T5、公式Python SDK中間hop186 PASS/2 FAILが未解決。自己レビューは独立安全監査ではない。
+
+**判定：A/B責務分離を設計採用、A非本番PoCは条件付き研究候補・新規実装着手は別承認。BのHC06強安全性HOLD、Gem/public API・本番Host統合HOLD、RubyGems公開・Production・実決済・署名Receipt NO-GO。**
+
+**次のおすすめ1件（別途ユーザー明示承認後のみ）：P1-10n、設計レビューだけ**。A狭い非本番PoCの着手条件と残ったブロッカー（Issuer trust、必要開示完全性、鍵PoP、原文Checkout/hash、公式Python/Ruby正負比較）を表にし、新PoCのGO/HOLDを明示的に再審査する。実装・CI・GCP・外部連携/決済・公開Gemは別承認。

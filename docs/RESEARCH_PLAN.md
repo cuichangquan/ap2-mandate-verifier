@@ -1,6 +1,6 @@
 # Research Plan — 小さく始める
 
-更新日：2026-10-11。**研究・小さなオフライン技術検証を実施。Ruby Gem/API実装・公開は未実施。**
+更新日：2026-10-12。**研究・小さなオフライン技術検証を実施。Ruby Gem/API実装・公開は未実施。**
 
 ## Phase 0 — 仕様と競合調査
 
@@ -35,7 +35,8 @@
 - [x] **P1-10j完了（外部独立Authority証拠の成立性・採否設計レビューのみ）**：[HOST_EXTERNAL_REVOCATION_P110J_DECISION](HOST_EXTERNAL_REVOCATION_P110J_DECISION.md) — 直接Host PG参照を外し、Host trust anchor・予約context照合・Host terminal C/ABORTと同一transactionのdurable決定・全C経路gate・failover/rollback防止・AuthorityのPENDING/R_effective条件を比較。**誠実なHost前提のCONDITIONAL RESEARCHのみ、実Authority機能・暗号証拠・分散整合性は未確認。新コード/CI/テスト0、Host正本9/34・25 NOT RUN、HC06 HOLD。**
 - [x] **P1-10k完了（Host/Authorityの安全契約チェックリスト・設計のみ）**：[HOST_EXTERNAL_REVOCATION_P110K_CONTRACT_CHECKLIST](HOST_EXTERNAL_REVOCATION_P110K_CONTRACT_CHECKLIST.md) — C01〜C12について責任候補・要求証拠・未達時STOP/PENDING/REJECT・顧客への表示・契約確認質問を整理。**外部回答は全件OPEN/UNCONFIRMED**、外部API・実装・テスト・CIなし。Host正本9/34・25 NOT RUN、HC06 FULL HOLD。
 - [x] **P1-10l完了（公式AP2 v0.2.0固定commitの仕様/SDK読取照合のみ）**：[HOST_EXTERNAL_REVOCATION_P110L_AP2_SPEC_MAPPING](HOST_EXTERNAL_REVOCATION_P110L_AP2_SPEC_MAPPING.md) — 固定SHA `b4587ac1d055888a73b4b21750973cffba961793`に対応する規範的Merchant検証・Checkout/Receipt・SDKプリミティブは**SUPPORTED**、C01〜C12の**完全な外部Host–Authority強い失効協調契約は参照範囲でNOT SPECIFIED**、実事業者が個別にサポートするかは**UNKNOWN**。すべて根拠文書/行リンクを記録。新コード/テスト/CI/外部API 0、Host正本9/34・HC06 HOLD。
-- [ ] **P1-10m（次のおすすめ1件・別途明示承認後のみ）**：Merchant Checkout Mandate暗号Verifierの責務と、Host/Authority強い失効制御の責務を**スコープ表1枚に整理する設計だけ**。Gem API/コード、CI、決済、GCP、公開は別承認。
+- [x] **P1-10m完了（A: Merchant暗号VerifierとB: Host/Authority強失効を分離した設計のみ）**：[VERIFIER_VS_REVOCATION_P110M_SCOPE](VERIFIER_VS_REVOCATION_P110M_SCOPE.md) — VerifiedEvidence/Rejection（未実装）とHost最終ALLOW/nonce/operation/outbox、HC06/P/R_effective（研究用モデル）、実決済/Receipt、公開Gemを別責務としてスコープ・GO/HOLD表に整理。**非本番PoCの候補は条件付き・今回実装GOなし、HC06/Gem API/本番HOLD、決済・公開NO-GO。新コード/CI/テスト0、Host正本9/34・25 NOT RUN不変。**
+- [ ] **P1-10n（次のおすすめ1件・別途明示承認後のみ）**：Aの狭い非本番PoCに必要な正負fixture・Issuer trust・PoP・開示完全性・Checkout JWT/hashesと未解決事項を一表にまとめ、**設計のみで**着手GO/HOLD条件を再評価。コード/CI・GCP・実サービス・決済・Gem公開は別承認。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 
