@@ -1,14 +1,7 @@
 name: P1-6 Security Hardening Research (all RED must clear)
 
+# Manual-only after the initial pinned-SDK CI verification to limit repeated installs.
 on:
-  pull_request:
-    paths:
-      - 'research/shared/**'
-      - 'research/p1_1/**'
-      - 'research/p1_2/**'
-      - 'research/p1_3/**'
-      - 'research/p1_5/**'
-      - '.github/workflows/p1-6-hardening.yml'
   workflow_dispatch:
 
 permissions:
