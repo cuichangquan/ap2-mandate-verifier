@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§32（P1-10k）：Host/Authorityの安全契約C01〜C12を責任候補・必要証拠・未達時Fail Closedに整理したが、外部相手への確認・合意は全件OPEN/UNCONFIRMED。Host正本9/34・25 NOT RUN、HC06強い外部失効保証とGem/API・本番統合はHOLD、RubyGems公開/実決済NO-GO。**
+> **最新判定は§33（P1-10l）：固定AP2 v0.2.0仕様/SDKではMandate検証・Checkout binding・Receipt等はSUPPORTED、独立Host–Authorityの強い失効協調C01〜C12の完全な標準契約はNOT SPECIFIED（照合した公式ファイルに限定）、実事業者実装はUNKNOWN。C01〜C12外部回答OPEN、Host正本9/34・25 NOT RUN、HC06・Gem/API本番統合HOLD、RubyGems公開/実決済NO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -391,3 +391,15 @@ guardは**別Host DBへの直接的な信頼済み読取り**で成立する人�
 **判断：P1-10k設計資料のみ完了。HC06外部分散安全性・Gem/public API・本番Host統合HOLD、RubyGems公開・Production・実決済・署名Receipt NO-GO。** 自己レビューは独立セキュリティ監査ではない。
 
 **次のおすすめ1件（別途明示承認後のみ）：P1-10l（読み取り専用・設計調査のみ）** — 固定AP2公式v0.2.0仕様/SDKの実ファイルをC01〜C12の契約項目と照合して、何が標準でSUPPORTED、何がNOT SPECIFIED、何がUNKNOWNかを出典付きで記録する。API/新コード/CI/GCP/実決済/Gem化に進まない。
+
+## 33. 2026-10-12 P1-10l 固定AP2 v0.2.0のC01〜C12公式仕様・SDK照合（最新・読み取りのみ）
+
+[HOST_EXTERNAL_REVOCATION_P110L_AP2_SPEC_MAPPING](HOST_EXTERNAL_REVOCATION_P110L_AP2_SPEC_MAPPING.md) に固定版 `google-agentic-commerce/AP2@b4587ac1d055888a73b4b21750973cffba961793` の正本仕様文書とPython SDKの**該当行に直結するリンク**を記録。Git treeは473 entries / `truncated=false`。**文書だけで新コード/CI/テスト/外部接続・支払0件**。読んだ関連公式ファイルの範囲で判断し、全サンプル・将来版・商用実装の不存在証明とは扱わない。
+
+**SUPPORTED:** AP2のMerchant/CP/MPP/SA/Trusted Surfaceの役割、Merchant Checkout Mandate処理と厳密なvct、SD-JWT/委任chain、open Constraints、Checkout JWTとcheckout_hash/Receipt、署名と参照照合。Payment Budget/Agent Recurrenceの利用回数追跡は要件・context型を認めるが、外部Authorityへの予約P/失効R_effectiveの標準分散APIとは別。
+
+**NOT SPECIFIED（Cxx完全契約として）:** 12項目すべての強いHost–Authority失効協調（独立Authorityが耐久予約P/失効要求保留・R_effectiveを決め、Host全C経路でABORT terminal gateを強制し、decision proof/outbox、anti-rollback、分散線形化とfail-closedを結ぶ実API）。一部重なるMandate/Receipt要件まで未定義だとは書かない。**UNKNOWN:** 実外部事業者がこれらを独自に提供しているかは未調査・未回答。すべてのC01〜C12契約確認は引き続きOPEN/UNCONFIRMED。AP2 Checkout ReceiptをHost durable abort proofと誤称しない。
+
+**Go/HOLD:** 本PJが限定Verfierを将来検討する責務と、Host/Authority強い分散失効を別責務に明確化する。実装GOは**出していない**。HC06 FULL HOLD、Gem/public API・本番統合HOLD、RubyGems公開/Production/実決済/署名Receipt NO-GO。Host正本**9/34件、25 NOT RUN（12 runs/465 assertions）**、P1-10c 8 runs/94 assertions、P1-10g 2 runs/118 assertions、P1-10i 6 runs/178 assertionsは別証拠。H01旧Authorityは**R_effective後にC成功の危険反例**。H07〜H12、N17 HOST_BOUNDARY、G1〜G6/T1〜T5、公式Python SDK中間hop186 PASS/2 FAILは未解決。
+
+**次のおすすめ1件（別途ユーザー明示承認後のみ）：P1-10m** — Merchant Checkout Mandate暗号VerifierとHost/Authority分散強失効を分ける**非実装スコープ/GO-HOLD表だけ**をまとめる。新コード/CI/GCP/外部サービス/決済/公開Gemには進まない。
