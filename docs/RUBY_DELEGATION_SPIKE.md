@@ -82,7 +82,7 @@ Rubyの研究コードは`AP2RootSDJWTResearch.verify_full_root!`と署名済SD-
 - **`sd_hash`の基準は元のwire:** Ruby `Digest::SHA256.digest(root_wire.b)` と公式Python `common.compute_sd_hash(parse_token(root))`が一致することを正例で確認。Disclosuresを省略または再直列化して別取引の根拠にしない。P1-2では`issuer_jwt_hash`を一律拒否。
 - **`aud`/`nonce`が「ある」だけで成功させない:** Hostの非空の期待値がない場合は先に拒否する。署名済みTerminalに異なる`aud`や`nonce`を含む独立の正規署名負例でも拒否。**再利用防止はHostが原子的に管理する**（今回未検証）。
 - **Rootの完全性:** P1-1が許可する`checkout.line_items`＋`checkout.allowed_merchants`の狭いIssuer layoutを継承。RootからMerchantのDisclosureを消した場合は、Root署名が有効でもRejected。未知の権限制約を全般的に発見できる主張ではない。
-- **Clock:** RootとTerminalの`iat`/`exp`周りに**研究用の厳格な有限値**を導入。数字は正式AP2共通ルールやHost運用で妥当と確定したものではない。テスト実行後のfixtureの長期保存・リプレイ受理に利用しない。
+- **Clock:** Rootの`iat`/`exp`とTerminalの`iat`を**研究用の厳格な有限値**で確認した。Terminal `exp`の網羅検証は未実施。数字は正式AP2共通ルールやHost運用で妥当と確定したものではない。テスト実行後のfixtureの長期保存・リプレイ受理に利用しない。
 
 **未実証項目:** `checkout_jwt`のMerchant署名・保存された正本JWTとの**バイト列完全一致**・`checkout_hash`の独立再計算・AllowedMerchants/LineItemsを**現実の注文内容**で評価すること、Issuer失効・Agent資格・時刻境界/Clock Skew網羅、nonce消費/replay、Receiptの署名、resource limitの包括的セキュリティ検査、上流2件の公式pytest失敗解消、AP2相互運用の広いSDK/Issuer網羅。
 
