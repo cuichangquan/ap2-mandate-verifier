@@ -1,10 +1,7 @@
 name: AP2 P0-5a Python SDK research
 
+# Diagnostic workflow is manually invoked to avoid repeated SDK installs.
 on:
-  pull_request:
-    paths:
-      - '.github/workflows/ap2-python-research.yml'
-      - 'research/p0_5a/**'
   workflow_dispatch:
 
 permissions:
