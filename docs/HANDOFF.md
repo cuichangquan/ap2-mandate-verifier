@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**Phase 0 / P0-1・P0-2 完了、P0-3 未着手**。Gem実装・公開・適合性検証・本番安全性検証は未実施。
+状態：**Phase 0 / P0-1〜P0-3 完了、P0-4 未着手**。Gem実装・公開・適合性検証・本番安全性検証は未実施。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -13,7 +13,7 @@
 
 1. [README](../README.md) — Gemの目的・利用シーン・非スコープ
 2. [PROJECT](PROJECT.md) — D001〜D006、責務境界、独立OSS方針
-3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) — 固定版・Verifier要件と未確定事項
+3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) — 固定版・Verifier要件・公式SDKとRubyの再利用調査
 4. [OFFICIAL_SOURCES](OFFICIAL_SOURCES.md) — AP2/FIDO/IETFの一次資料・ウォッチリスト
 5. [RESEARCH_PLAN](RESEARCH_PLAN.md) — Phase 0〜3 の全体工程
 6. [SECURITY_BOUNDARY](SECURITY_BOUNDARY.md) — 未信頼Mandateの扱いとFail Closed
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1・P0-2完了 / P0-3が次】
+### Phase 0 — 仕様・競合調査【P0-1〜P0-3完了 / P0-4が次】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -57,14 +57,14 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - **成果物案：** `docs/VERIFIER_REQUIREMENTS.md`
   - **完了条件：** 最小Verifierが保証する範囲と保証しない範囲が説明できること。
 
-- [ ] **P0-3：公式Python実装・既存Ruby Gemの競合/再利用調査【次に着手】**
+- [x] **P0-3：公式Python実装・既存Ruby Gemの競合/再利用調査（完了：[ECOSYSTEM_RESEARCH.md](ECOSYSTEM_RESEARCH.md)）**
   - 公式SDKのどこまでが実装済みかを、ソース・テストで照合する。
   - RubyGems/GitHubでAP2専用実装、SD-JWT/VC、JWT/JWS、暗号・HTTP関連実装を調べる。最新性、ライセンス、保守状況、テストを確認。
   - 「見つからなかった」は「存在しない」の証明にしない。
   - **成果物案：** `docs/ECOSYSTEM_RESEARCH.md`
   - **完了条件：** 再利用可能な部分と、本当にRubyで新規実装が必要な部分が分かること。
 
-- [ ] **P0-4：最小Public APIと責務分担の提案（設計のみ）**
+- [ ] **P0-4：最小Public APIと責務分担の提案【次に着手・設計のみ】**
   - 入力（Mandate、期待するAgent/受取サービス/Checkout、Hostのtrusted issuer policy）と結果（verified evidence / rejection）を整理する。
   - 「署名が正しい」≠「Userが同意した」≠「Hostが業務を実行してよい」を守る。
   - ホストによる失効・Replay防止・ビジネス認可が必要か、VerifierのAPIがどこまで保証できるか明記。
@@ -119,26 +119,28 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P0-1・P0-2完了。** [SPEC_BASELINE](SPEC_BASELINE.md) の公式AP2 v0.2.0固定Commitを根拠に [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) を作成済み。Merchant MUST、推奨、個人draft依存、Hostの最終認可、未知制約・開示・Checkout hash・期限・nonce/aud等のリスクを区別した。**設計調査のみ、テスト・Gem実装は未実施。**
+**P0-1〜P0-3は調査文書として完了。** [SPEC_BASELINE](SPEC_BASELINE.md)でAP2 v0.2.0仕様Commitを固定し、[VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md)でMerchantのMUST/Host責務を区別し、[ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md)でPython SDKとRubyの比較・不足点を静的に整理した。
 
-**次にP0-3だけ着手する。** Python SDK実装・テストと固定AP2仕様の差分、RubyGemsの競合/再利用可能技術を根拠付きで調査し、`docs/ECOSYSTEM_RESEARCH.md` を作る。API案・Gem実装・公開はしない。
+**重要な留保:** Python SDKの実行・pytest・Ruby Gem依存の検証・相互運用は未実施。SDKのCheckout hash、issuer trust、non-disclosed constraints、`aud`/`nonce`、JSON Schema containsと生成modelの差はソースから観察したもの。安全性の実証済みとの誤記禁止。
 
-### 新しいチャットに貼り付ける指示文
+**次のタスクはP0-4のみ。** `docs/API_PROPOSAL.md` に小さなPublic APIの**設計案のみ**をまとめ、入力（未信頼Mandate、Host側のtrusted issuer/key resolver、Checkout JWT、expected aud/nonce）と出力（verified evidence / rejection）、責務境界を明示する。実装・公開はしない。
+
+### 次チャット用指示文
 
 ```text
-ap2-mandate-verifier を続けます。
+ap2-mandate-verifierの続きを始めます。
 正本: https://github.com/cuichangquan/ap2-mandate-verifier/tree/main
 
-最新main、Issue、Open PRを確認し、docs/HANDOFF.md、
-docs/SPEC_BASELINE.md、docs/VERIFIER_REQUIREMENTS.md、
-docs/PROJECT.md、docs/RESEARCH_PLAN.md を読んでください。
+最新main、Open Issue/PRを確認し、
+docs/HANDOFF.md、docs/SPEC_BASELINE.md、
+docs/VERIFIER_REQUIREMENTS.md、docs/ECOSYSTEM_RESEARCH.mdを読んでください。
 
-今回はPhase 0 / P0-3のみ。
-固定AP2 v0.2仕様と公式Python SDKのソース・既存テストを照合し、
-sd-jwt署名/開示/chain・Open/Closed制約・Checkout hash・aud/nonce等の
-実装範囲と仕様差分、再利用できるRubyGemsを調査してください。
-結果をdocs/ECOSYSTEM_RESEARCH.mdに根拠付きで記録してください。
+今回はPhase 0 / P0-4（API設計案）のみ。
+Hostが指定するIssuer信頼ポリシー、Checkout JWTの独立hash検証、
+Agent鍵binding、制約検証、expected aud/nonce、Verified Evidenceと
+業務ALLOWの区別、Fail Closed・未保証項目を明記した
+docs/API_PROPOSAL.mdを作り、PR・mainマージしてください。
 
-P0-4のAPI案、Gem実装、ActingFor・a2a-railsの変更は禁止。
-変更・Commit SHA・保留事項・次の1つだけ報告してください。
+Gem実装、API確定、ActingFor/a2a-rails変更、公開は禁止。
+最終Commit SHA・未解決事項・次の重要な1項目のみ報告してください。
 ```
