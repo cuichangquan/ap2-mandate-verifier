@@ -201,7 +201,7 @@ def test_signed_open_checkout_disclosure_can_hide_a_merchant_constraint():
         issuer_key=issuer,
         sd=selective_metadata,
     )
-    original_wire = issued.serialized()
+    original_wire = issued  # MandateClient.create returns a compact token string
 
     def decoded_disclosure(d):
         if not d:
