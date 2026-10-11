@@ -1,7 +1,10 @@
 name: P1-3 Merchant Checkout binding research
 
-# Manual dispatch only after initial measured PR validation.
 on:
+  pull_request:
+    paths:
+      - 'research/p1_3/**'
+      - '.github/workflows/p1-3-checkout-binding.yml'
   workflow_dispatch:
 
 permissions:
