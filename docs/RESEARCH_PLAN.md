@@ -4,7 +4,7 @@
 
 ## Phase 0 — 仕様と競合調査
 
-- [ ] AP2 v0.2の公式Commit SHAを固定してCheckout Mandate検証のMUSTを一覧化。
+- [x] AP2 v0.2の公式Commit SHAを固定してCheckout Mandate検証のMUSTを一覧化（[SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md)）。
 - [ ] 公式Python SDKの対応範囲、署名・開示・チェーン検証を照合。
 - [ ] RubyGems/GitHubでAP2専用Gem、SD-JWT VC、JWT等を再調査。
 - [ ] 最小のVerifier API案・スコープ・未保証項目を整理。
