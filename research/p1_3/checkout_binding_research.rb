@@ -34,20 +34,28 @@ module AP2CheckoutBindingResearch
       raise Rejected, "Closed checkout_hash does not bind Host JWT" unless
         secure_equal?(closed.fetch("checkout_hash"), digest)
 
-      segments = host_checkout_jwt.split(".")
-      raise Rejected, "invalid Checkout JWT format" unless segments.length == 3
-      header = JSON.parse(Base64.urlsafe_decode64(segments.first + ("=" * (-segments.first.size % 4))))
+      # Parse the original signed JOSE/header and Checkout JSON with strict
+      # duplicate-key detection; preserve compact bytes for JWT verification
+      # and for the Host/JWT and checkout_hash binding above.
+      header, strict_checkout = AP2StrictJSONResearch.validate_signed_jws_json!(host_checkout_jwt)
       raise Rejected, "only merchant ES256 JWT allowed" unless header.is_a?(Hash) &&
         header["alg"] == "ES256"
+      raise Rejected, "unsupported Merchant JWT typ" unless header["typ"] == "JWT"
       raise Rejected, "JWT headers cannot choose trust keys" if (%w[jwk jku x5c x5u crit] & header.keys).any?
       merchant_public = JWT::JWK.import(merchant_jwk).public_key
       checkout, = JWT.decode(host_checkout_jwt, merchant_public, true, { algorithms: ["ES256"] })
-      raise Rejected, "checkout JSON expected" unless checkout.is_a?(Hash)
+      raise Rejected, "checkout JSON expected" unless checkout.is_a?(Hash) &&
+        checkout == strict_checkout
+      # Strict ONE-LINE RESEARCH PROFILE, not a general UCP/AP2 schema:
+      # reject unrecognized data instead of accidentally ignoring important
+      # monetary/authority semantics hidden in new fields.
+      require_exact_keys!(checkout, %w[id merchant line_items status currency totals links])
       raise Rejected, "wrong Host checkout id" unless checkout["id"] == expected_checkout_id
       raise Rejected, "unsupported Checkout status" unless checkout["status"] == "ready_for_complete"
       raise Rejected, "wrong checkout currency" unless checkout["currency"] == expected_currency
 
       merchant = checkout.fetch("merchant")
+      require_exact_keys!(merchant, %w[id name])
       raise Rejected, "wrong checkout merchant" unless merchant.is_a?(Hash) &&
         merchant["id"] == expected_merchant_id && present_string?(merchant["name"])
 
@@ -77,7 +85,9 @@ module AP2CheckoutBindingResearch
       lines = checkout.fetch("line_items")
       raise Rejected, "only one cart line supported" unless lines.is_a?(Array) && lines.size == 1
       line = lines.first
+      require_exact_keys!(line, %w[id item quantity totals])
       product = line.fetch("item")
+      require_exact_keys!(product, %w[id title price])
       raise Rejected, "invalid cart product" unless product.is_a?(Hash) &&
         product["id"] == accepted.first["id"] && product["title"] == accepted.first["title"]
       raise Rejected, "cart quantity violates mandate" unless line["quantity"] == expected_quantity
@@ -105,6 +115,11 @@ module AP2CheckoutBindingResearch
       v.is_a?(String) && !v.empty?
     end
 
+    def require_exact_keys!(object, keys)
+      raise Rejected, "unsupported or missing Checkout profile fields" unless
+        object.is_a?(Hash) && object.keys.sort == keys.sort
+    end
+
     def secure_equal?(a, b)
       return false unless a.is_a?(String) && b.is_a?(String) &&
         a.bytesize == b.bytesize
@@ -116,6 +131,7 @@ module AP2CheckoutBindingResearch
     def validate_totals!(totals, expected)
       raise Rejected, "unsupported Checkout total shape" unless totals.is_a?(Array) &&
         totals.size == 2 && totals.all? { |v| v.is_a?(Hash) }
+      totals.each { |t| require_exact_keys!(t, %w[type amount]) }
       by_type = totals.to_h { |t| [t["type"], t["amount"]] }
       raise Rejected, "Checkout subtotal/total inconsistent" unless
         by_type.keys.sort == %w[subtotal total] &&
