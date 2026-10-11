@@ -111,7 +111,12 @@ def generate():
         "wrong_status": checkout_json(status="completed"),
     }
     valid_jwt = merchant_signed_jwt(merchant_key, versions["valid"])
-    signed_jwts = {name: merchant_signed_jwt(merchant_key, data) for name, data in versions.items()}
+    signed_jwts = {name: merchant_signed_jwt(merchant_key, data)
+                   for name, data in versions.items() if name != "valid"}
+    # Reuse the EXACT signed JWT bytes saved by Host. ES256 signing twice can
+    # generate distinct signatures for the same JSON; comparing payloads alone
+    # is explicitly insufficient for P1-3 Checkout binding.
+    signed_jwts["valid"] = valid_jwt
     wrong_signer_jwt = merchant_signed_jwt(wrong_merchant_key, versions["valid"])
 
     # Validating against the official Python constraint evaluator is useful for
