@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier for Ruby
 
-> **Status: research only — P1-4 static security gap review completed (12 gap categories, 6 acceptance gates). Generic Ruby Gem/API implementation remains HOLD; release and production/real payments NO-GO. P1-1–P1-3 tests passed within a strict synthetic research profile; next is offline security-negative testing, not Gem creation.**
+> **Status: research only — P1-5 signed security-negative observations: **6 RED** (unexpectedly accepted strict-profile inputs), 10 expected rejections, 1 valid control, 1 Host replay boundary. Generic Ruby Gem/API implementation HOLD; RubyGems release and production/real payments NO-GO. Historical P1-1–P1-3 regression: 43/43 PASS; this does not erase security REDs.**
 >
 > Independent, unofficial Ruby OSS exploration. Not affiliated with Google, the AP2 project, or FIDO Alliance.
 
@@ -76,6 +76,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [Ruby two-hop delegation — P1-2 pinned Python signed Open→Closed, cnf/sd_hash/aud/nonce: 15 PASS](docs/RUBY_DELEGATION_SPIKE.md)
 - [Ruby Merchant Checkout binding — P1-3 signed Checkout JWT, Host exact bytes, hash, restricted merchant/SKU/quantity/amount: 18 PASS](docs/RUBY_CHECKOUT_BINDING_SPIKE.md)
 - [Security Gap Review — P1-4 12 ranked risks, 6 gates, generic Gem implementation HOLD](docs/SECURITY_GAP_REVIEW.md)
+- [Signed Security Negative Observations — P1-5 18 probes, **6 RED / 11 GREEN / 1 Host boundary**](docs/SECURITY_NEGATIVE_TESTS.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)
