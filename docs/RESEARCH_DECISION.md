@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新の判定は§13（P1-3）を参照：非本番Ruby研究PoCのみCONDITIONAL GO。汎用Gem/API/リリースはHOLD、本番/実決済はNO-GO。**
+> **最新の判定は§14（P1-4）を参照：オフライン研究テスト強化はGO候補、汎用Gem/API実装はHOLD、RubyGems公開・本番/実決済はNO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -172,3 +172,23 @@
 - **次の1件（別の明示依頼後のみ）：P1-4 — 研究コードP1-1〜P1-3の攻撃面・安全負債レビューと、実際に汎用Gem開発へ進むかのGO/HOLD判断を文書化。** まだGem/API実装しない。
 
 **この文書でP1-3完了を記録することは、Gem実装許可・実決済許可にはならない。**
+
+## 14. 2026-10-11 P1-4 セキュリティ負債レビューによるGO/HOLD再判定（最新）
+
+**結論：汎用・外部利用を想定したRuby Gemの実装開始はHOLD。RubyGems公開、本番/実決済はNO-GO。現行の狭いオフライン研究とセキュリティ負例追加（P1-5）のみGO候補（別のユーザー承認を必要とする）。**
+
+**根拠:** [SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) — 固定版AP2 v0.2仕様とP1-1〜P1-3のRuby研究コードを静的に確認し、**12項目（S01〜S12）の課題とGem化に先立つ6ゲート（G1〜G6）**を定義。これらは**新しい攻撃/再現実験ではない**。Critical/Highなどの深刻さの断定やCVEを報告するものではない。
+
+**既存成果:** P1-1のRoot署名とdisclosure 10件、P1-2 Agent署名/cnf/sd_hash/aud/nonce 15件、P1-3 Merchant Checkout JWT/Host正本/hash/店舗/数量等18件は、既存の非本番・単一Agent・2hop Strict ProfileのCIでPASS。特にP1-3の最終43件は[Actions #38126247946](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38126247946)。**この成功は不正な追加形式、時間差攻撃、Replayや実決済の安全性を証明しない**。
+
+**Gem実装をHOLDする阻害条件（重要順）:**
+
+1. **厳格なJSON/JWS/JOSEの受入れ（G1）**：重複JSONキー、JOSE鍵選択・署名アルゴリズムを誤解釈せず拒否する負例が不足。
+2. **選択的開示・権限制約完全性（G2）**：現行のIssuer Profile外に一般化する証拠がなく、hidden/decoyと未知権限が混在するケースの振舞い未検証。
+3. **期限・信頼のHost契約（G3）**：Root TTLとTerminal iatの一部は確認するが、**Closed内expを独立検証していない**。Issuer/merchant identity ↔ trusted JWKの運用契約も不十分。
+4. **Resource/Fault（G4）**：深いJSONや過大入力での例外が業務許可に転じない保証がない。
+5. **VerifiedEvidenceとHostの最終ALLOWの分離（G5）**：nonce一度限りの原子的消費、失効・取引状態・署名ReceiptはHost側で別途設計/実証しなければならない。
+
+**次の1件（P1-5）：** 上記G1〜G4の優先負例を**研究コードのテストとして先に書き**、RED/GREENと拒否理由を実測・記録する。Ruby verifier本体やGem雛形の実装はその後の**別GO/HOLD判断と明示承認**へ先送りする。P1-4自身は文書変更のみでCI実行・テスト追加・Gem作成なし。
+
+**判断表:** オフライン研究のみCONDITIONAL GO／P1-5はGO候補／汎用Gem実装HOLD／RubyGemsリリース・実決済Production NO-GO。**上流の中間hop aud/nonce公式pytest 2件失敗はまだ未解決**だが、初期研究対象から中間hopを除外しているため、解消済みとは書かない。
