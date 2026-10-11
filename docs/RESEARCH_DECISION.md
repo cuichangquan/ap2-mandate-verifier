@@ -289,3 +289,13 @@
 **現在の実測は前段P1-10aまでのHost正本9/34 IDs、12 Minitest runs/465 assertions PASSのみ**（[Actions #38136570328](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38136570328)）。**HC06はNOT RUN、残り25件NOT RUN**。N17 stateless HOST_BOUNDARY、HC04/HC07等、P1-4 G1〜G6/P1-7 T1〜T5未達、公式Python SDK 186 PASS/2 FAILを解消したとは主張しない。
 
 **判断：P1-10bの文書設計だけ限定GO。HC06実測とHost本番統合/Gem/APIはHOLD、RubyGems公開・Production・実決済・Receipt NO-GO。** 次の1件（別途ユーザー明示承認後）：**P1-10c**、完全架空のAuthority/Hostオフラインスケジューラで再照会方式のTOCTOUとfencing条件の差を研究する。実Authority/GCP/APIデプロイ等はさらに別承認。
+
+## 24. 2026-10-11 P1-10c HC06 TOCTOU/人工fence境界の合成オフライン実測（最新）
+
+**完全オフラインの合成モデルとして8 runs/94 assertions/0 failures・errors・skipsがPASS。** [HOST_EXTERNAL_REVOCATION_P110C_EVIDENCE](HOST_EXTERNAL_REVOCATION_P110C_EVIDENCE.md)、[Actions #38137575582](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38137575582)。2つは安全性の合格でなく**危険な負例の期待通りの再現**：（1）権限照会QでALLOW→失効Rが有効化→Hostが古いALLOWでoperationを確定C（`Q<R<C`）、（2）fencing ticketを発行しても最終認可を強制しなければ`F<R<C`となり不正確定。Authorityのepoch/token失効後、**最終的な認可とHost確定が同一Mutexで保護された人工モデル**なら、R<CでSTOP・operation 0、C<Rで確定済operationを偽取消しせず、他tenant/subject/scopeや未知ticket、Authority障害、リプレイも停止する挙動を確認した。
+
+**決定的な限界：** Authority/Hostは単一Rubyプロセスの二つの**論理モデル**であり、共有Mutexは本物の別サーバー/別DB間に存在しない。実環境で外部`validate_fence`を受けてからHost DBをCOMMITすると、その隙間で失効が確定するTOCTOUが再発する。今回の成功は**実Authorityの線形化／予約／フェンス強制や分散障害回復を実証せず、正本HC06全体のPASSには数えない**。HC06は**PARTIAL SYNTHETIC ONLY / FULL HOLD**。
+
+既存PostgreSQL16研究の正本Hostテストは**34 ID中9件のみ実測、25件NOT RUN**のまま（[P1-10a最終CI #38136570328](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38136570328)：12 runs/465 assertions PASS）。今回の新8モデルテストを足してHost実DBの17件達成などと数えない。N17 stateless HOST_BOUNDARY、P1-4 G1〜G6、P1-7 T1〜T5未完、公式Python SDK中間hopの186 PASS/2 FAILは残る。
+
+**判断：P1-10c合成研究のみGO、汎用Gem/API・実Host連携HOLD、RubyGems公開・実決済/Production・署名Receipt NO-GO。** 次の1件（新たなユーザー明示承認後のみ）：**P1-10d**。外部Authorityの原子的予約と失効effective時点、Host durable COMMIT間の協調プロトコルを**設計資料と故障モード整理のみ**で検討。外部API/GCP/本番はさらに別承認。
