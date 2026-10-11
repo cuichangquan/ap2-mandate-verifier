@@ -30,6 +30,7 @@
 
 - **トップレベルが厳格であることと、ネストした権限制約が厳格であることは別。** 公式Open JSON Schemaが存在することは、現在のRuby研究コードがそのスキーマを全階層で検証していることを意味しない。
 - **未知の追加フィールドがすべてAP2で意味を持つと断定しない。** 未認識属性が権限に関係するか判断できなければ、固定研究profileではREJECTする設計が安全側の候補。**不適切なACCEPTを実測するまでは「確定した攻撃」と書かない。**
+- 固定[Open Checkout JSON Schema](https://github.com/google-agentic-commerce/AP2/blob/b4587ac1d055888a73b4b21750973cffba961793/code/sdk/schemas/ap2/open_checkout_mandate.json)の`$defs/allowed_merchants`と`$defs/line_items`は`type`や必須属性を定義する一方、`additionalProperties: false`は宣言していない。したがって**未知の属性があること自体を公式Schema違反とは断定しない**。本OSSの追加の厳格プロファイルで安全側REJECTを検討するという区別である。
 - Issuer/Agent署名を持つ反例生成では**OpenのDisclosure digest再計算と署名原文整合性を独立検査**し、壊れたtokenが単にパース段階で拒否される結果を、GP01の安全性PASSとして扱わない（[P1-10oでの失敗履歴](VERIFIER_P110O_EVIDENCE.md#5-pr-36のcodex-p1p2フォローアップ最終実測)）。
 - **GP01だけを修正/拒否できても** GP02 hidden disclosure一般完全性、GP03外部Issuer profile正本、GP06 replay、GP09分散失効は解決しない。
 
