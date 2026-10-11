@@ -35,7 +35,7 @@
 | **HC03** | Challengeが未発行/欠落/失効/Checkout versionと不一致、`aud`か`nonce`不一致 | Host STOP、別nonceへ自動切替しない |
 | **HC04** | 検証時は正しいがHost決定前に価格・在庫・通貨・Checkout版/状態が変更 | **最新Host正本との比較でSTOP**。過去の検証成功を再利用しない |
 | **HC05** | Root/Terminal/Closed `iat`/`exp`境界、注入時計±skew、Host TTL超過 | 段階ごとの時刻規則を一貫評価。期限外/未来/不明は拒否 |
-| **HC06** | 验証後・DB commit直前にIssuer/Agent/Buyerの許可が失効 | **時点性を踏まえてHost STOP**。可視性/ロック/整合性の方式を検証 |
+| **HC06** | 検証後・DB commit直前にIssuer/Agent/Buyerの許可が失効 | **時点性を踏まえてHost STOP**。可視性/ロック/整合性の方式を検証 |
 | **HC07** | Verifier例外、Host trusted clock/DB/鍵/Revocation providerが利用不可 | **Fail Closed**。依存障害を成功にマップしない |
 
 ## 4. Atomic nonce/replay、二重課金防止（L2、将来DBが必要）
