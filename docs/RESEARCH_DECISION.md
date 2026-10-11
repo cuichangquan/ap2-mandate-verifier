@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§34（P1-10m）：A. Merchant側Checkout Mandate暗号Verifier（VerifiedEvidence/Rejectionのみ）と、B. Host/独立Authorityの強い分散失効制御（HC06）を別責務として設計上分離。Aの狭い非本番PoCは条件付き研究候補だが本Stepで実装GOなし。B/HC06・汎用Gem/API・本番Host統合HOLD、RubyGems公開/実決済/署名Receipt NO-GO。Host正本9/34・25 NOT RUN不変。**
+> **最新判定は§35（P1-10n）：Aの単一Issuer/厳格2hop/既知完全開示の合成非本番研究PoCだけCONDITIONAL GO CANDIDATE（次実験は別途明示承認必須）。過去Ruby実測・6 RED→限定GREEN化を棚卸しし、G01〜G08・将来8ケースを設計したが**本Stepで新規実装/CI/試験0**。一般的なhidden Constraint完全性・任意hop/Issuer・Host replay、B/HC06、汎用Gem/API・本番統合HOLD、RubyGems/実決済NO-GO。Host正本9/34・25 NOT RUN不変。**
 
 **判断日:** 2026-10-12 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -415,3 +415,13 @@ guardは**別Host DBへの直接的な信頼済み読取り**で成立する人�
 **判定：A/B責務分離を設計採用、A非本番PoCは条件付き研究候補・新規実装着手は別承認。BのHC06強安全性HOLD、Gem/public API・本番Host統合HOLD、RubyGems公開・Production・実決済・署名Receipt NO-GO。**
 
 **次のおすすめ1件（別途ユーザー明示承認後のみ）：P1-10n、設計レビューだけ**。A狭い非本番PoCの着手条件と残ったブロッカー（Issuer trust、必要開示完全性、鍵PoP、原文Checkout/hash、公式Python/Ruby正負比較）を表にし、新PoCのGO/HOLDを明示的に再審査する。実装・CI・GCP・外部連携/決済・公開Gemは別承認。
+
+## 35. 2026-10-12 P1-10n Aだけの狭い非本番Ruby PoC再開条件の採否（最新・設計のみ）
+
+[VERIFIER_P110N_OFFLINE_POC_GATE](VERIFIER_P110N_OFFLINE_POC_GATE.md)で、P1-10mのAだけを対象に**Issuer固定・Open→Closed 2hop・完全開示が信頼できる合成発行fixtureで検証可能な厳格profile**の採否を再審査した。従来のP1-0 14 runs/17 assertions、P1-1 10 runs/22、P1-2 15 runs/32、P1-3 18 runs/40、P1-5 signed負例6 RED/11 GREEN/1 HOST_BOUNDARY→P1-6同18例17 GREEN/0 RED/1 HOST_BOUNDARYと43件回帰、公式Python pytest186 PASS/2 FAILを**元のスコープごとに**整理。過去結果はこれらを実測済み、**P1-10n新規CI/テストは0件**。Rubyの基礎検証は成立したが、G1〜G6/Host T1〜T5の全面達成や商用安全性は未証明。
+
+**採否：次のAN-P01/AN-N01〜N07に限定した架空signed-fixture統合再試験へのCONDITIONAL GO CANDIDATE（別途ユーザー承認待ち）。** G01事前Issuer信頼、G02厳格2hop/PoP、**G03権限制約の完全開示：固定Issuer発行layout以外はREJECT/HOLD**、G04 Root/Closed/terminal時刻と期待aud/nonce、G05重複JSON/JOSE・入力制限、G06Host正本Checkout JWT元wireと署名/hashと固定商品制約、G07正負Python↔Ruby差分、G08VerifiedEvidence≠最終ALLOWを受入条件とする。**これら8 Gate/提案8ケースは新規PASSではなく実行ゼロ。** Issuer署名が正しいだけでは隠れたConstraintの不存在を一般証明できない点は未解決で、他Issuerや実商用入力への拡張はHOLD。公式Python intermediate hop2 FAILは3hop非対応として境界外に隔離、上流実装の規格違反と断定しない。
+
+**広いGem/API・本番Host統合HOLD、独立Authority/HC06強い失効HOLD、RubyGems公開・Production/実決済・署名Receipt NO-GO。** Bの契約C01〜C12は全件OPEN/UNCONFIRMED。Host正本**9/34実測・25 NOT RUN、12 runs/465 assertions**。P1-10c 8 runs/94、P1-10g 2 runs/118、P1-10i 6 runs/178は別合成研究。H01旧Authorityの失効後C成功は**危険反例**。N17 HOST_BOUNDARY、H07〜H12 NOT RUN。安全性の独立監査を本書で実施したわけではない。
+
+**次のおすすめ1件（別途明示承認後のみ）：P1-10o** — 上記8件の**A-onlyオフライン合成fixture Ruby統合再実測**を独立した研究PR/専用CIに限定して実行。コード・CI・外部通信・鍵生成・Gem公開はこの設計PRで認めない。実Checkout/決済、GCP、署名Receipt、外部Host/Authorityには進まない。
