@@ -19,6 +19,16 @@ from sd_jwt.issuer import SDJWTIssuer
 from ap2.sdk.checkout_mandate_chain import CheckoutMandateChain
 from ap2.sdk.constraints import check_checkout_constraints
 from ap2.sdk.generated.checkout_mandate import CheckoutMandate
+from ap2.sdk.generated.open_checkout_mandate import (
+    AllowedMerchants,
+    LineItemRequirements,
+    LineItems,
+    Item as MandateItem,
+)
+from ap2.sdk.generated.types.merchant import Merchant
+from ap2.sdk.disclosure_metadata import DisclosureMetadata
+from ap2.sdk.mandate import MandateClient
+from ap2.tests.conftest import make_line_item
 from ap2.sdk.generated.open_checkout_mandate import OpenCheckoutMandate
 from ap2.sdk.generated.open_payment_mandate import OpenPaymentMandate
 from ap2.sdk.sdjwt import common, kb_sd_jwt, parse_token, sd_jwt
@@ -161,3 +171,77 @@ def test_visible_empty_checkout_constraints_evaluate_to_no_violations():
     jwt = make_checkout_jwt(checkout_id="A")
     chain = _empty_checkout_chain(jwt)
     assert chain.verify(checkout_jwt=jwt) == []
+
+
+def test_signed_open_checkout_disclosure_can_hide_a_merchant_constraint():
+    """If a merchant constraint is withheld, a visible-only evaluator misses it.
+
+    This demonstrates the evidence-completeness question, not a purchase exploit:
+    no merchant Host should authorize based on a positive low-level result alone.
+    """
+    issuer = JWK.generate(kty="EC", crv="P-256")
+    holder = JWK.generate(kty="EC", crv="P-256")
+    checkout_open = OpenCheckoutMandate(
+        constraints=[
+            LineItems(items=[LineItemRequirements(
+                id="item-required",
+                acceptable_items=[MandateItem(id="SKU-1", title="Widget")],
+                quantity=1,
+            )]),
+            AllowedMerchants(allowed=[Merchant(id="shop-approved", name="Approved")]),
+        ],
+        cnf=make_cnf(holder),
+    )
+    # Issuer itself marks the second array entry selectively disclosable.
+    selective_metadata = DisclosureMetadata(
+        children={"constraints": DisclosureMetadata(sd_array_indices=[1])}
+    )
+    issued = MandateClient().create(
+        payloads=[checkout_open],
+        issuer_key=issuer,
+        sd=selective_metadata,
+    )
+    original_wire = issued.serialized()
+
+    def decoded_disclosure(d):
+        if not d:
+            return None
+        pad = "=" * (-len(d) % 4)
+        return json.loads(base64.urlsafe_b64decode(d + pad))
+
+    segments = original_wire.split("~")
+    available = []
+    hidden_count = 0
+    for seg in segments[1:]:
+        decoded = decoded_disclosure(seg)
+        if (
+            isinstance(decoded, list) and len(decoded) == 2
+            and isinstance(decoded[1], dict)
+            and decoded[1].get("type") == "checkout.allowed_merchants"
+        ):
+            hidden_count += 1
+            continue
+        if seg:
+            available.append(seg)
+    assert hidden_count == 1, "Expected a real SD-JWT array-element disclosure"
+
+    redacted_wire = "~".join([segments[0], *available, ""])
+    issuer_pub = JWK.from_json(issuer.export_public())
+    verified = MandateClient().verify(
+        token=redacted_wire,
+        key_or_provider=lambda _token: issuer_pub,
+    )
+    assert len(verified) == 1
+    redacted_open = OpenCheckoutMandate.model_validate(verified[0])
+    assert len(redacted_open.constraints) == 1
+    assert isinstance(redacted_open.constraints[0], LineItems)
+
+    bad_merchant_checkout = make_checkout_jwt(
+        merchant=Merchant(id="shop-other", name="Not Approved"),
+        line_items=[make_line_item(
+            "SKU-1", "Widget", quantity=1, unit_price=1000
+        )],
+    )
+    checkout = _empty_checkout_chain().extract_parsed_checkout_object(bad_merchant_checkout)
+    assert any("not in allowed list" in x for x in check_checkout_constraints(checkout_open, checkout))
+    assert check_checkout_constraints(redacted_open, checkout) == []
