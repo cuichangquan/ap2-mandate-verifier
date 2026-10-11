@@ -104,7 +104,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 - [x] **P1-3：Merchant署名済Checkout JWT・Host正本/HashとOpen制約のオフライン統合Ruby Spike（完了：[RUBY_CHECKOUT_BINDING_SPIKE.md](RUBY_CHECKOUT_BINDING_SPIKE.md)）**
   - 固定AP2 Python SDK生成の署名済Open→Closedと、独立MerchantがES256署名した架空Checkout JWTをRubyで検証。
-  - **P1-3：18 runs / 40 assertions、0 failures**、P1-2回帰15/15、P1-1回帰10/10（[GitHub Actions #38125925976](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38125925976)）。
+  - **P1-3：18 runs / 40 assertions、0 failures**、P1-2回帰15/15、P1-1回帰10/10（[GitHub Actions #38126247946](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38126247946)）。
   - Merchant JWT署名、Host原文一致、Closed checkout_hash再計算、Merchant ID/SKU/数量/金額の厳格な1商品プロフィールを検証。**上流Pythonの必要数量2・Checkout数量1は違反0件**を観察したが、仕様違反と断定しない。
   - 取引は架空、最終購入許可/nonce消費/replay/Receipt/Gem/API/Productionは未実施。
 
@@ -161,7 +161,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P0-1〜P0-5b / P1-0〜P1-3の限定研究を完了。** [P1-3レポート](RUBY_CHECKOUT_BINDING_SPIKE.md)は、固定AP2 v0.2 SDK署名済2hop＋独立Merchant ES256署名済Checkout JWTをRubyで18 tests/40 assertions、失敗0と確認。P1-2回帰15件、P1-1回帰10件成功。[Actions #38125925976](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38125925976)。
+**P0-1〜P0-5b / P1-0〜P1-3の限定研究を完了。** [P1-3レポート](RUBY_CHECKOUT_BINDING_SPIKE.md)は、固定AP2 v0.2 SDK署名済2hop＋独立Merchant ES256署名済Checkout JWTをRubyで18 tests/40 assertions、失敗0と確認。P1-2回帰15件、P1-1回帰10件成功。[Actions #38126247946](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38126247946)。
 
 **確認したこと:** Host事前登録Merchant公開鍵のCheckout JWT署名、Host正本原文とClosedの完全一致、SHA-256 checkout_hash、Rootの店舗ID・SKU・数量、Host Checkout ID/Currency/単純合計。**PoC独自の厳格条件**（単一商品、1店舗、数量完全一致、割引/税なし）に限定。Python公式SDKの一部数量不足ケースは違反0件だったが、PoCで追加拒否しており、規格違反や脆弱性とは断言しない。
 
