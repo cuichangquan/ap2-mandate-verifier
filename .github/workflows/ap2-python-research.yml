@@ -1,0 +1,70 @@
+name: AP2 P0-5a Python SDK research
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ap2-python-research.yml'
+      - 'research/p0_5a/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-ap2-python:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+      - name: Checkout immutable official AP2 v0.2.0
+        shell: bash
+        run: |
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = "b4587ac1d055888a73b4b21750973cffba961793"
+          echo "UPSTREAM_SHA=$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Install locked Python dependencies
+        shell: bash
+        working-directory: ${{ runner.temp }}/ap2
+        run: uv sync --frozen --python python3.11
+      - name: Execute complete official Python SDK pytest
+        shell: bash
+        working-directory: ${{ runner.temp }}/ap2
+        run: |
+          set +e
+          uv run --frozen python -m pytest code/sdk/python/ap2/tests/ -q --tb=short --junitxml="$GITHUB_WORKSPACE/official-pytest.xml" 2>&1 | tee "$GITHUB_WORKSPACE/official-pytest.log"
+          rc=${PIPESTATUS[0]}
+          echo "official_pytest_exit_code=$rc" | tee -a "$GITHUB_WORKSPACE/summary.txt"
+          echo "Official pytest exit status: $rc" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+      - name: Execute real full-SDK negative probes
+        shell: bash
+        working-directory: ${{ runner.temp }}/ap2
+        run: |
+          set +e
+          uv run --frozen python -m pytest "$GITHUB_WORKSPACE/research/p0_5a/test_ap2_real_sdk_negatives.py" -q -vv --tb=short --junitxml="$GITHUB_WORKSPACE/negative-pytest.xml" 2>&1 | tee "$GITHUB_WORKSPACE/negative-pytest.log"
+          rc=${PIPESTATUS[0]}
+          echo "negative_probes_exit_code=$rc" | tee -a "$GITHUB_WORKSPACE/summary.txt"
+          echo "Negative probe exit status: $rc" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+      - name: Upload isolated research results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ap2-p0-5a-logs
+          path: |
+            official-pytest.log
+            official-pytest.xml
+            negative-pytest.log
+            negative-pytest.xml
+            summary.txt
+          if-no-files-found: warn
+          retention-days: 7
