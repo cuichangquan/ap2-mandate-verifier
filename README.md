@@ -4,6 +4,23 @@
 >
 > Independent, unofficial Ruby OSS exploration. Not affiliated with Google, the AP2 project, or FIDO Alliance.
 
+## AP2を図で理解する / Visual guides
+
+手書きの学習用図解です。概念を理解するための資料であり、仕様の正式な要件は [AP2 v0.2 仕様基準点](docs/SPEC_BASELINE.md) を参照してください。
+
+**まずは全体像**
+
+- [① AP2規格の全体像](docs/assets/ap2-overview.png)
+- [② AP2の委任フローと信頼検証](docs/assets/ap2-delegation-trust-flow.png)
+
+**次に内部構造と安全性**
+
+- [③ Mandateの内部構造](docs/assets/mandate-anatomy.png)
+- [④ SD-JWTと委任チェーンの仕組み](docs/assets/sd-jwt-delegation-chain.png)
+- [⑤ 攻撃パターンとFail Closed](docs/assets/attack-patterns-fail-closed.png)
+
+![AP2規格の全体像（手書き解説）](docs/assets/ap2-overview.png)
+
 ## Why?
 
 A future personal AI could arrive at a web service carrying evidence of authority granted by a person, without that person pre-configuring every service. **A self-declared permission is not proof of authority.** The service needs verifiable evidence, an explicit trust policy, and its own final authorization decision.
