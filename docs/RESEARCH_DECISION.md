@@ -80,3 +80,16 @@
 - [ ] Ruby Gem/PoC実装・CI・公開：**未承認・未実施**。
 
 **現在の最終判断: HOLD。** Agent/Issuerに対する信頼や購入許可を、本OSSが暗号だけで判断できるという主張はしない。
+
+
+## 8. 2026-10-11 P0-5a実行後の判断更新（追加記録）
+
+**GO/HOLD/NO-GOの再判定: HOLD 継続。** P0-5aは単なる静的調査を越え、固定公式SDK全pytestと、Issuer/terminal aud/nonce/SD-JWT選択的開示・Checkout Hashに関する実署名負例を実行した。実測詳細とログは[PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md)。
+
+- **公式Python SDK:** 188件中 **186 PASS / 2 FAIL**。intermediate KB-SD-JWTのaud/nonce mismatchテストでは例外が発生せずテスト失敗。**コードとテストの適用範囲の食い違いであり、仕様違反を独立に断言したものではない**。
+- **研究追加負例:** **12 PASS**。期待aud/nonce欠落、信頼されないx5c root、Checkout Hash/JWT別セッション、選択的開示でMerchant制約を秘匿した署名付きOpen SD-JWTを検証。**PASSは不適切受理の観測を含み、全Verifierが安全であるという意味ではない**。
+- **再現限界:** upstream公式\`uv.lock\`が認証付き配布先を指して401となったため、公開PyPIからupstream\`pyproject.toml\`の**直接依存ピン**で導入した。**すべての推移的依存の完全lock再現ではない**。GCP・実決済・本番トラフィックなし。
+- **HOLDを維持する理由:** 仕様とPython実装間のintermediate aud/nonce境界、Hostが要求する必須disclosureの完全性、trusted rootなしのx5cを受け入れないデフォルト、Merchant署名済Checkout JWT/closed hashの独立照合を、**具体的なHost向け拒否契約**としてまだ固定していない。Ruby互換性の実測も未実施。
+- **次の1件（P0-5b）:** 上記に対する最小Fail Closed Profileと適用不能時のHOLD条件を設計し、最小非本番PoCに限定したGO/HOLD判断を更新する。**Gem実装は今なお未承認**。
+
+この追記は以前のP0-5判断時点の「Python tests未実施」の歴史的記述を置き換えるものではなく、**新しい実測を反映した最新判断**。証拠は[PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md)を優先。
