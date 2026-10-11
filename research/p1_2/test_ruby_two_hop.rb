@@ -50,7 +50,8 @@ module AP2TwoHopResearch
       # The signed root and terminal are cryptographically connected. This
       # success is NOT Checkout authorization: Merchant JWT signature, inventory,
       # amount, receipt, replay and business rules have NOT been verified.
-      { verified_root_vct: root.fetch("vct"), verified_terminal_vct: closed.fetch("vct") }
+      { verified_root_vct: root.fetch("vct"), verified_terminal_vct: closed.fetch("vct"),
+        verified_open: root, verified_closed: closed }
     rescue JWT::DecodeError, JWT::JWKError, JSON::ParserError, ArgumentError, KeyError => e
       raise Rejected, "invalid signed chain or required context (#{e.class})"
     end
