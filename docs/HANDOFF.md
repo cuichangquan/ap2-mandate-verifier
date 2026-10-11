@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**P0-1〜P0-5bとP1-0/P1-1/P1-2完了。P1-2は固定AP2 Pythonが署名したOpen→Closed 2hopをRubyで15 runs/32 assertions、0 failures、P1-1回帰10/10成功**。次はP1-3。**非本番研究PoCのみCONDITIONAL GO、汎用Gem/APIはHOLD、productionはNO-GO**。上流公式pytestは186 PASS / 2 FAIL（別検証）。Checkout JWTはダミー。Gem実装・公開・本番安全性検証は未実施。
+状態：**P0-1〜P0-5bとP1-0〜P1-3完了。P1-3はMerchant署名済Checkout JWTとHost正本/hash/制約のRuby統合18 runs/40 assertions、失敗0**、P1-2回帰15成功、P1-1回帰10成功。次は**P1-4セキュリティ負債・GO/HOLD判断**。非本番研究PoCのみCONDITIONAL GO、汎用Gem/APIはHOLD、production/実決済はNO-GO。上流公式pytestは以前186 PASS / 2 FAIL。Gem実装/公開/本番安全性検証は未実施。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -13,7 +13,7 @@
 
 1. [README](../README.md) — Gemの目的・利用シーン・非スコープ
 2. [PROJECT](PROJECT.md) — D001〜D006、責務境界、独立OSS方針
-3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) — 公式Python実測・Ruby Root検証・2hop署名binding・研究GO/HOLD境界
+3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) / [RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) — Ruby署名Root・2hop署名binding・Checkout署名/Hash/制約の限定研究
 4. [OFFICIAL_SOURCES](OFFICIAL_SOURCES.md) — AP2/FIDO/IETFの一次資料・ウォッチリスト
 5. [RESEARCH_PLAN](RESEARCH_PLAN.md) — Phase 0〜3 の全体工程
 6. [SECURITY_BOUNDARY](SECURITY_BOUNDARY.md) — 未信頼Mandateの扱いとFail Closed
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-2完了 / 次はP1-3】
+### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-3完了 / 次はP1-4】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -102,9 +102,16 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - **Ruby P1-2：15 runs / 32 assertions、0 failures**、**P1-1 Root回帰：10 runs / 22 assertions、0 failures**。[Actions run #38124823804](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38124823804)。
   - 署名済みのwrong holder/root、チャレンジ不一致/未指定、3hop、intermediate、非開示Merchant、未対応hash mode等を拒否。**Merchant-signed Checkout JWTは未検証（ダミー）**。Gemと一般AP2互換は未達。
 
-- [ ] **P1-3：Host正本Checkout JWT/HashとOpen制約のオフライン統合Ruby Spike（次の1件／別の明示承認後）**
-  - Merchant署名済Checkout JWTの署名、Host正本バイト一致、Closed `checkout_hash`独立再計算、Openの`allowed_merchants`と`line_items`の業務取引制約を正負fixtureで検証。
-  - **成果物案：** `docs/RUBY_CHECKOUT_BINDING_SPIKE.md`。購入、Stateful Replay/nonce消費、Receipt、Gem/API実装、GCP利用は禁止。
+- [x] **P1-3：Merchant署名済Checkout JWT・Host正本/HashとOpen制約のオフライン統合Ruby Spike（完了：[RUBY_CHECKOUT_BINDING_SPIKE.md](RUBY_CHECKOUT_BINDING_SPIKE.md)）**
+  - 固定AP2 Python SDK生成の署名済Open→Closedと、独立MerchantがES256署名した架空Checkout JWTをRubyで検証。
+  - **P1-3：18 runs / 40 assertions、0 failures**、P1-2回帰15/15、P1-1回帰10/10（[GitHub Actions #38125925976](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38125925976)）。
+  - Merchant JWT署名、Host原文一致、Closed checkout_hash再計算、Merchant ID/SKU/数量/金額の厳格な1商品プロフィールを検証。**上流Pythonの必要数量2・Checkout数量1は違反0件**を観察したが、仕様違反と断定しない。
+  - 取引は架空、最終購入許可/nonce消費/replay/Receipt/Gem/API/Productionは未実施。
+
+- [ ] **P1-4：P1-1〜P1-3研究コードのセキュリティ負債レビューとGem開発GO/HOLD判断（次の1件、明示承認後のみ）**
+  - JSON重複キー、JOSE header、unknown SD-JWT/制約・情報の完全性、Expired Terminal、resource制限、Host trust、nonce atomic replay・Revocation/Receiptなどを優先順位付きで評価。
+  - **成果物案：** `docs/SECURITY_GAP_REVIEW.md` + `docs/RESEARCH_DECISION.md`更新。**Gem/本番コードの実装はしない。**
+
 
 
 
@@ -154,34 +161,33 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P0-1〜P0-5b / P1-0〜P1-2までの限定研究を完了。** 最新の[実測報告](RUBY_DELEGATION_SPIKE.md)では、固定AP2 v0.2 Python SDKが署名・検証した**実在形式のOpen Root→Agent Terminal Closed**を、Rubyで **15 tests/32 assertions、失敗0**と確認。P1-1のRoot署名・Disclosure回帰は **10 tests/22 assertions、失敗0**。[GitHub Actions #38124823804](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38124823804)。
+**P0-1〜P0-5b / P1-0〜P1-3の限定研究を完了。** [P1-3レポート](RUBY_CHECKOUT_BINDING_SPIKE.md)は、固定AP2 v0.2 SDK署名済2hop＋独立Merchant ES256署名済Checkout JWTをRubyで18 tests/40 assertions、失敗0と確認。P1-2回帰15件、P1-1回帰10件成功。[Actions #38125925976](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38125925976)。
 
-**重要:** Terminal Closed中のCheckout JWTは`NOT_A_SIGNATURE`という架空データ。Merchant署名・Host正本の原文照合・Checkout Hash/取引条件が**未検証**なので、Rubyの正式Verifierや購入許可の根拠にはならない。非本番限定研究PoCのみCONDITIONAL GO、汎用Gem/API/releaseはHOLD、production/実決済はNO-GO。[RESEARCH_DECISION](RESEARCH_DECISION.md) §12と[FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md)を参照。
+**確認したこと:** Host事前登録Merchant公開鍵のCheckout JWT署名、Host正本原文とClosedの完全一致、SHA-256 checkout_hash、Rootの店舗ID・SKU・数量、Host Checkout ID/Currency/単純合計。**PoC独自の厳格条件**（単一商品、1店舗、数量完全一致、割引/税なし）に限定。Python公式SDKの一部数量不足ケースは違反0件だったが、PoCで追加拒否しており、規格違反や脆弱性とは断言しない。
 
-**検証済み:** P1-1 strict Root署名/Full Disclosure、Issuer→Agent鍵`cnf.jwk`とHost期待Agent、Agent署名、`sd_hash`の元root wire digest、Host期待`aud`/`nonce`、2段構造。これを汎用dSD-JWT/3hopに一般化しない。上流公式pytestは以前の188件中186 PASS / 2 FAILであり、このP1-2で再実行・解決していない。
+**残る重大課題:** 隠れたConstraintの一般的な完全性、Host/Merchant keyとIDの信頼運用、JWT重複JSON/JOSE、期限/時間、stateful nonce/replay、Revocation、価格/在庫正本、Receipt、実決済。**汎用Gem/API・ProductionはHOLD/NO-GO**。Root/Terminalの一部暗号成功だけで購入を許可しない。[RESEARCH_DECISION](RESEARCH_DECISION.md) §13参照。
 
-**次の1件（改めて明示承認後のみ）：P1-3。** Merchant公開鍵でのCheckout JWT署名・Hostの正本JWTバイト・Closed`checkout_hash`・Open `allowed_merchants`/`line_items`と実際の架空Checkoutを一貫して検証し、`docs/RUBY_CHECKOUT_BINDING_SPIKE.md`に正負の実測を残す。Gem雛形、API公開、実決済、GCP、stateful replay/Receipt、ActingFor/a2a-rails変更は禁止。
+**次の1件（ユーザーが別途明示承認した時だけ）：P1-4 — 研究コードのセキュリティ負債レビューと、本格的なGem開発GO/HOLDの文書判断。** まだGem実装・リリース・GCPや実決済・ActingFor/a2a-rails変更は禁止。
 
 ### 次チャット用指示文
 
 ```text
-ap2-mandate-verifier P1-3を開始します。
+ap2-mandate-verifier P1-4を開始します。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-最新main/Open Issue/PRを確認し、
-docs/HANDOFF.md、docs/RUBY_DELEGATION_SPIKE.md、
-docs/FAIL_CLOSED_PROFILE.md、docs/RESEARCH_DECISION.md §12を読んでください。
+最新main、Open PR/Issueを確認し、
+docs/HANDOFF.md、docs/RUBY_CHECKOUT_BINDING_SPIKE.md、
+docs/RUBY_DELEGATION_SPIKE.md、docs/FAIL_CLOSED_PROFILE.md、
+docs/RESEARCH_DECISION.md §13を読んでください。
 
-P1-2で固定AP2 Python SDK生成の署名付きOpen→Closed 2hopを
-Rubyで15件成功（P1-1 Root回帰10件成功）。これはMerchant Checkout
-JWTがダミーであり最終許可でも安全な決済でもないことに注意。
+P1-3はMerchant ES256 Checkout JWT署名とHost正本/Hash/店舗・SKU・
+数量・合計の研究Spike18件成功（P1-2回帰15、P1-1回帰10）。
+全AP2の仕様適合や安全な実決済という意味ではありません。
+今回はsecurity gapレビュー＋GO/HOLD判断文書のみ。
+JSON重複キー、JOSE、SD-JWT部分開示、expired terminal、
+リソース・Host issuer/merchant key、nonce replay/失効/Receipt等を
+セキュリティ優先度付きで調べ、docs/SECURITY_GAP_REVIEW.mdと
+docs/RESEARCH_DECISION.mdに記録しPR/mainへ反映してください。
 
-今回はP1-3だけ。Host正本merchant-signed Checkout JWTと
-Closed checkout_jwtの原文バイト一致、署名/checkout_hash独立検証、
-Open allowed_merchants/line_itemsと取引内容を架空正負fixtureで
-オフライン検証し、docs/RUBY_CHECKOUT_BINDING_SPIKE.mdに結果を記録。
-
-Gem実装、公開API/リリース、GCP/実決済、stateful replay/
-nonce消費/Receipt、ActingFor/a2a-rails変更は禁止。
-PRをレビューしてmainにマージ。失敗時はHOLDへ戻す。
+Gem/public API・本番コード実装/リリース、GCP/実決済、他OSS変更は禁止。
 ```
