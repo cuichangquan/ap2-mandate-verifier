@@ -130,15 +130,52 @@ def generate():
     extra_open_payload = json.loads(base64.urlsafe_b64decode(
         root_payload + "=" * (-len(root_payload) % 4)
     ))
-    assert isinstance(extra_open_payload["delegate_payload"][0], dict)
-    extra_open_payload["delegate_payload"][0]["currency"] = "USD"
     original_header_json = base64.urlsafe_b64decode(
         root_header + "=" * (-len(root_header) % 4)
     ).decode("utf-8")
+
+    # The first delegate_payload array element is an SD-JWT disclosure
+    # PLACEHOLDER, not the Open mandate object. Mutate the signed Mandate
+    # disclosure itself and update its referenced digest inside the
+    # issuer-signed outer payload. An altered placeholder shape would be
+    # rejected for parsing, obscuring the omitted-claim vulnerability.
+    edited_disclosures = root_parts[1:-1].copy()
+    changed = []
+    for idx, part in enumerate(edited_disclosures):
+        decoded = json.loads(base64.urlsafe_b64decode(
+            part + "=" * (-len(part) % 4)
+        ))
+        if (isinstance(decoded, list) and len(decoded) == 2
+                and isinstance(decoded[1], dict)
+                and decoded[1].get("vct") == "mandate.checkout.open.1"):
+            decoded[1]["currency"] = "USD"
+            new_part = b64(json_compact(decoded).encode("utf-8"))
+            old_digest = b64(hashlib.sha256(part.encode("ascii")).digest())
+            new_digest = b64(hashlib.sha256(new_part.encode("ascii")).digest())
+            edited_disclosures[idx] = new_part
+            changed.append((old_digest, new_digest))
+    assert len(changed) == 1, "Expected one signed Open Mandate disclosure"
+
+    old_digest, new_digest = changed[0]
+    count = [0]
+    def repoint(value):
+        if isinstance(value, dict):
+            if list(value) == ["..."] and value["..."] == old_digest:
+                value["..."] = new_digest
+                count[0] += 1
+            else:
+                for item in value.values():
+                    repoint(item)
+        elif isinstance(value, list):
+            for item in value:
+                repoint(item)
+    repoint(extra_open_payload)
+    assert count[0] == 1, "Expected exactly one delegate_payload commitment"
+
     signed_extra_root = sign_merchant_raw(
         issuer, json_compact(extra_open_payload), original_header_json
-    ) + "~" + "~".join(root_parts[1:])
-    # Independently check valid Issuer signature before testing rejection.
+    ) + "~" + "~".join([*edited_disclosures, ""])
+    # Verify the new issuer signature AND the full updated disclosure chain.
     from ap2.sdk.sdjwt.sd_jwt import verify as verify_root
     assert verify_root(signed_extra_root, JWK.from_json(issuer.export_public()))[
         "delegate_payload"
