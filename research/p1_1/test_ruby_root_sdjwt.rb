@@ -88,7 +88,7 @@ module AP2RootSDJWTResearch
         value.map do |item|
           if item.is_a?(Hash) && item.keys == ["..."]
             raise Rejected, "unsupported array disclosure location" unless
-              path == ["delegate_payload"] || path == ["delegate_payload", "constraints"]
+              path == ["delegate_payload"] || path == ["delegate_payload", "*", "constraints"]
             digest = item["..."]
             raise Rejected, "invalid disclosure marker" unless digest.is_a?(String)
             raise Rejected, "missing disclosure" unless digest_to_value.key?(digest)
