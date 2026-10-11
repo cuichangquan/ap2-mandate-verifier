@@ -1,10 +1,7 @@
 name: P1-0 Ruby interoperability research
 
+# Research fixture CI is manually dispatched after the initial PR validation.
 on:
-  pull_request:
-    paths:
-      - 'research/p1_0/**'
-      - '.github/workflows/p1-0-ruby-spike.yml'
   workflow_dispatch:
 
 permissions:
