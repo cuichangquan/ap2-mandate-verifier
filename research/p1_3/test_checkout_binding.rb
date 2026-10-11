@@ -32,6 +32,15 @@ class P13CheckoutBindingResearchTest < Minitest::Test
     assert_raises(AP2CheckoutBindingResearch::Rejected) { verify(terminal: terminal) }
   end
 
+  def business_rejection(name)
+    # Using the same Merchant-signed JWT as Closed avoids short-circuiting at
+    # Host JWT byte inequality: check the actual authenticated business rule.
+    assert_raises(AP2CheckoutBindingResearch::Rejected) do
+      verify(terminal: @f.fetch("bad_terminals").fetch(name),
+             host_jwt: @f.fetch("variant_checkout_jwts").fetch(name))
+    end
+  end
+
   def test_01_genuine_merchant_jwt_and_signed_2hop_is_valid_under_strict_profile
     result = verify
     assert_equal "checkout-001", result.fetch(:checkout_id)
@@ -49,31 +58,31 @@ class P13CheckoutBindingResearchTest < Minitest::Test
   end
 
   def test_04_signed_wrong_merchant_checkout_rejected
-    rejection(@f.fetch("bad_terminals").fetch("disallowed_merchant"))
+    business_rejection("disallowed_merchant")
   end
 
   def test_05_signed_wrong_sku_rejected
-    rejection(@f.fetch("bad_terminals").fetch("wrong_sku"))
+    business_rejection("wrong_sku")
   end
 
   def test_06_signed_wrong_quantity_rejected
-    rejection(@f.fetch("bad_terminals").fetch("wrong_quantity"))
+    business_rejection("wrong_quantity")
   end
 
   def test_07_extra_cart_item_rejected_even_if_required_item_present
-    rejection(@f.fetch("bad_terminals").fetch("extra_item"))
+    business_rejection("extra_item")
   end
 
   def test_08_mismatched_totals_rejected
-    rejection(@f.fetch("bad_terminals").fetch("wrong_total"))
+    business_rejection("wrong_total")
   end
 
   def test_09_completed_checkout_status_rejected
-    rejection(@f.fetch("bad_terminals").fetch("wrong_status"))
+    business_rejection("wrong_status")
   end
 
   def test_10_checkout_signed_by_untrusted_merchant_key_rejected
-    rejection(@f.fetch("bad_terminals").fetch("wrong_merchant_signer"))
+    business_rejection("wrong_merchant_signer")
   end
 
   def test_11_host_original_jwt_is_missing
