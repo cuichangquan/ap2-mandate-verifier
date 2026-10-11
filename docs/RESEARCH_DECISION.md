@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§35（P1-10n）：Aの単一Issuer/厳格2hop/既知完全開示の合成非本番研究PoCだけCONDITIONAL GO CANDIDATE（次実験は別途明示承認必須）。過去Ruby実測・6 RED→限定GREEN化を棚卸しし、G01〜G08・将来8ケースを設計したが**本Stepで新規実装/CI/試験0**。一般的なhidden Constraint完全性・任意hop/Issuer・Host replay、B/HC06、汎用Gem/API・本番統合HOLD、RubyGems/実決済NO-GO。Host正本9/34・25 NOT RUN不変。**
+> **最新判定は§36（P1-10o）：固定Issuer・Open→Closed 2hop・合成実署名のA-only試験AN-P01＋AN-N01〜N07を8 runs/42 assertions、失敗0で限定実測。Codex PR #35のP1固定claim書換え（期限内の正署名Closed exp変更）をRuby研究コードで拒否。AN-N07は2回verify成功のHOST_BOUNDARYであり、replay安全PASSではない。Host正本9/34・25 NOT RUN、隠れた制約の一般完全性・HC06・汎用Gem/API・本番統合HOLD、RubyGems/実決済NO-GO。**
 
 **判断日:** 2026-10-12 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -425,3 +425,19 @@ guardは**別Host DBへの直接的な信頼済み読取り**で成立する人�
 **広いGem/API・本番Host統合HOLD、独立Authority/HC06強い失効HOLD、RubyGems公開・Production/実決済・署名Receipt NO-GO。** Bの契約C01〜C12は全件OPEN/UNCONFIRMED。Host正本**9/34実測・25 NOT RUN、12 runs/465 assertions**。P1-10c 8 runs/94、P1-10g 2 runs/118、P1-10i 6 runs/178は別合成研究。H01旧Authorityの失効後C成功は**危険反例**。N17 HOST_BOUNDARY、H07〜H12 NOT RUN。安全性の独立監査を本書で実施したわけではない。
 
 **次のおすすめ1件（別途明示承認後のみ）：P1-10o** — 上記8件の**A-onlyオフライン合成fixture Ruby統合再実測**を独立した研究PR/専用CIに限定して実行。コード・CI・外部通信・鍵生成・Gem公開はこの設計PRで認めない。実Checkout/決済、GCP、署名Receipt、外部Host/Authorityには進まない。
+
+## 36. 2026-10-12 P1-10o A-only固定Issuer/2hopの実署名8-case統合研究（最新）
+
+[VERIFIER_P110O_EVIDENCE](VERIFIER_P110O_EVIDENCE.md)／[修正後SUCCESS CI #38153636500](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38153636500)にて、**Ruby 8 runs/42 assertions、0 failures/0 errors/0 skips**を実測。内訳：**AN-P01限定正例1件、AN-N01〜N06の拒否6カテゴリ、AN-N07の2回stateless verify成功をHOST_BOUNDARYとして観測1件**。合成実署名のIssuer/Agent/Merchantと公式AP2 v0.2.0 commit `b4587ac1d055888a73b4b21750973cffba961793`を固定、Ruby 3.3 / jwt 3.3.0。上流Python直接依存ピンは公開PyPIから取得し、private registry付きupstream lock完全再現ではない。
+
+**初回[CI #38153577136](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38153577136)はFAILED。** Ruby8/42自体は成功していたが、報告JSONをlexical sortした`AN-P01`が後ろへ並ぶことをCIゲートが考慮しておらずPython集計assertが失敗。ID集合の厳密性/重複/分類を順序非依存に修正して再実行した。失敗を「当初から全CI成功」と誤記しない。
+
+**重大な新知見:** マージ後に確認されたPR #35のCodex **P1 review** が、Open→Closedにおける`iat/exp`等の共有固定claim保持チェックを欠いていると指摘した。研究`p1_2` Verifierに**共有claim値保持**を追加し、正式にAgent署名された「Closedの`exp`だけ短縮、Root期間内」という**期限違反ではない負例**をAN-N04で「Closed changed a fixed Open claim」として拒否確認。Root署名、Agent PoP、暗号hashがPASSしてもIssuerの固定claim変更を許さない。ただし**固定2hop layout内の修正**であり全AP2 Mandate/多hop/外部Issuerの形式的保証ではない。
+
+**限界:** AN-N07は同一token2回とも暗号的にverify成功し、Hostのnonce原子的消費を**していない**。P1-10oはHostの購入最終ALLOW・決済・Receipt・外部分散失効HC06を解決しない。**Issuer発行レイアウトをテスト作成者が事前に知っている**ため、任意の隠れたConstraintが存在しないことを汎用的に証明できない。上流公式Python intermediate hop186 PASS/2 FAILは未解決。P1-4 G1〜G6/P1-7 T1〜T5、N17 replay、H07〜H12も未完了。
+
+**証拠混算禁止：** 正本Host **9/34件実測・25 NOT RUN、過去12 runs/465 assertions**。P1-10c 8 runs/94、P1-10g 2 runs/118、P1-10i 6 runs/178は別のHost/HC06合成証拠。P1-10i H01旧Authorityの`R_effective`後Host COMMIT成功は**危険な反例**、今回のA-only研究で修正したと主張しない。今回の8/42をHost正本件数に加えない。
+
+**判断：限定合成A-only verifier研究8ケース実測成功（replay Host境界は未解決）、汎用Gem/public API・本番Host統合HOLD、B/HC06分散強失効HOLD、C01〜C12 OPEN/UNCONFIRMED、RubyGems公開・Production・実決済・署名Receipt NO-GO。** 自己レビューは独立セキュリティ監査ではない。
+
+**次のおすすめ1件（別途明示承認後のみ）：P1-10p 設計Gapレビューだけ。** 認証済Issuer layoutの外部検証可能性、共有claimを改変できる余地、未対応の隠れた制約・不正入力の残余リスクを棚卸しする。新Rubyコード/CI/GCP/外部サービス/実決済/Gem公開は別承認。
