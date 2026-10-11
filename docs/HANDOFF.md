@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**P0-1〜P0-5b・P1-0〜P1-9b完了（限定PG16オフライン研究）**。HR04/HR05の独立worker SIGKILLテスト成功（COMMIT前全Rollback／COMMIT ACK後の同一operationをPENDING復元）。P1-9a回帰込み**6ケース/192 assertions成功**、[CI #38134591784](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38134591784)で確認。**残り28 HostケースNOT RUN**。N17 stateless HOST_BOUNDARY継続。次は**P1-9c：HR06/07 unknown COMMIT/Fake Provider Idempotency（別途承認後のみ）**。Gem/API実装HOLD、RubyGems公開・Production/実決済NO-GO。
+状態：**P0-1〜P0-5b・P1-0〜P1-9c完了（P1-9a/b/cは限定PG16研究）**。HR06（COMMIT ACK不明時のDB再照会、PG lock timeout）・HR07（架空Providerの応答喪失→同一key再試行、試行2回/論理効果1件）もPASS。旧6件を含む**Host8件/341 assertions、失敗0**（[CI #38135302918](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38135302918)）。**残る26 Host件未実行**。N17 stateless HOST_BOUNDARY継続。次は**P1-10a：HR10 Checkout更新/失効との競合（別途承認後のみ）**。Gem/API HOLD、RubyGems公開・Production/実決済NO-GO。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -13,7 +13,7 @@
 
 1. [README](../README.md) — Gemの目的・利用シーン・非スコープ
 2. [PROJECT](PROJECT.md) — D001〜D006、責務境界、独立OSS方針
-3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) / [RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) / [SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) / [SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md) / [SECURITY_HARDENING_RESEARCH](SECURITY_HARDENING_RESEARCH.md) / [HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md) / [HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md) / [HOST_REPLAY_LAB_DESIGN](HOST_REPLAY_LAB_DESIGN.md) / [HOST_REPLAY_P19A_EVIDENCE](HOST_REPLAY_P19A_EVIDENCE.md) / [HOST_REPLAY_P19B_EVIDENCE](HOST_REPLAY_P19B_EVIDENCE.md) — P1-6実測、P1-7契約、P1-8ラボ設計、P1-9a/b限定PG16実測
+3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) / [RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) / [SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) / [SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md) / [SECURITY_HARDENING_RESEARCH](SECURITY_HARDENING_RESEARCH.md) / [HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md) / [HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md) / [HOST_REPLAY_LAB_DESIGN](HOST_REPLAY_LAB_DESIGN.md) / [HOST_REPLAY_P19A_EVIDENCE](HOST_REPLAY_P19A_EVIDENCE.md) / [HOST_REPLAY_P19B_EVIDENCE](HOST_REPLAY_P19B_EVIDENCE.md) / [HOST_REPLAY_P19C_EVIDENCE](HOST_REPLAY_P19C_EVIDENCE.md) — P1-6実測、P1-7契約、P1-8設計、P1-9a/b/c限定PG16実測
 4. [OFFICIAL_SOURCES](OFFICIAL_SOURCES.md) — AP2/FIDO/IETFの一次資料・ウォッチリスト
 5. [RESEARCH_PLAN](RESEARCH_PLAN.md) — Phase 0〜3 の全体工程
 6. [SECURITY_BOUNDARY](SECURITY_BOUNDARY.md) — 未信頼Mandateの扱いとFail Closed
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-9b完了 / 次はP1-9c】
+### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-9c完了 / 次はP1-10a】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -135,8 +135,10 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - [HOST_REPLAY_P19A_EVIDENCE.md](HOST_REPLAY_P19A_EVIDENCE.md)：HR01/02/03/08の4件を実PG16.9/Minitestで実行し108 assertions全成功。DB lock競合、CAS0件、Checkout UNIQUEと再送STOPを観測。**他30ケース未実行**。初回失敗も履歴として保存。
 - [x] **P1-9b：独立worker SIGKILL（COMMIT前後）とHost復旧（限定研究実測完了）**
   - [HOST_REPLAY_P19B_EVIDENCE.md](HOST_REPLAY_P19B_EVIDENCE.md)でHR04/05の全Rollback/PENDING復元/再送STOP実測。回帰込み6/34件PASS、残り28件未実行。
-- [ ] **P1-9c（次の1件・別途明示承認後のみ）**
-  - HR06 unknown COMMIT/DB timeout、HR07 Fake Provider timeout/同一idempotency keyをさらに架空オフラインで検証。Receipt/本番は対象外。
+- [x] **P1-9c：Unknown COMMIT応答/Mock Provider Idempotency（限定オフライン研究完了）**
+  - [HOST_REPLAY_P19C_EVIDENCE.md](HOST_REPLAY_P19C_EVIDENCE.md)にHR06/HR07実測（2 runs/149 assertions）＋既存6回帰（192 assertions）を記録。34 Host中8件、残り26件未実行。実決済/実HTTPとの同等性は主張しない。
+- [ ] **P1-10a（次の1件・別途明示承認後のみ）**
+  - HR10のCheckout状態更新・失効とnonce/operationの同時実行を隔離PGで限定検証。外部失効配信/Receiptは別Step。
 
 
 
@@ -191,23 +193,23 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P1-9bまでの限定オフライン研究完了。** [HOST_REPLAY_P19B_EVIDENCE](HOST_REPLAY_P19B_EVIDENCE.md)、[HOST_REPLAY_P19A_EVIDENCE](HOST_REPLAY_P19A_EVIDENCE.md)、[HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md)、[RESEARCH_DECISION](RESEARCH_DECISION.md) §20を読む。着手時GitHub最新main/Open PR/Issue確認。
+**P1-9cまでの限定研究完了。** [HOST_REPLAY_P19C_EVIDENCE](HOST_REPLAY_P19C_EVIDENCE.md)、[HOST_REPLAY_P19B_EVIDENCE](HOST_REPLAY_P19B_EVIDENCE.md)、[HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md)、[RESEARCH_DECISION](RESEARCH_DECISION.md) §21を参照。GitHub最新main/Open PR/Issueを最初に再確認。
 
-- **実測:** PostgreSQL16.9・Ruby別worker実SIGKILLによりHR04/05の2テスト/84 assertions成功、P1-9a回帰4テスト/108 assertions成功。**34件中6件実測・残り28件未実行**。
-- **境界:** COMMIT結果不明（HR06）、Provider Idempotency（HR07）、署名Receipt/本番決済、AP2署名とのHost統合は未検証。N17 stateless Replay境界は継続。Gem/API HOLD、RubyGems公開/実決済 NO-GO。
-- **次の1件（別途明示承認）:** **P1-9c**。HR06/HR07のみ隔離DB/Fake Providerで実測、証拠/後片付けとCIを確認。
+- **実測:** PG16.9でP1-9a/b/c合計**8/34件、341 assertions、fail/error0**。HR06はACK未読でDB再照会/PENDING復旧＋実PG timeout、HR07はMock Providerの2 attempts/1 logical effect。**残る26件はNOT RUN**。
+- **境界:** HR06 ACK未読の成功経路のみ。実ネットワーク分断や本番Providerは未検証。N17 stateless Verifier HOST_BOUNDARY継続。AP2 trust/Receipt/実決済/本番はHOLD、Gem公開NO-GO。
+- **次の1件（別途承認）:** **P1-10a HR10** Checkout更新/失効とnonce消費の競合を先に研究。外部revocation sourceはDB lockだけで保証しない。
 
-### 次チャット用指示文
+### 次のチャット用指示文
 
 ```text
-ap2-mandate-verifier P1-9cを開始します。
+ap2-mandate-verifier P1-10aを進めたいです。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-GitHub最新main/Open PR/Issueと、docs/HOST_REPLAY_P19B_EVIDENCE.md、
-docs/HOST_SECURITY_TEST_PLAN.md、docs/RESEARCH_DECISION.md §20を確認。
-P1-9a/bでは6/34件をPG16で実測。HR04 COMMIT前Rollback、
-HR05 COMMIT ACK後のPENDING復元まで成功。残り28件は未試験。
-次の1件のみ：HR06 COMMIT結果不明/DB timeoutとHR07 Fake
-Provider Idempotencyをオフライン研究。PR/CI証拠を確認後マージ。
-Gem/API・実決済・署名Receipt・GCP・他OSSは変更しない。
+まず最新main/Open PR/Issue、docs/HOST_REPLAY_P19C_EVIDENCE.md、
+docs/HOST_SECURITY_TEST_PLAN.md、docs/RESEARCH_DECISION.md §21を確認。
+P1-9a/b/cの隔離PG16研究でHR01〜08の8ケースが実測成功、
+341 assertions、残るHost 26件は未試験です。
+次の1件のみHR10：Checkout更新/失効とnonce/operationの
+並列競合を実DBで検証。DBロックと外部失効情報の境界を明記。
+Gem/API、実決済、署名Receipt、GCP、他OSSは変更しない。
 ```

@@ -1,10 +1,11 @@
-name: P1-9a/b Host Replay PostgreSQL 16 (research only)
+name: P1-9a/b/c Host Replay PostgreSQL 16 (research only)
 
 on:
   pull_request:
     paths:
       - 'research/p1_9a/**'
       - 'research/p1_9b/**'
+      - 'research/p1_9c/**'
       - '.github/workflows/p1-9a-host-replay.yml'
   workflow_dispatch:
 
@@ -33,6 +34,7 @@ jobs:
       P19A_DATABASE_URL: postgresql://labuser:offline-test-only@127.0.0.1:5432/ap2_research
       P19A_REPORT: p19a-report.json
       P19B_REPORT: p19b-report.json
+      P19C_REPORT: p19c-report.json
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,12 +55,15 @@ jobs:
             ruby -rpg -e 'db=PG.connect(ENV.fetch("P19A_DATABASE_URL")); puts "postgres #{db.exec("SHOW server_version").first.fetch("server_version")}"; db.close'
             docker image inspect postgres@sha256:ddfe3e8713e3ee5b8f286082cb12512488dfbf3f5a1ecb0b74a42e6055af0a5f --format 'postgres image ID={{.Id}} digests={{json .RepoDigests}}'
           } | tee p19a-environment.txt
-      - name: Syntax check P1-9a/b research workers and tests
+      - name: Syntax check isolated research workers and tests
         run: |
           ruby -c research/p1_9a/worker.rb
           ruby -c research/p1_9a/test_host_replay_pg.rb
           ruby -c research/p1_9b/recovery_worker.rb
           ruby -c research/p1_9b/test_crash_recovery_pg.rb
+          ruby -c research/p1_9c/timeout_worker.rb
+          ruby -c research/p1_9c/fake_provider.rb
+          ruby -c research/p1_9c/test_uncertainty_and_fake_provider_pg.rb
       - name: Run four isolated Host DB security experiments
         shell: bash
         run: |
@@ -109,6 +114,41 @@ jobs:
               after.fetch("recovery_state") == "PENDING"
             puts "PASS: HR04/HR05 actual SIGKILL + rollback and read-only recovery; no payment claim"
           '
+      - name: Run HR06 HR07 isolated uncertainty and mock Provider tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby research/p1_9c/test_uncertainty_and_fake_provider_pg.rb --verbose 2>&1 | tee p19c-run.log
+      - name: Reject incomplete unknown-commit and fake-provider evidence
+        if: success()
+        run: |
+          ruby -rjson -e '
+            cases=JSON.parse(File.read("p19c-report.json")).fetch("executed_cases")
+            abort "Wrong case IDs" unless cases.map{|x| x.fetch("id")}.sort == %w[HR06 HR07]
+            abort "Missing/failed cases" unless cases.all?{|x| x.fetch("result") == "PASS"}
+            a=cases.find{|x| x["id"] == "HR06"}
+            b=cases.find{|x| x["id"] == "HR07"}
+            abort "ACK uncertainty evidence missing" unless
+              a.fetch("async_commit_sent_without_result") == true &&
+              a.fetch("actual_sigkill") == true &&
+              a.fetch("committed_operation_recovered") == true &&
+              a.fetch("key_reused") == true &&
+              a.fetch("replay_stopped") == true &&
+              a.fetch("real_pg_timeout_sqlstate") == "55P03" &&
+              a.fetch("blocked_wait_observed") == true &&
+              a.fetch("no_new_operation_during_timeout") == true &&
+              a.fetch("fake_provider_effects") == 0
+            abort "Mock-provider idempotency evidence missing" unless
+              b.fetch("response_lost_after_durable_effect") == true &&
+              b.fetch("actual_sigkill") == true &&
+              b.fetch("replay_stopped") == true &&
+              b.fetch("stable_operation_and_key") == true &&
+              b.fetch("mock_provider_requests") == 2 &&
+              b.fetch("mock_logical_effects") == 1 &&
+              b.fetch("mismatched_key_stopped") == true &&
+              b.fetch("receipt_not_claimed") == true
+            puts "PASS: HR06/07 constrained DB+mock scenarios; NO real network/payment claims"
+          '
       - name: Upload time-limited, sanitized research evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -120,5 +160,7 @@ jobs:
             p19a-environment.txt
             p19b-report.json
             p19b-run.log
+            p19c-report.json
+            p19c-run.log
           retention-days: 7
           if-no-files-found: warn
