@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§31（P1-10j）：Host DB直接参照なしの別Authorityにとって、署名・通信認証だけではABORT耐久決定や将来C禁止を証明できない。Host trust anchor・terminal gate・rollback禁止・Authority失効保留の必要条件を設計で明確化。実Authority機能未確認で実装HOLD。Host正本9/34・25 NOT RUN、HC06分散保証HOLD、Gem/API・本番統合HOLD、RubyGems/実決済NO-GO。**
+> **最新判定は§32（P1-10k）：Host/Authorityの安全契約C01〜C12を責任候補・必要証拠・未達時Fail Closedに整理したが、外部相手への確認・合意は全件OPEN/UNCONFIRMED。Host正本9/34・25 NOT RUN、HC06強い外部失効保証とGem/API・本番統合はHOLD、RubyGems公開/実決済NO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -379,3 +379,15 @@ guardは**別Host DBへの直接的な信頼済み読取り**で成立する人�
 **判断：HC06強い外部失効保証・外部Authority向け接続・汎用Gem/API・本番統合HOLD。RubyGems公開・Production・実決済・署名Receipt NO-GO。** PR #29（`c1df549fa536712e5b56e81c478771f4e93282a0`）、PR #30（`37c97dcec8320ad91d917900824003656cc01bc4`）は既にmainにマージ済み。自己レビューは独立したセキュリティ監査ではない。
 
 **次のおすすめ1件（別途明示承認後のみ）：P1-10k — 設計のみ。** Host/Authorityの各責務、何を証拠と認めるか、確定できない条件、復旧・監査負担を「外部相手に確認できる契約チェックリスト」にする。実装/外部API/GCP/署名処理/決済/Gem公開は別承認。
+
+## 32. 2026-10-11 P1-10k Host/Authority安全契約チェックリスト（最新・設計のみ）
+
+[HOST_EXTERNAL_REVOCATION_P110K_CONTRACT_CHECKLIST](HOST_EXTERNAL_REVOCATION_P110K_CONTRACT_CHECKLIST.md)を追加。外部AuthorityとMerchant Hostの間で、C01〜C12について**権威所有者・予約P/失効の直列化・Host全COMMIT経路の耐久gate・COMMIT/ABORT排他・発行者鍵信頼・証拠context束縛・同一transactionでの決定/outbox・failover/anti-rollback・Authorityの確定規則・冪等性・長期PENDING運用・既存CとProvider Dの境界**を確認する契約表を作成。各行に責任者候補・必要な実証資料・未達時のSTOP/UNKNOWN/REJECTを記した。
+
+**結果は契約設計の整理のみ。C01〜C12はすべてOPEN/UNCONFIRMED。** 外部Authority/Host/Issuerとの照会・契約・API提供有無の確認、鍵/署名実装、DB/GCP、CI、テスト、実決済は**実施していない**。AP2 v0.2.0は固定SHA `b4587ac1d055888a73b4b21750973cffba961793`。P/R_request/R_effectiveは**提案Host研究モデル**で公式AP2 APIの存在を主張しない。信頼済Host発行者の署名が成功してもHost耐久gate/将来C停止・rollback防止・分散線形化は保証できない。悪意あるHostに対しては別の強制権威的境界が必要。
+
+**証拠の混算禁止：** Host正本**9/34件実測・25 NOT RUN、過去12 runs/465 assertions**、P1-10c単一process 8 runs/94 assertions、P1-10g別PG16 2 runs/118 assertions、P1-10i合成6 runs/178 assertions（[最新main向けCI #38148130154](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38148130154)）は別枠。H01の旧Authorityは**R_effective後のHost Cが通る危険反例**で、安全性PASSではない。H07〜H12、N17 HOST_BOUNDARY、P1-4 G1〜G6/P1-7 T1〜T5、公式Python SDK中間hop186 PASS/2 FAILは未解決。**今回新たな実測は0**。
+
+**判断：P1-10k設計資料のみ完了。HC06外部分散安全性・Gem/public API・本番Host統合HOLD、RubyGems公開・Production・実決済・署名Receipt NO-GO。** 自己レビューは独立セキュリティ監査ではない。
+
+**次のおすすめ1件（別途明示承認後のみ）：P1-10l（読み取り専用・設計調査のみ）** — 固定AP2公式v0.2.0仕様/SDKの実ファイルをC01〜C12の契約項目と照合して、何が標準でSUPPORTED、何がNOT SPECIFIED、何がUNKNOWNかを出典付きで記録する。API/新コード/CI/GCP/実決済/Gem化に進まない。
