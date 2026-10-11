@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§29（P1-10h）：Authorityのfinalize盲信を危険と判定、Host耐久決定の真正性・再送・通信断の安全ゲートを設計レビュー（H01〜H12 NOT RUN）。既存Host正本9/34件実測・25件NOT RUN、HC06分散安全性・Gem/API・本番統合HOLD、RubyGems公開/実決済NO-GO。**
+> **最新判定は§30（P1-10i）：H01旧Authorityの失効確定後Host COMMITという危険な反例を観測、新guardはUNPROVEN、H02〜H06限定合成試験PASS（6 runs/178 assertions）。Host正本9/34・25 NOT RUNは不変、HC06の分散保証・Gem/API・本番統合HOLD、RubyGems公開/実決済NO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -355,3 +355,15 @@ Hostの全C経路を耐久的に禁止するterminal abort、COMMITとabortの�
 **判断:** P1-10hレビュー文書のみ完了。Authorityの本番finalize/外部失効保証/HC06/Gem/API/本番Host連携**HOLD**、RubyGems公開・Production・実決済・署名Receipt**NO-GO**。自己レビューは独立セキュリティ監査ではない。
 
 **次のおすすめ1件（ユーザーの新たな明示承認後のみ）：P1-10i** — H01〜H06の狭いオフライン架空Authority負例を研究として検証し、Coordinator偽finalize/旧証拠の誤結合・相反する決定・durable gate未確定時のSTOP条件を見極める。実サービス/GCP/決済/Gem/APIへは進まない。
+
+## 30. 2026-10-11 P1-10i 旧Authorityの危険なfinalize反例とH01〜H06隔離合成負例（最新）
+
+[HOST_EXTERNAL_REVOCATION_P110I_EVIDENCE](HOST_EXTERNAL_REVOCATION_P110I_EVIDENCE.md)、[成功CI #38145972566](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38145972566)（head `f45cb2712e32dd756050db4ae7f738373f7c71fb`）：**6 runs/178 assertions、0 failures/0 errors/0 skips**。独立PG16.9×2の異なるsystem identifierを観測。初回[失敗CI #38145867563](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38145867563)は旧workerの`RESULT:`プレフィックスをJSON直接解析したテスト側エラーであり、修正・再実行済み。
+
+**H01は旧P1-10g AuthorityがHost abort未確定でも`finalize_abort`を受理し、AuthorityのR_effective後にHostのCOMMITが実際に成功した危険な反例：`COUNTEREXAMPLE_OBSERVED`、安全PASSではない。** その後の研究用guardではHost OPENに対しUNPROVEN/失効pendingを確認。H02は未知と自己申告するHost ID/誤audience、H03は文脈の誤束縛を拒否、H04は同証拠再送が冪等、H05は決定矛盾を拒否、H06はHost eventだけでdurable gateがない場合にUNPROVEN。H02〜H06は**限定合成の5ケースPASS**、H01の危険性は解消された本番修正ではない。
+
+guardは**別Host DBへの直接的な信頼済み読取り**で成立する人工モデル。Issuer/Host署名の真正性、外部Authority API、本物の分散直列化・DB rollback耐性・複数Authority・悪意あるHostは未証明。単なるHost ID一致やdigestは暗号認証でない。正本Host**9/34件、25 NOT RUN、既存12 runs/465 assertions**は変更なし。P1-10c 8 runs/94 assertions・P1-10g 2 runs/118 assertionsは別証拠。H07〜H12も**NOT RUN**。N17 HOST_BOUNDARY、G1〜G6/T1〜T5、公式Python SDK中間hop186 PASS/2 FAILは未解決。
+
+**判定：P1-10iの合成負例限定研究成功（H01旧経路の安全性はFAIL相当の反例）、HC06外部失効保証・Gem/API・本番Host統合HOLD。RubyGems公開・Production・実決済・署名Receipt NO-GO。** P1-10h PR #29はsquashマージ済み（`c1df549fa536712e5b56e81c478771f4e93282a0`）。P1-10i PR #30は最新mainをbaseとしてP1-10i単独差分を改めて検証する。PR #30の最終マージ状態はGitHub上で都度確認する。自己レビューは独立安全監査ではない。
+
+**次のおすすめ1件（別途明示承認後のみ）：P1-10j** — 直接Host PGアクセスを外した場合に、Authorityが真正かつ耐久的なHost最終状態を保証できる契約とアーキテクチャが成立するかの**設計採否レビューのみ**。追加実装/CI/GCP/実Authority/決済/Gem公開は別承認。

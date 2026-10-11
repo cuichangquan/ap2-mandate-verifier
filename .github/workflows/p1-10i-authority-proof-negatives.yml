@@ -1,0 +1,122 @@
+name: HC06 synthetic Authority evidence H01-H06 research (P1-10i)
+
+on:
+  pull_request:
+    paths:
+      - 'research/p1_10i/**'
+      - '.github/workflows/p1-10i-authority-proof-negatives.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-proof-negatives:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      authority_pg:
+        image: postgres@sha256:ddfe3e8713e3ee5b8f286082cb12512488dfbf3f5a1ecb0b74a42e6055af0a5f
+        env:
+          POSTGRES_DB: ap2g_authority
+          POSTGRES_USER: labuser
+          POSTGRES_PASSWORD: offline-test-only
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U labuser -d ap2g_authority"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      host_pg:
+        image: postgres@sha256:ddfe3e8713e3ee5b8f286082cb12512488dfbf3f5a1ecb0b74a42e6055af0a5f
+        env:
+          POSTGRES_DB: ap2g_host
+          POSTGRES_USER: labuser
+          POSTGRES_PASSWORD: offline-test-only
+        ports:
+          - 127.0.0.1:5433:5432
+        options: >-
+          --health-cmd "pg_isready -U labuser -d ap2g_host"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      P110G_AUTH_URL: postgresql://labuser:offline-test-only@127.0.0.1:5432/ap2g_authority
+      P110G_HOST_URL: postgresql://labuser:offline-test-only@127.0.0.1:5433/ap2g_host
+      P110I_RESEARCH_ONLY: enabled
+      P110I_REPORT: p110i-report.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: false
+      - name: Install narrow DB client and record environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          gem install pg --version 1.5.9 --no-document
+          ruby -rpg -e 'abort "unexpected pg gem" unless Gem.loaded_specs.fetch("pg").version.to_s == "1.5.9"'
+          {
+            ruby -v
+            ruby -rpg -e 'puts "pg #{PG::VERSION}, libpq #{PG.library_version}"'
+            ruby -rpg -e '
+              %w[P110G_AUTH_URL P110G_HOST_URL].each do |env|
+                db=PG.connect(ENV.fetch(env))
+                puts "#{env}: db=#{db.exec("SELECT current_database()").first.values.first} pg=#{db.exec("SHOW server_version").first.values.first} system_id=#{db.exec("SELECT system_identifier::text FROM pg_control_system()").first.values.first}"
+                db.close
+              end'
+          } | tee p110i-environment.txt
+      - name: Syntax check only P1-10i scripts
+        run: |
+          ruby -c research/p1_10i/authority_guard.rb
+          ruby -c research/p1_10i/test_authority_proof_negatives_pg.rb
+      - name: Run precisely six synthetic negatives H01-H06
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby research/p1_10i/test_authority_proof_negatives_pg.rb --verbose 2>&1 | tee p110i-run.log
+      - name: Reject incomplete evidence or unsafe PASS inflation
+        if: success()
+        run: |
+          ruby -rjson -e '
+            r=JSON.parse(File.read("p110i-report.json"))
+            abort "canonical Host ID count changed" unless r.fetch("canonical_host_ids_newly_proven") == 0
+            cases=r.fetch("cases")
+            abort "must have EXACTLY H01-H06" unless cases.map{|x|x.fetch("id")}.sort == %w[H01 H02 H03 H04 H05 H06]
+            abort "not two independent DBs" unless cases.all?{|x|x.fetch("independent_pg_system_identifiers") == true}
+            h01=cases.find{|x|x.fetch("id") == "H01"}
+            abort "missing dangerous old baseline + safe guard" unless
+              h01.fetch("classification") == "COUNTEREXAMPLE_OBSERVED" &&
+              h01.fetch("legacy_effective_before_host_commit") == true &&
+              h01.fetch("legacy_host_commit_after_effective") == true &&
+              h01.fetch("guarded_status") == "UNPROVEN" &&
+              h01.fetch("guarded_safety_pass") == true
+            other=cases.reject{|x|x.fetch("id") == "H01"}
+            abort "H02-H06 incomplete" unless other.all?{|x|x.fetch("classification") == "PASS"}
+            h02=other.find{|x|x.fetch("id") == "H02"}
+            h03=other.find{|x|x.fetch("id") == "H03"}
+            h04=other.find{|x|x.fetch("id") == "H04"}
+            h05=other.find{|x|x.fetch("id") == "H05"}
+            h06=other.find{|x|x.fetch("id") == "H06"}
+            abort "H02 fail" unless h02.fetch("wrong_host_rejected") && h02.fetch("wrong_audience_rejected") && h02.fetch("no_signature_auth_claim")
+            abort "H03 fail" unless h03.fetch("wrong_tenant_scope_operation_reservation_rejected")
+            abort "H04 fail" unless h04.fetch("same_digest_replay_idempotent") && h04.fetch("duplicate_effective_events") == 0
+            abort "H05 fail" unless h05.fetch("contradictory_second_decision_stopped") && h05.fetch("no_second_effective_event")
+            abort "H06 fail" unless h06.fetch("fake_event_without_host_gate_stopped") && h06.fetch("host_still_open") && h06.fetch("nonce_unconsumed")
+            puts "PASS: H01 counterexample observed + guarded stop; H02-H06 limited synthetic PASS; HC06 HOLD"
+          '
+      - name: Upload time-limited sanitized research evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-10i-hc06-proof-negatives-evidence
+          path: |
+            p110i-environment.txt
+            p110i-run.log
+            p110i-report.json
+          retention-days: 7
+          if-no-files-found: warn

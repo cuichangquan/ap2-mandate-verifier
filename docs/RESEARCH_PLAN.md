@@ -31,7 +31,8 @@
 - [x] **P1-10f完了（採否判断資料のみ・NOT RUN）**：[HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION](HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION.md) — E-R01/E-R02に限り、2独立Ruby worker＋別PG16インスタンス×2のローカル検証を**条件付き推奨**。abort gateの耐久・全C経路強制、barrier/障害注入・cleanup・費用/ローカル制約の着手ゲートを文書化。**実装/CI/新実測0**、HC06分散HOLD・Host正本9/34のまま。
 - [x] **P1-10g完了（2限定合成ケースの実PG16実測のみ）**：[HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE](HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE.md) — Ruby別プロセス＋**別PG16.9インスタンス×2**でE-R01/R02の隔離合成研究、[専用CI #38143039035](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38143039035) **2 runs/118 assertions/0 failures**。Host abort COMMIT後のSIGKILL、別接続復旧、遅延worker STOPを観測。Authorityの本当の線形化保証は**未実証**でHC06 HOLD。正本Host9/34・25 NOT RUNを維持。
 - [x] **P1-10h完了（信頼境界の設計レビューのみ・H01〜H12 NOT RUN）**：[HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW](HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW.md) — Coordinatorの偽`finalize_abort`を無条件に信じる現行合成Authorityの穴、Hostのdurable C/abort真正性・全C経路STOP・証拠束縛、再送/矛盾/partition/rollbackのFail Closedを整理。**実装・CI・テスト・DB新実測なし**、正本Host9/34・25 NOT RUN、HC06 FULL HOLD。
-- [ ] **P1-10i（次のおすすめ1件・別途明示承認後のみ）**：H01〜H06だけの隔離合成負例を限定実装・実測し、Coordinator偽finalize/旧証拠/他scope流用/相反証拠/中止未確定をどこでSTOPする必要があるか検討。既存HC06全体のGOを主張しない。
+- [x] **P1-10i完了（合成負例H01〜H06だけの実測）**：[HOST_EXTERNAL_REVOCATION_P110I_EVIDENCE](HOST_EXTERNAL_REVOCATION_P110I_EVIDENCE.md) — [CI #38145972566](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38145972566) **6 runs / 178 assertions / 0失敗・0エラー**。H01は旧Authorityが誤って失効有効化後もHost COMMIT可能だった**危険な反例**を観測（安全PASSに数えない）。研究用guardではUNPROVEN。H02〜H06は限定REJECT/IDEMPOTENT/CONFLICT/UNPROVENを確認。初回CI #38145867563はテスト解析エラーで失敗、修正後PASS。**Hostへの直接PG接続は研究用信頼前提**、本物のHost署名・遠隔認証・分散原子性ではない。正本Host9/34・25 NOT RUN、HC06 HOLDは不変。
+- [ ] **P1-10j（次のおすすめ1件・別途明示承認後のみ）**：直接Host DB参照のない独立Authorityが実際に安全なHost durable decisionを確認できるか、真正性・anti-rollback・全C経路強制/STOP条件を**採否設計レビューだけ**で判断。外部API/実装/GCP/決済は別承認。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 
