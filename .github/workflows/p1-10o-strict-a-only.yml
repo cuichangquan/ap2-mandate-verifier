@@ -1,0 +1,98 @@
+name: P1-10o Strict A-only Signed Offline Integration (8 cases)
+
+on:
+  pull_request:
+    paths:
+      - "research/p1_10o/**"
+      - "research/p1_2/two_hop_research.rb"
+      - "research/p1_5/generate_signed_negatives.py"
+      - ".github/workflows/p1-10o-strict-a-only.yml"
+      - "docs/VERIFIER_P110O_EVIDENCE.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  strict-synthetic-checkout:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout research branch without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
+      - name: Verify and checkout official AP2 fixed commit
+        shell: bash
+        run: |
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = "b4587ac1d055888a73b4b21750973cffba961793"
+      - name: Install pinned upstream direct dependencies (PyPI only)
+        shell: bash
+        working-directory: ${{ runner.temp }}/ap2
+        run: |
+          # Fixed AP2 source and pyproject direct pins. The upstream uv.lock
+          # requires a private registry; transitive lock is NOT reproduced.
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple -e .
+          python -m pip freeze > "$GITHUB_WORKSPACE/p110o-python-packages.txt"
+      - name: Create ephemeral signed issuer Agent Merchant fixtures
+        shell: bash
+        run: |
+          python -m py_compile research/p1_5/generate_signed_negatives.py research/p1_3/generate_merchant_checkout.py
+          python research/p1_5/generate_signed_negatives.py "$RUNNER_TEMP/p110o-negatives.json"
+          python research/p1_3/generate_merchant_checkout.py "$RUNNER_TEMP/p110o-checkout.json"
+          # Private JWK material remains in generator process memory only.
+          # Synthetic signed JWT / public JWK temporary files are not uploaded.
+      - name: Install exact Ruby JWT dependency and syntax-check research code
+        shell: bash
+        run: |
+          gem install jwt -v 3.3.0 --no-document
+          ruby -rjwt -e 'abort "wrong jwt" unless Gem.loaded_specs.fetch("jwt").version.to_s == "3.3.0"'
+          ruby -c research/p1_2/two_hop_research.rb
+          ruby -c research/p1_10o/test_strict_a_only_signed.rb
+      - name: Run EXACTLY AN-P01 and AN-N01..N07 (not Host/HC06)
+        shell: bash
+        env:
+          AP2_P110O_FIXTURES: ${{ runner.temp }}/p110o-negatives.json
+          AP2_P110O_CHECKOUT_FIXTURES: ${{ runner.temp }}/p110o-checkout.json
+          AP2_P110O_RESULTS: p110o-results.json
+        run: |
+          set -o pipefail
+          ruby research/p1_10o/test_strict_a_only_signed.rb --verbose 2>&1 | tee p110o-run.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path("p110o-results.json").read_text())
+          wanted = ["AN-P01", *[f"AN-N{i:02d}" for i in range(1, 8)]]
+          actual = [x["id"] for x in r["cases"]]
+          assert actual == wanted, ("missing/duplicate/unexpected case", actual)
+          assert r["count_recorded"] == 8
+          classifications = {x["id"]: x["classification"] for x in r["cases"]}
+          assert classifications["AN-P01"] == "LIMITED_POSITIVE"
+          assert all(classifications[f"AN-N{i:02d}"] == "REJECTED" for i in range(1, 7))
+          assert classifications["AN-N07"] == "HOST_BOUNDARY"
+          assert "claim drift" in next(x["note"] for x in r["cases"] if x["id"] == "AN-N04")
+          assert r["pinned_ap2"] == "b4587ac1d055888a73b4b21750973cffba961793"
+          assert "HOST_BOUNDARY" in r["evidence_boundary"]
+          print("PASS: 8 planned cases present; 1 synthetic positive, 6 rejection categories, 1 Host boundary")
+          print("LIMIT: No Host ALLOW, nonce atomicity, strong external revocation, AP2 general compatibility or production")
+          PY
+      - name: Upload sanitized evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p110o-a-only-research-evidence
+          path: |
+            p110o-results.json
+            p110o-run.log
+            p110o-python-packages.txt
+          retention-days: 7
+          if-no-files-found: warn
