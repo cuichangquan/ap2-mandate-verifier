@@ -1,5 +1,7 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
+> **最新追記（P0-5b, 2026-10-11）：非本番・単一Agent・2hopのRuby研究PoCに限り CONDITIONAL GO。公開Gem・一般AP2受理・本番利用はNO-GO。下記§9を優先。**
+
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
 **推奨する次の研究:** AP2公式Python SDK `v0.2.0` 固定ソースを**隔離・オフライン中心**に実行し、公式テストと優先負例を検証して再判定する。**この文書のマージは実装承認や次タスクの自動実行ではない。**
@@ -93,3 +95,32 @@
 - **次の1件（P0-5b）:** 上記に対する最小Fail Closed Profileと適用不能時のHOLD条件を設計し、最小非本番PoCに限定したGO/HOLD判断を更新する。**Gem実装は今なお未承認**。
 
 この追記は以前のP0-5判断時点の「Python tests未実施」の歴史的記述を置き換えるものではなく、**新しい実測を反映した最新判断**。証拠は[PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md)を優先。
+
+
+## 9. P0-5bの最終再判定（2026-10-11）— **CONDITIONAL GO（狭い非本番Ruby PoCのみ）**
+
+**判断:** **CONDITIONAL GO: Phase 1の最小オフラインRuby技術PoC**（別途ユーザーの明示承認が必要）。**HOLD: Gemとしての広範な実装・一般公開・本番決済利用**。
+
+根拠: [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) に「認める入力」と「必ず拒否する入力」を具体化できた。公式AP2 v0.2 Python SDK全体は **186 PASS / 2 FAIL**（intermediate aud/nonce）だが、最初のRuby PoCは**中間hopを全拒否**し、実験済みの実署名負例12件の重要な境界を**Host必須ポリシーとして明示して埋める設計**とした。ただし**Ruby側でその防御を実装・実証したわけではない**。
+
+### PoC用の条件付き許可（GOの条件）
+
+1. **スコープの固定:** **Autonomous/二段**（issuer-signed Open Checkout → 同じAgentの鍵でsigned Closed Checkout）。Direct、任意3-hop/multi-agent、Payment Mandate、未知type、\`issuer_jwt_hash\` mode、任意\`x5c\`は**受け付けない**。
+2. **Hostの信頼境界:** Trusted issuer public key、Agentのendorsement/PoP、merchant signed Checkout JWT、期待aud/nonce、時計/期限、Merchant IDと必要なDisclosureを**必須でHostが供給**。Root内の自己宣言鍵・kid・Issuer URLは信頼根拠にしない。
+3. **Fail Closed:** 有効なRoot/Terminal署名、\`sd_hash\`の元tokenとのbinding、all required open constraints completeness、Checkout JWTの署名と原文・independent base64url SHA-256 hash、期限、aud/nonceを検証。未知、曖昧、欠落なら**必ずRejection**。「署名正しい」だけではVerifiedEvidenceを返さない。
+4. **制約完全性の最重要Gate:** AP2 SDK上ではIssuerが署名したConstraint自体を非開示にしても可視評価は違反0となることを再現した。**Issuer-approved layout/本物の完全開示状態を検証可能な限定fixture**だけを研究対象にする。発行者が隠したConstraintを区別できない場合は**非対応・REJECT**、安全に判定できない場合は **Ruby PoCをその境界でHOLD**。デコイ・未知のcommitmentを無害扱いしない。プライバシー上の理由で「全AP2は常時全開示必須」とは主張しない。
+5. **成功の意味の限定:** 返却は **VerifiedEvidenceかRejectionのみ**。Hostの業務ALLOW、replay/失効の原子管理、Receipt署名・返却、注文と決済は実装しない。失効/Replay等の追加条件を未評価のまま「購入許可」と伝えない。
+6. **PoC開始の安全弁:** まずRuby \`jwt\`/JOSE、\`json_schemer\`、OpenSSLの能力・鍵署名・Digestを**公式Pythonの正負fixtureで比較するだけ**。署名未検証のshortcut、未知アルゴリズム許可、手作り暗号実装はしない。Rubyで完全性保証や鍵bindingが成立しない場合は **HOLD/NO-GOへ戻る**。
+
+### 判断表
+
+| 対象 | P0-5b判断 | 含意 |
+| --- | --- | --- |
+| **ローカル限定Ruby技術PoC** | **CONDITIONAL GO** | **次の明示承認を得た場合に限る**。最初は署名・schema・hashのoffline compatibility spike。脆弱性再現テストを比較して失敗時はSTOP |
+| 汎用Ruby Gem/安定Public API | **HOLD** | API固定、依存追加の永続化、サポートmatrix、gem releaseに進まない |
+| AP2 v0.2全フローの互換性 | **HOLD** | Direct、Delegation複数Agent、中間hop、Payment等はサポートしない |
+| 実決済 / 外部サービス / Production | **NO-GO** | 公開・販売・セキュリティ保証をしない。Hostが最終ALLOWとReceiptを管理する必要あり |
+
+**なぜ全部HOLDではなく限定GOか:** 公式SDKを固定して実行でき、重要な「不適切な受理」を12件の実署名/フルSDKプローブで確認した。この境界を避ける狭いfixtureと、失敗なら必ずREJECTとする仕様上の入口を設計できた。Ruby環境で成立するかを試すのはPoCの目的であり、Pythonの全188件PASSやIssue closeを無期限に待つより安価で検証可能。ただし**POCそのものの技術的成功はまだ証明されていない**。
+
+**次の1件（別途承認後のみ）:** **P1-0 — Ruby暗号・JSON Schemaのオフライン互換性Spike**。Gem/Railsアプリを作らず、隔離したRubyの小さな実験で \`ES256 JWS/JWK\`、\`SHA-256 checkout_hash\`、\`Open Checkout JSON Schema contains\`、invalid/missing-keyケースを固定Python fixtureと照合。**成果物は \`docs/RUBY_FEASIBILITY_SPIKE.md\` と最小研究テスト**。公開API実装、実決済、GCP利用は未承認。

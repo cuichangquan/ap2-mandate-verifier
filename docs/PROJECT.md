@@ -64,4 +64,4 @@ AP2全部入りSDK、ウォレット、鍵発行、OAuth Server、MCP/A2A Server
 
 ## 7. 次の作業
 
-P0-1〜P0-4は仕様・検証要件・Python SDK比較・仮API提案を文書化済み。P0-5では[RESEARCH_DECISION.md](RESEARCH_DECISION.md)のとおりRuby実装を**HOLD**と判断。次は明示承認を得た場合に限り、[RESEARCH_PLAN.md](RESEARCH_PLAN.md)の**P0-5a（公式Python SDKのオフライン基準/負例テスト、Ruby実装なし）**を行う。Gem実装・依存Gem確定・公開は承認前に開始しない。
+P0-1〜P0-5bの調査・公式Python実測（186 PASS / 2 FAIL、独立負例12 PASS）・[Fail Closed Profile](FAIL_CLOSED_PROFILE.md)は文書化済み。最新の[RESEARCH_DECISION](RESEARCH_DECISION.md) §9は**Autonomous/単一Agent/2hopの非本番Ruby研究PoCのみ条件付きGO**。汎用Gem、製品品質、実決済はHOLD/NO-GO。**次のP1-0は別の明示承認を得た場合だけ**、Rubyの署名・Schema・Hashをオフラインで検証する。
