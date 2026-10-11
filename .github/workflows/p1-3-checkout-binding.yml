@@ -1,10 +1,7 @@
 name: P1-3 Merchant Checkout binding research
 
+# P1-3 research runs manually after verified PR results.
 on:
-  pull_request:
-    paths:
-      - 'research/p1_3/**'
-      - '.github/workflows/p1-3-checkout-binding.yml'
   workflow_dispatch:
 
 permissions:
