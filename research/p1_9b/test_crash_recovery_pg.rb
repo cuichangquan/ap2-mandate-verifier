@@ -123,9 +123,7 @@ class HostCrashRecoveryResearchTest < Minitest::Test
   end
 
   def snapshot(tenant, checkout, challenge)
-    @db.exec_params(<<~SQL, [tenant, checkout, challenge]).first.transform_values do |value|
-      value
-    end
+    @db.exec_params(<<~SQL, [tenant, checkout, challenge]).first
       SELECT
         (SELECT status FROM p19a_checkouts WHERE tenant_id=$1 AND checkout_id=$2) AS checkout_status,
         (SELECT state FROM p19a_challenges WHERE challenge_id=$3 AND tenant_id=$1 AND checkout_id=$2) AS nonce_state,
