@@ -103,13 +103,13 @@ def generate():
     }
 
     def terminal(jwt, exp=now + 3600, timestamp=now, signer=agent,
-                 hash_mode="sd_hash"):
+                 hash_mode="sd_hash", prior_root=None):
         closed = CheckoutMandate(
             checkout_jwt=jwt, checkout_hash=b64(hashlib.sha256(jwt.encode()).digest()),
             iat=timestamp, exp=exp,
         )
         return kb_sd_jwt.create(
-            prev_token=common.parse_token(root), holder_key=signer, payload=closed,
+            prev_token=common.parse_token(prior_root or root), holder_key=signer, payload=closed,
             aud=AUD, nonce=NONCE, sd=DisclosureMetadata(), hash_mode=hash_mode,
         ).sd_jwt_issuance
 
@@ -120,6 +120,31 @@ def generate():
     # still inside Root time window, but an Issuer fixed claim was changed.
     terminal_variants["changed_closed_exp_in_window"] = terminal(
         checkout_jwts["valid"], exp=now + 3000
+    )
+    # P1-10o Codex follow-up: a correctly Issuer-signed Open can carry an
+    # EXTRA fixed claim. A naive intersection-only comparison misses that
+    # the Agent has omitted it in Closed. The strict fixed-layout verifier
+    # must reject the root itself rather than infer unchanged authority.
+    root_parts = root.split("~")
+    root_header, root_payload, _ = root_parts[0].split(".")
+    extra_open_payload = json.loads(base64.urlsafe_b64decode(
+        root_payload + "=" * (-len(root_payload) % 4)
+    ))
+    assert isinstance(extra_open_payload["delegate_payload"][0], dict)
+    extra_open_payload["delegate_payload"][0]["currency"] = "USD"
+    original_header_json = base64.urlsafe_b64decode(
+        root_header + "=" * (-len(root_header) % 4)
+    ).decode("utf-8")
+    signed_extra_root = sign_merchant_raw(
+        issuer, json_compact(extra_open_payload), original_header_json
+    ) + "~" + "~".join(root_parts[1:])
+    # Independently check valid Issuer signature before testing rejection.
+    from ap2.sdk.sdjwt.sd_jwt import verify as verify_root
+    assert verify_root(signed_extra_root, JWK.from_json(issuer.export_public()))[
+        "delegate_payload"
+    ][0]["currency"] == "USD"
+    signed_extra_terminal = terminal(
+        checkout_jwts["valid"], prior_root=signed_extra_root
     )
     terminal_variants["wrong_agent_signature"] = terminal(
         checkout_jwts["valid"], signer=wrong_agent
@@ -184,6 +209,8 @@ def generate():
         "trusted_merchant_public_jwk": json.loads(merchant.export_public()),
         "root_open_sdjwt": root,
         "valid_terminal": terminal_variants.pop("valid"),
+        "signed_extra_fixed_open_root": signed_extra_root,
+        "signed_extra_fixed_open_terminal": signed_extra_terminal,
         "terminal_variants": terminal_variants,
         "checkout_jwts": checkout_jwts,
         "expired_root": expired_root,
