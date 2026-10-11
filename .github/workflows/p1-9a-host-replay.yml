@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 12
     services:
       postgres:
-        image: postgres:16.9
+        image: postgres@sha256:ddfe3e8713e3ee5b8f286082cb12512488dfbf3f5a1ecb0b74a42e6055af0a5f
         env:
           POSTGRES_USER: labuser
           POSTGRES_PASSWORD: offline-test-only
@@ -49,7 +49,7 @@ jobs:
             ruby -v
             ruby -rpg -e 'puts "pg gem #{Gem.loaded_specs.fetch("pg").version}"; puts "libpq #{PG.library_version}"'
             ruby -rpg -e 'db=PG.connect(ENV.fetch("P19A_DATABASE_URL")); puts "postgres #{db.exec("SHOW server_version").first.fetch("server_version")}"; db.close'
-            docker image inspect postgres:16.9 --format 'postgres image ID={{.Id}} digests={{json .RepoDigests}}'
+            docker image inspect postgres@sha256:ddfe3e8713e3ee5b8f286082cb12512488dfbf3f5a1ecb0b74a42e6055af0a5f --format 'postgres image ID={{.Id}} digests={{json .RepoDigests}}'
           } | tee p19a-environment.txt
       - name: Run four isolated Host DB security experiments
         shell: bash
