@@ -6,6 +6,10 @@ on:
       - "research/p1_10o/**"
       - "research/p1_2/two_hop_research.rb"
       - "research/p1_5/generate_signed_negatives.py"
+      - "research/p1_3/checkout_binding_research.rb"
+      - "research/p1_3/generate_merchant_checkout.py"
+      - "research/p1_1/root_sdjwt_research.rb"
+      - "research/shared/strict_json_research.rb"
       - ".github/workflows/p1-10o-strict-a-only.yml"
       - "docs/VERIFIER_P110O_EVIDENCE.md"
   workflow_dispatch:
