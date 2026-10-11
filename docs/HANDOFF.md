@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**Phase 0 / P0-1〜P0-5 完了（判断：HOLD）。P0-5aは一部実施（固定SDKのCheckout限定テスト11 PASS / 公式pytest BLOCKED）**。Ruby Gem実装・公開・適合性検証・本番安全性検証は未実施。
+状態：**Phase 0 / P0-1〜P0-5a 完了（判断：HOLD）。公式Python SDK 186 PASS / 2 FAIL、追加の実署名負例12 PASS、先行隔離サブセット11 PASS**。Ruby Gem実装・公開・適合性検証・本番安全性検証は未実施。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1〜P0-5完了（HOLD）/ P0-5aは一部実施・継続】
+### Phase 0 — 仕様・競合調査【P0-1〜P0-5a完了（Ruby実装HOLD）/ P0-5bが次】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -76,12 +76,16 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - **成果物案：** `docs/RESEARCH_DECISION.md`
   - **完了条件：** GO（最小PoC）、HOLD（仕様待ち）、NO-GO（既存活用/価値が小さい）の根拠を記録。**自動的に実装へ進まない。**
 
-- [ ] **P0-5a：公式Python SDKの隔離・オフライン基準テスト＋主要負例（部分結果あり・未完了）**
-  - **実測部分結果：** [PYTHON_BASELINE_VERIFICATION.md](PYTHON_BASELINE_VERIFICATION.md) — 公式5ファイルのGit Blob SHA一致。CheckoutChainの限定パス/生成Openモデル/JSON Schemaの隔離サブセット11 PASS。署名・Issuer/Holder・aud/nonce・非開示制約は未実行。
-  - **阻害要因：** 外部GitHub DNSに接続できず、`jwcrypto`/`sd-jwt`がローカル未導入。公式pytest全体は**未実行**。Ruby実装HOLDは継続。
-  - AP2 v0.2.0固定commitでpytestの実測結果を記録。Checkout hash、Issuer trust、terminal aud/nonce、hidden constraints、Open schema差異を短い負例で検証する。
-  - **成果物案：** `docs/PYTHON_BASELINE_VERIFICATION.md`。実行コマンド/バージョン/Pass・Fail・Skip/解釈を明記。Ruby Gem実装・外部実決済なし。
-  - **完了条件：** P0-5のHOLDを再判定するための実証材料を得ること。自動的なGOはしない。
+- [x] **P0-5a：AP2公式Python SDK基準テスト・Issuer/aud/nonce/Selective Disclosure優先負例（完了：[PYTHON_BASELINE_VERIFICATION.md](PYTHON_BASELINE_VERIFICATION.md)）**
+  - **公式pytest実測：188件中186 PASS / 2 FAIL**（中間KB-SD-JWTのaud/nonce mismatchテストが`DID NOT RAISE`）、[GitHub Actions run #38121818162](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38121818162)。
+  - **独立フルSDK負例：12 PASS**（署名付きterminal challenge、x5c root、Checkout binding、空Constraint、署名付きOpenのMerchant Constraint非開示）。先行ローカル限定11件も別にPASS。
+  - **環境注意：** 公式uv.lockにはprivate registryの401があり、公式pyprojectの直接依存を公開PyPIで取得。推移的依存の完全lock再現ではない。
+  - **結論：** 検証実績は得たがSDK全体は2件失敗。**Gem実装HOLDを継続**。このタスク完了はGOを意味しない。
+
+- [ ] **P0-5b：初期Checkout Verifierの最小Fail Closed ProfileとGO/HOLDの再判定（次の1件、設計のみ）**
+  - Issuer trust anchors、terminal/intermediateのaud/nonce、Openの必須開示、Checkout JWTのmerchant署名・hash、Host最終業務認可の条件を文書化する。
+  - **成果物案：** `docs/FAIL_CLOSED_PROFILE.md` および `docs/RESEARCH_DECISION.md` 更新。Ruby Gem実装・公開なし。ユーザーの明示承認後のみ進める。
+
 
 ### Phase 1 — 最小Checkout Mandate PoC【GO承認後のみ】
 
@@ -126,28 +130,29 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P0-1〜P0-5完了。実装判断はHOLD。P0-5aの一部のみ実行。** 最新GitHub mainとIssue/PRを確認し、[PYTHON_BASELINE_VERIFICATION.md](PYTHON_BASELINE_VERIFICATION.md)、[RESEARCH_DECISION.md](RESEARCH_DECISION.md)を優先的に読む。
+**P0-1〜P0-5aの研究・実行検証は完了。Ruby PoC判断はHOLDを継続。** [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md)には**公式188件の186 PASS / 2 FAIL**、**フルSDK独立負例12 PASS**、**先行stub化サブセット11 PASS**を別々に記録している。完全成功やAP2適合性の主張は禁止。
 
-**P0-5aの実際の結果:** AP2 v0.2固定ソース**5ファイル**をGit Blob SHA一致で隔離復元し、**Checkout helper/Schema/Model限定テスト11 PASS**（[再現用Pythonテスト](../research/p0_5a/test_ap2_checkout_subset.py)）。外部ネットワークが使えず`jwcrypto`/`sd-jwt`がないため**公式pytestは未実行**。テストは暗号処理や全制約評価をstub化した限定結果であり、AP2 Verifier全体のPASSではない。
+公式失敗は `kb_sd_jwt_intermediate_tests.py::test_verify_rejects_aud_mismatch` と `::test_verify_rejects_nonce_mismatch`。中間hopでの期待値検査が省略される実装とテスト期待の差異であり、仕様上の扱いは未決定。実署名Selective DisclosureではMerchant制約を隠して可視LineItemsだけ評価すると違反0件になるケースを確認。Issuerがその項目を選択的開示可能にした状況での結果であり、商用攻撃の成功とは解釈しない。
 
-**次の1件（別の明示依頼後のみ）:** **P0-5aの残作業**。GitHub/PyPIアクセスが可能な隔離環境（macOSなど）で固定AP2の公式pytestと、Issuer trust・aud/nonce・非開示constraintの優先負例を**本物のSDK依存で**実行し、結果を既存の`docs/PYTHON_BASELINE_VERIFICATION.md`へ追記する。Ruby Gem/PoC実装、公開、GCP課金、ActingFor/a2a-rails変更はしない。HOLDの再判定はそれから行う。
+**次の1件（別の明示依頼後のみ）**：P0-5b — [API_PROPOSAL](API_PROPOSAL.md) と実測結果を使って、初期Host向け最小Fail Closed Profile（trusted issuer、aud/nonce、required disclosure、merchant-signed Checkout JWT/hash、最終業務認可）を**設計文書だけ**で確定候補とし、P0-5 GO/HOLDを再判定する。Ruby Gem/PoC実装・公開、GCP/実決済・ActingFor/a2a-rails変更は禁止。
 
 ### 次チャット用指示文
 
 ```text
-ap2-mandate-verifier P0-5aの続きを始めます。
+ap2-mandate-verifier P0-5bを進めます。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-main/Issue/PR、docs/HANDOFF.md、docs/RESEARCH_DECISION.md、
-docs/PYTHON_BASELINE_VERIFICATION.mdを確認してください。
-固定 AP2 v0.2.0 SHA: b4587ac1d055888a73b4b21750973cffba961793
+最新main・Issue・Open PRを確認し、
+docs/PYTHON_BASELINE_VERIFICATION.md、docs/RESEARCH_DECISION.md、
+docs/API_PROPOSAL.md、docs/VERIFIER_REQUIREMENTS.mdを読んでください。
 
-既に実行した限定テスト11件と、公式pytest未実行を混同しないこと。
-今回は、ネットワークで依存が取得できる隔離環境で**公式Python SDK**
-のpytestと優先負例（trusted issuer/x5c、terminal aud/nonce、
-実際のSD-JWT非開示/Constraints）を実行し、再現コマンド、
-Pass/Fail/Skipをdocs/PYTHON_BASELINE_VERIFICATION.mdへ追記。
+AP2 v0.2固定Commit b4587ac1d055888a73b4b21750973cffba961793。
+公式Pythonテスト188件中186 PASS / 2 FAIL（intermediate aud/nonce）。
+追加フルSDK負例12件PASS（実署名Selective Disclosureの非開示Merchant制約含む）。
+これらの実測と仕様のMUST/Host policyを区別してください。
 
-Gem/PoCの実装・公開、GCP利用、他OSSの変更は禁止。
-安全性を誇張せずPR/マージの記録を残してください。
+今回は初期Checkout Verifierの最小Fail Closed Profileの設計と
+GO/HOLD判断更新のみ。docs/FAIL_CLOSED_PROFILE.mdと
+docs/RESEARCH_DECISION.mdへ根拠を記録し、PRでレビュー後mainへ。
+Ruby Gem/PoC実装、リリース、GCP利用、他OSS変更は禁止。
 ```

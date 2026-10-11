@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier for Ruby
 
-> **Status: research only — P0-5 decision: HOLD Ruby implementation pending offline SDK evidence. No Ruby verifier, released Gem, production security assurance, or AP2 conformance claim yet.**
+> **Status: research only — P0-5a executed: official Python SDK 186 passed / 2 failed; signed negative probes 12 passed. Ruby implementation remains HOLD. No released Gem, production security assurance, or AP2 conformance claim.**
 >
 > Independent, unofficial Ruby OSS exploration. Not affiliated with Google, the AP2 project, or FIDO Alliance.
 
@@ -69,7 +69,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [Official Python SDK and Ruby ecosystem research (P0-3)](docs/ECOSYSTEM_RESEARCH.md)
 - [Minimal Checkout Verifier public API proposal — design only (P0-4)](docs/API_PROPOSAL.md)
 - [Phase 0 research decision — **HOLD** and evidence needed before Ruby implementation (P0-5)](docs/RESEARCH_DECISION.md)
-- [Python baseline verification — isolated subset 11 PASS; official pytest **BLOCKED** (P0-5a)](docs/PYTHON_BASELINE_VERIFICATION.md)
+- [Python baseline verification — P0-5a: official pytest 186 PASS / 2 FAIL, signed negative probes 12 PASS (plus earlier isolated 11 PASS)](docs/PYTHON_BASELINE_VERIFICATION.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)
