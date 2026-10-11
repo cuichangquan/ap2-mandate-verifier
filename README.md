@@ -67,6 +67,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [AP2 v0.2 frozen specification and Python SDK baseline](docs/SPEC_BASELINE.md)
 - [AP2 Checkout Mandate verifier requirements and trust boundaries (P0-2)](docs/VERIFIER_REQUIREMENTS.md)
 - [Official Python SDK and Ruby ecosystem research (P0-3)](docs/ECOSYSTEM_RESEARCH.md)
+- [Minimal Checkout Verifier public API proposal — design only (P0-4)](docs/API_PROPOSAL.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)
