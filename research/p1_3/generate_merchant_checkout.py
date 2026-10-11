@@ -161,6 +161,9 @@ def generate():
         "root_open_sdjwt": root,
         "valid_terminal": variants.pop("valid"),
         "bad_terminals": variants,
+        # For each business-rule negative, Host supplies the EXACT same signed
+        # JWT as Closed: ensures Ruby reaches merchant/SKU/quantity/price checks.
+        "variant_checkout_jwts": {**signed_jwts, "wrong_merchant_signer": wrong_signer_jwt},
         "trusted_issuer_public_jwk": json.loads(issuer.export_public()),
         "expected_agent_public_jwk": json.loads(agent.export_public()),
         "trusted_merchant_public_jwk": json.loads(merchant_key.export_public()),
