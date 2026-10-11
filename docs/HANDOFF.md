@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-12
-状態：**P0完了、P1-0〜P1-10o完了（P1-10oはA-only合成2hopの実署名統合8-case限定実測）**。[P1-10o証拠](VERIFIER_P110O_EVIDENCE.md)：修正後[CI #38154695155](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154695155) **8 runs/45 assertions/失敗0**。AN-P01限定正例、AN-N01〜N06拒否、AN-N07二度verify成功は**HOST_BOUNDARY（replay未防御）**。前回PR #35 Codex P1指摘の**Open→Closed固定claim保持の漏れ**は研究用`p1_2`で修正し、署名正しい期限内Closed exp変更に加え、Issuer署名済Open追加固定claimのClosed欠落を厳格Open layoutで拒否した。PR #36のCodex P2に従いCI監視pathsも拡張した。初回CIは集計順序のバグで失敗→修正後成功。Host正本**9/34件・25 NOT RUN／12 runs/465 assertions**は不変。隠れたConstraintの一般的完全性・B/HC06・本番Host統合・Gem/APIはHOLD、RubyGems公開・実決済NO-GO。次は**P1-10p設計のみ（別承認）**。
+状態：**P0完了、P1-0〜P1-10pの研究を実施（P1-10pはIssuer/Constraint静的Gapレビューだけ）**。[P1-10p残余リスク表](VERIFIER_P110P_RESIDUAL_GAPS.md)：GP01〜GP09新試験NOT RUN。P1-10oの8 runs/45 assertionsは過去の合成実測であり、P1-10p新コード/CI/テスト0。汎用Gem/本番/HC06はHOLD。[P1-10o証拠](VERIFIER_P110O_EVIDENCE.md)：修正後[CI #38154695155](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154695155) **8 runs/45 assertions/失敗0**。AN-P01限定正例、AN-N01〜N06拒否、AN-N07二度verify成功は**HOST_BOUNDARY（replay未防御）**。前回PR #35 Codex P1指摘の**Open→Closed固定claim保持の漏れ**は研究用`p1_2`で修正し、署名正しい期限内Closed exp変更に加え、Issuer署名済Open追加固定claimのClosed欠落を厳格Open layoutで拒否した。PR #36のCodex P2に従いCI監視pathsも拡張した。初回CIは集計順序のバグで失敗→修正後成功。Host正本**9/34件・25 NOT RUN／12 runs/465 assertions**は不変。隠れたConstraintの一般的完全性・B/HC06・本番Host統合・Gem/APIはHOLD、RubyGems公開・実決済NO-GO。次は**P1-10p設計のみ（別承認）**。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10o完了（A-only合成実署名8試験まで） / 次はP1-10p別承認】
+### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10p静的Gapレビューまで / 次はP1-10q別承認】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -167,8 +167,10 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - [VERIFIER_P110N_OFFLINE_POC_GATE.md](VERIFIER_P110N_OFFLINE_POC_GATE.md)：G01〜G08・AN-P01/AN-N01〜N07は**将来のテスト案、NOT RUN**。固定Issuer layout・完全開示・2hopだけにCONDITIONAL GO CANDIDATE、一般Issuer/disclosure・Host replay/B/HC06はHOLD。P1-10n新実装・CIゼロ。
 - [x] **P1-10o（合成固定Issuer/2hop A-only実署名AN-P01＋AN-N01〜N07実測完了）**
   - [VERIFIER_P110O_EVIDENCE.md](VERIFIER_P110O_EVIDENCE.md)：[修正後CI #38154695155](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154695155) **8 runs/45 assertions/0 errors/failures**。1限定正例、6拒否カテゴリ、AN-N07は**HOST_BOUNDARY**。前回#35 Codex P1のOpen→Closed共有claim保持漏れ修正を実署名の期限内Closed exp変更で確認。初回CIはPython結果一覧順の誤りでFAILし修正。**汎用Gem/API/本番/HC06はHOLD、決済・公開NO-GO。**
-- [ ] **P1-10p（次のおすすめ1件・別途明示承認後のみ）**
-  - 未開示の権限制約完全性・Issuer発行レイアウト根拠・共有claim/未知入力・現状未試験の負例を**設計Gap表のみ**で評価。新コード/CI/実API/GCP/決済/Gem公開なし。
+- [x] **P1-10p（残余Issuer/Constraintリスクの静的レビューだけ）**
+  - [VERIFIER_P110P_RESIDUAL_GAPS](VERIFIER_P110P_RESIDUAL_GAPS.md)：GP01〜GP09、新実測なし。GP01未知ネストConstraintの潜在的見落としは静的疑義のみ。
+- [ ] **P1-10q（次のおすすめ・明示承認後のみ）**
+  - GP01の1合成署名負例で既存RubyがACCEPT/REJECTするか隔離観測する研究のみ。予期しない受理はRED/HOLD記録とし、修正実装は別承認。
 
 
 
@@ -223,7 +225,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P1-10o A-onlyの合成固定Issuer・2hop・署名付き8ケースまで実測。** まずGitHub最新main/Open PR/Issueを再確認し、[P1-10o証拠](VERIFIER_P110O_EVIDENCE.md)→[P1-10n受入条件](VERIFIER_P110N_OFFLINE_POC_GATE.md)→[P1-10m責務分離](VERIFIER_VS_REVOCATION_P110M_SCOPE.md)→[研究判断§36](RESEARCH_DECISION.md)を読む。PR #36のmerge/レビュー状態は必ずGitHubで実確認する（この文書作成時はPR上）。
+**P1-10pの静的Gapレビューまで実施。** [残余リスク表](VERIFIER_P110P_RESIDUAL_GAPS.md)を確認。GP01〜GP09は新試験NOT RUN、8/45はP1-10oのみ。次のP1-10q（合成署名GP01観測）は別承認。 まずGitHub最新main/Open PR/Issueを再確認し、[P1-10o証拠](VERIFIER_P110O_EVIDENCE.md)→[P1-10n受入条件](VERIFIER_P110N_OFFLINE_POC_GATE.md)→[P1-10m責務分離](VERIFIER_VS_REVOCATION_P110M_SCOPE.md)→[研究判断§36](RESEARCH_DECISION.md)を読む。PR #36のmerge/レビュー状態は必ずGitHubで実確認する（この文書作成時はPR上）。
 
 - **実測:** [Actions #38154695155](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154695155)、正例AN-P01、拒否AN-N01〜N06、N07 HOST_BOUNDARYの**8 runs/45 assertions/0失敗/エラー**。初回Actions #38153577136は集計順の誤りでWorkflow FAIL（Ruby8/42成功）→改修後CI成功。最終headへdocs追加後のCIも確認する。
 - **Codex P1（前回PR #35）:** Open→Closedの共有固定claim（iat/exp）保持漏れ。研究`p1_2`で値保持を要求し、Root有効期間**内でも**Closed expが変化した**Agent署名済み**負例を拒否。正式Gem/APIはない。
