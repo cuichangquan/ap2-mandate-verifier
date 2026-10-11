@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**Phase 0 / P0-1〜P0-5b 完了。P0-5b最新判断：非本番Ruby研究PoCのみCONDITIONAL GO（別途承認必須）、汎用Gemと本番はHOLD/NO-GO**。公式Python SDK 186 PASS / 2 FAIL、実署名負例12 PASS。Ruby Gem実装・公開・適合性検証・本番安全性検証は未実施。
+状態：**P0-1〜P0-5b完了、P1-0オフラインRuby互換性Spike完了（14 runs / 17 assertions / 0 failures）**。次はP1-1。**研究PoCだけCONDITIONAL GO、汎用Gem/公開APIはHOLD、productionはNO-GO**。AP2公式Python SDKは186 PASS / 2 FAIL、実署名負例12 PASS。Ruby Gem実装・公開・本番安全性検証は未実施。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -13,7 +13,7 @@
 
 1. [README](../README.md) — Gemの目的・利用シーン・非スコープ
 2. [PROJECT](PROJECT.md) — D001〜D006、責務境界、独立OSS方針
-3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) — 仕様・実測・最小制限プロフィール・最新CONDITIONAL GO判定
+3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) — 仕様・Python実測・Ruby限定Spike・研究GO/HOLD境界
 4. [OFFICIAL_SOURCES](OFFICIAL_SOURCES.md) — AP2/FIDO/IETFの一次資料・ウォッチリスト
 5. [RESEARCH_PLAN](RESEARCH_PLAN.md) — Phase 0〜3 の全体工程
 6. [SECURITY_BOUNDARY](SECURITY_BOUNDARY.md) — 未信頼Mandateの扱いとFail Closed
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / 限定PoCのみCONDITIONAL GO、P1-0が次】
+### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0完了 / 次はP1-1】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -87,9 +87,15 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - **CONDITIONAL GO**：非本番・オフラインのRuby技術PoCに限る。汎用Gem/公開API/ProductionはHOLD/NO-GO。文書マージで自動的に実装を開始しない。
   - 実署名SD-JWTのMerchant制約非開示、intermediate aud/nonce公式テスト失敗を考慮し、曖昧な入力や中間hopは初期PoCで明示的に拒否。
 
-- [ ] **P1-0：Ruby署名・Schema・Hashのオフライン互換性Spike（次の1件／別途承認必須）**
-  - 公式Python正負fixtureでES256 JWS/JWK、Checkout SHA-256、Open JSON Schemaの`contains`を比較。Gem雛形、安定APIは作らない。
-  - **成果物案：** `docs/RUBY_FEASIBILITY_SPIKE.md`。技術的に成立しない場合HOLDへ戻す。
+- [x] **P1-0：Ruby署名・Schema・Hashのオフライン互換性Spike（完了：[RUBY_FEASIBILITY_SPIKE.md](RUBY_FEASIBILITY_SPIKE.md)）**
+  - Ruby 3.3.12、`jwt 3.3.0`、`json_schemer 2.5.0` で **14 runs / 17 assertions / 0 failures / 0 errors / 0 skips**。[GitHub Actions実行](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38123249933)。
+  - Python cryptographyで署名した**合成**ES256/JWK fixtureをRubyで検証。Checkout SHA-256 hash一致、公式AP2固定Schemaの`contains`や必須項目/型の限定検証を実行。
+  - **AP2本物のSD-JWT Delegationは未実装**。今回のCI成功はRuby GemやAP2適合性を意味しない。
+
+- [ ] **P1-1：実署名SD-JWT Root / Disclosure digest・必要Constraint完全性のオフラインSpike（次の1件・別途承認後）**
+  - AP2 Python v0.2実SDKから得た再現可能なRoot SD-JWT正負fixtureをRubyで署名/Disclosure照合し、隠れたMerchant制約を**拒否**できるか確認。API/Gemは作らない。
+  - **成果物案：** `docs/RUBY_SDJWT_RESEARCH.md` と小さなテストだけ。成立しない場合HOLD。
+
 
 
 
@@ -136,32 +142,36 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P0-1〜P0-5bの研究・設計判断を完了。最新判定：非本番Ruby技術PoCのみCONDITIONAL GO。** [RESEARCH_DECISION](RESEARCH_DECISION.md) §9、[FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md)、[P0-5a実測](PYTHON_BASELINE_VERIFICATION.md)を優先。ユーザーが改めて承認するまでRuby実装禁止。
+**P0-1〜P0-5bの研究判断とP1-0の限定Ruby互換性Spikeを完了。** [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) にRuby 3.3.12 + jwt 3.3.0 + json_schemer 2.5.0、**14テスト/17 assertions、失敗なし**を実測記録。ES256 fixtureはPython cryptography作成の**合成JWTで公式AP2 SDKのtest vectorではない**。Open Checkout Schemaだけは固定AP2 v0.2 SHAの実ファイルでBlob SHA一致。
 
-**実測:** AP2 v0.2固定版の公式Python pytest 188件中186 PASS / 2 FAIL（intermediate aud/nonce）、署名付き負例12 PASS。未開示Merchant Constraintで可視評価が違反0件になることを再現。これは実決済での攻撃成功の証明ではない。
+**重要な未実証:** Root SD-JWT issuer署名、SD-claim disclosure digests、Open→Closed Agent binding、非開示Constraintの完全性、checkout JWT/closed hashの統合検証、Host最終認可。前工程の公式Python pytestは186 PASS / 2 FAIL。**完成Gem・安全性・AP2適合性を主張しない。**
 
-**PoCの拒否境界:** 単一Agent / Issuer Open→Agent Closedのちょうど2hop。Trusted issuer/merchant signing keys、Host expected terminal aud/nonce、required disclosure completeness、merchant Checkout JWT原文/hashが全て証明できない場合は必ずRejection。Direct、Payment、multi-hop/Agent間転委任、任意x5c、未知Constraintは拒否。Hostだけが最終ALLOW/Replay/Receiptを扱う。
+**GO/HOLD:** 非本番の限定Ruby研究PoCはCONDITIONAL GO、Gem/公開APIはHOLD、Production/実決済はNO-GO。次の作業は**別のユーザー明示依頼後**に実施。
 
-**次の1タスク（別の明示依頼後のみ）**：P1-0 Ruby JWS/JWK・SHA-256・JSON Schemaオフライン互換性Spike。結果は`docs/RUBY_FEASIBILITY_SPIKE.md`に記録。Gemの作成・公開API・GCP・実決済・ActingFor/a2a-railsの変更禁止。
+**次の1件: P1-1。** 固定AP2 Python SDKで生成した実署名SD-JWT Root・Disclosuresを、Rubyで再現可能な正負fixtureと比較し、Issuer署名/Disclosure digest/hidden Merchant ConstraintのFail Closedを確認する小さな研究Spike（Gem/アプリ/公開API実装なし）。
 
 ### 次チャット用指示文
 
 ```text
-ap2-mandate-verifier P1-0を開始します。
-正本: https://github.com/cuichangquan/ap2-mandate-verifier
+ap2-mandate-verifier の P1-1 を開始します。
+https://github.com/cuichangquan/ap2-mandate-verifier
 
-最新main・Issue・Open PRを確認し、
-docs/RESEARCH_DECISION.md §9、docs/FAIL_CLOSED_PROFILE.md、
-docs/PYTHON_BASELINE_VERIFICATION.md、docs/API_PROPOSAL.mdを読んでください。
+GitHub最新main/Open PR/Issueを確認して
+docs/HANDOFF.md、docs/RUBY_FEASIBILITY_SPIKE.md、
+docs/FAIL_CLOSED_PROFILE.md、docs/RESEARCH_DECISION.md §10、
+docs/PYTHON_BASELINE_VERIFICATION.mdを読んでください。
 
-P0-5bの判定は、非本番・単一Agent・2hopのRuby技術PoCのみ
-CONDITIONAL GO。汎用Gem・本番利用・リリースはHOLD/NO-GOです。
+P1-0ではPython生成（合成）ES256/JWK・Checkout SHA256・AP2公式
+Open Checkout JSON SchemaをRubyで14テスト成功。これはAP2 SDKの
+SD-JWT chain/Disclosure等がRubyで実装済みという意味ではありません。
 
-今回はP1-0だけ。固定AP2 v0.2のPython正負fixtureを基に、
-Ruby JWS/JWK(ES256)・Checkout Hash(base64url SHA-256)、
-JSON Schema containsのオフライン互換性を検証して
-docs/RUBY_FEASIBILITY_SPIKE.mdに実測を記録してください。
+今回はP1-1だけ。AP2 v0.2固定SHA:
+b4587ac1d055888a73b4b21750973cffba961793
+の公式Python SDKを使って実署名Root SD-JWTとDisclosureの
+正負fixtureを作り、Rubyで署名/開示digestを比較し、
+未開示Merchant Constraintをfail-closedできるか研究・検証。
+docs/RUBY_SDJWT_RESEARCH.mdに実測、未検証事項を明記してください。
 
-Ruby Gem雛形・公開API・リリース、GCP/実決済、他OSS変更は禁止。
-PRを確認後mainにマージし、失敗時はHOLDへ戻してください。
+Gem雛形、公開API、リリース、GCP・実決済、ActingFor/a2a-rails変更禁止。
+PRレビューの後mainマージ。成立しない場合HOLDへ戻すこと。
 ```

@@ -1,0 +1,49 @@
+name: P1-0 Ruby interoperability research
+
+# Research fixture CI is manually dispatched after the initial PR validation.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ruby-interop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: false
+      - name: Obtain pinned official AP2 v0.2 schema
+        shell: bash
+        run: |
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = "b4587ac1d055888a73b4b21750973cffba961793"
+      - name: Install Ruby research dependencies (pinned)
+        shell: bash
+        run: |
+          gem install jwt -v 3.3.0 --no-document
+          gem install json_schemer -v 2.5.0 --no-document
+          ruby -v
+          ruby -rjwt -rjson_schemer -e 'puts "JWT: #{Gem.loaded_specs.fetch("jwt").version} JSONSchemer: #{Gem.loaded_specs.fetch("json_schemer").version}"'
+      - name: Run Python-signed fixture tests in Ruby
+        shell: bash
+        env:
+          AP2_OPEN_CHECKOUT_SCHEMA: ${{ runner.temp }}/ap2/code/sdk/schemas/ap2/open_checkout_mandate.json
+        run: |
+          set -o pipefail
+          ruby research/p1_0/test_ruby_feasibility.rb --verbose 2>&1 | tee p1-0-ruby-spike.log
+      - name: Upload research test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-0-ruby-spike-log
+          path: p1-0-ruby-spike.log
+          retention-days: 7
+          if-no-files-found: warn
