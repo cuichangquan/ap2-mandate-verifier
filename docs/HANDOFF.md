@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**P0-1〜P0-5b・P1-0〜P1-10d完了（P1-10dはHC06の分散協調設計資料のみ）**。外部Authority予約P、失効要求R_request/有効化R_effective、Host確定C、Provider送出Dを区別し、予約解放・不明COMMIT・fence強制点・即時取消と保留のトレードオフを[プロトコル設計](HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md)で整理。**HC06は未完全／今回新CI・実装なし**。既存実PG16 Host正本**9/34件、12 Minitest runs/465 assertions PASS、25件未実行**。P1-10cの合成8 runs/94 assertionsは別扱い。次は**P1-10e：難ケース3件の独立した架空Authority/Hostテスト設計のみ（別途明示承認）**。N17継続、Gem/API HOLD、RubyGems公開・Production/実決済NO-GO。
+状態：**P0完了、P1-0〜P1-10e完了（P1-10eは独立Authority/Host障害注入テスト計画のみ、NOT RUN）**。[P1-10e計画](HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md)に予約後の失効要求、unknown COMMIT、timeout/遅延Cの3系統12将来計画IDを整理。既存PG16 Host正本**9/34件、12 runs/465 assertions PASS、25件NOT RUN**、P1-10c合成8 runs/94 assertionsは別扱い。**HC06分散安全性HOLD**。次は**P1-10f（独立オフライン検証環境の採否判断だけ。別途明示承認）**。N17継続、Gem/API HOLD、RubyGems公開・Production/実決済NO-GO。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-10d完了（HC06分散設計のみ） / 次はP1-10e】
+### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10e完了（HC06テスト計画まで） / 次はP1-10f採否判断】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -145,8 +145,10 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - [HOST_EXTERNAL_REVOCATION_P110C_EVIDENCE.md](HOST_EXTERNAL_REVOCATION_P110C_EVIDENCE.md)：8 runs/94 assertions PASS、うち2つは**脆弱な負例の再現成功**。真正な分散Authority/Host保証は**未試験**、正本HC06はFULL PASSではない。
 - [x] **P1-10d：HC06外部Authority/Host予約・失効有効化・Host確定境界の設計（資料のみ完了）**
   - [HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md](HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md)：方式A〜F・障害13種・Authorityへの契約確認項目。実プロトコルも外部Authorityも実装していない。
-- [ ] **P1-10e（次の1件・別途明示承認後のみ）**
-  - P先行でR_request競合、Host COMMIT ACK不明、timeoutによる予約解放という3つの難ケースについて、**独立した架空Authority/Hostテスト設計だけ**を行う。実測/サービス作成は別承認。
+- [x] **P1-10e（設計のみ完了・NOT RUN）**
+  - [HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md](HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md)：P後のR_request、Host COMMIT ACK不明、予約timeout/遅延Cの3系統12ケースを計画。独立永続DB/障害注入/合否証拠・UNPROVENを定義。**実行なし、HC06 HOLD**。
+- [ ] **P1-10f（次のおすすめ1件・別途明示承認後のみ）**
+  - E-R01/E-R02の独立オフライン検証環境について、実装可否・barrier/通信障害注入/費用を先に判断。新実装やCIは別途承認。
 
 
 
@@ -201,28 +203,25 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P1-10dの外部Authority/Hostプロトコル設計まで完了。** [HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL](HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md)、[HOST_EXTERNAL_REVOCATION_P110C_EVIDENCE](HOST_EXTERNAL_REVOCATION_P110C_EVIDENCE.md)、[HOST_EXTERNAL_REVOCATION_HC06_DESIGN](HOST_EXTERNAL_REVOCATION_HC06_DESIGN.md)、[HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md)、[RESEARCH_DECISION](RESEARCH_DECISION.md) §25を読む。作業開始時GitHub最新main/Open PR/Issueを必ず再確認。
+**P1-10e（計画文書のみ）完了。** [テスト計画](HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md)、[P1-10d分散設計](HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md)、[P1-10c合成実測](HOST_EXTERNAL_REVOCATION_P110C_EVIDENCE.md)、[正本HC06](HOST_SECURITY_TEST_PLAN.md)、[判断記録](RESEARCH_DECISION.md) §26を参照。GitHub最新main、Open PR/Issueは**毎回再確認**。
 
-- **P1-10d:** 外部AuthorityのP（権利予約）、R_request（失効要求）、R_effective（失効確定）、Host durable C、Provider Dの時点を分離。COMMIT結果が不明なら安易に予約を解放できず、失効を完了扱いできない場合がある。fence文字列だけではRとCの原子性は実現しない。共有線形化境界/Authority予約/2PC等は**可能条件の整理であって採用/実証していない**。
-- **実測:** 旧Host正本34件中9件・12 runs/465 assertions PASS、25件NOT RUN。P1-10cの合成モデル8 runs/94 assertionsは**別証拠**でHC06の完全PASSではない。今回docs-only、CI未実行。N17 HOST_BOUNDARY継続、Gem/API/本番/実決済NO-GO。
-- **次の1件（別途明示承認）：P1-10e**。独立した架空Authority/Hostテスト設計のみ（P先行+R_request、COMMIT ACK不明、timeout解放）、失敗時の線形化・復旧の観測方法を計画。実コード/実Authority/GCP/Paymentは別承認。
+- P1-10eの3系統12計画IDは**全件NOT RUN**。外部AuthorityとのR_effective/C共通線形化境界、将来C不能にする耐久ゲートは**未実装・未実測**。COMMIT ACK欠落、期限だけで予約解放しない。R_request acceptedとR_effective confirmedを分離する。
+- 既存PG16正本Host**9/34件実測・25件NOT RUN**、12 runs/465 assertions PASSは過去証拠。P1-10c合成8 runs/94 assertionsは単一プロセスで分散保証にならない。**HC06 HOLD、N17 HOST_BOUNDARY継続、Gem/API HOLD、RubyGems/本番/実決済NO-GO**。
+- **次のおすすめ1件（別途明示承認が必要）：P1-10f**。E-R01/E-R02の最小独立プロセス/独立DBオフライン環境を本当に作るか、費用・注入方法・リスクを検討する採否判断だけ。実装を自動開始しない。
 
 ### 次のチャット用指示文
 
 ```text
-ap2-mandate-verifier P1-10eの設計を進めたいです。
+ap2-mandate-verifier P1-10fの採否判断を検討したい。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-GitHub最新main/Open PR/Issue、
-docs/HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md、
-docs/HOST_EXTERNAL_REVOCATION_P110C_EVIDENCE.md、
-docs/HOST_SECURITY_TEST_PLAN.md、docs/RESEARCH_DECISION.md §25を確認。
-P1-10dは設計資料のみ。Authority P/R_request/R_effectiveと
-Host durable C、Provider D間の厳密保証は未実装・未実測。
-既存Host正本は9/34件実測、25件未実行、HC06フルHOLD。
+最新main/Open PR/Issueとdocs/HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md、
+P1-10d文書、docs/RESEARCH_DECISION.md §26を確認する。
+P1-10eは文書のみ・12計画ID全件NOT RUN、HC06分散安全性HOLD。
+既存Host実PG16は9/34実測・25 NOT RUN。
 
-次の1件のみ：P先行と取消要求、COMMIT ACK不明、
-予約timeout解放の3種について独立した架空Authority/Hostの
-オフライン検証**設計だけ**を行う。実コード、外部API、GCP、
-実決済、Receipt、Gem、他OSSは変更しない。
+次の1件だけ：E-R01/E-R02を試す独立架空Authority/Hostの
+オフライン検証環境を構築すべきか、barrier/通信障害注入・
+費用・可用性・最小範囲を判断する。Gem/API/外部Authority/
+実決済/GCP/RubyGemsへの変更は禁止。実装は別承認。
 ```
