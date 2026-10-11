@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
-更新日：2026-10-11
-状態：**P0完了、P1-0〜P1-10k完了（P1-10kはHost/Authority安全契約C01〜C12のチェックリスト設計のみ）**。[P1-10k契約表](HOST_EXTERNAL_REVOCATION_P110K_CONTRACT_CHECKLIST.md)：担当候補・要求証拠・Fail Closed・将来の相手への質問を整理。**全12項目OPEN/UNCONFIRMED**で実Authority/Hostからの回答はない。P1-10i別PG16合成**6 runs/178 assertions**、H01旧Authorityの危険反例は残る。Host正本**9/34件・25 NOT RUN／12 runs/465 assertions**のまま。**HC06外部失効HOLD、Gem/API・本番統合HOLD、RubyGems公開・実決済NO-GO**。次は**P1-10l：固定AP2 v0.2.0仕様・SDKとの読み取り専用照合（別承認）**。
+更新日：2026-10-12
+状態：**P0完了、P1-0〜P1-10l完了（P1-10lは固定AP2 v0.2.0公式仕様/SDKとの読み取り専用の責務照合のみ）**。[P1-10l照合](HOST_EXTERNAL_REVOCATION_P110L_AP2_SPEC_MAPPING.md)：Checkout Mandate署名・chain/制約・checkout_hash/Receipt等の公式範囲は**SUPPORTED**、Host–Authority外部分散失効C01〜C12の**完全契約は確認した固定版文書/SDKでNOT SPECIFIED**、実事業者の提供能力は**UNKNOWN**。C01〜C12外部回答全件OPEN/UNCONFIRMED。Host正本**9/34件・25 NOT RUN、12 runs/465 assertions**、P1-10i合成**6 runs/178 assertions**（H01旧Authorityは危険反例）のまま。**HC06強保証HOLD、Gem/API・本番統合HOLD、RubyGems公開・実決済NO-GO**。次は**P1-10mの責務分離スコープ表（設計のみ・別承認）**。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10k完了（安全契約C01〜C12設計のみ） / 次はP1-10l別承認】
+### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10l完了（公式AP2 v0.2.0の静的仕様照合まで） / 次はP1-10m別承認】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -159,8 +159,10 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - [HOST_EXTERNAL_REVOCATION_P110J_DECISION.md](HOST_EXTERNAL_REVOCATION_P110J_DECISION.md)：Hostの事前信頼・証拠認証・durable terminal gate・全C経路STOP/anti-rollback・外部AuthorityのP/R有効化契約の成立条件とFail Closedを比較。**新コード・CI・テストなし、HC06 HOLD。**
 - [x] **P1-10k（Host/Authority契約C01〜C12のチェックリスト設計のみ完了）**
   - [HOST_EXTERNAL_REVOCATION_P110K_CONTRACT_CHECKLIST.md](HOST_EXTERNAL_REVOCATION_P110K_CONTRACT_CHECKLIST.md)：必要保証・担当候補・要求証拠・不明時の停止条件・相手先への質問を明記。**全件OPEN/UNCONFIRMED**、実Authority/Host契約の確認なし、CI/実装なし。
-- [ ] **P1-10l（次のおすすめ1件・別途明示承認後のみ）**
-  - 固定AP2 v0.2.0公式仕様/SDKを**読み取り専用**でC01〜C12と照合、SUPPORTED/NOT SPECIFIED/UNKNOWNを出典付きで整理。新コード/CI/実API/GCP/決済/Gem化なし。
+- [x] **P1-10l（固定AP2 v0.2.0公式仕様/SDKとの静的照合、実装・CIなし）**
+  - [HOST_EXTERNAL_REVOCATION_P110L_AP2_SPEC_MAPPING.md](HOST_EXTERNAL_REVOCATION_P110L_AP2_SPEC_MAPPING.md)：公式Mandate/Checkout/ReceiptのSUPPORTED範囲、C01〜C12完全契約NOT SPECIFIED（照合範囲限定）、外部Authority能力UNKNOWNの根拠表。Host正本9/34・HC06 HOLD維持。
+- [ ] **P1-10m（次のおすすめ1件・別途明示承認後のみ）**
+  - Merchant用の暗号VerifierとHost/Authority失効制御を分ける**責務・スコープ/GO-HOLD表の設計のみ**。新コード/CI/実API/GCP/決済/Gem公開なし。
 
 
 
@@ -215,30 +217,32 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P1-10kの契約チェックリストまで設計整理完了。** 作業開始時は必ずGitHub最新main・Open PR/Issueを確認する。[P1-10k契約表](HOST_EXTERNAL_REVOCATION_P110K_CONTRACT_CHECKLIST.md)→[P1-10j採否](HOST_EXTERNAL_REVOCATION_P110J_DECISION.md)→[P1-10i実測](HOST_EXTERNAL_REVOCATION_P110I_EVIDENCE.md)→[研究判断§32](RESEARCH_DECISION.md)の順で読む。
+**P1-10l：固定AP2公式v0.2.0仕様/SDKへの読み取り専用照合まで完了。** 毎回GitHub最新main/Open PR/Issueを再確認。[P1-10l](HOST_EXTERNAL_REVOCATION_P110L_AP2_SPEC_MAPPING.md)→[P1-10k契約C01〜C12](HOST_EXTERNAL_REVOCATION_P110K_CONTRACT_CHECKLIST.md)→[P1-10j](HOST_EXTERNAL_REVOCATION_P110J_DECISION.md)→[研究判断§33](RESEARCH_DECISION.md)を読む。
 
-- **安全契約:** C01〜C12の責任者候補・要求証拠・未達時のSTOP/REJECT/PENDINGを定義。全件**OPEN/UNCONFIRMED**。実AuthorityがP/R/finalize APIを提供する事実は**未確認**。このモデルをAP2公式APIと呼ばない。
-- **実測と残件:** Host正本9/34件・25 NOT RUN／12 runs/465 assertions。P1-10iの合成H01〜H06は[CI #38148130154](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38148130154)で6 runs/178 assertions、H01旧方式の失効後Cは**危険反例**。H07〜H12、強いHC06分散安全性、Host証拠真正性・anti-rollback、N17、公式Python SDK中間hop186 PASS/2 FAILは未解決。
-- **Go/HOLD:** HC06 FULL HOLD、Gem/API・本番連携HOLD、RubyGems公開・実決済/Receipt NO-GO。実APIや署名・支払い・GCPの実装権限はない。
-- **次の一件（別承認）：P1-10l** — 固定公式AP2 v0.2.0仕様/SDKを読み取り専用で照合し、C01〜C12の各契約要素が標準に定義されているか根拠を付けて記録する。
+- **一次根拠:** `google-agentic-commerce/AP2@b4587ac1d055888a73b4b21750973cffba961793`、文書行リンクとSDKの対象メソッド確認。AP2 Merchant Checkout Mandate/Receiptの標準義務はSUPPORTED。研究用Host–Authority C01〜C12全体の分散失効契約は**当該照合範囲でNOT SPECIFIED**。外部企業の実装能力はUNKNOWN。C01〜C12外部回答OPEN。
+- **検証状況:** Host正本9/34件・25 NOT RUN／12 runs/465 assertions。P1-10i H01〜H06は別PG16合成6 runs/178 assertions（H01旧経路は**R_effective後Host C成功の危険反例**）。H07〜H12 NOT RUN。N17 HOST_BOUNDARY、SDK中間hop186 PASS/2 FAIL、G/T各ケース未解決。今回新実装・CI・テスト0件。
+- **GO/HOLD:** HC06分散強保証HOLD、Gem/public API・本番Host統合HOLD、RubyGems公開・Production/実決済/署名Receipt NO-GO。
+- **次の一件（別途明示承認後のみ）：P1-10m**。Merchant向け暗号VerifierとHost/Authority強失効協調を**別スコープ表**で切り分け、PoCへの判断条件を記載する設計だけ。実装・クラウド・実サービスは禁止。
 
-### 次のチャットで使える引き継ぎ文
+### 次チャット用指示文
 
 ```text
-ap2-mandate-verifier P1-10lの読み取り専用・仕様照合を検討する。
+ap2-mandate-verifier P1-10m の設計スコープ整理を検討する。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-GitHub最新main/Open PR/Issueを確認。
-docs/HOST_EXTERNAL_REVOCATION_P110K_CONTRACT_CHECKLIST.md と
-docs/HOST_EXTERNAL_REVOCATION_P110J_DECISION.md を読む。
-P1-10kは設計のみ、C01〜C12はすべてOPEN/UNCONFIRMED。
-Host正本9/34件・25 NOT RUN、P1-10iは6 runs/178 assertions
-（H01旧方式は危険反例）。HC06強い分散失効保証HOLD。
+まずGitHub最新main/Open PR/Issue確認。
+docs/HOST_EXTERNAL_REVOCATION_P110L_AP2_SPEC_MAPPING.md と
+docs/HOST_EXTERNAL_REVOCATION_P110K_CONTRACT_CHECKLIST.md を読む。
+公式AP2 v0.2.0固定commit b4587ac1d055888a73b4b21750973cffba961793
+ではCheckout Mandateの検証義務はSUPPORTED、Host–Authority強失効
+C01〜C12完全契約は照合範囲内でNOT SPECIFIED、実事業者能力UNKNOWN。
+C01〜C12は全件OPEN/UNCONFIRMED、HC06強保証HOLD。
+Host正本9/34・25 NOT RUN、P1-10i合成6 runs/178 assertions
+（H01旧方式はR_effective後Cが通る危険反例）。
 
-今回の一件：固定AP2公式v0.2.0 commit
-b4587ac1d055888a73b4b21750973cffba961793 の
-仕様/SDKを読み取り専用でC01〜C12と照合。
-SUPPORTED/NOT SPECIFIED/UNKNOWNを根拠節・ファイルで整理。
-実Authorityとの接続、実装、CI、GCP、決済、公開Gem、
-署名鍵/Receipt、他OSSの変更は別途承認。
+次の一件：Merchant Checkout Mandate cryptographic verifierと
+Host/Authority strong revocation controlを明確な別責務として整理し、
+PoCのGO/HOLDとGem外スコープを一枚の表にする設計のみ。
+新実装/CI、GCP、実決済、外部Authority/Host通信、
+公開Gem/API、署名鍵・Receipt、他OSS変更は別承認。
 ```
