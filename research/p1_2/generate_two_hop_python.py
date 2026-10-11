@@ -61,7 +61,9 @@ def generate():
     assert root != alternate_root, "Two independent ES256 issuances must differ"
 
     # Demonstration-only compact value, deliberately NOT merchant-signed.
-    checkout_jwt = f"{b64(b'{\"alg\":\"ES256\"}')}.{b64(b'{\"id\":\"research-only\"}')}.NOT_A_SIGNATURE"
+    checkout_header = b64(json.dumps({"alg": "ES256"}, separators=(",", ":")).encode())
+    checkout_payload = b64(json.dumps({"id": "research-only"}, separators=(",", ":")).encode())
+    checkout_jwt = f"{checkout_header}.{checkout_payload}.NOT_A_SIGNATURE"
     checkout_hash = b64(hashlib.sha256(checkout_jwt.encode("ascii")).digest())
     closed = CheckoutMandate(
         checkout_jwt=checkout_jwt, checkout_hash=checkout_hash, iat=now, exp=now + 3600
