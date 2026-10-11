@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-12
-状態：**P0完了、P1-0〜P1-10qの限定研究実施。P1-10qは署名済み未知ネストConstraintのGP01 1件を観測し、Rubyが予期せずACCEPTしたため安全性RED/HOLD。既存Verifierの修正なし。** [GP01証拠](VERIFIER_P110Q_GP01_EVIDENCE.md)、[CI #38183751071](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38183751071) **1 run / 8 assertions、Workflow SUCCESSは観測成功であって安全性PASSではない**。次は**P1-10r（別途ユーザー明示承認後のみ）**。 [P1-10p残余リスク表](VERIFIER_P110P_RESIDUAL_GAPS.md)：GP01〜GP09は新試験NOT RUN。最優先GP01はIssuer署名の既知Constraintに未知ネスト属性が追加された場合の**静的な受理可能性の疑い**であり、攻撃の実測ではない。P1-10o最終 [CI #38155050010](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38155050010) **8 runs/45 assertions/失敗0**は以前の独立研究。AN-N07は二度verify成功の**HOST_BOUNDARY**でreplay未防御。Host正本**9/34件・25 NOT RUN（過去12 runs/465 assertions）**、一般SD-JWT/Issuer、本番Gem/API・HC06はHOLD、RubyGems/決済/署名Receipt NO-GO。**次のおすすめはP1-10q：GP01だけの正署名合成負例観測（別承認）**。
+状態：**P0完了、P1-0〜P1-10qの限定研究実施。P1-10qは正署名GP01 1件でRubyが未知ネストConstraintを想定外ACCEPTしたため、セキュリティ判定RED/HOLD（既存Verifier未修正）。** [GP01証拠](VERIFIER_P110Q_GP01_EVIDENCE.md)、[最初の実測CI #38183751071](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38183751071) **1 run / 8 assertions（WorkflowのSUCCESSは観測成功のみ）**。P1-10oの別研究は8 runs/45 assertions・AN-N07 HOST_BOUNDARY、Host正本は9/34件実測・25 NOT RUN、外部HC06/HOST replay/一般Issuer/Gem API/本番統合HOLD、RubyGems公開/実決済/Receipt NO-GO。**次の一件はP1-10r：GP01限定Fail Closed対策（別承認）**。
 
 ## 1. 新しいチャットで最初に読むこと
 
