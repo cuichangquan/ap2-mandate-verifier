@@ -163,7 +163,7 @@
 
 ## 13. 2026-10-11 P1-3 Checkout JWT / Host正本 / Constraint実測後の判断（最新）
 
-**CONDITIONAL GOは非本番研究PoCの範囲のみ継続。汎用Gem/API/リリースはHOLD、実決済・ProductionはNO-GO。** 根拠は[RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md)と[CI Run #38125925976](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38125925976)。
+**CONDITIONAL GOは非本番研究PoCの範囲のみ継続。汎用Gem/API/リリースはHOLD、実決済・ProductionはNO-GO。** 根拠は[RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md)と[CI Run #38126247946](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38126247946)。
 
 - 固定AP2 Python SDKによる署名済Open Root→Agent Closed Terminalを使い、さらに**独立Merchant鍵のES256署名付き架空Checkout JWT**を発行。RubyはHostが登録したMerchant公開JWKで検証し、Host正本JWTとClosed `checkout_jwt`の原文一致、Closed `checkout_hash`の独立SHA-256 base64url計算、RootのMerchant/SKU/Quantity、HostのCheckout ID/Currency/Totalを評価した。
 - **P1-3：18 runs/40 assertions、失敗0**。Root署名/Disclosure P1-1回帰**10 PASS**、2-hop署名binding P1-2回帰**15 PASS**。**合計43テストが成功**したが、別階層の限定研究結果をAP2標準合格とみなさない。
