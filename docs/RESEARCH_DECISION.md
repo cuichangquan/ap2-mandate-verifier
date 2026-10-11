@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新の判定は§11（P1-1）を参照：非本番Ruby研究PoCのみCONDITIONAL GO。汎用Gem・API・リリースはHOLD、本番利用はNO-GO。**
+> **最新の判定は§12（P1-2）を参照：非本番Ruby研究PoCのみCONDITIONAL GO。汎用Gem/API/リリースはHOLD、本番/実決済はNO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -148,3 +148,15 @@
 - **未実証:** SD-JWTの任意形式（dictionary disclosure・decoy等）、全権限制約の一般的完全性証明、Terminal agent署名・Rootの`cnf`とのPoP、`sd_hash`、Host期待aud/nonce、merchant-signed Checkout JWT/Hashの統合検証、業務ALLOW、Replay/Receipt。**10 PASSはAP2 Verifierの完成・本番安全性ではない。**
 
 **次の1件（改めて明示承認後のみ）：P1-2 — 固定SDKによるOpen Root → Agent Terminalの厳密2-hop SD-JWTで、RubyのHolder署名、Root `cnf`、`sd_hash`、Host期待aud/nonceを負例込みでオフライン確認。** 3hop以上や他Agent転委任は拒否し、Gem/APIの実装・公開には進まない。
+
+## 12. 2026-10-11 P1-2 2hop署名・Root binding 実測後の判断（最新）
+
+**最新判断：CONDITIONAL GO（限定非本番研究PoCのみ）、汎用Gem/API/公開はHOLD、production/実決済はNO-GO。** 一次証拠は[RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md)と[Actions run #38124823804](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38124823804)。
+
+- AP2 v0.2固定Python SDKで**Open Root→Agent Terminal Closedを署名し公式Python `verify_chain`で検証**、その真正なwireをRubyで検証。
+- Ruby 3.3.12/`jwt 3.3.0`でRootとTerminalの署名、Root `cnf.jwk`に結び付くAgent、`sd_hash`の元wireダイジェスト、Host必須の`aud`/`nonce`に対する正負を評価。**P1-2は15 runs / 32 assertions / 0 failures**、共有Root検証の**P1-1回帰は10 runs / 22 assertions / 0 failures**。
+- 署名済みでも別Root hash、違うAgent signer、wrong expected Agent、wrong/missing aud・nonce、intermediate/3hop、非開示Root制約、署名改ざん、未対応`issuer_jwt_hash`は拒否した。
+- **特に重要な未完了:** Closed中のCheckout JWTは署名欄`NOT_A_SIGNATURE`の**架空JWT**。Merchant公開鍵による署名検証、Host正本との原文照合、Closed `checkout_hash`の独立再計算、Open制約と実際のMerchant/商品/数量の取引一致は**未実装**。したがって`VerifiedEvidence`や`ALLOW`、購入許可のAPIとしてまだ提供しない。暗号連結だけでは不十分。
+- 根拠の範囲はstrict single Issuer layout + exactly two hopsで、任意AP2／SD-JWT、Issuer trust infrastructure、stateful replay/nonce消費、Receipt、本番の安全性には広げない。固定上流公式pytestの失敗2件（intermediate aud/nonce）も解消していない。
+
+**次の1件（新しい明示承認後のみ）：P1-3 — Merchant-signed Checkout JWTのHost正本・原文・SHA-256 checkout_hash、Open `allowed_merchants`/`line_items`をオフラインで統合する小さなRuby Spike。** Gem雛形、安定API、公開、決済実行・GCP・nonce消費・Receiptは未承認。
