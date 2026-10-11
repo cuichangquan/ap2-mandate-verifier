@@ -108,7 +108,15 @@ class AP2StrictAOnlyAcceptanceResearchTest < Minitest::Test
       verify(terminal: p15("changed_closed_exp_in_window"))
     end
     assert_match(/Closed changed a fixed Open claim/, err.message)
-    P110O.record("AN-N04", "REJECTED", "signed in-window exp alteration rejected as R06 claim drift; challenge/time rejects")
+    # Also reject an Issuer-signed extra Open fixed claim when the Agent
+    # omits it from its otherwise valid signed Closed. The source layout
+    # itself is unsupported, not merely a mismatch on intersecting keys.
+    omitted = assert_raises(Rejected) do
+      verify(root: f.fetch("signed_extra_fixed_open_root"),
+             terminal: f.fetch("signed_extra_fixed_open_terminal"))
+    end
+    assert_match(/unsupported signed Open claim layout/, omitted.message)
+    P110O.record("AN-N04", "REJECTED", "signed in-window exp alteration AND omitted issuer-fixed Open claim rejected; challenge/time rejects")
   end
 
   def test_an_n05_strict_jose_json_and_resource_bounds
