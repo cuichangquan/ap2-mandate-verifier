@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**Phase 0 / P0-1〜P0-3 完了、P0-4 未着手**。Gem実装・公開・適合性検証・本番安全性検証は未実施。
+状態：**Phase 0 / P0-1〜P0-4 完了、P0-5 未着手**。Gem実装・公開・適合性検証・本番安全性検証は未実施。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -13,7 +13,7 @@
 
 1. [README](../README.md) — Gemの目的・利用シーン・非スコープ
 2. [PROJECT](PROJECT.md) — D001〜D006、責務境界、独立OSS方針
-3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) — 固定版・Verifier要件・公式SDKとRubyの再利用調査
+3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) — 固定版・Verifier要件・エコシステム・API案
 4. [OFFICIAL_SOURCES](OFFICIAL_SOURCES.md) — AP2/FIDO/IETFの一次資料・ウォッチリスト
 5. [RESEARCH_PLAN](RESEARCH_PLAN.md) — Phase 0〜3 の全体工程
 6. [SECURITY_BOUNDARY](SECURITY_BOUNDARY.md) — 未信頼Mandateの扱いとFail Closed
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1〜P0-3完了 / P0-4が次】
+### Phase 0 — 仕様・競合調査【P0-1〜P0-4完了 / P0-5が次】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -64,14 +64,14 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - **成果物案：** `docs/ECOSYSTEM_RESEARCH.md`
   - **完了条件：** 再利用可能な部分と、本当にRubyで新規実装が必要な部分が分かること。
 
-- [ ] **P0-4：最小Public APIと責務分担の提案【次に着手・設計のみ】**
+- [x] **P0-4：最小Public APIと責務分担の提案（設計のみ・完了：[API_PROPOSAL.md](API_PROPOSAL.md)）**
   - 入力（Mandate、期待するAgent/受取サービス/Checkout、Hostのtrusted issuer policy）と結果（verified evidence / rejection）を整理する。
   - 「署名が正しい」≠「Userが同意した」≠「Hostが業務を実行してよい」を守る。
   - ホストによる失効・Replay防止・ビジネス認可が必要か、VerifierのAPIがどこまで保証できるか明記。
   - **成果物案：** `docs/API_PROPOSAL.md`
   - **完了条件：** API案が小さく、根拠と保留点が明確であること。
 
-- [ ] **P0-5：実装GO/NO-GOを判断**
+- [ ] **P0-5：実装GO/NO-GOを判断【次に着手】**
   - 仕様の確かさ、SDK相互運用の見込み、OSS需要、Ruby既存実装との差分、セキュリティ・保守コストから判断。
   - **成果物案：** `docs/RESEARCH_DECISION.md`
   - **完了条件：** GO（最小PoC）、HOLD（仕様待ち）、NO-GO（既存活用/価値が小さい）の根拠を記録。**自動的に実装へ進まない。**
@@ -119,11 +119,13 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P0-1〜P0-3は調査文書として完了。** [SPEC_BASELINE](SPEC_BASELINE.md)でAP2 v0.2.0仕様Commitを固定し、[VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md)でMerchantのMUST/Host責務を区別し、[ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md)でPython SDKとRubyの比較・不足点を静的に整理した。
+**P0-1〜P0-4は研究・設計文書として完了。** [SPEC_BASELINE](SPEC_BASELINE.md) のAP2 v0.2固定仕様、[VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) のMerchant MUSTとHost責務、[ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) の静的SDK比較、[API_PROPOSAL](API_PROPOSAL.md) の**仮Public API設計**を参照。
 
-**重要な留保:** Python SDKの実行・pytest・Ruby Gem依存の検証・相互運用は未実施。SDKのCheckout hash、issuer trust、non-disclosed constraints、`aud`/`nonce`、JSON Schema containsと生成modelの差はソースから観察したもの。安全性の実証済みとの誤記禁止。
+**P0-4の結果:** Verifierは未信頼Mandate、HostのIssuer/key policy、Hostが保持する正規merchant-signed Checkout JWT、expected audience/nonce、Merchant/Agent文脈、Constraint policyを入力とする。返却は`VerifiedEvidence`または`Rejection`のみ。**Hostの最終ALLOW、Replay/失効・注文・Receiptは別責務**。Direct/Autonomous別にFail Closed条件を整理した。全て提案であり、APIやGemは未実装・未確定。
 
-**次のタスクはP0-4のみ。** `docs/API_PROPOSAL.md` に小さなPublic APIの**設計案のみ**をまとめ、入力（未信頼Mandate、Host側のtrusted issuer/key resolver、Checkout JWT、expected aud/nonce）と出力（verified evidence / rejection）、責務境界を明示する。実装・公開はしない。
+**残る重要な確認:** P0-3で見つかったCheckout hash、x5c trust、非開示Constraint、aud/nonce、Open JSON Schema containsの不一致はPythonの静的観察であり、実行で再現・保証していない。AP2準拠・production readyとは主張しない。
+
+**次の1タスク:** **P0-5**。実装を始めるかどうかの**GO/HOLD/NO-GO**を[RESEARCH_PLAN](RESEARCH_PLAN.md)に従い[RESEARCH_DECISION](RESEARCH_DECISION.md)として**判断文書化のみ**。ユーザーの明示承認前にGem実装を開始しない。
 
 ### 次チャット用指示文
 
@@ -131,16 +133,17 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 ap2-mandate-verifierの続きを始めます。
 正本: https://github.com/cuichangquan/ap2-mandate-verifier/tree/main
 
-最新main、Open Issue/PRを確認し、
+GitHub最新main、Issue、Open PRを再確認し、
 docs/HANDOFF.md、docs/SPEC_BASELINE.md、
-docs/VERIFIER_REQUIREMENTS.md、docs/ECOSYSTEM_RESEARCH.mdを読んでください。
+docs/VERIFIER_REQUIREMENTS.md、docs/ECOSYSTEM_RESEARCH.md、
+docs/API_PROPOSAL.mdを読んでください。
 
-今回はPhase 0 / P0-4（API設計案）のみ。
-Hostが指定するIssuer信頼ポリシー、Checkout JWTの独立hash検証、
-Agent鍵binding、制約検証、expected aud/nonce、Verified Evidenceと
-業務ALLOWの区別、Fail Closed・未保証項目を明記した
-docs/API_PROPOSAL.mdを作り、PR・mainマージしてください。
+Phase 0 / P0-5だけを実施してください。
+実装GO/HOLD/NO-GOの根拠（仕様の確度、Hostの信頼境界、
+Python SDK検証の不足、Ruby既存Gemの再利用、OSSとしての価値、
+セキュリティ/保守コスト）をdocs/RESEARCH_DECISION.mdにまとめ、
+README/HANDOFFから参照できる状態にしてください。
 
-Gem実装、API確定、ActingFor/a2a-rails変更、公開は禁止。
-最終Commit SHA・未解決事項・次の重要な1項目のみ報告してください。
+Gem/API実装・公開、ActingFor/a2a-railsへの変更は禁止。
+PRをreviewしてmainにマージし、結果・SHA・次の1件のみ報告してください。
 ```
