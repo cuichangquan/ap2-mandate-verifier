@@ -227,9 +227,9 @@ def test_signed_open_checkout_disclosure_can_hide_a_merchant_constraint():
 
     redacted_wire = "~".join([segments[0], *available, ""])
     issuer_pub = JWK.from_json(issuer.export_public())
-    verified = MandateClient().verify(
-        token=redacted_wire,
-        key_or_provider=issuer_pub,  # root-only MandateClient.verify requires JWK
+    verified = verify_chain(
+        tokens=[parse_token(redacted_wire)],
+        public_key_provider=lambda _token: issuer_pub,
     )
     assert len(verified) == 1
     redacted_open = OpenCheckoutMandate.model_validate(verified[0])
