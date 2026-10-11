@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§30（P1-10i）：H01旧Authorityの失効確定後Host COMMITという危険な反例を観測、新guardはUNPROVEN、H02〜H06限定合成試験PASS（6 runs/178 assertions）。Host正本9/34・25 NOT RUNは不変、HC06の分散保証・Gem/API・本番統合HOLD、RubyGems公開/実決済NO-GO。**
+> **最新判定は§31（P1-10j）：Host DB直接参照なしの別Authorityにとって、署名・通信認証だけではABORT耐久決定や将来C禁止を証明できない。Host trust anchor・terminal gate・rollback禁止・Authority失効保留の必要条件を設計で明確化。実Authority機能未確認で実装HOLD。Host正本9/34・25 NOT RUN、HC06分散保証HOLD、Gem/API・本番統合HOLD、RubyGems/実決済NO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -367,3 +367,15 @@ guardは**別Host DBへの直接的な信頼済み読取り**で成立する人�
 **判定：P1-10iの合成負例限定研究成功（H01旧経路の安全性はFAIL相当の反例）、HC06外部失効保証・Gem/API・本番Host統合HOLD。RubyGems公開・Production・実決済・署名Receipt NO-GO。** P1-10h PR #29はsquashマージ済み（`c1df549fa536712e5b56e81c478771f4e93282a0`）。P1-10i PR #30は最新mainをbaseとしてP1-10i単独差分を改めて検証する。PR #30の最終マージ状態はGitHub上で都度確認する。自己レビューは独立安全監査ではない。
 
 **次のおすすめ1件（別途明示承認後のみ）：P1-10j** — 直接Host PGアクセスを外した場合に、Authorityが真正かつ耐久的なHost最終状態を保証できる契約とアーキテクチャが成立するかの**設計採否レビューのみ**。追加実装/CI/GCP/実Authority/決済/Gem公開は別承認。
+
+## 31. 2026-10-11 P1-10j 別運営Authority向けHost durable proofの成立条件（最新・設計のみ）
+
+[P1-10j採否レビュー](HOST_EXTERNAL_REVOCATION_P110J_DECISION.md)では、P1-10iが仮定した**AuthorityからHost PGへの直接的な信頼済みDB読取り**を取り除いた。この場合、単なるHost ID allowlist、Coordinator主張、署名済み`ABORTED`やTTLは**Hostの耐久的terminal gateと将来C不可能性の証明にはならない**。P1-10iのH01危険反例が示す無証拠の早期`R_effective`は引き続き不可。
+
+**採否: CONDITIONAL FEASIBILITY / DESIGN RESEARCH ONLY、実用のGOではない。** 誠実で障害停止型のHostが全C経路を単一terminal gateに通す契約、Host決定＋証拠outboxの同一transaction、耐久ログ・rollback防止/復旧、Host発行者の事前登録/鍵更新、Authorityの予約P/失効保留とcontext一致照合・冪等R_effectiveの実現可能性を**未実装の必須条件**として整理。Host自体が侵害・虚偽なら署名は無力で、共有権威的直列化境界など別アーキテクチャが必要。実Authorityがreserve/finalizeや必要な契約を持つ事実も確認していない。未確認・障害・不明決定なら**PENDING/UNKNOWN/STOP**、即時失効は約束しない。Provider送出Dと既存Cの取消/返金は別契約。
+
+**新実装/DB/CI/テスト/実外部接続/GCP/決済/署名Receiptなし、P1-10jの追加実測0。** 以前のHost正本は**9/34件実測・25 NOT RUN、12 runs/465 assertions**、P1-10c 8 runs/94 assertions、P1-10g 2 runs/118 assertions、P1-10i 6 runs/178 assertions（[mainベース最終CI #38148130154](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38148130154)）は**別枠**。H07〜H12、N17 HOST_BOUNDARY、G1〜G6/T1〜T5、公式Python SDK中間hop186 PASS/2 FAILは未解決。
+
+**判断：HC06強い外部失効保証・外部Authority向け接続・汎用Gem/API・本番統合HOLD。RubyGems公開・Production・実決済・署名Receipt NO-GO。** PR #29（`c1df549fa536712e5b56e81c478771f4e93282a0`）、PR #30（`37c97dcec8320ad91d917900824003656cc01bc4`）は既にmainにマージ済み。自己レビューは独立したセキュリティ監査ではない。
+
+**次のおすすめ1件（別途明示承認後のみ）：P1-10k — 設計のみ。** Host/Authorityの各責務、何を証拠と認めるか、確定できない条件、復旧・監査負担を「外部相手に確認できる契約チェックリスト」にする。実装/外部API/GCP/署名処理/決済/Gem公開は別承認。
