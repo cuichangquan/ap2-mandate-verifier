@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-12
-状態：**P0完了、P1-0〜P1-10n完了（P1-10nはA-only非本番合成PoCへの採否・条件設計のみ）**。[P1-10n設計](VERIFIER_P110N_OFFLINE_POC_GATE.md)：先行Rubyの署名/2hop/Checkout基礎実測とP1-6の限定6 RED修正を棚卸し、**単一Issuer固定layout・完全開示2hopの架空合成fixtureに限る次実験をCONDITIONAL GO CANDIDATE**とした。**新たな実験のコード/CI/テスト0、次の実装には別承認が必要**。Issuer一般化・隠れたConstraint/複数hop・Host replay/BのHC06はHOLD。Host正本**9/34件・25 NOT RUN、12 runs/465 assertions**、P1-10i合成6 runs/178 assertions（H01危険反例）、公式Python 186 PASS/2 FAILは不変。**Gem/API・本番HOLD、RubyGems公開/実決済NO-GO。** 次は**P1-10o: AN-P01/AN-N01〜N07だけの非本番オフライン統合試験（別承認）**。
+状態：**P0完了、P1-0〜P1-10o完了（P1-10oはA-only合成2hopの実署名統合8-case限定実測）**。[P1-10o証拠](VERIFIER_P110O_EVIDENCE.md)：修正後[CI #38153636500](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38153636500) **8 runs/42 assertions/失敗0**。AN-P01限定正例、AN-N01〜N06拒否、AN-N07二度verify成功は**HOST_BOUNDARY（replay未防御）**。前回PR #35 Codex P1指摘の**Open→Closed固定claim保持の漏れ**は研究用`p1_2`で修正し、署名正しい期限内Closed exp変更を拒否した。初回CIは集計順序のバグで失敗→修正後成功。Host正本**9/34件・25 NOT RUN／12 runs/465 assertions**は不変。隠れたConstraintの一般的完全性・B/HC06・本番Host統合・Gem/APIはHOLD、RubyGems公開・実決済NO-GO。次は**P1-10p設計のみ（別承認）**。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10n完了（A-only限定研究PoCの着手条件を設計再審査） / 次はP1-10o別承認】
+### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10o完了（A-only合成実署名8試験まで） / 次はP1-10p別承認】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -165,8 +165,10 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - [VERIFIER_VS_REVOCATION_P110M_SCOPE.md](VERIFIER_VS_REVOCATION_P110M_SCOPE.md)：AのVerifiedEvidence/Rejection、Merchant Hostの最終ALLOW/replay、BのHC06強失効、決済/Receiptと公開Gemを別責務に整理。非本番PoCは条件付き候補、**新実装GOなし**。B/HC06・Gem API・本番HOLD。
 - [x] **P1-10n（狭いA-only合成PoCの採否・設計だけ完了）**
   - [VERIFIER_P110N_OFFLINE_POC_GATE.md](VERIFIER_P110N_OFFLINE_POC_GATE.md)：G01〜G08・AN-P01/AN-N01〜N07は**将来のテスト案、NOT RUN**。固定Issuer layout・完全開示・2hopだけにCONDITIONAL GO CANDIDATE、一般Issuer/disclosure・Host replay/B/HC06はHOLD。P1-10n新実装・CIゼロ。
-- [ ] **P1-10o（次のおすすめ1件・別途明示承認後のみ）**
-  - **AN-P01/AN-N01〜N07だけ**を合成signed fixtureで統合再実測し、既存Ruby/Python研究コードを再利用。公式v0.2固定・小さな専用CI/PRのみ。公開Gem/API、実Issuer/Authority、GCP、実決済/Receiptは触らない。
+- [x] **P1-10o（合成固定Issuer/2hop A-only実署名AN-P01＋AN-N01〜N07実測完了）**
+  - [VERIFIER_P110O_EVIDENCE.md](VERIFIER_P110O_EVIDENCE.md)：[修正後CI #38153636500](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38153636500) **8 runs/42 assertions/0 errors/failures**。1限定正例、6拒否カテゴリ、AN-N07は**HOST_BOUNDARY**。前回#35 Codex P1のOpen→Closed共有claim保持漏れ修正を実署名の期限内Closed exp変更で確認。初回CIはPython結果一覧順の誤りでFAILし修正。**汎用Gem/API/本番/HC06はHOLD、決済・公開NO-GO。**
+- [ ] **P1-10p（次のおすすめ1件・別途明示承認後のみ）**
+  - 未開示の権限制約完全性・Issuer発行レイアウト根拠・共有claim/未知入力・現状未試験の負例を**設計Gap表のみ**で評価。新コード/CI/実API/GCP/決済/Gem公開なし。
 
 
 
@@ -221,35 +223,34 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P1-10nのA-only合成非本番PoC再開可否（設計）まで完了。** 必ずGitHub最新main、Open PR/Issueを確認してから[採否資料](VERIFIER_P110N_OFFLINE_POC_GATE.md)→[P1-10m責務](VERIFIER_VS_REVOCATION_P110M_SCOPE.md)→[P0-5b厳格profile](FAIL_CLOSED_PROFILE.md)→[P1-6限定修正](SECURITY_HARDENING_RESEARCH.md)→[判断§35](RESEARCH_DECISION.md)を読む。
+**P1-10o A-onlyの合成固定Issuer・2hop・署名付き8ケースまで実測。** まずGitHub最新main/Open PR/Issueを再確認し、[P1-10o証拠](VERIFIER_P110O_EVIDENCE.md)→[P1-10n受入条件](VERIFIER_P110N_OFFLINE_POC_GATE.md)→[P1-10m責務分離](VERIFIER_VS_REVOCATION_P110M_SCOPE.md)→[研究判断§36](RESEARCH_DECISION.md)を読む。PR #36のmerge/レビュー状態は必ずGitHubで実確認する（この文書作成時はPR上）。
 
-- **判定の条件:** Aのみ、Issuer固定/単一AgentのOpen→Closed2hop/完全開示が既知の研究fixture/架空Checkout、Host固定Issuer trustと原文Checkout JWT/公開鍵が必須。G01〜G08のFail ClosedとAN-P01＋AN-N01〜N07の新規試験案（**全NOT RUN**）。次の小実験は**CONDITIONAL GO CANDIDATE、実行は別承認**。未知の制約・issuer layout/多hopはHOLD。
-- **実測の履歴:** P1-1 10/22、P1-2 15/32、P1-3 18/40；P1-6 17 GREEN/0 RED/1 HOST_BOUNDARY＋43既存回帰。公式Python SDK pytest**186 PASS/2 FAIL**。これらは別スコープで、P1-10nで再実行していない。
-- **Host/B:** 正本Host9/34・25 NOT RUN、12 runs/465 assertions。P1-10i合成6 runs/178 assertionsのH01旧Authorityは失効後Cが成功した危険反例。H07〜H12 NOT RUN。N17 Host replay、B/HC06強い外部失効、C01〜C12全件OPENは未解決。
-- **外部効果:** Gem/public API/本番統合HOLD、RubyGems公開・Production/決済・署名Receipt NO-GO。今回コード/CI/新規テスト/外部API/GCP0件。
+- **実測:** [Actions #38153636500](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38153636500)、正例AN-P01、拒否AN-N01〜N06、N07 HOST_BOUNDARYの**8 runs/42 assertions/0失敗/エラー**。初回Actions #38153577136は集計順の誤りでWorkflow FAIL（Ruby8/42成功）→改修後CI成功。最終headへdocs追加後のCIも確認する。
+- **Codex P1（前回PR #35）:** Open→Closedの共有固定claim（iat/exp）保持漏れ。研究`p1_2`で値保持を要求し、Root有効期間**内でも**Closed expが変化した**Agent署名済み**負例を拒否。正式Gem/APIはない。
+- **Host側責務:** AN-N07同一signed tokenは2回verify成功、**atomic replay/nonce**はHost別管理。正本Host9/34・25 NOT RUN／12 runs/465 assertions。P1-10iのH01 Authority失効後Host C成功の危険反例とHC06 HOLD、外部Host proof/C01〜C12未確認は変更なし。
+- **限定:** 固定Issuer layoutを合成fixture作成者が知っており一般的なhidden Constraintの不存在証明ではない。P1-4 G1〜G6、Host T1〜T5、公式Python186 PASS/2 FAIL、H07〜H12等の未解決項目を削除しない。Gem/API/本番統合HOLD、RubyGems公開・実決済/Receipt NO-GO。
+- **次の1件（別承認）：P1-10p** — 残るIssuer layout・隠れた権限制約・Open/Closed保持・未知入力のGapを**文書レビューのみ**で整理。新コード/CI/外部API/GCP/支払・Gem化なし。
 
 ### 次のチャットに渡す指示文
 
 ```text
-ap2-mandate-verifier P1-10oを承認範囲に限定して進めたい。
+ap2-mandate-verifierのP1-10pを設計Gapレビューだけ進めたい。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-GitHub最新main/Open PR/Issueを確認。
+GitHub最新main/Open PR/Issue・PR #36の最終レビュー状態を確認。
+docs/VERIFIER_P110O_EVIDENCE.md
 docs/VERIFIER_P110N_OFFLINE_POC_GATE.md
-docs/VERIFIER_VS_REVOCATION_P110M_SCOPE.md
-docs/FAIL_CLOSED_PROFILE.md を読む。
+docs/RESEARCH_DECISION.md §36 を読む。
 
-P1-10nは設計だけ、A-onlyの固定Issuer/2hop/完全開示された
-合成signed fixture研究に限りCONDITIONAL GO CANDIDATE。
-G01〜G08、AN-P01＋AN-N01〜N07はすべて未実行。
-本Gem/public API/本番開発GOではない。固定公式AP2 v0.2.0
-commit b4587ac1d055888a73b4b21750973cffba961793。
+P1-10oは固定AP2 v0.2.0 commit
+b4587ac1d055888a73b4b21750973cffba961793 に基づく
+合成signed fixtureのA-only Open→Closed2hop8テスト。
+8 runs/42 assertions PASS、AN-N07はHost replay未解決境界。
+#35 Codex P1指摘のOpen/Closed claim保存を研究用Rubyで追加し、
+署名済Closed expが期限内でも変更されていればreject。
+Host正本9/34・25 NOT RUN、B/HC06・一般SD-JWT/GemはHOLD。
 
-実装許可を得た場合の次の一件は、上記8ケースだけを既存
-research/コードにより専用オフラインCIで再実測する限定試験。
-偽・生産不可のfixtureだけ、private signing keyをcommitしない。
-B/HC06はHOLD、Host正本9/34・25 NOT RUN、N17 Host境界、
-Python 186 PASS/2 FAILは未解決のまま。
-本番Host/実Authority/GCP、実決済/署名Receipt、Gem/API、
-他OSSへの変更は承認していない。
+次の一件：未知のIssuer layout/hidden Constraint/共有固定claim
+を含む未検証リスクの設計Gap表。実装・CI/GCP・実Authority/
+実決済・Receipt発行・公開Gem/API・他OSS変更は別承認。
 ```
