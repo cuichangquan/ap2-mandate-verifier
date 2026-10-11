@@ -36,7 +36,8 @@
 - [x] **P1-10k完了（Host/Authorityの安全契約チェックリスト・設計のみ）**：[HOST_EXTERNAL_REVOCATION_P110K_CONTRACT_CHECKLIST](HOST_EXTERNAL_REVOCATION_P110K_CONTRACT_CHECKLIST.md) — C01〜C12について責任候補・要求証拠・未達時STOP/PENDING/REJECT・顧客への表示・契約確認質問を整理。**外部回答は全件OPEN/UNCONFIRMED**、外部API・実装・テスト・CIなし。Host正本9/34・25 NOT RUN、HC06 FULL HOLD。
 - [x] **P1-10l完了（公式AP2 v0.2.0固定commitの仕様/SDK読取照合のみ）**：[HOST_EXTERNAL_REVOCATION_P110L_AP2_SPEC_MAPPING](HOST_EXTERNAL_REVOCATION_P110L_AP2_SPEC_MAPPING.md) — 固定SHA `b4587ac1d055888a73b4b21750973cffba961793`に対応する規範的Merchant検証・Checkout/Receipt・SDKプリミティブは**SUPPORTED**、C01〜C12の**完全な外部Host–Authority強い失効協調契約は参照範囲でNOT SPECIFIED**、実事業者が個別にサポートするかは**UNKNOWN**。すべて根拠文書/行リンクを記録。新コード/テスト/CI/外部API 0、Host正本9/34・HC06 HOLD。
 - [x] **P1-10m完了（A: Merchant暗号VerifierとB: Host/Authority強失効を分離した設計のみ）**：[VERIFIER_VS_REVOCATION_P110M_SCOPE](VERIFIER_VS_REVOCATION_P110M_SCOPE.md) — VerifiedEvidence/Rejection（未実装）とHost最終ALLOW/nonce/operation/outbox、HC06/P/R_effective（研究用モデル）、実決済/Receipt、公開Gemを別責務としてスコープ・GO/HOLD表に整理。**非本番PoCの候補は条件付き・今回実装GOなし、HC06/Gem API/本番HOLD、決済・公開NO-GO。新コード/CI/テスト0、Host正本9/34・25 NOT RUN不変。**
-- [ ] **P1-10n（次のおすすめ1件・別途明示承認後のみ）**：Aの狭い非本番PoCに必要な正負fixture・Issuer trust・PoP・開示完全性・Checkout JWT/hashesと未解決事項を一表にまとめ、**設計のみで**着手GO/HOLD条件を再評価。コード/CI・GCP・実サービス・決済・Gem公開は別承認。
+- [x] **P1-10n完了（A限定オフラインPoC再開の採否・設計のみ）**：[VERIFIER_P110N_OFFLINE_POC_GATE](VERIFIER_P110N_OFFLINE_POC_GATE.md) — P1-0〜P1-3の署名/Chain/Checkout実測、P1-5の6 RED→P1-6の17 GREEN/0 RED/1 HOST_BOUNDARYを別証拠として棚卸し。Issuer固定・完全開示の厳格2hop合成fixtureに限定すれば**CONDITIONAL GO CANDIDATE（次実験は別承認）**、一般的な隠れた制約・任意hop・Host replayはHOLD。G01〜G08の判定要件とAN-P01/AN-N01〜N07の**未実行8ケース**を提案。**今回Rubyコード/CI/テスト0、汎用Gem/API・本番HOLD、決済/公開NO-GO。**
+- [ ] **P1-10o（次のおすすめ1件・別途明示承認後のみ）**：A-onlyの合成Issuer/Agent/Merchant署名fixtureとAN-P01＋AN-N01〜N07に限定し、既存研究コードを再利用した小さな**隔離オフライン統合試験**を行う。固定AP2 v0.2.0の証拠とCIを先に計画し、Gem/API/GCP/実決済/外部Authorityは対象外。別承認なしにコード追加・CI実行しない。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 
