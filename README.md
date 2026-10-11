@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier for Ruby
 
-> **Status: research/design only.** P1-10f evaluates a local two-process/two-PG16 synthetic Authority/Host harness for E-R01/R02 (**feasibility decision only; NOT BUILT / NOT RUN**). Prior PG16 Host research exercised **9/34 canonical cases** (12 runs / 465 assertions); **25 NOT RUN**. P1-10c's 8 runs/94 assertions used a single Ruby process and do not prove cross-service atomicity. HC06 distributed safety **HOLD**. **No generic Ruby Gem/API**; implementation **HOLD**, RubyGems release and production/real payments **NO-GO**.
+> **Status: research only.** P1-10g isolated two synthetic HC06 cases with separate Ruby OS processes and two PG16 instances (**E-R01/E-R02: 2 runs/118 assertions PASS; limited evidence only**). Canonical Host test cases remain **9/34 measured** (prior 12 runs/465 assertions), **25 NOT RUN**. Synthetic evidence does not prove cross-service atomicity or the full HC06 security contract (**HOLD**). **No generic Ruby Gem/API**; implementation **HOLD**, RubyGems release and production/real payments **NO-GO**.
 >
 > Independent, unofficial Ruby OSS exploration. Not affiliated with Google, the AP2 project, or FIDO Alliance.
 
@@ -90,6 +90,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [HC06 Cross-Service Protocol Design — P1-10d Authority reservations, durable Host COMMIT, revocation timing and failure matrix (DESIGN ONLY)](docs/HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md)
 - [HC06 Independent Failure-Injection Test Plan — P1-10e revocation during reservation, unknown COMMIT, reservation timeout (DESIGN ONLY, NOT RUN)](docs/HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md)
 - [HC06 Minimal Independent Harness Decision — P1-10f E-R01/R02 local two-process/two-PG16 feasibility assessment (DESIGN ONLY, NOT RUN)](docs/HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION.md)
+- [HC06 Independent PG16 Synthetic Evidence — P1-10g E-R01/R02 2 runs / 118 assertions, Host abort SIGKILL; distributed HC06 HOLD](docs/HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)

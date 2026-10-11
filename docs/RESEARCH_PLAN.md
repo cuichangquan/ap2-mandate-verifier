@@ -29,7 +29,8 @@
 - [x] **P1-10d完了（HC06の外部Authority/Host協調プロトコル設計のみ）**：[HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL](HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md) — 外部の失効有効化RとHost耐久COMMIT Cの順序、予約P/失効要求の保留、fence強制境界、障害/不明COMMIT/遅延COMMIT/二重送出の判断表、候補方式A〜Fを整理。**実装・新テスト・CIなし**。実DBでの正本Host9/34件・25件NOT RUN、HC06フルHOLDのまま。
 - [x] **P1-10e完了（設計のみ／NOT RUN）**：[HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN](HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md) — 独立した架空Authority/Hostによる予約後失効要求、COMMIT応答不明、予約timeoutと遅延COMMITの3系統12将来計画ID、fault barrier、耐久証拠、不変条件I1〜I6を設計。**実装・新テスト/CI・新DB検証なし**。正本Host 9/34件・25件NOT RUN、HC06 FULL HOLDは不変。
 - [x] **P1-10f完了（採否判断資料のみ・NOT RUN）**：[HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION](HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION.md) — E-R01/E-R02に限り、2独立Ruby worker＋別PG16インスタンス×2のローカル検証を**条件付き推奨**。abort gateの耐久・全C経路強制、barrier/障害注入・cleanup・費用/ローカル制約の着手ゲートを文書化。**実装/CI/新実測0**、HC06分散HOLD・Host正本9/34のまま。
-- [ ] **P1-10g（次のおすすめ1件・別途明示承認後のみ）**：P1-10f着手前の安全/環境/承認ゲートを満たせる場合に限り、E-R01/R02専用の隔離ハーネスを最小実装・実測する。条件未達はコードを書かずに再設計。
+- [x] **P1-10g完了（2限定合成ケースの実PG16実測のみ）**：[HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE](HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE.md) — Ruby別プロセス＋**別PG16.9インスタンス×2**でE-R01/R02の隔離合成研究、[専用CI #38143039035](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38143039035) **2 runs/118 assertions/0 failures**。Host abort COMMIT後のSIGKILL、別接続復旧、遅延worker STOPを観測。Authorityの本当の線形化保証は**未実証**でHC06 HOLD。正本Host9/34・25 NOT RUNを維持。
+- [ ] **P1-10h（次のおすすめ1件・別途明示承認後のみ）**：架空Coordinator任せのAuthority finalizeを信用できない問題について、耐久中止証拠の真正性/再送/切断時の失効確定ゲートを**設計レビューのみ**。実装・外部接続は別承認。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 

@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§27（P1-10f）：E-R01/R02の独立ハーネス構築は条件付き推奨だが、実装未承認・NOT RUN。既存Host正本9/34件実測・25件NOT RUN、HC06分散安全性HOLD。汎用Gem/API実装HOLD、公開/本番/実決済NO-GO。**
+> **最新判定は§28（P1-10g）：独立Ruby OS worker・2独立PG16によるE-R01/R02の限定合成試験2 runs/118 assertions PASS。ただしAuthority/Hostの分散原子性とHC06全体はHOLD、Host正本9/34件実測・25件NOT RUN。Gem/API・本番統合HOLD、RubyGems公開・実決済NO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -331,3 +331,15 @@ R_requestの受付とR_effectiveの失効完了を混同しない。COMMIT応答
 **過去証拠は不変：** PostgreSQL16 Host正本**9/34件、25件NOT RUN、12 runs/465 assertions PASS**。P1-10cの8 runs/94 assertionsは単一プロセスの合成研究。今回のE-R01/R02をPASSと数えない。HC06分散安全性、N17 HOST_BOUNDARY、P1-4 G1〜G6/P1-7 T1〜T5、公式Python SDKの**186 PASS/2 FAIL**は継続。**汎用Gem/API・本番Host統合HOLD、RubyGems公開・Production/実決済/署名Receipt NO-GO。** メンテナ自己レビューは独立セキュリティ監査ではない。
 
 **次のおすすめ1件（別途ユーザー明示承認後のみ）：P1-10g** — 上記着手ゲート成立時のみ、E-R01/R02用の独立ローカルPG16/worker障害注入実験を最小実装・実測する。未成立なら設計課題へ戻す。GCP・外部Authority・Gem・本番・決済は別承認。
+
+## 28. 2026-10-11 P1-10g HC06 E-R01/R02の独立PG16合成実測（最新・限定研究）
+
+**[HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE](HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE.md)、[GitHub Actions #38143039035](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38143039035)。** 専用CIでは**2 runs/118 assertions、失敗/エラー/skip 0**。PG16.9の別インスタンス×2をsystem identifierで確認、Ruby workerを独立OS子プロセスとして実行。E-R01はP→R_request accepted/pending→Host C durable→Authority R_effectiveの順序で、operation/outbox各1。E-R02は中止操作のHost durable COMMIT後、workerをSIGKILLして結果ACKを失わせ、別Host接続でABORTEDを復旧。その後のR_effective後に古いworkerを解放して**STOP**、nonce未消費、operation/outbox各0、再試行STOP。新しい実際のPayment/Provider/外部Authority/実Mandateは使わない。
+
+**制限:** Authorityは合成Coordinatorからのfinalizeを信用し、Hostのdurable証拠を真正に検証する分散原子手続きを備えない。R_effectiveとHost Cの全交錯・未知のin-flight COMMITは未実測。E-R02のpaused workerは**Host DBトランザクション開始前**であり、実DB lock待ちの実証ではない。2つのPGインスタンスは同一CIホストの物理障害ドメインを共有する。ゆえに**E-R01/R02の限定PASSをHC06の完全PASSや本番安全性に拡大しない**。P1-10e残り10計画IDはNOT RUN。
+
+**Host正本は9/34 IDs実測・25 NOT RUN、過去の12 runs/465 assertionsから増やさない。** P1-10cの8 runs/94 assertionsは単一プロセスの別合成研究。P1-10gの2 runs/118 assertionsを混算しない。N17 HOST_BOUNDARY、P1-4 G1〜G6/P1-7 T1〜T5、公式Python SDK中間hop186 PASS/2 FAILは残る。
+
+**判断：P1-10gの小さな合成研究のみPASS、HC06の外部分散安全性HOLD。Gem/API・本番Host統合HOLD、RubyGems公開・Production/実決済/署名Receipt NO-GO。** 自己レビューは独立セキュリティ監査ではない。
+
+**次のおすすめ1件（別のユーザー明示承認後のみ）：P1-10h** — Authorityが架空Coordinatorのfinalizeを盲信しないよう、Host耐久中止の証拠の真正性・再送/異常通信・失効確定条件を**設計レビューだけ**で整理する。実装/外部Authority/GCP/決済は追加承認。
