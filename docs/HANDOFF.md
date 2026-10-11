@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**Phase 0 / P0-1〜P0-5 完了（判断：HOLD）、次はP0-5a のオフライン検証**。Ruby Gem実装・公開・適合性検証・本番安全性検証は未実施。
+状態：**Phase 0 / P0-1〜P0-5 完了（判断：HOLD）。P0-5aは一部実施（固定SDKのCheckout限定テスト11 PASS / 公式pytest BLOCKED）**。Ruby Gem実装・公開・適合性検証・本番安全性検証は未実施。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -13,7 +13,7 @@
 
 1. [README](../README.md) — Gemの目的・利用シーン・非スコープ
 2. [PROJECT](PROJECT.md) — D001〜D006、責務境界、独立OSS方針
-3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) — 仕様・要件・エコシステム・API案・HOLD判断
+3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) — 仕様・要件・エコシステム・API案・HOLD判断・限定実行結果
 4. [OFFICIAL_SOURCES](OFFICIAL_SOURCES.md) — AP2/FIDO/IETFの一次資料・ウォッチリスト
 5. [RESEARCH_PLAN](RESEARCH_PLAN.md) — Phase 0〜3 の全体工程
 6. [SECURITY_BOUNDARY](SECURITY_BOUNDARY.md) — 未信頼Mandateの扱いとFail Closed
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1〜P0-5完了（HOLD）/ P0-5aが次】
+### Phase 0 — 仕様・競合調査【P0-1〜P0-5完了（HOLD）/ P0-5aは一部実施・継続】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -76,7 +76,9 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - **成果物案：** `docs/RESEARCH_DECISION.md`
   - **完了条件：** GO（最小PoC）、HOLD（仕様待ち）、NO-GO（既存活用/価値が小さい）の根拠を記録。**自動的に実装へ進まない。**
 
-- [ ] **P0-5a：公式Python SDKの隔離・オフライン基準テスト＋主要負例（次の1タスク、ユーザー承認後のみ）**
+- [ ] **P0-5a：公式Python SDKの隔離・オフライン基準テスト＋主要負例（部分結果あり・未完了）**
+  - **実測部分結果：** [PYTHON_BASELINE_VERIFICATION.md](PYTHON_BASELINE_VERIFICATION.md) — 公式5ファイルのGit Blob SHA一致。CheckoutChainの限定パス/生成Openモデル/JSON Schemaの隔離サブセット11 PASS。署名・Issuer/Holder・aud/nonce・非開示制約は未実行。
+  - **阻害要因：** 外部GitHub DNSに接続できず、`jwcrypto`/`sd-jwt`がローカル未導入。公式pytest全体は**未実行**。Ruby実装HOLDは継続。
   - AP2 v0.2.0固定commitでpytestの実測結果を記録。Checkout hash、Issuer trust、terminal aud/nonce、hidden constraints、Open schema差異を短い負例で検証する。
   - **成果物案：** `docs/PYTHON_BASELINE_VERIFICATION.md`。実行コマンド/バージョン/Pass・Fail・Skip/解釈を明記。Ruby Gem実装・外部実決済なし。
   - **完了条件：** P0-5のHOLDを再判定するための実証材料を得ること。自動的なGOはしない。
@@ -124,32 +126,28 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**Phase 0 / P0-1〜P0-5を研究・判断文書として完了。P0-5の判定はHOLD。** [RESEARCH_DECISION](RESEARCH_DECISION.md)を必ず読み、HOLDの理由と再判定ルールを維持する。
+**P0-1〜P0-5完了。実装判断はHOLD。P0-5aの一部のみ実行。** 最新GitHub mainとIssue/PRを確認し、[PYTHON_BASELINE_VERIFICATION.md](PYTHON_BASELINE_VERIFICATION.md)、[RESEARCH_DECISION.md](RESEARCH_DECISION.md)を優先的に読む。
 
-**現時点でGem/Ruby PoCの実装許可はない。** Python SDKはソース・既存テストを静的に閲覧したのみ。Python pytest、Ruby Gem依存試験、相互運用は未実施。上流IssueのOpen状態は、その報告内容を本OSSで独立実証したことを意味しない。
+**P0-5aの実際の結果:** AP2 v0.2固定ソース**5ファイル**をGit Blob SHA一致で隔離復元し、**Checkout helper/Schema/Model限定テスト11 PASS**（[再現用Pythonテスト](../research/p0_5a/test_ap2_checkout_subset.py)）。外部ネットワークが使えず`jwcrypto`/`sd-jwt`がないため**公式pytestは未実行**。テストは暗号処理や全制約評価をstub化した限定結果であり、AP2 Verifier全体のPASSではない。
 
-**次の1タスク（ユーザーが改めて承認した場合のみ）：P0-5a — 公式Python SDKを固定Commitで隔離してオフラインテストし、Checkout Hash、trusted issuer、aud/nonce、Selective Disclosure、Open schemaを負例確認。** `docs/PYTHON_BASELINE_VERIFICATION.md` に実行証拠を記録する。Gem実装、公開、A2A/ActingFor変更は禁止。結果からP0-5 HOLDを再判定するが、自動的にRuby実装へ進まない。
+**次の1件（別の明示依頼後のみ）:** **P0-5aの残作業**。GitHub/PyPIアクセスが可能な隔離環境（macOSなど）で固定AP2の公式pytestと、Issuer trust・aud/nonce・非開示constraintの優先負例を**本物のSDK依存で**実行し、結果を既存の`docs/PYTHON_BASELINE_VERIFICATION.md`へ追記する。Ruby Gem/PoC実装、公開、GCP課金、ActingFor/a2a-rails変更はしない。HOLDの再判定はそれから行う。
 
 ### 次チャット用指示文
 
 ```text
-ap2-mandate-verifierを続けます。
-正本: https://github.com/cuichangquan/ap2-mandate-verifier/tree/main
+ap2-mandate-verifier P0-5aの続きを始めます。
+https://github.com/cuichangquan/ap2-mandate-verifier
 
-最新main、Issue、Open PRを確認し、docs/HANDOFF.md、
-docs/SPEC_BASELINE.md、docs/VERIFIER_REQUIREMENTS.md、
-docs/ECOSYSTEM_RESEARCH.md、docs/API_PROPOSAL.md、
-docs/RESEARCH_DECISION.mdを読んでください。
+main/Issue/PR、docs/HANDOFF.md、docs/RESEARCH_DECISION.md、
+docs/PYTHON_BASELINE_VERIFICATION.mdを確認してください。
+固定 AP2 v0.2.0 SHA: b4587ac1d055888a73b4b21750973cffba961793
 
-今回はP0-5aのみ。HOLDを尊重し、公式AP2 v0.2固定ソース
-b4587ac1d055888a73b4b21750973cffba961793 のPython SDKを
-ローカル隔離・低コストで実行し、既存pytestと、Checkout hash、
-Issuer trust、terminal aud/nonce、Selective Disclosure/制約、
-Open schema差異の優先負例を検証してください。
-コマンド・固定版・Pass/Fail/Skip・観察・未実証事項を
-docs/PYTHON_BASELINE_VERIFICATION.mdに根拠付きで記録してください。
+既に実行した限定テスト11件と、公式pytest未実行を混同しないこと。
+今回は、ネットワークで依存が取得できる隔離環境で**公式Python SDK**
+のpytestと優先負例（trusted issuer/x5c、terminal aud/nonce、
+実際のSD-JWT非開示/Constraints）を実行し、再現コマンド、
+Pass/Fail/Skipをdocs/PYTHON_BASELINE_VERIFICATION.mdへ追記。
 
-Ruby Gem実装、API確定、GCP費用、実決済/実サービス通信、
-ActingFor/a2a-rails変更、公開は禁止です。
-PR・mainマージのうえ、実測結果、SHA、次の1タスクだけ報告してください。
+Gem/PoCの実装・公開、GCP利用、他OSSの変更は禁止。
+安全性を誇張せずPR/マージの記録を残してください。
 ```

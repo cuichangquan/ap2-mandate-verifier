@@ -69,6 +69,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [Official Python SDK and Ruby ecosystem research (P0-3)](docs/ECOSYSTEM_RESEARCH.md)
 - [Minimal Checkout Verifier public API proposal — design only (P0-4)](docs/API_PROPOSAL.md)
 - [Phase 0 research decision — **HOLD** and evidence needed before Ruby implementation (P0-5)](docs/RESEARCH_DECISION.md)
+- [Python baseline verification — isolated subset 11 PASS; official pytest **BLOCKED** (P0-5a)](docs/PYTHON_BASELINE_VERIFICATION.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)
