@@ -117,8 +117,14 @@ def generate():
     # Validating against the official Python constraint evaluator is useful for
     # distinguishing AP2-like rules from stricter Host-only checks.
     assert check_checkout_constraints(root_model, Checkout.model_validate(versions["valid"])) == []
-    for name in ("disallowed_merchant", "wrong_sku", "wrong_quantity"):
+    for name in ("disallowed_merchant", "wrong_sku"):
         assert check_checkout_constraints(root_model, Checkout.model_validate(versions[name])), name
+    # Observed in official AP2 v0.2 SDK: quantity=1 against requirement=2
+    # produces no violations. Ruby research profile therefore REQUIRES exact
+    # quantity, rather than claiming upstream enforces it.
+    assert check_checkout_constraints(
+        root_model, Checkout.model_validate(versions["wrong_quantity"])
+    ) == []
 
     def terminal(checkout_jwt, checkout_hash=None):
         if checkout_hash is None:
