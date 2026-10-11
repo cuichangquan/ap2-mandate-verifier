@@ -24,7 +24,8 @@
 - [x] **P1-9b完了（隔離Host PG16クラッシュ研究のみ）**：[HOST_REPLAY_P19B_EVIDENCE](HOST_REPLAY_P19B_EVIDENCE.md) — HR04（COMMIT前SIGKILL/全Rollback）・HR05（COMMIT ACK後SIGKILL/PENDING復元・再送STOP）**2 runs / 84 assertions成功**、P1-9a回帰4/108成功、計**6/34実測・残り28件未実行**（[CI #38134591784](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38134591784)）。
 - [x] **P1-9c完了（オフラインUnknown COMMIT/Mock Provider研究のみ）**：[HOST_REPLAY_P19C_EVIDENCE](HOST_REPLAY_P19C_EVIDENCE.md) — HR06（COMMIT非同期送信・ACK未受信で別DB回復／実lock_timeout `55P03`）、HR07（Mock Provider応答喪失＋同一key 2回試行／論理効果1件＋別key STOP）。**新2 runs /149 assertions、旧6 runs/192 assertionsの計8/34件PASS・341 assertions成功**（[CI #38135302918](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38135302918)）。**残る26件未実行**。
 - [x] **P1-10a完了（HR10・同一DBのCheckout変更/失効競合のみ）**：[HOST_REPLAY_P110A_EVIDENCE](HOST_REPLAY_P110A_EVIDENCE.md) — PostgreSQL 16.9独立2workerのDBロック競合を実測。cancel先/Buyer block先/Checkout version更新先→STOP・nonce未使用・operation/outbox0、注文先→遅い取消はtoo_late。**HR10の4 subcases：4 runs/124 assertions PASS**、既存8 runs/341 assertions回帰PASS。**正本Host34件中9件実測・25件未実行**（[CI #38136341199](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38136341199)）。外部失効源は保証対象外。
-- [ ] **P1-10b（次・別途明示承認後のみ）**：HC06の外部Issuer/Agent/Buyer revocationとCOMMIT境界の一貫性について**設計・テスト戦略のみ**。GCP/外部サービス/Host本番コードは未承認。
+- [x] **P1-10b完了（HC06は設計・テスト戦略のみ、NOT RUN）**：[HOST_EXTERNAL_REVOCATION_HC06_DESIGN](HOST_EXTERNAL_REVOCATION_HC06_DESIGN.md) — 外部Issuer/Agent/Buyer失効の有効時点RとHost確定Cの整合性、単純な照会方式のTOCTOU、fencing/leaseの条件、UNKNOWN時Fail Closed、HC06-A〜Hの負例を設計。新実装・CI実行・Host ID実測の増加なし。**既存9/34件のみ実測、25件未実行**。
+- [ ] **P1-10c（別途明示承認後のみ）**：架空Authority/HostのオフラインスケジューラでHC06 TOCTOUとfencing方式の差を実測。実Authority/API/GCP/Gem/実決済は対象外。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 

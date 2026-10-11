@@ -85,6 +85,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [Host Crash Recovery Evidence — P1-9b HR04/HR05 real SIGKILL and durable PG recovery; 6/34 Host cases exercised](docs/HOST_REPLAY_P19B_EVIDENCE.md)
 - [Host Unknown COMMIT / Mock Provider Evidence — P1-9c HR06/HR07 offline only, 8/34 Host cases executed](docs/HOST_REPLAY_P19C_EVIDENCE.md)
 - [Host Checkout/Revocation Race — P1-10a HR10 four PG16 interleavings PASS; 9/34 Host case IDs (research only)](docs/HOST_REPLAY_P110A_EVIDENCE.md)
+- [HC06 External Revocation Design — P1-10b authority consistency, TOCTOU and negative tests (design only, NOT RUN)](docs/HOST_EXTERNAL_REVOCATION_HC06_DESIGN.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)

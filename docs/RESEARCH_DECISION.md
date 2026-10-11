@@ -279,3 +279,13 @@
 **範囲と限界:** 両側が**同じPostgreSQL checkout→policy行を同一規約でlock**する合成研究。外部Issuer/Buyer/Agentの失効源、別DB、一時的な不整合、真正Checkout JWTの署名・金額/在庫、取消後補償/Refund、正式Receipt、実決済は未検証。HC04/HC06/HC07を自動でPASSにしない。N17 stateless HOST_BOUNDARYも残る。P1-4 G1〜G6、P1-7 T1〜T5の完全達成、公式Python SDK中間hop aud/nonceの186 PASS/2 FAIL解消は主張しない。
 
 **判断:** 狭いHost DB競合研究だけPASS/限定GO。汎用Gem/API、本番Host統合**HOLD**、RubyGems公開・Production/実決済**NO-GO**。**次の一件（別途ユーザー明示承認）：P1-10b HC06の外部失効整合性設計・テスト戦略のみ。** 外部GCP/APIデプロイや実験はその後の独立承認。
+
+## 23. 2026-10-11 P1-10b HC06 外部失効AuthorityとHost COMMIT境界の設計判断（最新）
+
+**今回のP1-10bは設計のみ・HC06 NOT RUN。** [HOST_EXTERNAL_REVOCATION_HC06_DESIGN](HOST_EXTERNAL_REVOCATION_HC06_DESIGN.md)で、外部Issuer/Agent/Buyerの失効がeffectiveになる権威的時点 **R** とHostのnonce/Checkout/operation/outbox確定時点 **C** を分離。理想的な強いポリシーは**R<CならSTOP、nonce未消費、operation/outbox 0**。だがQで外部ALLOWを再照会しても**Q<R<C** のTOCTOUを防げず、Host DBのrow lockも別Authorityを制御しない。
+
+比較：**A）外部再照会+UNKNOWN時STOP**は比較baseline（強い競合保証なし）、**B）失効/Host確定の共有された直列化境界**は強い参照モデル、**C）Authorityの原子的予約とfencing token強制**はAuthorityのAPIと適用側保証が必要な将来候補、**D）lease有効中は失効のeffectiveを遅らせる方式**は即時取消ではない、**E）event/cache同期**は伝播遅延・欠落だけで保証不能。具体的なAuthority契約・実装方式は未決。将来のHC06-A〜H負例/Fail Closedの試験戦略を作成したが、**コード/Actions実行/外部API接続はない**。
+
+**現在の実測は前段P1-10aまでのHost正本9/34 IDs、12 Minitest runs/465 assertions PASSのみ**（[Actions #38136570328](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38136570328)）。**HC06はNOT RUN、残り25件NOT RUN**。N17 stateless HOST_BOUNDARY、HC04/HC07等、P1-4 G1〜G6/P1-7 T1〜T5未達、公式Python SDK 186 PASS/2 FAILを解消したとは主張しない。
+
+**判断：P1-10bの文書設計だけ限定GO。HC06実測とHost本番統合/Gem/APIはHOLD、RubyGems公開・Production・実決済・Receipt NO-GO。** 次の1件（別途ユーザー明示承認後）：**P1-10c**、完全架空のAuthority/Hostオフラインスケジューラで再照会方式のTOCTOUとfencing条件の差を研究する。実Authority/GCP/APIデプロイ等はさらに別承認。
