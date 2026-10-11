@@ -48,6 +48,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [Project scope and design decisions — Japanese](docs/PROJECT.md)
 - [Official AP2 sources and standards watchlist](docs/OFFICIAL_SOURCES.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
+- [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)
 
 ## Primary official references
