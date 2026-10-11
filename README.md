@@ -80,6 +80,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [Security Hardening Research — P1-6 fixed six prior REDs: **0 RED, 17 GREEN, 43 historical regressions passed**](docs/SECURITY_HARDENING_RESEARCH.md)
 - [Host Security Contract — P1-7 Host trust, VerifiedEvidence vs ALLOW, nonce atomicity, revocation and Receipt (design only)](docs/HOST_SECURITY_CONTRACT.md)
 - [Host Security Test Plan — P1-7 34 planned race, trust, context and Receipt cases (NOT run)](docs/HOST_SECURITY_TEST_PLAN.md)
+- [Host Replay Lab Design — P1-8 PostgreSQL 16, two workers, crash/retry test plan (DESIGN ONLY, NOT RUN)](docs/HOST_REPLAY_LAB_DESIGN.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)
