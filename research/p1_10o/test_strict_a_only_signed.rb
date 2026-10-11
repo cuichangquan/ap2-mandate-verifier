@@ -116,7 +116,7 @@ class AP2StrictAOnlyAcceptanceResearchTest < Minitest::Test
              terminal: f.fetch("signed_extra_fixed_open_terminal"))
     end
     assert_match(/unsupported signed Open claim layout/, omitted.message)
-    P110O.record("AN-N04", "REJECTED", "signed in-window exp alteration AND omitted issuer-fixed Open claim rejected; challenge/time rejects")
+    P110O.record("AN-N04", "REJECTED", "signed in-window claim drift AND omitted issuer-fixed Open claim rejected; challenge/time rejects")
   end
 
   def test_an_n05_strict_jose_json_and_resource_bounds
