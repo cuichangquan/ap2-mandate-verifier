@@ -42,6 +42,7 @@ def generate():
     agent = JWK.generate(kty="EC", crv="P-256")
     merchant = JWK.generate(kty="EC", crv="P-256")
     other_issuer = JWK.generate(kty="EC", crv="P-256")
+    wrong_agent = JWK.generate(kty="EC", crv="P-256")
     now = int(time.time())
     items = LineItems(items=[
         LineItemRequirements(
@@ -72,6 +73,9 @@ def generate():
 
     checkout_with_extra = dict(base_checkout)
     checkout_with_extra["opaque_unverified_authorization"] = {"role": "override"}
+    deep_nested = "leaf"
+    for _ in range(48):
+        deep_nested = {"nested": deep_nested}
     checkout_jwts = {
         "valid": sign_merchant_raw(merchant, base_checkout_json),
         "duplicate_merchant_id": sign_merchant_raw(merchant, duplicated_merchant_json),
@@ -91,21 +95,100 @@ def generate():
         "large_checkout": sign_merchant_raw(
             merchant, json_compact({**base_checkout, "padding": "A" * 19500})
         ),
+        # P1-10o: authentic ES256 JWT whose extra nested data exceeds the
+        # strict research JSON max nesting (distinct from an over-size token).
+        "deep_checkout": sign_merchant_raw(
+            merchant, json_compact({**base_checkout, "unexpected": deep_nested})
+        ),
     }
 
-    def terminal(jwt, exp=now + 3600, timestamp=now):
+    def terminal(jwt, exp=now + 3600, timestamp=now, signer=agent,
+                 hash_mode="sd_hash", prior_root=None):
         closed = CheckoutMandate(
             checkout_jwt=jwt, checkout_hash=b64(hashlib.sha256(jwt.encode()).digest()),
             iat=timestamp, exp=exp,
         )
         return kb_sd_jwt.create(
-            prev_token=common.parse_token(root), holder_key=agent, payload=closed,
-            aud=AUD, nonce=NONCE, sd=DisclosureMetadata(), hash_mode="sd_hash",
+            prev_token=common.parse_token(prior_root or root), holder_key=signer, payload=closed,
+            aud=AUD, nonce=NONCE, sd=DisclosureMetadata(), hash_mode=hash_mode,
         ).sd_jwt_issuance
 
     terminal_variants = {k: terminal(jwt) for k, jwt in checkout_jwts.items()}
     terminal_variants["expired_closed"] = terminal(checkout_jwts["valid"], exp=now - 120)
     terminal_variants["future_closed_iat"] = terminal(checkout_jwts["valid"], timestamp=now + 1800)
+    # P1-10o / Codex P1 claim-preservation review: valid signed Closed
+    # still inside Root time window, but an Issuer fixed claim was changed.
+    terminal_variants["changed_closed_exp_in_window"] = terminal(
+        checkout_jwts["valid"], exp=now + 3000
+    )
+    # P1-10o Codex follow-up: a correctly Issuer-signed Open can carry an
+    # EXTRA fixed claim. A naive intersection-only comparison misses that
+    # the Agent has omitted it in Closed. The strict fixed-layout verifier
+    # must reject the root itself rather than infer unchanged authority.
+    root_parts = root.split("~")
+    root_header, root_payload, _ = root_parts[0].split(".")
+    extra_open_payload = json.loads(base64.urlsafe_b64decode(
+        root_payload + "=" * (-len(root_payload) % 4)
+    ))
+    original_header_json = base64.urlsafe_b64decode(
+        root_header + "=" * (-len(root_header) % 4)
+    ).decode("utf-8")
+
+    # The first delegate_payload array element is an SD-JWT disclosure
+    # PLACEHOLDER, not the Open mandate object. Mutate the signed Mandate
+    # disclosure itself and update its referenced digest inside the
+    # issuer-signed outer payload. An altered placeholder shape would be
+    # rejected for parsing, obscuring the omitted-claim vulnerability.
+    edited_disclosures = root_parts[1:-1].copy()
+    changed = []
+    for idx, part in enumerate(edited_disclosures):
+        decoded = json.loads(base64.urlsafe_b64decode(
+            part + "=" * (-len(part) % 4)
+        ))
+        if (isinstance(decoded, list) and len(decoded) == 2
+                and isinstance(decoded[1], dict)
+                and decoded[1].get("vct") == "mandate.checkout.open.1"):
+            decoded[1]["currency"] = "USD"
+            new_part = b64(json_compact(decoded).encode("utf-8"))
+            old_digest = b64(hashlib.sha256(part.encode("ascii")).digest())
+            new_digest = b64(hashlib.sha256(new_part.encode("ascii")).digest())
+            edited_disclosures[idx] = new_part
+            changed.append((old_digest, new_digest))
+    assert len(changed) == 1, "Expected one signed Open Mandate disclosure"
+
+    old_digest, new_digest = changed[0]
+    count = [0]
+    def repoint(value):
+        if isinstance(value, dict):
+            if list(value) == ["..."] and value["..."] == old_digest:
+                value["..."] = new_digest
+                count[0] += 1
+            else:
+                for item in value.values():
+                    repoint(item)
+        elif isinstance(value, list):
+            for item in value:
+                repoint(item)
+    repoint(extra_open_payload)
+    assert count[0] == 1, "Expected exactly one delegate_payload commitment"
+
+    signed_extra_root = sign_merchant_raw(
+        issuer, json_compact(extra_open_payload), original_header_json
+    ) + "~" + "~".join([*edited_disclosures, ""])
+    # Verify the new issuer signature AND the full updated disclosure chain.
+    from ap2.sdk.sdjwt.sd_jwt import verify as verify_root
+    assert verify_root(signed_extra_root, JWK.from_json(issuer.export_public()))[
+        "delegate_payload"
+    ][0]["currency"] == "USD"
+    signed_extra_terminal = terminal(
+        checkout_jwts["valid"], prior_root=signed_extra_root
+    )
+    terminal_variants["wrong_agent_signature"] = terminal(
+        checkout_jwts["valid"], signer=wrong_agent
+    )
+    terminal_variants["unsupported_hash_mode"] = terminal(
+        checkout_jwts["valid"], hash_mode="issuer_jwt_hash"
+    )
     # An already-expired-but-signed Root is tested separately: root signature
     # valid; Root clock should reject. Use an independent issuance.
     expired_root = MandateClient().create(
@@ -163,6 +246,8 @@ def generate():
         "trusted_merchant_public_jwk": json.loads(merchant.export_public()),
         "root_open_sdjwt": root,
         "valid_terminal": terminal_variants.pop("valid"),
+        "signed_extra_fixed_open_root": signed_extra_root,
+        "signed_extra_fixed_open_terminal": signed_extra_terminal,
         "terminal_variants": terminal_variants,
         "checkout_jwts": checkout_jwts,
         "expired_root": expired_root,

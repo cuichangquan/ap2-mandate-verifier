@@ -17,6 +17,11 @@ module AP2TwoHopResearch
 
       root_wire, terminal_wire = chain
       root = AP2RootSDJWTResearch.verify_full_root!(root_wire, trusted_jwk: issuer_jwk)
+      # The lab supports exactly this Issuer-signed Open layout. Comparing
+      # only the intersection of Open/Closed keys is insufficient: an Agent
+      # could simply OMIT an extra issuer-fixed Open claim from the Closed.
+      raise Rejected, "unsupported signed Open claim layout" unless
+        root.keys.sort == %w[cnf constraints exp iat vct].sort
       agent_jwk = root.fetch("cnf").fetch("jwk")
       raise Rejected, "root holder key not trusted expected Agent" unless public_key?(agent_jwk, expected_agent_jwk)
 
@@ -42,6 +47,8 @@ module AP2TwoHopResearch
         payloads.length == 1 && payloads.first.is_a?(Hash)
       closed = payloads.first
       raise Rejected, "terminal must be Closed Checkout" unless closed["vct"] == "mandate.checkout.1"
+      raise Rejected, "unsupported signed Closed claim layout" unless
+        closed.keys.sort == %w[checkout_hash checkout_jwt exp iat vct].sort
       # The outer KB-SD-JWT iat does NOT establish validity of the nested
       # Agent-signed Closed Mandate. Check its own signed iat/exp separately.
       closed_iat, closed_exp = closed.values_at("iat", "exp")
@@ -53,6 +60,18 @@ module AP2TwoHopResearch
         closed_exp - closed_iat <= 7200
       raise Rejected, "Closed outside issuer Root validity" unless
         closed_iat >= root.fetch("iat") && closed_exp <= root.fetch("exp")
+      # AP2 R06: Claims shared by Open and Closed (other than type/vct) must
+      # retain their signed values. A shorter but valid Closed exp is NOT
+      # a license to override the Issuer's originally authorized claims.
+      # Strict research profile: equality of root iat/exp is required; no
+      # arbitrary extension fields or extra hops are supported here.
+      %w[iat exp].each do |claim|
+        raise Rejected, "Closed changed a fixed Open claim" unless
+          closed.fetch(claim) == root.fetch(claim)
+      end
+      other_shared = (root.keys & closed.keys) - %w[vct iat exp]
+      raise Rejected, "Closed overwrote a signed Open claim" unless
+        other_shared.all? { |claim| root[claim] == closed[claim] }
       raise Rejected, "terminal must not delegate again" if closed.key?("cnf")
       raise Rejected, "missing checkout information" unless closed["checkout_jwt"].is_a?(String) &&
         !closed["checkout_jwt"].empty? && closed["checkout_hash"].is_a?(String) &&
