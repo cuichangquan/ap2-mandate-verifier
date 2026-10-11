@@ -14,6 +14,7 @@ module P110Q
     FIXTURE.fetch("fixture_signature_verified_by_python") == true
   raise "wrong probe" unless FIXTURE.fetch("probe_id") == "GP01"
   RESULT = {}
+  ROOT_REVERIFIED = { completed: false }
 end
 
 class P110QNestedConstraintProbeTest < Minitest::Test
@@ -33,6 +34,8 @@ class P110QNestedConstraintProbeTest < Minitest::Test
                  matching.first.fetch("policy_override")
     assert_equal %w[allowed policy_override type], matching.first.keys.sort
     assert_equal "merchant-allowed", matching.first.fetch("allowed").first.fetch("id")
+    # Mark only after both signed Root parsing and expected disclosed field checks.
+    P110Q::ROOT_REVERIFIED[:completed] = true
 
     begin
       proof = AP2CheckoutBindingResearch.verify!(
@@ -79,7 +82,7 @@ Minitest.after_run do
     probe: "GP01",
     count: 1,
     fixture_issuer_agent_merchant_signatures_checked: P110Q::FIXTURE["fixture_signature_verified_by_python"],
-    root_disclosures_reverified_by_ruby: true,
+    root_disclosures_reverified_by_ruby: P110Q::ROOT_REVERIFIED[:completed],
     result: P110Q::RESULT,
     scope: "isolated research observation, not a security certification or Host checkout ALLOW",
     no_fix_applied_to_existing_verifier: true
