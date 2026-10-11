@@ -108,6 +108,8 @@ def generate():
         "source": "Official AP2 v0.2 Python kb_sd_jwt.create / chain.verify_chain",
         "ap2_commit": "b4587ac1d055888a73b4b21750973cffba961793",
         "trusted_issuer_public_jwk": json.loads(issuer.export_public()),
+        "expected_agent_public_jwk": json.loads(holder.export_public()),
+        "wrong_agent_public_jwk": json.loads(wrong_holder.export_public()),
         "expected_aud": EXPECTED_AUD,
         "expected_nonce": EXPECTED_NONCE,
         "root_open_sdjwt": root,
