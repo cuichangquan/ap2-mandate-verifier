@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§16（P1-6）：以前の6 REDは固定18ケースで0 REDへ改善、43回帰PASS。ただしHost replay等が未実装のため汎用Gem/API実装HOLD、公開/本番/実決済NO-GO。**
+> **最新判定は§17（P1-7）：Host信頼境界/Nonce/Receiptの設計と34件の将来テストケースを作成。新しいHost/CI実測はゼロ。汎用Gem/API実装HOLD、公開/本番/実決済NO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -223,3 +223,17 @@
 **最新GO/HOLD判断:** 厳格なオフライン研究PoCのみCONDITIONAL GO。**汎用AP2 Ruby Gem/API実装はHOLD、RubyGems公開・本番/実決済はNO-GO。** これを「P1-4ゲートG1〜G6完全クリア」や安全な実取引への許可と解釈しない。
 
 **次の1件（ユーザーが別途明示承認した場合のみ）：P1-7 — Host trust/VerifiedEvidence/Nonce/Clock/失効・Receiptの責務契約と必要な負例の設計資料作成。** 本番コードやGem実装はまだ先に進めない。
+
+## 17. 2026-10-11 P1-7 Host信頼境界・nonce/Receipt責務の設計とGO/HOLD（最新）
+
+**実行内容：文書設計のみ。** [HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md)と[HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md)で、AP2 v0.2固定版・単一Agent/2hopの範囲に対し、HostのIssuer/Buyer/Agent/Merchant identity↔信頼鍵、現在Checkout正本、Host期待aud/nonce/Clock、失効、`VerifiedEvidence ≠ ALLOW`、原子的なReplay防止、同一operationによる障害復旧、署名Receiptを責務別に整理した。
+
+**将来テスト計画は34件**：HT01〜HT07（Host鍵/IDとtrust、7）、HC01〜HC07（Context/Clock/TOCTOU、7）、HR01〜HR10（DBによるnonce同時消費・障害・再実行、10）、HE01〜HE10（Evidence/Receipt・Privacy・障害時STOP、10）。**すべて設計のみ・未実装・未実行。** P1-7は新しいCI/Rubyテスト、DBの一意制約、Receipt生成、実決済/GCP実験を行っていない。
+
+**境界の核心:** VerifierはIssuer/Agent/Merchant署名・Checkout制約等の検証**事実**を返し、最終のBuyer資格/失効/注文正本/nonce使用済みを証明しない。Hostがそれらを同一整合性境界で確認し、CASによるnonce消費とCheckout operation作成を**原子的に確定**するという**提案契約**を明示した。複数worker、commit不明時、外部処理timeout/receipt署名失敗で**再実行・二重課金をしない**ことを将来の受入れ基準とする。未達時はSTOP/PENDING、証拠不足で成功へ進めない。
+
+**公式根拠と独自方針の区別:** MerchantによるCheckout Mandate検証・失敗時Receiptは固定[AP2仕様](https://github.com/google-agentic-commerce/AP2/blob/b4587ac1d055888a73b4b21750973cffba961793/docs/ap2/specification.md#L302-L317)。nonce CAS/Outbox/注文DB/Host IDマッピングは**本OSSのHostセキュリティ設計案**であって規格の必須DB実装ではない。
+
+**GO/HOLD：** 限定研究・設計活動のみCONDITIONAL GO。**汎用AP2 Ruby Gem/public API実装はHOLD、RubyGems公開/本番/実決済はNO-GOを維持。** P1-6の旧RED修正後18ケース（17 GREEN/0 RED/Host責務1）と43回帰は過去CIの証拠であり、**Host Replay/Tenant/Receiptの受入れテスト合格を意味しない**。
+
+**次の1件（別途ユーザー明示承認が必要）：P1-8。** Host nonce/Checkout操作のrace/rollback/retryをオフラインで試すため、**ローカルDB/runner・テスト設計・費用・実装範囲の採用判断を先に行う**。Gem/Host本番コードやDB/決済を自動的に作らない。

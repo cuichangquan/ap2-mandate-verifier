@@ -18,7 +18,8 @@
 - [x] **P1-4完了（静的レビューのみ）**：[SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) — P1-1〜P1-3コードに基づく**12項目のリスク登録＋6つのGem受入れゲート**。公開/汎用Gemの実装は**HOLD**、Production/実決済は**NO-GO**。研究テスト追加に限定したP1-5はGO候補（別途承認）。新CI・新攻撃実証はなし。
 - [x] **P1-5完了（テストのみ）**：[SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md)、[Actions #38127279271](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38127279271)。固定AP2 SDK＋Ruby研究コードの署名済負例**18件：GREEN 11（正例1/拒否10）、RED 6（想定外受理）、HOST_BOUNDARY 1、ERROR 0**。既存P1-1/2/3回帰43件はPASS。**汎用Gem/API実装HOLD、公開/本番NO-GO**。既存検証器は変更しない。
 - [x] **P1-6完了（研究コード修正のみ）**：[SECURITY_HARDENING_RESEARCH](SECURITY_HARDENING_RESEARCH.md)、[CI #38128152237](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38128152237)。以前の**6 REDをすべてGREEN化**。署名付き観測18件=**17 GREEN / 0 RED / 0 ERROR / 1 Host Boundary**。P1-1〜3回帰**10+15+18=43件成功**。重複JSON/JOSE・Closed内時刻・Merchant JWT typ・未知Checkout fieldを厳格化。**Gem実装/公開・実決済はHOLD/NO-GO**。
-- [ ] **P1-7（次・別途明示承認後のみ）**：Host trustとVerifiedEvidence≠ALLOW、nonce一度限り消費・Clock/失効/Receiptの責務を**設計・テスト計画のみ**として文書化。Gem本体・Host DB・GCP/実決済は未実装のまま。
+- [x] **P1-7完了（設計資料のみ）**：[HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md) / [HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md)。Issuer/Buyer/Agent/MerchantのHost鍵信頼登録、Host current Checkout、`VerifiedEvidence ≠ ALLOW`、nonceと注文の**原子的な一度限り遷移**、失効・Clock・外部処理Idempotency/Receiptの責務を分け、**34件の将来テストID**を設計。**新テスト/CI、Host DB/実決済、Gem/API実装なし**。汎用Gem実装HOLD・Production NO-GO。
+- [ ] **P1-8（次・別途明示承認後のみ）**：Host側Replay/nonce同時性・クラッシュ/再試行を将来オフライン実測するため、ローカルDB（例：一時PostgreSQL）/隔離環境と最小試験範囲を**まず設計・採用判断**する。Host DB/Gem実装、GCP、実決済は自動着手しない。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 

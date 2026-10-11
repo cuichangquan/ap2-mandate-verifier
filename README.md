@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier for Ruby
 
-> **Status: research only.** P1-6 strict-profile security hardening verified all 6 prior REDs are now rejected: **17 GREEN / 0 RED / 0 ERROR / 1 Host replay boundary** on the same 18 signed research probes; **43/43 historical regressions passed**. This is NOT a generic AP2 Ruby Verifier. Generic Gem/API implementation **HOLD**, RubyGems release and real payments/production **NO-GO**.
+> **Status: research/design only.** P1-7 documented Host trust anchors, evidence vs authorization, atomic nonce/replay, clock/revocation, and signed Receipt responsibilities with **34 planned Host test cases (NOT run)**. P1-6's historical synthetic signed probes remain **17 GREEN / 0 RED / 0 ERROR / 1 Host replay boundary**, plus **43/43 regressions**. **No generic Ruby Gem/API**; implementation **HOLD**, RubyGems release and production/real payments **NO-GO**.
 >
 > Independent, unofficial Ruby OSS exploration. Not affiliated with Google, the AP2 project, or FIDO Alliance.
 
@@ -78,6 +78,8 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [Security Gap Review — P1-4 12 ranked risks, 6 gates, generic Gem implementation HOLD](docs/SECURITY_GAP_REVIEW.md)
 - [Signed Security Negative Observations — P1-5 18 probes, **6 RED / 11 GREEN / 1 Host boundary**](docs/SECURITY_NEGATIVE_TESTS.md)
 - [Security Hardening Research — P1-6 fixed six prior REDs: **0 RED, 17 GREEN, 43 historical regressions passed**](docs/SECURITY_HARDENING_RESEARCH.md)
+- [Host Security Contract — P1-7 Host trust, VerifiedEvidence vs ALLOW, nonce atomicity, revocation and Receipt (design only)](docs/HOST_SECURITY_CONTRACT.md)
+- [Host Security Test Plan — P1-7 34 planned race, trust, context and Receipt cases (NOT run)](docs/HOST_SECURITY_TEST_PLAN.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)

@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**P0-1〜P0-5b・P1-0〜P1-6完了。P1-6では以前の6 REDをすべて拒否に変更し、署名付き18観測で17 GREEN / 0 RED / 0 ERROR / Host Replay境界1、既存43回帰成功**。次は**P1-7：Host信頼境界/Nonce/VerifiedEvidence責務の設計のみ（別途承認必須）**。**汎用Gem/API実装HOLD、RubyGems公開・Production/実決済NO-GO**。GCP/実決済/Host nonce消費・Receiptは未実装。
+状態：**P0-1〜P0-5b・P1-0〜P1-7完了。P1-7はHost信頼/nonce原子的消費/VerifiedEvidence≠ALLOW/Receiptを文書設計し、将来のテスト34件を計画**。Hostの新しいCI/DB/Replay実験は**ゼロ**。前回P1-6は署名付き18ケースで17 GREEN / 0 RED / 0 ERROR / Host replay境界1、既存43回帰成功。次は**P1-8：Host Replay競合の試験範囲とDB採用判断（別途承認後）**。**汎用Gem/API実装HOLD、公開・Production/実決済NO-GO**。GCP/決済/Host DB/Receiptは未実装。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -13,7 +13,7 @@
 
 1. [README](../README.md) — Gemの目的・利用シーン・非スコープ
 2. [PROJECT](PROJECT.md) — D001〜D006、責務境界、独立OSS方針
-3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) / [RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) / [SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) / [SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md) / [SECURITY_HARDENING_RESEARCH](SECURITY_HARDENING_RESEARCH.md) — P1-5旧RED 6とP1-6研究修正後0 REDの一次記録
+3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) / [RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) / [SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) / [SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md) / [SECURITY_HARDENING_RESEARCH](SECURITY_HARDENING_RESEARCH.md) / [HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md) / [HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md) — P1-6研究修正の実測とP1-7 Host Trust/Replay/Receiptの未実装設計
 4. [OFFICIAL_SOURCES](OFFICIAL_SOURCES.md) — AP2/FIDO/IETFの一次資料・ウォッチリスト
 5. [RESEARCH_PLAN](RESEARCH_PLAN.md) — Phase 0〜3 の全体工程
 6. [SECURITY_BOUNDARY](SECURITY_BOUNDARY.md) — 未信頼Mandateの扱いとFail Closed
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-6完了 / 次はP1-7】
+### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-7完了 / 次はP1-8】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -124,9 +124,14 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - 重複JSON/JOSE、Closed内部iat/exp、Merchant JWT `typ`、未知Checkout fieldsを**研究用Strict Profile**に限定して拒否。署名済JWT原文/Hashの照合を維持。
   - **Host replay/nonce原子的消費未実装。** G1〜G6完全達成は主張しない。公開/汎用Gem/APIと本番実決済はHOLD/NO-GO。
 
-- [ ] **P1-7：Host Trust/VerifiedEvidence/Nonce契約・ClockとReceiptの責務分離設計（次の1件／明示承認後のみ）**
-  - Issuer/Agent/Buyer/Merchant IDと登録JWK、VerifiedEvidence≠Host ALLOW、nonce原子的消費をどの責務で保証するか、Replay/失効/Checkout正本/Clock/Receiptとフェイルクローズを整理する。
-  - **成果物案：** `docs/HOST_SECURITY_CONTRACT.md`とテスト計画のみ。Gem/API・Host DB/本番・GCP/決済・他OSS実装は禁止。
+- [x] **P1-7：Host Trust/VerifiedEvidence/Nonce契約・Clock/失効/Receipt責務（設計のみ完了）**
+  - [HOST_SECURITY_CONTRACT.md](HOST_SECURITY_CONTRACT.md)で、Issuer/Agent/Merchant/BuyerのHost信頼・鍵用途とCheckout正本、Verifierの`VerifiedEvidence ≠ Host ALLOW`、nonce＋order-operationの**一回限りの原子性**、外部実行idempotency、失効・Clock・署名Receiptと障害STOPを文書化。
+  - [HOST_SECURITY_TEST_PLAN.md](HOST_SECURITY_TEST_PLAN.md)で、HT01〜07（信頼7）、HC01〜07（文脈7）、HR01〜10（DB Replay/競合10）、HE01〜10（Evidence/Receipt10）の**計34件を将来テストとして設計**。
+  - **34件とも実装・実行なし**。Host DB/原子的nonce消費/Receipt/実決済は未実装、Gem/API/ProductionはHOLD/NO-GO。P1-6の歴史的署名CI成功をHost安全性PASSとしない。
+
+- [ ] **P1-8：Host Replay/nonce競合の将来オフライン試験環境と採用方針の設計判断（次の1件、明示承認後のみ）**
+  - 一時的なローカルDB/テストrunner、2worker・Crash/Retry・checkout version、idempotency検証範囲と費用を評価。**まず承認条件を決める**。勝手にDB/本番アプリ・Gem/GCPを作らない。
+
 
 
 
@@ -180,37 +185,33 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P0-1〜P0-5b、P1-0〜P1-6完了。最新[P1-6研究レポート](SECURITY_HARDENING_RESEARCH.md)、[P1-5旧RED実測](SECURITY_NEGATIVE_TESTS.md)、[RESEARCH_DECISION](RESEARCH_DECISION.md) §16を読むこと。**
+**P0-1〜P0-5b、P1-0〜P1-7完了。最新は[P1-7 Host設計契約](HOST_SECURITY_CONTRACT.md)・[将来Hostテスト34件](HOST_SECURITY_TEST_PLAN.md)。** [RESEARCH_DECISION](RESEARCH_DECISION.md) §17に最新GO/HOLD判断を記録済み。
 
-**最新証拠:** [GitHub Actions #38128152237](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38128152237)で固定AP2 v0.2 SDKが生成した合成Issuer/Agent/Merchant署名付き18ケースを再実行し、**17 GREEN / 0 RED / 0 ERROR / 1 HOST_BOUNDARY**。Root/2hop/Merchant Checkoutの既存**43件回帰も全成功**。P1-5の6 RED（duplicate Merchant JSON id/JOSE alg、Closed exp/iat、Merchant JWT typ、unknown checkout field）は研究コード限定で修正した。以前のRED記録は履歴として残す。
+**P1-7で決めたこと:** 固定AP2 v0.2（`b4587ac1d055888a73b4b21750973cffba961793`）、単一Agent/Strict Open→Closed 2hopに限り、HostはIssuer/Agent/Merchant登録鍵とBuyer資格/Checkout正本/expected aud・nonceを提供する。Verifierの`VerifiedEvidence`は署名・開示・取引の**検証事実のみ**で、購入ALLOW/nonce消費やBuyer本人同定ではない。**Hostが発行nonceとCheckout operationをDBで原子的に一度だけ確定**し、外部実行の二重送信をidempotencyで防ぐという**将来のHost設計案**。失効、Clock、unknown state、署名Checkout Receipt、障害時STOPも責務を整理した。
 
-**重要なHOLD:** 汎用Gem/API実装・公開はHOLD、RubyGems/Production/実決済はNO-GO。stateless nonce照合だけでは**Replayを阻止できない**。Issuer/Merchant ID/Agent/Buyerの信頼鍵登録・ローテーション/失効、Host正本/Clock注入、購入ALLOW、Receiptは未実装。全AP2・全SD-JWT対応は未証明。公式AP2 v0.2 SHAは`b4587ac1d055888a73b4b21750973cffba961793`。
+**検証していないこと:** Host永続DB、2worker競合、atomic consume、外部実行/Receipt発行、Key rotationと失効の動的挙動は**一度も実装・実測していない**。P1-6の[既存署名テスト](SECURITY_HARDENING_RESEARCH.md)は18件で17 GREEN/0 RED/HOST_BOUNDARY 1、Ruby回帰43件PASSだが、Host実装の安全性とは別。**汎用Gem/API実装HOLD、公開/本番/実決済NO-GO**。G1〜G6の全面完了を意味しない。
 
-**P1-6コード差分:** `research/shared/strict_json_research.rb`（重複JSON拒否）、`research/p1_1/root_sdjwt_research.rb`（Root/Terminal原文の厳格Parse）、`research/p1_2/two_hop_research.rb`（Closed内時刻）、`research/p1_3/checkout_binding_research.rb`（Merchant JOSE/Checkout field）、`.github/workflows/p1-6-hardening.yml`（手動起動のみ）。Gem雛形なし。
-
-**次の1件（新たなユーザー承認後のみ）：P1-7**。Host trust/VerifiedEvidence≠ALLOW/nonce atomic consumption/Clock/Revocation/Receipt責務の**設計文書と安全テスト計画のみ**を作成。Gem本体やHostアプリ/DB、実決済/GCP、ActingFor/a2a-railsは変更しない。
+**次の1件（新しいユーザー明示承認が必要）：P1-8。** [HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md)のHR01〜HR10を中心に、ローカルDB（例：一時PostgreSQL）でnonce/Checkout CASを試す**実験計画・最小環境/費用/成果判定の採用判断**。**実装やGCP、Gem化はこの時点では自動承認しない。**
 
 ### 次チャット用指示文
 
 ```text
-ap2-mandate-verifier P1-7を開始します。
+ap2-mandate-verifier P1-8を開始します。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-GitHub最新main、Open Issue/PRを確認し、
-docs/HANDOFF.md、docs/SECURITY_HARDENING_RESEARCH.md、
-docs/SECURITY_NEGATIVE_TESTS.md、docs/SECURITY_GAP_REVIEW.md、
-docs/RESEARCH_DECISION.md §16、docs/FAIL_CLOSED_PROFILE.mdを読んでください。
+最新main/Issue/Open PRを確認し、docs/HANDOFF.md、
+docs/HOST_SECURITY_CONTRACT.md、docs/HOST_SECURITY_TEST_PLAN.md、
+docs/RESEARCH_DECISION.md §17、docs/SECURITY_GAP_REVIEW.md、
+docs/SECURITY_HARDENING_RESEARCH.mdを読んでください。
 
-P1-6で同じ署名付き18観測の6 REDを研究コードだけで修正し、
-17 GREEN / 0 RED / 0 ERROR / HOST_BOUNDARY 1。
-P1-1〜P1-3の43回帰もPASSしました。
-ただしReplay/nonce一度限り消費は実装されていません。
+P1-7はHost trust/VerifiedEvidenceとALLOWの区別、nonceの
+原子的消費、Checkout正本/失効/Receiptの責務の設計のみ完了。
+HT/HC/HR/HE計34テストは全て未実行、Host DB/本番コードなし。
+P1-6の17 GREEN/0 RED/43回帰PASSはVerifier研究だけの結果です。
 
-今回はHost trust（Issuer/Buyer/Agent/Merchant登録鍵/ID）、
-VerifiedEvidence != ALLOW、Checkout正本、atomic nonce consume、
-失効、clock/TTL、署名Receiptの責務を
-docs/HOST_SECURITY_CONTRACT.mdとして整理し、
-負例・失敗/競合時STOPをテスト計画にします。
-追加のGem/API・Host DB/本番コード・公開/決済・GCP・他OSS変更は禁止。
-PRレビュー後mainへマージしてください。
+今回はP1-8として、将来HR01〜HR10をローカル隔離DBで実測するための
+最小環境・採用DB・2worker/concurrency・Crash/Retryの
+テスト範囲、再現手順、費用/クリーンアップ、GO/HOLD条件を設計し、
+資料に残してください。Host DBやGem、API、実決済、GCPへ
+承認なしに自動実装・公開しない。PRレビュー後mainへ反映。
 ```
