@@ -1,0 +1,99 @@
+name: P1-10c HC06 synthetic revocation (research only)
+
+on:
+  pull_request:
+    paths:
+      - 'research/p1_10c/**'
+      - '.github/workflows/p1-10c-hc06-synthetic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-hc06-model:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      P110C_REPORT: p110c-report.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: false
+      - name: Verify isolated synthetic Ruby source
+        run: |
+          ruby -v | tee p110c-environment.txt
+          ruby -c research/p1_10c/simulator.rb
+          ruby -c research/p1_10c/test_synthetic_hc06.rb
+      - name: Run eight HC06 state-machine experiments (no actual authority)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby research/p1_10c/test_synthetic_hc06.rb --verbose 2>&1 | tee p110c-run.log
+      - name: Reject missing negative examples or exaggerated proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -rjson -e '
+            report=JSON.parse(File.read("p110c-report.json"))
+            abort "Wrong canonical case" unless report.fetch("canonical_case_id") == "HC06"
+            abort "Incorrect HC06 evidence scope" unless report.fetch("status") == "PARTIAL_SYNTHETIC_ONLY_NOT_FULL_HC06_PASS"
+            abort "No new real Host cases" unless
+              report.fetch("prior_real_pg_host_ids") == 9 &&
+              report.fetch("canonical_host_ids_newly_proven") == 0 &&
+              report.fetch("unrun_canonical_host_ids") == 25
+            cases=report.fetch("scenarios")
+            expected=%w[fence_c_before_r fence_not_enforced fence_r_before_c
+              fence_replay forged]
+            names=%w[
+              naive_q_r_c fence_not_enforced revoke_before_query fence_r_before_c
+              fence_c_before_r scope_tenant_subject_and_forgery
+              offline_at_final_gate fence_replay
+            ]
+            abort "Missing/duplicate/extra scenarios" unless cases.map{|x| x.fetch("scenario")}.sort == names.sort
+            abort "All scenarios must have executed" unless
+              cases.all?{|x| x.fetch("id") == "HC06" && x.fetch("result") == "PASS"}
+            unsafe=cases.select{|x| x.fetch("classification") == "EXPECTED_UNSAFE_BASELINE"}
+            abort "Missing counterexamples" unless
+              unsafe.map{|x| x.fetch("scenario")}.sort == %w[fence_not_enforced naive_q_r_c] &&
+              unsafe.all?{|x|
+                x.fetch("r_before_c") == true &&
+                x.fetch("bad_operation_committed") == true &&
+                x.fetch("model_guarantee") == "VIOLATED"
+              }
+            safe=cases.reject{|x| x.fetch("classification") == "EXPECTED_UNSAFE_BASELINE"}
+            abort "Wrong safe case count" unless safe.length == 6 &&
+              safe.all?{|x| x.fetch("classification") == "SAFE_MODEL"}
+            guarded=cases.find{|x| x["scenario"] == "fence_r_before_c"}
+            abort "Guarded R<C did not stop" unless
+              guarded.fetch("stopped") == true && guarded.fetch("operations") == 0 &&
+              guarded.fetch("synchronized_final_gate") == true
+            prior=cases.find{|x| x["scenario"] == "fence_c_before_r"}
+            abort "C<R ordering not proven" unless
+              prior.fetch("c_before_r") == true &&
+              prior.fetch("late_revoke_did_not_cancel") == true &&
+              prior.fetch("repeated_ticket_stopped") == true
+            reject=cases.find{|x| x["scenario"] == "scope_tenant_subject_and_forgery"}
+            abort "No cross-context evidence" unless
+              reject.fetch("invalid_contexts_stopped") == 3 &&
+              reject.fetch("forged_ticket_stopped") == true
+            downtime=cases.find{|x| x["scenario"] == "offline_at_final_gate"}
+            abort "Failed to stop on unavailable authority" unless
+              downtime.fetch("unavailable_fail_closed") == true
+            puts "PASS: eight HC06 synthetic experiments (two EXPECTED unsafe); NOT external revocation compliance"
+          '
+      - name: Upload sanitized evidence (seven days)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-10c-hc06-synthetic-evidence
+          path: |
+            p110c-environment.txt
+            p110c-run.log
+            p110c-report.json
+          retention-days: 7
+          if-no-files-found: warn
