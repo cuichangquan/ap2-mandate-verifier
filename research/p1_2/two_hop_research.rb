@@ -42,6 +42,17 @@ module AP2TwoHopResearch
         payloads.length == 1 && payloads.first.is_a?(Hash)
       closed = payloads.first
       raise Rejected, "terminal must be Closed Checkout" unless closed["vct"] == "mandate.checkout.1"
+      # The outer KB-SD-JWT iat does NOT establish validity of the nested
+      # Agent-signed Closed Mandate. Check its own signed iat/exp separately.
+      closed_iat, closed_exp = closed.values_at("iat", "exp")
+      raise Rejected, "Closed iat/exp required" unless
+        closed_iat.is_a?(Integer) && closed_exp.is_a?(Integer)
+      raise Rejected, "Closed not currently valid" unless
+        closed_iat <= now && now < closed_exp && closed_exp > closed_iat
+      raise Rejected, "Closed exceeds research time window" unless
+        closed_exp - closed_iat <= 7200
+      raise Rejected, "Closed outside issuer Root validity" unless
+        closed_iat >= root.fetch("iat") && closed_exp <= root.fetch("exp")
       raise Rejected, "terminal must not delegate again" if closed.key?("cnf")
       raise Rejected, "missing checkout information" unless closed["checkout_jwt"].is_a?(String) &&
         !closed["checkout_jwt"].empty? && closed["checkout_hash"].is_a?(String) &&
