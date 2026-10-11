@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新の判定は§14（P1-4）を参照：オフライン研究テスト強化はGO候補、汎用Gem/API実装はHOLD、RubyGems公開・本番/実決済はNO-GO。**
+> **最新判定は§15（P1-5）：署名付き負例18件で6 REDを実測。汎用Gem/API実装はHOLD、RubyGems公開/本番/実決済はNO-GO。研究用修正のみ次のGO候補。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -192,3 +192,20 @@
 **次の1件（P1-5）：** 上記G1〜G4の優先負例を**研究コードのテストとして先に書き**、RED/GREENと拒否理由を実測・記録する。Ruby verifier本体やGem雛形の実装はその後の**別GO/HOLD判断と明示承認**へ先送りする。P1-4自身は文書変更のみでCI実行・テスト追加・Gem作成なし。
 
 **判断表:** オフライン研究のみCONDITIONAL GO／P1-5はGO候補／汎用Gem実装HOLD／RubyGemsリリース・実決済Production NO-GO。**上流の中間hop aud/nonce公式pytest 2件失敗はまだ未解決**だが、初期研究対象から中間hopを除外しているため、解消済みとは書かない。
+
+## 15. 2026-10-11 P1-5 署名済セキュリティ負例実測後のGO/HOLD（最新）
+
+**P1-5の成果:** 固定AP2 v0.2 Python SDKが生成したOpen→Closedと、実Merchant ES256署名付きの改変Checkoutを使用し、Ruby研究Verifierに**18観測**を実行。[SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md)、[CI Run #38127279271](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38127279271)。
+
+**結果: GREEN 11（正常1＋拒否10）/ RED 6（署名が有効な厳格プロフィール外の入力を想定外受理）/ HOST_BOUNDARY 1（同一tokenを独立2回verifyすれば両方受理。stateless設計上、Hostがreplay消費必要）/ ERROR 0。** 過去P1-1〜P1-3回帰は10+15+18テストすべてPASSしたが、**新しい6 REDの重大性を帳消しにしない**。
+
+**RED内容と優先度:**
+1. **B0/G1:** Merchant JWTの同一`merchant.id`重複を許容（N01）、ES256署名済Protected Headerに`alg`重複を許容（N02）。トークン署名の不備が発見されたのではなく、**重複キーがある曖昧な署名済JSONをrejectしていない**ことを実測。
+2. **B1/G3:** Root/Terminal outerの時刻チェックがある一方、Closed内部の期限切れ`exp`（N03）と未来`iat`（N04）が受理された。
+3. **B0/B1のStrict Profile:** Merchant JWTの想定外`typ`（N05）、Checkout中の未知の権限関連field（N07）が受理された。**全AP2仕様のMUST違反とは主張せず**、初期OSSのfail-closed/supported subsetの未達として扱う。
+4. **G2/G4は限定正例あり:** Required Merchant開示欠落・追加Authority、Issuer信頼鍵不一致、JWT過大、Root期限、Host nonce不一致は今回拒否された。しかし深いJSON/Decoy/多Issuerを網羅したわけではない。
+5. **G5 Host責務未実装:** 同一nonceの原子的消費/Checkout二重処理防止・失効/Receiptは本研究Gemで証明していない。
+
+**最新判断：P1-5テスト実証は完了、汎用Ruby Gem/API実装はHOLD、RubyGems公開・実決済/ProductionはNO-GO。** 既存研究コードへの限定修正を行う**P1-6のみGO候補（別途ユーザー承認必須）**。先にN01/N02/N03/N04/N05/N07をGREENへ変える。**Gem作成・リリース・Host永続nonce・Receiptの実装は自動承認しない。**
+
+**CIの落とし穴:** 観測stepは6 REDにつきexit 1したが、報告Artifactを残すため`continue-on-error`としたのでworkflow自体は**success**。これは「セキュリティテスト全PASS」ではない。修正前の6 REDは[Security Negative実測レポート](SECURITY_NEGATIVE_TESTS.md)に残す。
