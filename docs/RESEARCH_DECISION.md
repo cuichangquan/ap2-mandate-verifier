@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§15（P1-5）：署名付き負例18件で6 REDを実測。汎用Gem/API実装はHOLD、RubyGems公開/本番/実決済はNO-GO。研究用修正のみ次のGO候補。**
+> **最新判定は§16（P1-6）：以前の6 REDは固定18ケースで0 REDへ改善、43回帰PASS。ただしHost replay等が未実装のため汎用Gem/API実装HOLD、公開/本番/実決済NO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -209,3 +209,17 @@
 **最新判断：P1-5テスト実証は完了、汎用Ruby Gem/API実装はHOLD、RubyGems公開・実決済/ProductionはNO-GO。** 既存研究コードへの限定修正を行う**P1-6のみGO候補（別途ユーザー承認必須）**。先にN01/N02/N03/N04/N05/N07をGREENへ変える。**Gem作成・リリース・Host永続nonce・Receiptの実装は自動承認しない。**
 
 **CIの落とし穴:** 観測stepは6 REDにつきexit 1したが、報告Artifactを残すため`continue-on-error`としたのでworkflow自体は**success**。これは「セキュリティテスト全PASS」ではない。修正前の6 REDは[Security Negative実測レポート](SECURITY_NEGATIVE_TESTS.md)に残す。
+
+## 16. 2026-10-11 P1-6 6 REDの限定研究ハードニング実測（最新）
+
+**成果と一次証拠:** [SECURITY_HARDENING_RESEARCH](SECURITY_HARDENING_RESEARCH.md)、[GitHub Actions #38128152237](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38128152237)。
+
+- P1-5と同じ固定AP2 v0.2公式Python署名fixtureの**18観測**について、以前の6 RED（重複Merchant JSON ID/重複JOSE alg、Closed内部exp/iat、Merchant JWT typ、未知Checkout field）をRuby**研究コードの厳格な受理方針**に合わせて拒否するよう修正。
+- **P1-6：GREEN 17（正例1＋拒否16）、RED 0、ERROR 0、HOST_BOUNDARY 1**。P1-1 Root回帰**10/10**、P1-2 Agent binding回帰**15/15**、P1-3 Merchant Checkout回帰**18/18**（計43件、失敗/エラーなし）。
+- **正しい鍵の署名・元JWTバイト・checkout_hash・sd_hashを保護するチェックは維持**。曖昧な署名済JSONは原文バイトの厳密Parseで拒否する。Closed内部のiat/expはouter terminalと別に確認。JWT typ/Checkoutのフィールド集合はあくまで**研究用Strict Profile**であり、一般AP2の規範MUSTではない。
+- **未達:** HostのIssuer ID/Agent/Buyer/Merchant IDと信頼鍵の登録・失効・正本管理、Atomic nonce replay防止、一般SD-JWT/decoy、深い異常JSON・時間境界とClock注入、最終認可/購入注文・Receipt、実決済。特に**N17の同一トークン2回受理はHost replay境界として残す**。6 REDが0になっても上記の保証は得られない。
+- P1-6では**汎用Gem、安定API、RubyGemsリリース、Host DB/state/Receipt、GCP/実決済を作っていない**。
+
+**最新GO/HOLD判断:** 厳格なオフライン研究PoCのみCONDITIONAL GO。**汎用AP2 Ruby Gem/API実装はHOLD、RubyGems公開・本番/実決済はNO-GO。** これを「P1-4ゲートG1〜G6完全クリア」や安全な実取引への許可と解釈しない。
+
+**次の1件（ユーザーが別途明示承認した場合のみ）：P1-7 — Host trust/VerifiedEvidence/Nonce/Clock/失効・Receiptの責務契約と必要な負例の設計資料作成。** 本番コードやGem実装はまだ先に進めない。

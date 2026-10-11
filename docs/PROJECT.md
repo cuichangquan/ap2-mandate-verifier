@@ -64,8 +64,8 @@ AP2全部入りSDK、ウォレット、鍵発行、OAuth Server、MCP/A2A Server
 
 ## 7. 現在の進捗・次の作業（2026-10-11）
 
-P0-1〜P0-5bとP1-0〜P1-5を完了。公式AP2 v0.2 Python SDKの固定仕様を用い、P1-1 Root SD-JWT署名/開示、P1-2 2-hop Agent binding、P1-3 Merchant署名済Checkout JWT・Host正本/Hash/商品制約を限定研究として実証し、**既存回帰43テストPASS**を確認。
+P0-1〜P0-5b、P1-0〜P1-6までの研究完了。固定AP2 v0.2公式Python SDKを利用したP1-1 Root/Disclosures、P1-2 2hop Agent署名、P1-3 Merchant署名済CheckoutをRubyで検証する限定研究PoCを維持。P1-4で12リスク・6ゲートを記録し、P1-5で署名済入力18件中**6 RED**を観測した。
 
-[P1-4静的レビュー](SECURITY_GAP_REVIEW.md)で12リスク・6ゲートを定義。[P1-5署名付き負例](SECURITY_NEGATIVE_TESTS.md)を実際に実行した結果、**6 RED（本OSS Strict Profileで本来拒否するべき入力の受理）/ GREEN 11 / Host replay境界1**を記録。**P1-5では検証器本体を修正していない**。Gemの実装・公開や本番決済には進めないことを確認した。
+**[P1-6の研究用修正](SECURITY_HARDENING_RESEARCH.md)**では、これらの6 REDを重複JSON/JOSEの厳格処理、Closed内部iat/exp、Merchant typ、Checkout field allowlistで修正。**同じ18観測で17 GREEN / 0 RED / 0 ERROR / Host replay境界1、過去の43テストも全成功**（[CI #38128152237](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38128152237)）。
 
-**最新判断:** [RESEARCH_DECISION](RESEARCH_DECISION.md) §15 — **研究のみCONDITIONAL GO、汎用Gem/API実装HOLD、公開・本番/実決済NO-GO**。次は別の明示承認後に**P1-6：6 REDの最小研究用対策と負例＋回帰再検証**。HostのIssuer/Merchant identity trust、replay/nonce一度限り消費、revocation/Receiptは依然未実装・未承認。
+**最新判断：** [RESEARCH_DECISION](RESEARCH_DECISION.md) §16。研究PoCのみCONDITIONAL GO、**汎用Gem/API実装HOLD、RubyGems公開・実決済/Production NO-GO**。Issuer/Buyer/Agent/MerchantのHost trust運用、Atomic nonce消費、失効/Receipt/業務認可は未設計・未実装。**次の1件（別途明示承認後のみ）：P1-7 — Host責務/信頼境界の設計・テスト計画資料**。Gem/本番実装に自動的には進まない。

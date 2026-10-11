@@ -11,6 +11,7 @@ require "base64"
 require "openssl"
 require "digest"
 require "set"
+require_relative "../shared/strict_json_research"
 require "minitest/autorun"
 
 module AP2RootSDJWTResearch
@@ -57,7 +58,10 @@ module AP2RootSDJWTResearch
       # The caller supplies an already-trusted issuer key. Never import a key
       # supplied by a JWT header or trust its 'kid' / 'x5c' / remote URLs.
       key = JWT::JWK.import(trusted_jwk)
-      header_untrusted = JSON.parse(b64_json(parts.first.split(".").first))
+      # Duplicate JOSE/claim keys, including nested objects, are rejected
+      # BEFORE the JWT library parses them; signature verification remains
+      # mandatory and uses the original untouched compact JWT bytes.
+      header_untrusted, = AP2StrictJSONResearch.validate_signed_jws_json!(parts.first)
       raise Rejected, "non ES256 algorithm" unless header_untrusted["alg"] == "ES256"
       raise Rejected, "untrusted JOSE header parameter" if (%w[jwk jku x5c x5u crit] & header_untrusted.keys).any?
       payload, = JWT.decode(parts.first, key.public_key, true, { algorithms: ["ES256"] })
@@ -66,7 +70,7 @@ module AP2RootSDJWTResearch
       digest_to_value = {}
       disclosures.each do |segment|
         raise Rejected, "invalid encoded disclosure" unless segment.match?(/\A[A-Za-z0-9_-]+\z/)
-        decoded = JSON.parse(b64_json(segment))
+        decoded = AP2StrictJSONResearch.parse!(b64_json(segment))
         raise Rejected, "unsupported object disclosure" unless decoded.is_a?(Array) &&
           decoded.size == 2 && decoded[0].is_a?(String) && decoded[0].size >= 8 &&
           decoded[1].is_a?(Hash)

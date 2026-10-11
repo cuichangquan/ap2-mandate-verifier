@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier for Ruby
 
-> **Status: research only.** P1-5 signed security-negative observations: **6 RED** (unexpectedly accepted strict-profile inputs), 10 expected rejections, 1 valid control, 1 Host replay boundary. Generic Ruby Gem/API implementation **HOLD**; RubyGems release and production/real payments **NO-GO**. Historical P1-1–P1-3 regression 43/43 PASS does not erase the security REDs.
+> **Status: research only.** P1-6 strict-profile security hardening verified all 6 prior REDs are now rejected: **17 GREEN / 0 RED / 0 ERROR / 1 Host replay boundary** on the same 18 signed research probes; **43/43 historical regressions passed**. This is NOT a generic AP2 Ruby Verifier. Generic Gem/API implementation **HOLD**, RubyGems release and real payments/production **NO-GO**.
 >
 > Independent, unofficial Ruby OSS exploration. Not affiliated with Google, the AP2 project, or FIDO Alliance.
 
@@ -77,6 +77,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [Ruby Merchant Checkout binding — P1-3 signed Checkout JWT, Host exact bytes, hash, restricted merchant/SKU/quantity/amount: 18 PASS](docs/RUBY_CHECKOUT_BINDING_SPIKE.md)
 - [Security Gap Review — P1-4 12 ranked risks, 6 gates, generic Gem implementation HOLD](docs/SECURITY_GAP_REVIEW.md)
 - [Signed Security Negative Observations — P1-5 18 probes, **6 RED / 11 GREEN / 1 Host boundary**](docs/SECURITY_NEGATIVE_TESTS.md)
+- [Security Hardening Research — P1-6 fixed six prior REDs: **0 RED, 17 GREEN, 43 historical regressions passed**](docs/SECURITY_HARDENING_RESEARCH.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)
