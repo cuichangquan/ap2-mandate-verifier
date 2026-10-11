@@ -1,9 +1,10 @@
-name: P1-9a Host Replay PostgreSQL 16 (research only)
+name: P1-9a/b Host Replay PostgreSQL 16 (research only)
 
 on:
   pull_request:
     paths:
       - 'research/p1_9a/**'
+      - 'research/p1_9b/**'
       - '.github/workflows/p1-9a-host-replay.yml'
   workflow_dispatch:
 
@@ -31,6 +32,7 @@ jobs:
     env:
       P19A_DATABASE_URL: postgresql://labuser:offline-test-only@127.0.0.1:5432/ap2_research
       P19A_REPORT: p19a-report.json
+      P19B_REPORT: p19b-report.json
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,6 +53,12 @@ jobs:
             ruby -rpg -e 'db=PG.connect(ENV.fetch("P19A_DATABASE_URL")); puts "postgres #{db.exec("SHOW server_version").first.fetch("server_version")}"; db.close'
             docker image inspect postgres@sha256:ddfe3e8713e3ee5b8f286082cb12512488dfbf3f5a1ecb0b74a42e6055af0a5f --format 'postgres image ID={{.Id}} digests={{json .RepoDigests}}'
           } | tee p19a-environment.txt
+      - name: Syntax check P1-9a/b research workers and tests
+        run: |
+          ruby -c research/p1_9a/worker.rb
+          ruby -c research/p1_9a/test_host_replay_pg.rb
+          ruby -c research/p1_9b/recovery_worker.rb
+          ruby -c research/p1_9b/test_crash_recovery_pg.rb
       - name: Run four isolated Host DB security experiments
         shell: bash
         run: |
@@ -72,6 +80,35 @@ jobs:
             abort "Replay not rejected" unless cases.find{|x| x["id"] == "HR08"}.fetch("replay_rejected") == true
             puts "PASS: four research-only Host DB scenarios; NO AP2/Payment/Receipt claim"
           '
+      - name: Run HR04 HR05 actual process-crash research
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby research/p1_9b/test_crash_recovery_pg.rb --verbose 2>&1 | tee p19b-run.log
+      - name: Reject incomplete crash/recovery evidence
+        if: success()
+        run: |
+          ruby -rjson -e '
+            cases=JSON.parse(File.read("p19b-report.json")).fetch("executed_cases")
+            abort "Wrong HR04/HR05 set" unless cases.map{|x| x.fetch("id")}.sort == %w[HR04 HR05]
+            abort "Incomplete or failed crash run" unless cases.all?{|x| x.fetch("result") == "PASS"}
+            abort "No real SIGKILL/session closure" unless cases.all?{|x|
+              x.fetch("actual_sigkill") == true && x.fetch("pg_session_closed") == true
+            }
+            before=cases.find{|x| x["id"] == "HR04"}
+            after=cases.find{|x| x["id"] == "HR05"}
+            abort "No rollback+revalidation evidence" unless
+              before.fetch("pre_commit_rollback") == true &&
+              before.fetch("recovery_before_retry") == "STOP" &&
+              before.fetch("retry_after_fresh_check") == "COMMITTED"
+            abort "No COMMIT/recovery idempotency proof" unless
+              after.fetch("commit_ack_observed") == true &&
+              after.fetch("stable_operation_recovered") == true &&
+              after.fetch("stable_idempotency_key") == true &&
+              after.fetch("no_second_operation") == true &&
+              after.fetch("recovery_state") == "PENDING"
+            puts "PASS: HR04/HR05 actual SIGKILL + rollback and read-only recovery; no payment claim"
+          '
       - name: Upload time-limited, sanitized research evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -81,5 +118,7 @@ jobs:
             p19a-report.json
             p19a-run.log
             p19a-environment.txt
+            p19b-report.json
+            p19b-run.log
           retention-days: 7
           if-no-files-found: warn
