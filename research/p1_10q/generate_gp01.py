@@ -157,6 +157,13 @@ def generate():
 
     checkout = checkout_json()
     host_jwt = sign_compact(merchant, compact(checkout))
+    # P1-10q Codex P2: independently authenticate the Merchant JWS too.
+    # verify_chain authenticates Root/Agent, not the Merchant Checkout JWT.
+    merchant_signed = jws.JWS()
+    merchant_signed.deserialize(host_jwt)
+    merchant_signed.verify(JWK.from_json(merchant.export_public()))
+    assert merchant_signed.payload.decode("utf-8") == compact(checkout)
+    assert merchant_signed.jose_header["alg"] == "ES256"
     closed = CheckoutMandate(
         checkout_jwt=host_jwt,
         checkout_hash=b64(hashlib.sha256(host_jwt.encode("ascii")).digest()),
