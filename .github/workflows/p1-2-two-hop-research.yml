@@ -1,11 +1,7 @@
 name: P1-2 AP2 two-hop binding research
 
+# Manual-only after initial PR validation; avoid unnecessary repeated CI downloads.
 on:
-  pull_request:
-    paths:
-      - 'research/p1_1/**'
-      - 'research/p1_2/**'
-      - '.github/workflows/p1-2-two-hop-research.yml'
   workflow_dispatch:
 
 permissions:
