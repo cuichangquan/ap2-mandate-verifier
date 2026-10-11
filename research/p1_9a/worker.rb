@@ -85,8 +85,7 @@ begin
     # Client submits COMMIT asynchronously; it MUST NOT read libpq's result.
     # Coordinator will SIGKILL while the outcome is unknown to the caller.
     # Independent PG observation determines the server's actual final state.
-    submitted = db.send_query("COMMIT")
-    raise HostStop, "commit_submission_failed" unless submitted
+    db.send_query("COMMIT")
     puts "COMMIT_SENT_NO_ACK:#{db.backend_pid}"
     STDIN.gets
     raise HostStop, "uncertain_commit_hook_not_killed"
