@@ -6,10 +6,10 @@
 
 ## 1. 実施内容・CI一次証拠
 
-- **初回専用CI：** [Actions #38143039035](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38143039035)、PR #28、検証head `8b59ee25ae8c1d1f3674aecbfa33e69c0210f6a9`。**SUCCESS**、Minitest **2 runs / 118 assertions / 0 failures / 0 errors / 0 skips**。Ruby 3.3、pg 1.5.9、ubuntu-24.04。実行後のドキュメント更新等はこのCIの検証範囲外。**最終headのCIはマージ前に別途確認する。**
+- **専用CI初回と最終コード再検証：** [Actions #38143039035](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38143039035)（初回・head `8b59ee25ae8c1d1f3674aecbfa33e69c0210f6a9`）および [Actions #38143330749](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38143330749)（最終研究コード/CI構成・head `d480b0a3ebe3f4653e1c1ab93c8f2a01bdb2cf92`）。**両方SUCCESS**、各 Minitest **2 runs / 118 assertions / 0 failures / 0 errors / 0 skips**。Ruby 3.3、pg 1.5.9、ubuntu-24.04。最終検証ではPostgreSQL公開ポートを**127.0.0.1のみにbind**し、別system identifier（Authority `7695401779484848166`、Host `7695401782574620709`）を確認。後続の**docs-only**変更はCIで再実行しない可能性があるが、テストコード/ワークフロー内容を変えない場合のみその差を明示する。
 - **2独立PG16.9インスタンス：** 同一digest固定のPostgreSQL 16.9コンテナを**2つ別々に起動**、Authorityは`ap2g_authority`（port 5432）、Hostは`ap2g_host`（port 5433）。`pg_control_system()`の`system_identifier`が**異なる**ことをログ・テストの両方で実測（Authority `7695400623862755366`、Host `7695400625983741990`）。異なるPostgreSQLサーバ/データディレクトリ・別transactionであり、単なる別schemaではない。
 - **Worker独立性：** Authority操作とHost操作は個別Ruby OS子プロセスで実行し、DBごとに固有接続。E-R02ではHost workerを**実際にSIGKILL**してから新しい接続でdurable ABORTを読み戻した。
-- **証拠artifact：** [p1-10g-hc06-isolated-evidence（ID 11704100622）](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38143039035/artifacts/11704100622) に`p110g-run.log`、`p110g-report.json`、`p110g-environment.txt`を7日保持。CIでID/結果/隔離/中止/nonce/outboxを機械的に検査している。秘密鍵・実Mandate・生nonce・決済情報を保存しない。
+- **証拠artifact：** [最終検証p1-10g-hc06-isolated-evidence（ID 11703936542）](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38143330749/artifacts/11703936542)（初回 [ID 11704100622](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38143039035/artifacts/11704100622)）。`p110g-run.log`、`p110g-report.json`、`p110g-environment.txt`を7日保持。CIでID/結果/隔離/中止/nonce/outboxを機械的に検査している。秘密鍵・実Mandate・生nonce・決済情報を保存しない。
 - **隔離・終了:** scoped Github Actions jobの一時サービスのみ。CIログで2コンテナをSTOP/remove済み。**GCPリソース・外部ネットワークサービスは作成していない**。
 
 ## 2. E-R01 — Pが先、失効要求後にCが先に耐久確定
