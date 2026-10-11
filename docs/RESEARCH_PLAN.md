@@ -19,7 +19,8 @@
 - [x] **P1-5完了（テストのみ）**：[SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md)、[Actions #38127279271](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38127279271)。固定AP2 SDK＋Ruby研究コードの署名済負例**18件：GREEN 11（正例1/拒否10）、RED 6（想定外受理）、HOST_BOUNDARY 1、ERROR 0**。既存P1-1/2/3回帰43件はPASS。**汎用Gem/API実装HOLD、公開/本番NO-GO**。既存検証器は変更しない。
 - [x] **P1-6完了（研究コード修正のみ）**：[SECURITY_HARDENING_RESEARCH](SECURITY_HARDENING_RESEARCH.md)、[CI #38128152237](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38128152237)。以前の**6 REDをすべてGREEN化**。署名付き観測18件=**17 GREEN / 0 RED / 0 ERROR / 1 Host Boundary**。P1-1〜3回帰**10+15+18=43件成功**。重複JSON/JOSE・Closed内時刻・Merchant JWT typ・未知Checkout fieldを厳格化。**Gem実装/公開・実決済はHOLD/NO-GO**。
 - [x] **P1-7完了（設計資料のみ）**：[HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md) / [HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md)。Issuer/Buyer/Agent/MerchantのHost鍵信頼登録、Host current Checkout、`VerifiedEvidence ≠ ALLOW`、nonceと注文の**原子的な一度限り遷移**、失効・Clock・外部処理Idempotency/Receiptの責務を分け、**34件の将来テストID**を設計。**新テスト/CI、Host DB/実決済、Gem/API実装なし**。汎用Gem実装HOLD・Production NO-GO。
-- [ ] **P1-8（次・別途明示承認後のみ）**：Host側Replay/nonce同時性・クラッシュ/再試行を将来オフライン実測するため、ローカルDB（例：一時PostgreSQL）/隔離環境と最小試験範囲を**まず設計・採用判断**する。Host DB/Gem実装、GCP、実決済は自動着手しない。
+- [x] **P1-8完了（設計のみ）**：[HOST_REPLAY_LAB_DESIGN](HOST_REPLAY_LAB_DESIGN.md) — SQLiteとPostgreSQLを比較して**一時PG16**を採用候補に選定。2 worker、nonce CAS＋Checkout unique、commit前後crash/Retry、Fake Provider idempotency、費用/cleanup、HR01〜HR10試験順序とGO/HOLDを設計。**Host DB・新CI・新テストなし、34件すべてNOT RUN。**
+- [ ] **P1-9a（次・別途明示承認後のみ）**：一時PG16とRuby 2workerで**HR01/02/03/08**だけのrace/重複拒否を実測。Crash/Receipt/決済/GCP/Gemの実装は未承認。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 

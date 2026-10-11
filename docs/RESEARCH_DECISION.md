@@ -237,3 +237,13 @@
 **GO/HOLD：** 限定研究・設計活動のみCONDITIONAL GO。**汎用AP2 Ruby Gem/public API実装はHOLD、RubyGems公開/本番/実決済はNO-GOを維持。** P1-6の旧RED修正後18ケース（17 GREEN/0 RED/Host責務1）と43回帰は過去CIの証拠であり、**Host Replay/Tenant/Receiptの受入れテスト合格を意味しない**。
 
 **次の1件（別途ユーザー明示承認が必要）：P1-8。** Host nonce/Checkout操作のrace/rollback/retryをオフラインで試すため、**ローカルDB/runner・テスト設計・費用・実装範囲の採用判断を先に行う**。Gem/Host本番コードやDB/決済を自動的に作らない。
+
+## 18. 2026-10-11 P1-8 Host Replay試験環境・DB採用判断（最新）
+
+**成果は設計資料のみ。** [HOST_REPLAY_LAB_DESIGN](HOST_REPLAY_LAB_DESIGN.md)でSQLiteとPostgreSQLを比較し、Host replayの同時性検証には**一時PostgreSQL 16**を第一候補に選定。2 Ruby worker/異なるDB接続、barrierを使うrace、nonce CAS＋Checkout単一操作のunique、単一transaction outbox、commit前後のクラッシュ/unknown commit、Fake Providerの安定idempotency key、runner費用/cleanupと将来テスト順序を設計した。DBモデル/Hostアプリ/CI/Receipt/GCPは**一切新規実装・実行していない**。
+
+**未実証:** P1-7のHT/HC/HR/HE計34ケースは**すべて未実行**。N17 HOST_BOUNDARY継続、nonce一回限りの原子性/注文二重処理抑止はまだ未証明。過去P1-6の17 GREEN / 0 REDと43回帰PASSはVerifier研究の証拠で、Hostテストの成功ではない。**ProviderがidempotencyをサポートしなければDB側だけで外部二重課金防止は断定できない。** AP2の規格MUSTとHost独自DB設計を区別する。
+
+**次の1件（別の明示承認後のみ）:** **P1-9a**、隔離PG16/2 Ruby workerで**HR01/02/03/08**の最小同時性試験を実装・実測。Crash/Retry/Receipt/全34件の実装を一括承認しない。固定AP2 v0.2公式Commit `b4587ac1d055888a73b4b21750973cffba961793`を維持、公式Python SDK 186 PASS / 2 FAIL（中間hop aud/nonce）を解消済みとしない。
+
+**GO/HOLD:** 限定オフライン研究のみCONDITIONAL GO、汎用Gem/public API実装HOLD、RubyGems公開・本番/実決済NO-GO。

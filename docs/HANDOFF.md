@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**P0-1〜P0-5b・P1-0〜P1-7完了。P1-7はHost信頼/nonce原子的消費/VerifiedEvidence≠ALLOW/Receiptを文書設計し、将来のテスト34件を計画**。Hostの新しいCI/DB/Replay実験は**ゼロ**。前回P1-6は署名付き18ケースで17 GREEN / 0 RED / 0 ERROR / Host replay境界1、既存43回帰成功。次は**P1-8：Host Replay競合の試験範囲とDB採用判断（別途承認後）**。**汎用Gem/API実装HOLD、公開・Production/実決済NO-GO**。GCP/決済/Host DB/Receiptは未実装。
+状態：**P0-1〜P0-5b・P1-0〜P1-8完了。P1-8はHost Replayの実験環境・技術選定・検証計画のみ**。[P1-8設計](HOST_REPLAY_LAB_DESIGN.md)で一時PostgreSQL 16、2worker、nonce CASとCheckout unique、Crash/Retry、Fake Providerを採用候補にした。**Host DB/新CI/Host実験は0件、HT/HC/HR/HEの34件は全て未実行**。P1-6の17 GREEN / 0 RED / 1 HOST_BOUNDARY、43回帰PASSは過去の研究成果のみ。次は**P1-9a：HR01/02/03/08の限定race実証（別途承認必要）**。**Gem/API実装HOLD、公開・Production/実決済NO-GO**。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -13,7 +13,7 @@
 
 1. [README](../README.md) — Gemの目的・利用シーン・非スコープ
 2. [PROJECT](PROJECT.md) — D001〜D006、責務境界、独立OSS方針
-3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) / [RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) / [SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) / [SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md) / [SECURITY_HARDENING_RESEARCH](SECURITY_HARDENING_RESEARCH.md) / [HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md) / [HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md) — P1-6研究修正の実測とP1-7 Host Trust/Replay/Receiptの未実装設計
+3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) / [RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) / [SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) / [SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md) / [SECURITY_HARDENING_RESEARCH](SECURITY_HARDENING_RESEARCH.md) / [HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md) / [HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md) / [HOST_REPLAY_LAB_DESIGN](HOST_REPLAY_LAB_DESIGN.md) — P1-6実測、P1-7 Host契約、P1-8未実行ラボ設計
 4. [OFFICIAL_SOURCES](OFFICIAL_SOURCES.md) — AP2/FIDO/IETFの一次資料・ウォッチリスト
 5. [RESEARCH_PLAN](RESEARCH_PLAN.md) — Phase 0〜3 の全体工程
 6. [SECURITY_BOUNDARY](SECURITY_BOUNDARY.md) — 未信頼Mandateの扱いとFail Closed
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-7完了 / 次はP1-8】
+### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-8完了 / 次はP1-9a】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -129,8 +129,10 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - [HOST_SECURITY_TEST_PLAN.md](HOST_SECURITY_TEST_PLAN.md)で、HT01〜07（信頼7）、HC01〜07（文脈7）、HR01〜10（DB Replay/競合10）、HE01〜10（Evidence/Receipt10）の**計34件を将来テストとして設計**。
   - **34件とも実装・実行なし**。Host DB/原子的nonce消費/Receipt/実決済は未実装、Gem/API/ProductionはHOLD/NO-GO。P1-6の歴史的署名CI成功をHost安全性PASSとしない。
 
-- [ ] **P1-8：Host Replay/nonce競合の将来オフライン試験環境と採用方針の設計判断（次の1件、明示承認後のみ）**
-  - 一時的なローカルDB/テストrunner、2worker・Crash/Retry・checkout version、idempotency検証範囲と費用を評価。**まず承認条件を決める**。勝手にDB/本番アプリ・Gem/GCPを作らない。
+- [x] **P1-8：Host Replay/nonce競合の一時DB環境・試験計画（設計のみ完了）**
+  - [HOST_REPLAY_LAB_DESIGN.md](HOST_REPLAY_LAB_DESIGN.md)でPG16・2独立worker・nonce CAS/Checkout unique・commit障害・Idempotency・費用/cleanupを選定。**Host新規実装/実行なし、34件NOT RUN**。
+- [ ] **P1-9a（次の1件・別途明示承認後のみ）**
+  - PG16専用研究DB＋Ruby 2workerでHR01/02/03/08のみ先行実測。Crash/Receipt/Gem/本番/GCPは未承認。
 
 
 
@@ -185,33 +187,26 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P0-1〜P0-5b、P1-0〜P1-7完了。最新は[P1-7 Host設計契約](HOST_SECURITY_CONTRACT.md)・[将来Hostテスト34件](HOST_SECURITY_TEST_PLAN.md)。** [RESEARCH_DECISION](RESEARCH_DECISION.md) §17に最新GO/HOLD判断を記録済み。
+**P1-8のDB選定・試験設計だけ完了。** [HOST_REPLAY_LAB_DESIGN](HOST_REPLAY_LAB_DESIGN.md)、[HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md)、[HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md)、[RESEARCH_DECISION](RESEARCH_DECISION.md) §18を参照。GitHub最新main/Open PR/Issueは毎回確認。
 
-**P1-7で決めたこと:** 固定AP2 v0.2（`b4587ac1d055888a73b4b21750973cffba961793`）、単一Agent/Strict Open→Closed 2hopに限り、HostはIssuer/Agent/Merchant登録鍵とBuyer資格/Checkout正本/expected aud・nonceを提供する。Verifierの`VerifiedEvidence`は署名・開示・取引の**検証事実のみ**で、購入ALLOW/nonce消費やBuyer本人同定ではない。**Hostが発行nonceとCheckout operationをDBで原子的に一度だけ確定**し、外部実行の二重送信をidempotencyで防ぐという**将来のHost設計案**。失効、Clock、unknown state、署名Checkout Receipt、障害時STOPも責務を整理した。
-
-**検証していないこと:** Host永続DB、2worker競合、atomic consume、外部実行/Receipt発行、Key rotationと失効の動的挙動は**一度も実装・実測していない**。P1-6の[既存署名テスト](SECURITY_HARDENING_RESEARCH.md)は18件で17 GREEN/0 RED/HOST_BOUNDARY 1、Ruby回帰43件PASSだが、Host実装の安全性とは別。**汎用Gem/API実装HOLD、公開/本番/実決済NO-GO**。G1〜G6の全面完了を意味しない。
-
-**次の1件（新しいユーザー明示承認が必要）：P1-8。** [HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md)のHR01〜HR10を中心に、ローカルDB（例：一時PostgreSQL）でnonce/Checkout CASを試す**実験計画・最小環境/費用/成果判定の採用判断**。**実装やGCP、Gem化はこの時点では自動承認しない。**
+- **決定:** 専用一時PostgreSQL 16、独立したRuby 2worker＋異なるDB sessionで競合を再現。Checkout→nonceのlock、nonce CAS、Checkout単一operation unique、durable outbox、外部処理のstable idempotency keyとcommit後の配送を将来検証する。
+- **未検証:** P1-7計34テストすべてNOT RUN。Host DB/Replay/Receipt本体はない。N17 HOST_BOUNDARYは残る。P1-6旧署名CIはHost合格実績でない。
+- **GO/HOLD:** 小さな非本番研究だけCONDITIONAL GO。Gem/API HOLD、RubyGems公開・本番/実決済 NO-GO。
+- **次の1件:** **P1-9a：HR01/02/03/08だけをPG16/2workerでオフライン試験**。別途明示承認後に着手。Crash/Retry後半・Receipt・実決済・GCP・他OSSは触らない。
 
 ### 次チャット用指示文
 
 ```text
-ap2-mandate-verifier P1-8を開始します。
+ap2-mandate-verifier P1-9aを開始します。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-最新main/Issue/Open PRを確認し、docs/HANDOFF.md、
+最新main/Open PR/Issueを確認し、docs/HOST_REPLAY_LAB_DESIGN.md、
 docs/HOST_SECURITY_CONTRACT.md、docs/HOST_SECURITY_TEST_PLAN.md、
-docs/RESEARCH_DECISION.md §17、docs/SECURITY_GAP_REVIEW.md、
-docs/SECURITY_HARDENING_RESEARCH.mdを読んでください。
+docs/RESEARCH_DECISION.md §18、docs/HANDOFF.mdを読んでください。
 
-P1-7はHost trust/VerifiedEvidenceとALLOWの区別、nonceの
-原子的消費、Checkout正本/失効/Receiptの責務の設計のみ完了。
-HT/HC/HR/HE計34テストは全て未実行、Host DB/本番コードなし。
-P1-6の17 GREEN/0 RED/43回帰PASSはVerifier研究だけの結果です。
-
-今回はP1-8として、将来HR01〜HR10をローカル隔離DBで実測するための
-最小環境・採用DB・2worker/concurrency・Crash/Retryの
-テスト範囲、再現手順、費用/クリーンアップ、GO/HOLD条件を設計し、
-資料に残してください。Host DBやGem、API、実決済、GCPへ
-承認なしに自動実装・公開しない。PRレビュー後mainへ反映。
+P1-8は一時PG16/2worker/CAS+Checkout unique/Crash・Idempotency
+の検証「計画」のみ。Host 34ケースは全てNOT RUNです。
+まず一件だけ：HR01/02/03/08を専用一時PG16とRuby 2 workerで
+オフライン実装・実測し、失敗を含む証拠/CI/cleanupを確認。
+Gem/API、Receipt/実決済、GCP、他OSSは変更しない。
 ```
