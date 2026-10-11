@@ -1,0 +1,68 @@
+name: P1-1 SD-JWT Ruby research
+
+# Research-only: manual dispatch after initially validated PR.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  p1-1-root-disclosure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: false
+      - name: Checkout pinned AP2 Python SDK
+        shell: bash
+        run: |
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = "b4587ac1d055888a73b4b21750973cffba961793"
+      - name: Install upstream Python direct dependency pins
+        shell: bash
+        working-directory: ${{ runner.temp }}/ap2
+        run: |
+          # AP2 frozen uv.lock references a private index (HTTP 401).
+          # Preserve upstream pyproject.toml direct pins, use public PyPI.
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple -e .
+          python -m pip freeze > "$GITHUB_WORKSPACE/p1-1-python-packages.txt"
+      - name: Generate genuine signed SD-JWT root and disclosure vectors
+        shell: bash
+        env:
+          PYTHONHASHSEED: '0'
+        run: |
+          python research/p1_1/generate_python_sdjwt.py "$RUNNER_TEMP/p1-1-fixtures.json"
+          test -s "$RUNNER_TEMP/p1-1-fixtures.json"
+      - name: Install pinned Ruby JWT library
+        shell: bash
+        run: |
+          gem install jwt -v 3.3.0 --no-document
+          ruby -v
+          ruby -rjwt -e 'puts "Ruby JWT version: #{Gem.loaded_specs.fetch("jwt").version}"'
+      - name: Verify real AP2 root signatures and disclosures in Ruby
+        shell: bash
+        env:
+          AP2_P11_FIXTURES: ${{ runner.temp }}/p1-1-fixtures.json
+        run: |
+          set -o pipefail
+          ruby research/p1_1/test_ruby_root_sdjwt.rb --verbose 2>&1 | tee p1-1-ruby-test.log
+      - name: Upload research evidence (public keys and synthetic mandates only)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-1-sdjwt-research-logs
+          path: |
+            p1-1-ruby-test.log
+            p1-1-python-packages.txt
+          retention-days: 7
+          if-no-files-found: warn

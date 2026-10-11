@@ -12,7 +12,8 @@
 - [x] **P0-5a完了（公式pytest 186 PASS / 2 FAIL、実署名負例12 PASS、先行限定11 PASS）**。[実測記録](PYTHON_BASELINE_VERIFICATION.md)。公式uv.lockはprivate registry 401のためpyproject直接依存を公開PyPIから取得。**Gem実装HOLD継続**。
 - [x] **P0-5b完了**：[Fail Closed Profile](FAIL_CLOSED_PROFILE.md)でIssuer trust、terminal aud/nonce、required disclosure、Checkout原文・hash、Host認可を限定し、[RESEARCH_DECISION](RESEARCH_DECISION.md) §9で**非本番Ruby PoCだけCONDITIONAL GO**（汎用Gem・本番利用はHOLD/NO-GO）。
 - [x] **P1-0完了**：合成Python ES256 JWS fixtureと固定AP2公式Open Checkout Schemaに対するRuby `jwt`・`json_schemer`互換性試験 **14 runs/17 assertions, 0 failures**。([RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md)、[CI実測](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38123249933))。Gem実装ではない。
-- [ ] **P1-1（次・別の明示承認後のみ）**：実署名SD-JWTのRoot署名とDisclosure digest・権限制約完全性の小さなオフラインRuby Spike。未開示Merchant制約はfail closed。Gem/API実装・公開はしない。
+- [x] **P1-1完了**：[RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) — 固定AP2 v0.2 Python SDKで実署名Root SD-JWTを生成し、RubyでES256 Root署名＋array disclosure digestの完全開示を検証。Merchant制約の非開示／署名・開示改ざんは拒否。**10 runs/22 assertions、0 failures**（[CI実測](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38123828122)）。研究用Strict Profileのみ、Gem実装ではない。
+- [ ] **P1-2（次・別途明示承認後のみ）**：同一AgentのTerminal KB-SD-JWT署名とRoot `cnf`、前段 `sd_hash`、Host期待 `aud`/`nonce`の2-hopオフラインRuby Spike。中間hop、汎用Gem/公開API、本番利用は禁止。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 

@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新追記（P0-5b, 2026-10-11）：非本番・単一Agent・2hopのRuby研究PoCに限り CONDITIONAL GO。公開Gem・一般AP2受理・本番利用はNO-GO。下記§9を優先。**
+> **最新の判定は§11（P1-1）を参照：非本番Ruby研究PoCのみCONDITIONAL GO。汎用Gem・API・リリースはHOLD、本番利用はNO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -137,3 +137,14 @@
 - **次の1件（別の明示依頼後）:** **P1-1：固定AP2 Python由来の署名付きSD-JWT Root・Disclosure digest・権限制約の完全性をRubyで評価する局所Spike**。不明・未開示のauthority constraintは必ずrejectするという方針を守り、Gem/public APIを構築しない。
 
 **P1-0のPASSはPhase 1すべての実装GOではない。** 技術研究用の狭いSpikeに限る。
+
+## 11. 2026-10-11 P1-1 実署名Root SD-JWTのRuby研究結果（最新）
+
+**判定：限定研究PoCのCONDITIONAL GOを継続。汎用Gem/公開API/リリースはHOLD、本番/決済はNO-GO。** 研究結果は[RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md)、[Actions run #38123828122](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38123828122)に記録。
+
+- 固定AP2 v0.2.0 Python SDKの`MandateClient.create`で架空のIssuer/Agent/Checkout制約を持つOpen Root SD-JWTを**実際に署名・選択的開示**した。
+- Ruby 3.3.12 / `jwt 3.3.0` が、Host指定Issuer公開鍵でES256署名を検証し、`delegate_payload`とMerchant制約のarray disclosure SHA-256ダイジェストの整合を確認した。**10 runs、22 assertions、失敗0**。
+- 未開示Merchant Constraint、Disclosureのsalt改ざん、Issuer JWT署名改ざん、wrong issuer key、無関係/重複Disclosureはすべて**Fail Closed（拒否）**を実測。
+- **未実証:** SD-JWTの任意形式（dictionary disclosure・decoy等）、全権限制約の一般的完全性証明、Terminal agent署名・Rootの`cnf`とのPoP、`sd_hash`、Host期待aud/nonce、merchant-signed Checkout JWT/Hashの統合検証、業務ALLOW、Replay/Receipt。**10 PASSはAP2 Verifierの完成・本番安全性ではない。**
+
+**次の1件（改めて明示承認後のみ）：P1-2 — 固定SDKによるOpen Root → Agent Terminalの厳密2-hop SD-JWTで、RubyのHolder署名、Root `cnf`、`sd_hash`、Host期待aud/nonceを負例込みでオフライン確認。** 3hop以上や他Agent転委任は拒否し、Gem/APIの実装・公開には進まない。
