@@ -84,6 +84,8 @@ end
 
 **API最小原則:** 一度の呼び出しは**1件のCheckout評価**。Verifierはネットワーク通信・DB書込み・nonce消費・注文作成・署名Receipt発行をしない。Hostが事前にresolveしたキー・取引文脈を使う。これは**P0-4の設計方針**であり、AP2が上記Rubyクラス名やコンストラクタを要求しているわけではない。
 
+**安全側の限界:** `constraint_policy` だけで『未開示Constraintは存在しない』とは証明できない。信頼できる発行側の完全性根拠や必須開示条件を確立できない場合、この設計は結果を成功にせず **Rejection/HOLD** とする。Ruby側での実現方法は未決定である。
+
 ### 入力の境界
 
 | 入力（仮称） | 信頼レベル・必要度 | 契約・Fail Closed |
@@ -178,7 +180,7 @@ end
 | A04 | 自律フローでaudienceまたはnonceが未発行/null/不一致 | `Rejection`。Directでは仕様とHost policyに従い区別 |
 | A05 | 期限切れ/future `iat`、未対応claim、Host期限要件不足 | `Rejection` |
 | A06 | 未知Constraint、制約の必要情報が未開示、Open schemaの必要制約がない | `Rejection` または規格未解決につき実装GOをHOLD |
-| A07 | 金額/商品/数量/merchantの制約不一致・Agent鍵ポリシー不一致 | `Rejection` |
+| A07 | 商品/数量/merchantの**標準Checkout制約**不一致・Agent鍵ポリシー不一致 | `Rejection`。価格・金額・通貨など標準制約にない業務確認はHostが実施 |
 | A08 | 関係ない/偽署名のCheckout JWT、最新Host正本と別JWT | `Rejection` |
 | A09 | `checkout_hash`の誤り、Host JWTと違う、期待hash省略を試みる | `Rejection`。hash照合をoptionalにしない |
 | A10 | 大きすぎるJWT、深いchain、不正JSON、未知alg、例外/タイムアウト | `Rejection`。失敗時にraw tokenをログへ出さない |
