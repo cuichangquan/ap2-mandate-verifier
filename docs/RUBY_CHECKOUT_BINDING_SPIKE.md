@@ -3,7 +3,7 @@
 **実行日:** 2026-10-11 JST  
 **状態:** **P1-3 PASS（厳格な架空Checkout 1商品/単一店舗に限定した研究Spike）**。**汎用Gem・正式API・本番Verifierは未実装。実決済、nonce消費、Replay防止、Receiptも未実装。**  
 **固定版:** [AP2 v0.2.0 `b4587ac1d055888a73b4b21750973cffba961793`](https://github.com/google-agentic-commerce/AP2/tree/b4587ac1d055888a73b4b21750973cffba961793)。公式SDKのRoot/Terminalを実行し、Merchant JWTはPythonの`jwcrypto`で**実際のES256 JWSとして署名**した。  
-**実測正本:** [GitHub Actions run #38125925976](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38125925976) / [研究用Ruby verifier](../research/p1_3/checkout_binding_research.rb) / [18ケースのRubyテスト](../research/p1_3/test_checkout_binding.rb) / [公式SDK連携Python生成器](../research/p1_3/generate_merchant_checkout.py) / [CI](../.github/workflows/p1-3-checkout-binding.yml)。
+**実測正本:** [GitHub Actions run #38126247946](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38126247946) / [研究用Ruby verifier](../research/p1_3/checkout_binding_research.rb) / [18ケースのRubyテスト](../research/p1_3/test_checkout_binding.rb) / [公式SDK連携Python生成器](../research/p1_3/generate_merchant_checkout.py) / [CI](../.github/workflows/p1-3-checkout-binding.yml)。
 
 ## 1. 今回の狙い
 
@@ -37,7 +37,7 @@ Hostの信頼済み入力:
 
 | 項目 | 証拠・留保 |
 | --- | --- |
-| 実行場所 | [GitHub Actions #38125925976](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38125925976) / GitHub-hosted Ubuntu 24.04 |
+| 実行場所 | [GitHub Actions #38126247946](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38126247946) / GitHub-hosted Ubuntu 24.04 |
 | 実行系 | **Ruby 3.3.12**、`jwt 3.3.0`、Ruby標準のDigest/JSON/Base64。Python **3.11.17** |
 | 固定SDK | 公式AP2のSHA `b4587ac1d055888a73b4b21750973cffba961793` をcloneしてHEADをassert。Python `MandateClient.create`/ `kb_sd_jwt.create`、`verify_chain`、公式Checkoutモデル・Constraint evaluatorを使用 |
 | Python依存 | 上流`uv.lock`がprivate registryでHTTP 401になるため、`pyproject.toml`の**直接依存version pins**を公開PyPIからインストール。**推移的依存lockの完全再現ではない** |
@@ -46,10 +46,10 @@ Hostの信頼済み入力:
 | P1-3本体 | **18 runs / 40 assertions / 0 failures / 0 errors / 0 skips** |
 | P1-2回帰 | **15 runs / 32 assertions / 0 failures / 0 errors / 0 skips** |
 | P1-1回帰 | **10 runs / 22 assertions / 0 failures / 0 errors / 0 skips** |
-| Artifact | [CIログ・依存一覧](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38125925976/artifacts/11696792503)（保持期限7日）。テスト/生成器はリポジトリに継続保存 |
+| Artifact | [CIログ・依存一覧](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38126247946/artifacts/11697257533)（保持期限7日）。テスト/生成器はリポジトリに継続保存 |
 | 実行費用 | GCP VM/Cloud Run・実決済なし。GitHub Actionsとソース/依存取得のみ。検証後CIは**手動起動専用**へ変更 |
 
-**実行記録を誇張しない:** P1-3は最初の2回に研究コード/fixtureの前提ミスで失敗し、最終Run #38125925976で全件成功。失敗も次節に記録した。以前の上流公式Python pytest **186 PASS / 2 FAIL**は別の調査結果（[P0-5a](PYTHON_BASELINE_VERIFICATION.md)）であり、今回再実行していない。
+**実行記録を誇張しない:** P1-3は最初の2回に研究コード/fixtureの前提ミスで失敗し、最終Run #38126247946で全件成功。失敗も次節に記録した。以前の上流公式Python pytest **186 PASS / 2 FAIL**は別の調査結果（[P0-5a](PYTHON_BASELINE_VERIFICATION.md)）であり、今回再実行していない。
 
 ## 3. 新規Ruby 18テスト（最終CIで全成功）
 
@@ -73,6 +73,8 @@ Hostの信頼済み入力:
 | 16 | Hostが期待Merchant IDを間違えて指定 | **拒否** |
 | 17 | Hostが期待通貨を間違えて指定 | **拒否** |
 | 18 | Hostが期待する取引金額を間違えて指定 | **拒否** |
+
+**負例カバレッジの注意（最終Runで修正済み）:** 不許可Merchant/SKU/数量/追加商品/誤合計/状態と不正Merchant鍵の各fixtureには、**そのClosedが参照する同一のMerchant署名済JWT**をHost正本として渡す。以前は正本JWTの不一致によって先に拒否され、個別の業務ルールまで到達していなかった。修正版[Actions #38126247946](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38126247946)ではその短絡を避け、18件すべてPASSした。
 
 **重要:** 署名が有効なCheckoutだから購入可、にはしない。Host鍵の信頼とaccount/注文status/replayの取り扱いはHost側。Ruby研究コードの戻り値は`checkout_id`、`merchant_id`、`checkout_sha256`、`amount_minor`で、`payment_approved`を意味しない。
 
