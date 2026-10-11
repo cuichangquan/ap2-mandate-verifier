@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**P0完了、P1-0〜P1-10e完了（P1-10eは独立Authority/Host障害注入テスト計画のみ、NOT RUN）**。[P1-10e計画](HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md)に予約後の失効要求、unknown COMMIT、timeout/遅延Cの3系統12将来計画IDを整理。既存PG16 Host正本**9/34件、12 runs/465 assertions PASS、25件NOT RUN**、P1-10c合成8 runs/94 assertionsは別扱い。**HC06分散安全性HOLD**。次は**P1-10f（独立オフライン検証環境の採否判断だけ。別途明示承認）**。N17継続、Gem/API HOLD、RubyGems公開・Production/実決済NO-GO。
+状態：**P0完了、P1-0〜P1-10f完了（P1-10fはE-R01/R02独立オフライン環境の採否判断だけ・NOT BUILT/NOT RUN）**。 [P1-10f判断資料](HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION.md)に、Ruby worker別プロセス＋別PG16×2のローカル限定案を**条件付きで推奨**し、abort gate・因果証拠・環境/費用/cleanupの着手ゲートを記載。既存PG16 Host正本**9/34件、12 runs/465 assertions PASS、25件NOT RUN**、P1-10c合成8 runs/94 assertionsは別。**HC06分散安全性HOLD**。次は**P1-10g（2ケース用最小研究ハーネス実装・実測の別承認）**。N17継続、Gem/API HOLD、RubyGems公開・Production/実決済NO-GO。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10e完了（HC06テスト計画まで） / 次はP1-10f採否判断】
+### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10f完了（HC06検証環境の採否判断まで） / 次はP1-10g別承認】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -147,8 +147,10 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - [HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md](HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md)：方式A〜F・障害13種・Authorityへの契約確認項目。実プロトコルも外部Authorityも実装していない。
 - [x] **P1-10e（設計のみ完了・NOT RUN）**
   - [HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md](HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md)：P後のR_request、Host COMMIT ACK不明、予約timeout/遅延Cの3系統12ケースを計画。独立永続DB/障害注入/合否証拠・UNPROVENを定義。**実行なし、HC06 HOLD**。
-- [ ] **P1-10f（次のおすすめ1件・別途明示承認後のみ）**
-  - E-R01/E-R02の独立オフライン検証環境について、実装可否・barrier/通信障害注入/費用を先に判断。新実装やCIは別途承認。
+- [x] **P1-10f（採否判断資料のみ完了・NOT RUN）**
+  - [HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION.md](HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION.md)：E-R01/R02に絞り、Ruby別プロセス＋PG16別インスタンス×2を条件付き推奨。耐久abort強制・R_effective順序証拠・費用/隔離/cleanupを着手前ゲートとした。**実装/実測/CIなし・HC06 HOLD**。
+- [ ] **P1-10g（次のおすすめ1件・別途明示承認後のみ）**
+  - 3ゲートが満たせるならE-R01/R02用のローカル独立ハーネスと障害注入を最小実装・実測。未達なら実装せず設計に戻る。
 
 
 
@@ -203,25 +205,25 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P1-10e（計画文書のみ）完了。** [テスト計画](HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md)、[P1-10d分散設計](HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md)、[P1-10c合成実測](HOST_EXTERNAL_REVOCATION_P110C_EVIDENCE.md)、[正本HC06](HOST_SECURITY_TEST_PLAN.md)、[判断記録](RESEARCH_DECISION.md) §26を参照。GitHub最新main、Open PR/Issueは**毎回再確認**。
+**P1-10fは実装判断文書だけ完了。** [P1-10f採否判断](HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION.md)、[P1-10eテスト計画](HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md)、[P1-10d協調設計](HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md)、[研究判断§27](RESEARCH_DECISION.md)を先に読み、開始時GitHub最新main/Open PR/Issueを再確認。
 
-- P1-10eの3系統12計画IDは**全件NOT RUN**。外部AuthorityとのR_effective/C共通線形化境界、将来C不能にする耐久ゲートは**未実装・未実測**。COMMIT ACK欠落、期限だけで予約解放しない。R_request acceptedとR_effective confirmedを分離する。
-- 既存PG16正本Host**9/34件実測・25件NOT RUN**、12 runs/465 assertions PASSは過去証拠。P1-10c合成8 runs/94 assertionsは単一プロセスで分散保証にならない。**HC06 HOLD、N17 HOST_BOUNDARY継続、Gem/API HOLD、RubyGems/本番/実決済NO-GO**。
-- **次のおすすめ1件（別途明示承認が必要）：P1-10f**。E-R01/E-R02の最小独立プロセス/独立DBオフライン環境を本当に作るか、費用・注入方法・リスクを検討する採否判断だけ。実装を自動開始しない。
+- **採否:** 独立Ruby OS worker＋別PG16インスタンス/永続領域×2のローカル実験を**条件付き推奨、未承認・未実装・NOT RUN**。E-R01（C先行/R_request pending）・E-R02（durable abort先行/stale C拒否）の2件だけ。停止ゲートの全C経路強制とAuthorityへの証拠接続はまだ未実証。
+- **歴史的実測は不変:** Host正本9/34件（25 NOT RUN）、12 runs/465 assertions。P1-10c 8 runs/94 assertionsは単一Rubyプロセス。**HC06 HOLD / N17 HOST_BOUNDARY / Gem/API HOLD / RubyGems・Production・実決済NO-GO**。
+- **次の1件（新たな明示承認後のみ）：P1-10g** — 最小2ケース用オフラインハーネスの安全/環境/承認ゲートを満たす場合のみ実装・実測。条件未達なら再設計。GCP/外部API/決済/本番/他OSSは変更禁止。
 
-### 次のチャット用指示文
+### 次チャットに渡す指示文
 
 ```text
-ap2-mandate-verifier P1-10fの採否判断を検討したい。
+ap2-mandate-verifier P1-10gの最小オフライン検証を検討します。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-最新main/Open PR/Issueとdocs/HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md、
-P1-10d文書、docs/RESEARCH_DECISION.md §26を確認する。
-P1-10eは文書のみ・12計画ID全件NOT RUN、HC06分散安全性HOLD。
-既存Host実PG16は9/34実測・25 NOT RUN。
+最新main/Open PR/Issue、docs/HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION.md、
+docs/HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md、docs/RESEARCH_DECISION.md §27を確認。
+P1-10fは独立ローカル実験環境の採否判断のみ。実装・実行なし。
+Host 9/34実測・25未実行、HC06分散HOLDは不変。
 
-次の1件だけ：E-R01/E-R02を試す独立架空Authority/Hostの
-オフライン検証環境を構築すべきか、barrier/通信障害注入・
-費用・可用性・最小範囲を判断する。Gem/API/外部Authority/
-実決済/GCP/RubyGemsへの変更は禁止。実装は別承認。
+まずE-R01/R02のみ、2独立Ruby worker・2別PG16・耐久abort全経路強制・
+barrier/障害注入/因果証拠/cleanupの各ゲートを検討する。
+実装は明示承認された範囲だけ。GCP、実Authority/Provider、Gem/API、
+本番利用、実決済、署名Receiptや他リポジトリは変更しない。
 ```
