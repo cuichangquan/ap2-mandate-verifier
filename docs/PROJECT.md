@@ -64,4 +64,4 @@ AP2全部入りSDK、ウォレット、鍵発行、OAuth Server、MCP/A2A Server
 
 ## 7. 次の作業
 
-[OFFICIAL_SOURCES.md](OFFICIAL_SOURCES.md)の一次資料からMUST項目とテストベクトルをまとめ、[RESEARCH_PLAN.md](RESEARCH_PLAN.md)のPhase 0を進める。
+Phase 0のP0-1〜P0-4は仕様・検証要件・Python SDK比較・仮API提案を文書化済み。次は[API_PROPOSAL.md](API_PROPOSAL.md)を起点に、[RESEARCH_PLAN.md](RESEARCH_PLAN.md)の**P0-5（実装GO/HOLD/NO-GO判断のみ）**へ進む。実装・依存Gem確定・公開は承認前に開始しない。
