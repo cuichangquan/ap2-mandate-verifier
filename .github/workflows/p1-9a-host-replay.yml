@@ -1,4 +1,4 @@
-name: P1-9a/b/c Host Replay PostgreSQL 16 (research only)
+name: Host Replay PostgreSQL 16 research (P1-9a through P1-10a)
 
 on:
   pull_request:
@@ -6,6 +6,7 @@ on:
       - 'research/p1_9a/**'
       - 'research/p1_9b/**'
       - 'research/p1_9c/**'
+      - 'research/p1_10a/**'
       - '.github/workflows/p1-9a-host-replay.yml'
   workflow_dispatch:
 
@@ -35,6 +36,7 @@ jobs:
       P19A_REPORT: p19a-report.json
       P19B_REPORT: p19b-report.json
       P19C_REPORT: p19c-report.json
+      P110_REPORT: p110-report.json
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,6 +66,8 @@ jobs:
           ruby -c research/p1_9c/timeout_worker.rb
           ruby -c research/p1_9c/fake_provider.rb
           ruby -c research/p1_9c/test_uncertainty_and_fake_provider_pg.rb
+          ruby -c research/p1_10a/host_race_worker.rb
+          ruby -c research/p1_10a/test_checkout_revocation_race_pg.rb
       - name: Run four isolated Host DB security experiments
         shell: bash
         run: |
@@ -149,6 +153,42 @@ jobs:
               b.fetch("receipt_not_claimed") == true
             puts "PASS: HR06/07 constrained DB+mock scenarios; NO real network/payment claims"
           '
+      - name: Run HR10 four deterministic Checkout/revocation interleavings
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby research/p1_10a/test_checkout_revocation_race_pg.rb --verbose 2>&1 | tee p110-run.log
+      - name: Reject incomplete HR10 evidence
+        if: success()
+        run: |
+          ruby -rjson -e '
+            evidence=JSON.parse(File.read("p110-report.json"))
+            abort "Wrong canonical Host IDs" unless evidence.fetch("canonical_case_ids") == ["HR10"]
+            cases=evidence.fetch("subscenarios")
+            expected=%w[authorize_first block_first cancel_first edit_first]
+            abort "Missing/extra HR10 interleavings" unless
+              cases.map{|x| x.fetch("subcase")}.sort == expected
+            abort "Missing actual PG contention or failed HR10" unless
+              cases.all?{|x|
+                x.fetch("id") == "HR10" && x.fetch("result") == "PASS" &&
+                  x.fetch("postgres_lock_contention_observed") == true
+              }
+            abort "Stale authorization not fail-closed" unless
+              cases.reject{|x| x["subcase"] == "authorize_first"}.all?{|x|
+                x.fetch("winner") == "mutation" &&
+                x.fetch("committed_operations") == 0 &&
+                x.fetch("outbox_rows") == 0 &&
+                x.fetch("nonce_consumed") == false
+              }
+            won=cases.find{|x| x["subcase"] == "authorize_first"}
+            abort "Late cancellation falsely accepted or double committed" unless
+              won.fetch("winner") == "authorize" &&
+              won.fetch("late_mutation_refused") == true &&
+              won.fetch("committed_operations") == 1 &&
+              won.fetch("outbox_rows") == 1 &&
+              won.fetch("nonce_consumed") == true
+            puts "PASS: HR10 four controlled DB races; external revocation NOT proven"
+          '
       - name: Upload time-limited, sanitized research evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -162,5 +202,7 @@ jobs:
             p19b-run.log
             p19c-report.json
             p19c-run.log
+            p110-report.json
+            p110-run.log
           retention-days: 7
           if-no-files-found: warn
