@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier for Ruby
 
-> **Status: research only.** P1-10h reviews why Authority must NOT trust synthetic Coordinator `finalize_abort` without trustworthy Host durable-decision evidence (**DESIGN REVIEW ONLY, H01–H12 NOT RUN**). P1-10g previously exercised two synthetic PG16 scenarios (**E-R01/E-R02: 2 runs/118 assertions PASS; limited scope**). Canonical Host cases remain **9/34 measured** (prior 12 runs/465 assertions), **25 NOT RUN**. HC06 cross-service safety **HOLD**; generic Gem/API and production Host integration **HOLD**, RubyGems/production/real payments **NO-GO**.
+> **Status: research only.** P1-10i exercises six *synthetic* H01–H06 negatives on separate PG16 instances (**6 runs / 178 assertions, 0 failures/errors**): H01 demonstrates unsafe old Authority finalization, while the guarded reference stops it; H02–H06 exercise limited rejection/idempotency checks. **NOT an authenticated remote Host proof or distributed HC06 guarantee.** Canonical Host security cases remain **9/34 measured**, **25 NOT RUN** (prior 12 runs / 465 assertions). **HC06/Gem API/production integration HOLD; RubyGems/real payments NO-GO.**
 >
 > Independent, unofficial Ruby OSS exploration. Not affiliated with Google, the AP2 project, or FIDO Alliance.
 
@@ -92,6 +92,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [HC06 Minimal Independent Harness Decision — P1-10f E-R01/R02 local two-process/two-PG16 feasibility assessment (DESIGN ONLY, NOT RUN)](docs/HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION.md)
 - [HC06 Independent PG16 Synthetic Evidence — P1-10g E-R01/R02 2 runs / 118 assertions, Host abort SIGKILL; distributed HC06 HOLD](docs/HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE.md)
 - [HC06 Authority Finalize Proof-Boundary Review — P1-10h trusted Host decision, forged/replayed reports and PENDING on uncertainty (DESIGN ONLY, NOT RUN)](docs/HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW.md)
+- [HC06 Synthetic Authority Evidence Negatives — P1-10i H01 unsafe baseline + guarded STOP, H02–H06 limited checks (6 runs / 178 assertions, distributed HC06 HOLD)](docs/HOST_EXTERNAL_REVOCATION_P110I_EVIDENCE.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)

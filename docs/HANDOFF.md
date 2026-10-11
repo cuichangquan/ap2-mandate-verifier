@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**P0完了、P1-0〜P1-10h完了（P1-10hはAuthority finalize証拠の信頼境界レビューのみ、H01〜H12全てNOT RUN）**。[P1-10hレビュー](HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW.md)でCoordinatorがHost決定を偽装・再送できる状態の危険、Host durable abortの真正性・全C経路STOP・失効保留条件を整理。過去のP1-10gは隔離PG16×2でE-R01/R02限定**2 runs/118 assertions PASS**。Host正本**9/34件・25 NOT RUN（12 runs/465 assertions）**のまま。**HC06分散安全性HOLD**。次は**P1-10i：H01〜H06の隔離合成負例（別途明示承認）**。Gem/API/本番統合HOLD、RubyGems公開・実決済NO-GO。
+状態：**P0完了、P1-0〜P1-10iの研究内容を作成（P1-10h PR #29はマージ済み、P1-10i PR #30はmainへ載せ直し・検証対象）**。[P1-10i証拠](HOST_EXTERNAL_REVOCATION_P110I_EVIDENCE.md)：独立PG16.9×2で**6 runs/178 assertions成功**。H01は**旧AuthorityがR_effective後にもHost COMMITを許す危険な反例**（安全PASSではない）、研究用guardでSTOP。H02〜H06限定合成PASS。Host正本**9/34件・25 NOT RUN、従来12 runs/465 assertions**。**HC06外部失効強保証HOLD**、実サービス用認証/原子性未実装。次は**P1-10j設計採否レビュー（別承認）**。Gem/API・本番統合HOLD、RubyGems公開・Production/実決済NO-GO。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10h完了（HC06 Authority finalizeの信頼境界レビューまで） / 次はP1-10i別承認】
+### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10i研究内容作成（P1-10h #29はmain反映済み、P1-10i #30は要最新状態確認） / 次はP1-10j別承認】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -153,8 +153,10 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - [HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE.md](HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE.md)：2 PG16.9インスタンス・別Ruby worker・Host abort後SIGKILL復旧とstale STOP。**2 runs/118 assertions PASS**、外部AuthorityとR/C原子性はHOLD。正本9/34件維持。
 - [x] **P1-10h（設計レビューのみ完了・H01〜H12 NOT RUN）**
   - [HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW.md](HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW.md)：AuthorityがCoordinatorの無証拠finalizeを信じる実装上の穴、Host durable decision/gateのtrustとcontext束縛、偽造/再送/通信断/矛盾の12計画負例を整理。**新CI/コードなし、HC06 HOLD**。
-- [ ] **P1-10i（次のおすすめ1件・別途明示承認後のみ）**
-  - H01〜H06だけを対象にオフラインの偽finalize/再送/相反証拠負例を限定実装・実測。ゲートが試験不能なら先に設計に戻る。本番/API/GCP/決済は別承認。
+- [x] **P1-10i（隔離合成H01〜H06実測完了／PR #30のmain反映はGitHubで再確認）**
+  - [HOST_EXTERNAL_REVOCATION_P110I_EVIDENCE.md](HOST_EXTERNAL_REVOCATION_P110I_EVIDENCE.md)：初回JSON解析CI失敗→修正後**6 runs/178 assertions PASS**。H01は旧Authorityが失効後Host COMMIT可能な**危険反例**とguardのSTOP。H02〜H06限定PASS、Host署名/分散原子性はHOLD。PR #29（`c1df549f`）マージ後のmainにP1-10i変更だけを載せ直すPR #30上。
+- [ ] **P1-10j（次のおすすめ1件・別途明示承認後のみ）**
+  - Host DB直接読取りを外したAuthority向けに証拠の真正性/耐久性/anti-rollback/全C経路STOPを実現できる設計か**採否レビューだけ**。実装/外部API/クラウド/決済は別承認。
 
 
 
@@ -209,26 +211,29 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P1-10hのAuthority finalize信頼境界の設計レビューまで完了。** [P1-10hレビュー](HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW.md)、[P1-10g実測](HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE.md)、[P1-10e計画](HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md)、[研究判断§29](RESEARCH_DECISION.md)を読み、毎回GitHub最新main/Open PR/Issueを確認。
+**P1-10h PR #29はsquashマージ済み（`c1df549fa536712e5b56e81c478771f4e93282a0`）。P1-10i PR #30は最新mainをbaseに変更し、P1-10iのみの差分へ載せ直す**。まずGitHub最新main、PR #30のマージ済み/未済、Open PR/Issue、レビューと**載せ直し後の正確なheadでのCI**を確認する。
 
-- **現時点で判明した問題:** P1-10gのAuthority分岐は、Coordinatorの`finalize_abort`/commit要求をHost durable証拠の認証なしで受け付け得る。Host署名だけでは将来C不能の証拠にならず、実Authorityとの強い§R_effective < C§の分散線形化は未証明。H01〜H12は**将来用設計ID、全件NOT RUN**。
-- **以前の実測は不変:** P1-10g E-R01/R02**2 runs/118 assertions**（別Ruby worker/別PG16）、P1-10c合成**8 runs/94 assertions**、Host正本**9/34件実測・25 NOT RUN、12 runs/465 assertions**。**HC06 FULL HOLD / N17 HOST_BOUNDARY / Gem/API・本番統合HOLD / RubyGems・実決済NO-GO**。
-- **次のおすすめ1件（別途明示承認のみ）：P1-10i**。H01〜H06のみを隔離合成研究の負例として試験し、Coordinatorの偽造/リプレイ/決定不一致/abort gate未確定時にSTOPできる最小条件を測る。環境やテスト拡張、GCP/実API/実決済/Gem化は無断で進めない。
+- **読む:** [P1-10i証拠](HOST_EXTERNAL_REVOCATION_P110I_EVIDENCE.md)、[P1-10h設計](HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW.md)、[P1-10g実測](HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE.md)、[RESEARCH_DECISION §30](RESEARCH_DECISION.md)。
+- **実測:** 合成H01〜H06、6 runs/178 assertions/失敗0（[CI #38145972566](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38145972566)）。**H01は旧方式の危険反例であり安全PASSではない**、guardはUNPROVEN。H02〜H06の研究用照合だけPASS。H07〜H12未実行。Host正本9/34件・25 NOT RUN／12 runs/465 assertions、P1-10g 2 runs/118 assertionsは別証拠。
+- **限界:** guardは**他運営主体のHost PostgreSQLを直接読み取れる**という人工前提。暗号的なHost発行者認証・強い分散順序・anti-rollbackの保証はない。**HC06 FULL HOLD / Gem/API・本番統合HOLD / RubyGems・実決済NO-GO**。
+- **次の1件（別承認）：P1-10j**。直接Host DB読取りを使えない現実的なAuthorityへ移る設計採否・STOPゲートだけレビュー。新規実装・GCP・外部API・本番に進めない。
 
-### 次チャット用指示文
+### 次チャットへ引き継ぐ指示
 
 ```text
-ap2-mandate-verifier P1-10iの限定オフライン負例研究を検討する。
+ap2-mandate-verifier P1-10jの設計採否レビューを検討する。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-GitHub最新main/Open PR/Issueとdocs/HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW.md、
-docs/HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE.md、docs/RESEARCH_DECISION.md §29を確認。
-P1-10hはAuthority finalizeの信頼境界のレビューのみ（H01〜H12 NOT RUN）。
-Host正本9/34件・25 NOT RUN、P1-10gのE-R01/R02は2 runs/118 assertions、
-HC06分散保証はHOLD。
+GitHub最新main/Open PR/Issueを確認。P1-10h PR #29はsquashマージ済み。
+P1-10i PR #30はmainをbaseとして差分を載せ直す。PR #30の実際の
+merge状態と最終CIを再確認し、マージ済み/未済を正確に区別する。
+docs/HOST_EXTERNAL_REVOCATION_P110I_EVIDENCE.md と
+docs/HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW.md を確認。
 
-次の1件だけ：設計ID H01〜H06の偽finalize/証拠再送/誤scope/
-相反証拠/不確実な中止に関する隔離合成負例を検討・限定実測する。
-署名を加えるだけでは耐久gateの真実性を証明できない点を維持し、
-新Gem/API、本番、外部Authority、GCP、実決済、Receipt、他OSSには触れない。
+H01旧Authorityの危険反例あり。合成H01〜H06 6 runs/178 assertions成功
+（安全性の全面PASSではない）。Host正本9/34・25 NOT RUN、HC06 HOLD。
+次の1件は、Host DBに直接入れない別Authorityでも受理できるdurable
+decision証拠の真正性・反ロールバック/全C経路保証をどこまで立証
+できるか、STOP/GO条件だけ設計レビューする。
+新実装/外部API/GCP/決済/公開Gem/Receipt/他OSSは未承認。
 ```
