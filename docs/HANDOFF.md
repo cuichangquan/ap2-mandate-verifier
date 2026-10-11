@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**Phase 0 / P0-1〜P0-4 完了、P0-5 未着手**。Gem実装・公開・適合性検証・本番安全性検証は未実施。
+状態：**Phase 0 / P0-1〜P0-5 完了（判断：HOLD）、次はP0-5a のオフライン検証**。Ruby Gem実装・公開・適合性検証・本番安全性検証は未実施。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -13,7 +13,7 @@
 
 1. [README](../README.md) — Gemの目的・利用シーン・非スコープ
 2. [PROJECT](PROJECT.md) — D001〜D006、責務境界、独立OSS方針
-3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) — 固定版・Verifier要件・エコシステム・API案
+3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) — 仕様・要件・エコシステム・API案・HOLD判断
 4. [OFFICIAL_SOURCES](OFFICIAL_SOURCES.md) — AP2/FIDO/IETFの一次資料・ウォッチリスト
 5. [RESEARCH_PLAN](RESEARCH_PLAN.md) — Phase 0〜3 の全体工程
 6. [SECURITY_BOUNDARY](SECURITY_BOUNDARY.md) — 未信頼Mandateの扱いとFail Closed
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1〜P0-4完了 / P0-5が次】
+### Phase 0 — 仕様・競合調査【P0-1〜P0-5完了（HOLD）/ P0-5aが次】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -71,10 +71,15 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - **成果物案：** `docs/API_PROPOSAL.md`
   - **完了条件：** API案が小さく、根拠と保留点が明確であること。
 
-- [ ] **P0-5：実装GO/NO-GOを判断【次に着手】**
+- [x] **P0-5：実装GO/HOLD/NO-GOを判断（HOLD、[RESEARCH_DECISION.md](RESEARCH_DECISION.md)）**
   - 仕様の確かさ、SDK相互運用の見込み、OSS需要、Ruby既存実装との差分、セキュリティ・保守コストから判断。
   - **成果物案：** `docs/RESEARCH_DECISION.md`
   - **完了条件：** GO（最小PoC）、HOLD（仕様待ち）、NO-GO（既存活用/価値が小さい）の根拠を記録。**自動的に実装へ進まない。**
+
+- [ ] **P0-5a：公式Python SDKの隔離・オフライン基準テスト＋主要負例（次の1タスク、ユーザー承認後のみ）**
+  - AP2 v0.2.0固定commitでpytestの実測結果を記録。Checkout hash、Issuer trust、terminal aud/nonce、hidden constraints、Open schema差異を短い負例で検証する。
+  - **成果物案：** `docs/PYTHON_BASELINE_VERIFICATION.md`。実行コマンド/バージョン/Pass・Fail・Skip/解釈を明記。Ruby Gem実装・外部実決済なし。
+  - **完了条件：** P0-5のHOLDを再判定するための実証材料を得ること。自動的なGOはしない。
 
 ### Phase 1 — 最小Checkout Mandate PoC【GO承認後のみ】
 
@@ -119,31 +124,32 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P0-1〜P0-4は研究・設計文書として完了。** [SPEC_BASELINE](SPEC_BASELINE.md) のAP2 v0.2固定仕様、[VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) のMerchant MUSTとHost責務、[ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) の静的SDK比較、[API_PROPOSAL](API_PROPOSAL.md) の**仮Public API設計**を参照。
+**Phase 0 / P0-1〜P0-5を研究・判断文書として完了。P0-5の判定はHOLD。** [RESEARCH_DECISION](RESEARCH_DECISION.md)を必ず読み、HOLDの理由と再判定ルールを維持する。
 
-**P0-4の結果:** Verifierは未信頼Mandate、HostのIssuer/key policy、Hostが保持する正規merchant-signed Checkout JWT、expected audience/nonce、Merchant/Agent文脈、Constraint policyを入力とする。返却は`VerifiedEvidence`または`Rejection`のみ。**Hostの最終ALLOW、Replay/失効・注文・Receiptは別責務**。Direct/Autonomous別にFail Closed条件を整理した。全て提案であり、APIやGemは未実装・未確定。
+**現時点でGem/Ruby PoCの実装許可はない。** Python SDKはソース・既存テストを静的に閲覧したのみ。Python pytest、Ruby Gem依存試験、相互運用は未実施。上流IssueのOpen状態は、その報告内容を本OSSで独立実証したことを意味しない。
 
-**残る重要な確認:** P0-3で見つかったCheckout hash、x5c trust、非開示Constraint、aud/nonce、Open JSON Schema containsの不一致はPythonの静的観察であり、実行で再現・保証していない。AP2準拠・production readyとは主張しない。
-
-**次の1タスク:** **P0-5**。実装を始めるかどうかの**GO/HOLD/NO-GO**を[RESEARCH_PLAN](RESEARCH_PLAN.md)に従い[RESEARCH_DECISION](RESEARCH_DECISION.md)として**判断文書化のみ**。ユーザーの明示承認前にGem実装を開始しない。
+**次の1タスク（ユーザーが改めて承認した場合のみ）：P0-5a — 公式Python SDKを固定Commitで隔離してオフラインテストし、Checkout Hash、trusted issuer、aud/nonce、Selective Disclosure、Open schemaを負例確認。** `docs/PYTHON_BASELINE_VERIFICATION.md` に実行証拠を記録する。Gem実装、公開、A2A/ActingFor変更は禁止。結果からP0-5 HOLDを再判定するが、自動的にRuby実装へ進まない。
 
 ### 次チャット用指示文
 
 ```text
-ap2-mandate-verifierの続きを始めます。
+ap2-mandate-verifierを続けます。
 正本: https://github.com/cuichangquan/ap2-mandate-verifier/tree/main
 
-GitHub最新main、Issue、Open PRを再確認し、
-docs/HANDOFF.md、docs/SPEC_BASELINE.md、
-docs/VERIFIER_REQUIREMENTS.md、docs/ECOSYSTEM_RESEARCH.md、
-docs/API_PROPOSAL.mdを読んでください。
+最新main、Issue、Open PRを確認し、docs/HANDOFF.md、
+docs/SPEC_BASELINE.md、docs/VERIFIER_REQUIREMENTS.md、
+docs/ECOSYSTEM_RESEARCH.md、docs/API_PROPOSAL.md、
+docs/RESEARCH_DECISION.mdを読んでください。
 
-Phase 0 / P0-5だけを実施してください。
-実装GO/HOLD/NO-GOの根拠（仕様の確度、Hostの信頼境界、
-Python SDK検証の不足、Ruby既存Gemの再利用、OSSとしての価値、
-セキュリティ/保守コスト）をdocs/RESEARCH_DECISION.mdにまとめ、
-README/HANDOFFから参照できる状態にしてください。
+今回はP0-5aのみ。HOLDを尊重し、公式AP2 v0.2固定ソース
+b4587ac1d055888a73b4b21750973cffba961793 のPython SDKを
+ローカル隔離・低コストで実行し、既存pytestと、Checkout hash、
+Issuer trust、terminal aud/nonce、Selective Disclosure/制約、
+Open schema差異の優先負例を検証してください。
+コマンド・固定版・Pass/Fail/Skip・観察・未実証事項を
+docs/PYTHON_BASELINE_VERIFICATION.mdに根拠付きで記録してください。
 
-Gem/API実装・公開、ActingFor/a2a-railsへの変更は禁止。
-PRをreviewしてmainにマージし、結果・SHA・次の1件のみ報告してください。
+Ruby Gem実装、API確定、GCP費用、実決済/実サービス通信、
+ActingFor/a2a-rails変更、公開は禁止です。
+PR・mainマージのうえ、実測結果、SHA、次の1タスクだけ報告してください。
 ```
