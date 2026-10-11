@@ -299,3 +299,13 @@
 既存PostgreSQL16研究の正本Hostテストは**34 ID中9件のみ実測、25件NOT RUN**のまま（[P1-10a最終CI #38136570328](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38136570328)：12 runs/465 assertions PASS）。今回の新8モデルテストを足してHost実DBの17件達成などと数えない。N17 stateless HOST_BOUNDARY、P1-4 G1〜G6、P1-7 T1〜T5未完、公式Python SDK中間hopの186 PASS/2 FAILは残る。
 
 **判断：P1-10c合成研究のみGO、汎用Gem/API・実Host連携HOLD、RubyGems公開・実決済/Production・署名Receipt NO-GO。** 次の1件（新たなユーザー明示承認後のみ）：**P1-10d**。外部Authorityの原子的予約と失効effective時点、Host durable COMMIT間の協調プロトコルを**設計資料と故障モード整理のみ**で検討。外部API/GCP/本番はさらに別承認。
+
+## 25. 2026-10-11 P1-10d HC06 外部AuthorityとHost確定間の失効協調プロトコル（最新・設計のみ）
+
+**設計資料を作成しただけであり、実装・CI・外部Authority検証は行っていない。** [HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL](HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md)に、Verifier検証V、Authority照会Q、予約P、失効要求R_request、失効が正本上有効となるR_effective、Hostのdurable COMMIT C、外部Provider送出Dを区別し、**R_effective<Cなら新しいoperation禁止・nonce未消費**という強い契約を定義した。**R_request即時に全操作停止**はさらに強い要件であり、予約中の取引があれば失効有効化を保留する方式とは異なる。二者を混同しない。
+
+単なるQ=ALLOW再照会やfencing token文字列はQとCの間のTOCTOUを解消しない。比較したのは **A: 再照会/TTL（不十分）、B: 共通の線形化境界、C: Authority予約・fence・失効保留（強い前提とブロックの可能性）、D: prepare/coordinator付き分散commit（外部Authority対応未確認）、E: 非同期キャッシュ（不十分）、F: 有効leaseによる失効遅延（即時取消ではない）**。どの方式も実現可能性/運用受容性が未確認なので採用決定していない。**Host COMMIT ACK喪失、予約タイムアウト、Authority障害、期限切れfence、C後D前の取消、回復中の二重送出等**について設計上の安全側応答を定義。Host C未確定なら勝手に予約解放してR_effectiveにせず、再照会しても決着しなければSTOP/PENDING。取消要求受付と失効完了のUIを分離し、長期PENDING/手動復旧の費用を可視化する。
+
+**正本HC06は未実装・NOT FULL PASS / HOLD。** 従来の実PG16 Host研究は34件中9件のみ実測・25件未実行（[P1-10a最終CI #38136570328](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38136570328)：12 runs/465 assertions PASS）。P1-10cの8 runs/94 assertions（危険性を再現する負例2件込み）は**単一Rubyプロセスの合成モデル**であって新しい正本IDとして数えない。今回docs-onlyでActionsを新規実行していない。N17 stateless HOST_BOUNDARYとP1-4 G1〜G6/P1-7 T1〜T5、公式Python SDKの186 PASS/2 FAILは引き続き未解決。
+
+**判断：P1-10d設計文書のみ限定GO。Gem/API、実Host統合HOLD、RubyGems公開・Production・実決済・署名Receipt NO-GO。** 次の1件（別途ユーザー明示承認後）：**P1-10e**、P先行でR_requestが競合／Host COMMIT ACK不明／timeoutによる予約解放という3ケースの**独立した架空Authority/Host検証設計のみ**。外部API/GCP/実実装は別承認。

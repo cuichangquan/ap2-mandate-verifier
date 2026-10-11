@@ -87,6 +87,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [Host Checkout/Revocation Race — P1-10a HR10 four PG16 interleavings PASS; 9/34 Host case IDs (research only)](docs/HOST_REPLAY_P110A_EVIDENCE.md)
 - [HC06 External Revocation Design — P1-10b authority consistency, TOCTOU and negative tests (design only, NOT RUN)](docs/HOST_EXTERNAL_REVOCATION_HC06_DESIGN.md)
 - [HC06 Offline Synthetic Evidence — P1-10c eight model tests, two expected unsafe counterexamples; not a full HC06 proof](docs/HOST_EXTERNAL_REVOCATION_P110C_EVIDENCE.md)
+- [HC06 Cross-Service Protocol Design — P1-10d Authority reservations, durable Host COMMIT, revocation timing and failure matrix (DESIGN ONLY)](docs/HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)
