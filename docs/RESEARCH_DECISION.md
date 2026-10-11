@@ -271,3 +271,11 @@
 **限界:** HR06のCOMMIT結果不明はACKを**読まないがDB側がcommit成功した経路**に限定。DB rollback/ACK紛失の他形態、実TCP切断、実Providerのidempotency/二重課金保証やReceiptを実証していない。N17 stateless HOST_BOUNDARY継続、P1-4 G1〜G6/P1-7 T1〜T5未完。上流Python SDKの186 PASS/2 FAILも未解決。**限定研究GO、汎用Gem/API・本番Host統合HOLD、RubyGems公開/実決済/Production NO-GO。**
 
 **次の1件（別のユーザー明示承認のみ）：P1-10a** HR10（Checkout更新/失効とnonce消費のrace）を隔離PG16で検討・実測。外部信頼情報更新の一貫性はDB lockだけで保証できない。
+
+## 22. 2026-10-11 P1-10a HR10 Checkout変更/失効とHost認可のDB競合実測（最新）
+
+**限定PG16研究の正本Host ID HR10を実測PASS。** [HOST_REPLAY_P110A_EVIDENCE](HOST_REPLAY_P110A_EVIDENCE.md)、[Actions #38136341199](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38136341199)。実2worker/2接続とPGの実ロック待機を4スケジュールで観測：**cancel先／Buyer block先／Checkout version+fingerprint更新先**なら購入認可STOP、nonce未消費、operation/outbox各0。**購入確定先**なら操作1件で、遅い取消は`too_late_checkout_reserved`として拒否し「防止済み」と誤報告しない。HR10は**4 Minitest runs /124 assertions / 0 failures/errors/skips**。既存8 runs/341 assertionsもPASSで合計**12 runs/465 assertions**。正本34件中**9 ID実測・25件NOT RUN**。
+
+**範囲と限界:** 両側が**同じPostgreSQL checkout→policy行を同一規約でlock**する合成研究。外部Issuer/Buyer/Agentの失効源、別DB、一時的な不整合、真正Checkout JWTの署名・金額/在庫、取消後補償/Refund、正式Receipt、実決済は未検証。HC04/HC06/HC07を自動でPASSにしない。N17 stateless HOST_BOUNDARYも残る。P1-4 G1〜G6、P1-7 T1〜T5の完全達成、公式Python SDK中間hop aud/nonceの186 PASS/2 FAIL解消は主張しない。
+
+**判断:** 狭いHost DB競合研究だけPASS/限定GO。汎用Gem/API、本番Host統合**HOLD**、RubyGems公開・Production/実決済**NO-GO**。**次の一件（別途ユーザー明示承認）：P1-10b HC06の外部失効整合性設計・テスト戦略のみ。** 外部GCP/APIデプロイや実験はその後の独立承認。
