@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**P0-1〜P0-5b・P1-0〜P1-10a完了（P1-9a/b/c/P1-10aは隔離PG16研究のみ）**。HR10の4競合パターン（cancel/Buyer block/Checkout更新が先→STOP、注文先→遅いcancel拒否）を実PGロックで確認。[CI #38136341199](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38136341199)で**既存8ケース＋HR10、正本Host9/34件、12 Minitest runs/465 assertions成功、失敗0**。**25件NOT RUN**。N17 stateless HOST_BOUNDARY継続、外部失効源との整合性は未証明。次は**P1-10b：HC06外部失効の整合性設計のみ（別途承認必要）**。Gem/API実装HOLD、RubyGems公開・Production/実決済NO-GO。
+状態：**P0-1〜P0-5b・P1-0〜P1-10b完了（P1-10bはHC06設計のみ）**。外部Issuer/Agent/Buyer失効の時点RとHost DB確定Cの競合、再照会TOCTOU、fencing/lease条件を[HC06設計](HOST_EXTERNAL_REVOCATION_HC06_DESIGN.md)に記録。**HC06はNOT RUN、新規コード・CIなし**。既存PG16研究はHost正本**9/34件、12 Minitest runs/465 assertions PASS**（[P1-10a CI](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38136570328)）。**25件NOT RUN**、N17 HOST_BOUNDARY継続。次は**P1-10c：架空Authority/HostのTOCTOU/fencingオフライン検証（別途明示承認後のみ）**。Gem/API HOLD、RubyGems公開・Production/実決済NO-GO。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -13,7 +13,7 @@
 
 1. [README](../README.md) — Gemの目的・利用シーン・非スコープ
 2. [PROJECT](PROJECT.md) — D001〜D006、責務境界、独立OSS方針
-3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) / [RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) / [SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) / [SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md) / [SECURITY_HARDENING_RESEARCH](SECURITY_HARDENING_RESEARCH.md) / [HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md) / [HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md) / [HOST_REPLAY_LAB_DESIGN](HOST_REPLAY_LAB_DESIGN.md) / [HOST_REPLAY_P19A_EVIDENCE](HOST_REPLAY_P19A_EVIDENCE.md) / [HOST_REPLAY_P19B_EVIDENCE](HOST_REPLAY_P19B_EVIDENCE.md) / [HOST_REPLAY_P19C_EVIDENCE](HOST_REPLAY_P19C_EVIDENCE.md) / [HOST_REPLAY_P110A_EVIDENCE](HOST_REPLAY_P110A_EVIDENCE.md) — P1-6〜10aの限定研究結果と境界
+3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) / [RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) / [SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) / [SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md) / [SECURITY_HARDENING_RESEARCH](SECURITY_HARDENING_RESEARCH.md) / [HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md) / [HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md) / [HOST_REPLAY_LAB_DESIGN](HOST_REPLAY_LAB_DESIGN.md) / [HOST_REPLAY_P19A_EVIDENCE](HOST_REPLAY_P19A_EVIDENCE.md) / [HOST_REPLAY_P19B_EVIDENCE](HOST_REPLAY_P19B_EVIDENCE.md) / [HOST_REPLAY_P19C_EVIDENCE](HOST_REPLAY_P19C_EVIDENCE.md) / [HOST_REPLAY_P110A_EVIDENCE](HOST_REPLAY_P110A_EVIDENCE.md) / [HOST_EXTERNAL_REVOCATION_HC06_DESIGN](HOST_EXTERNAL_REVOCATION_HC06_DESIGN.md) — P1-6〜10aの実測およびP1-10bの設計
 4. [OFFICIAL_SOURCES](OFFICIAL_SOURCES.md) — AP2/FIDO/IETFの一次資料・ウォッチリスト
 5. [RESEARCH_PLAN](RESEARCH_PLAN.md) — Phase 0〜3 の全体工程
 6. [SECURITY_BOUNDARY](SECURITY_BOUNDARY.md) — 未信頼Mandateの扱いとFail Closed
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-10a完了 / 次はP1-10b】
+### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-10b完了（HC06設計のみ） / 次はP1-10c】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -139,8 +139,10 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - [HOST_REPLAY_P19C_EVIDENCE.md](HOST_REPLAY_P19C_EVIDENCE.md)にHR06/HR07実測（2 runs/149 assertions）＋既存6回帰（192 assertions）を記録。34 Host中8件、残り26件未実行。実決済/実HTTPとの同等性は主張しない。
 - [x] **P1-10a：HR10 Checkout失効/Buyer停止・version更新との競合（限定研究実測完了）**
   - [HOST_REPLAY_P110A_EVIDENCE.md](HOST_REPLAY_P110A_EVIDENCE.md)：正本HR10の4サブケースで実際のPGロック待ちを観測、4 runs/124 assertions成功。既存8 runs/341 assertionsもPASS。正本9/34件、残り25件未実行。外部失効源は未保証。
-- [ ] **P1-10b（次の1件・別途明示承認後のみ）**
-  - HC06 外部Issuer/Agent/Buyer資格の失効とcommit境界の一貫性を、実装せず設計・テスト戦略から検討。外部API/GCPは不可。
+- [x] **P1-10b：HC06外部失効整合性の設計・試験マトリクス（実装/実測なし）**
+  - [HOST_EXTERNAL_REVOCATION_HC06_DESIGN.md](HOST_EXTERNAL_REVOCATION_HC06_DESIGN.md)：R/C線形化問題とA〜E案、将来HC06-A〜H負例を整理。**HC06 NOT RUN**。
+- [ ] **P1-10c（別途ユーザー承認後のみ）**
+  - 架空Authority/HostのオフラインTOCTOU負例とfence有無比較。実Authority/GCP/本番接続は承認外。
 
 
 
@@ -195,29 +197,23 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P1-10aまでの隔離PG16 Host研究完了**。[HOST_REPLAY_P110A_EVIDENCE](HOST_REPLAY_P110A_EVIDENCE.md)、[HOST_REPLAY_P19C_EVIDENCE](HOST_REPLAY_P19C_EVIDENCE.md)、[HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md)、[HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md)、[RESEARCH_DECISION](RESEARCH_DECISION.md) §22を読む。作業開始時GitHub最新main/Open PR/Issueを確認。
+**P1-10b HC06設計のみ完了。** [HOST_EXTERNAL_REVOCATION_HC06_DESIGN](HOST_EXTERNAL_REVOCATION_HC06_DESIGN.md)、[HOST_REPLAY_P110A_EVIDENCE](HOST_REPLAY_P110A_EVIDENCE.md)、[HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md)、[HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md)、[RESEARCH_DECISION](RESEARCH_DECISION.md) §23を確認。作業開始時にGitHub最新main/Open PR/Issueを確認する。
 
-- **実測:** HR10でCheckout取消/Buyer停止/版変更と認可の行ロック競合4パターンを実測。新4 runs/124 assertions、旧8 runs/341 assertions全PASS。**9/34 Host正本IDs達成・25件NOT RUN**。外部trust/失効源にある状態はこのDBの行ロックでは保護できない。
-- **境界:** N17 stateless VerifierのReplay可能性、HC04/HC06/HC07のHostチェック、HR09 DoS、正式署名Receipt、実決済は未検証。Gem/API HOLD、RubyGems公開/Production/実決済 NO-GO。
-- **次の1件（別途承認）:** **P1-10b HC06の設計・テスト戦略のみ**。外部Issuer/Agent/Buyer失効の更新時点と最終Host決定/COMMITをどう整合させるか検討。勝手にGCP/外部APIを作らない。
+- **論点:** 失効Authorityで権限が失効するRとHostがoperation確定するCの順序を単純な再照会では保証できない。Authorityの線形化・fencing・leaseの有効時点定義が必要。未知・失効・通信障害はSTOP/PENDING。
+- **未実測:** HC06はNOT RUN、新コード/CIなし。従来のHostテストは9/34件実測・25件未実行、12 runs/465 assertions PASS。N17 stateless replay境界は継続、Gem/API/Production/実決済はHOLD/NO-GO。
+- **次（別途明示承認）：** P1-10c 架空Authority/HostのTOCTOUとfencing条件をオフラインで検証。実外部API/GCP・Receipt・Gem化は行わない。
 
-### 次のチャット用指示文
+### 次チャット用指示文
 
 ```text
-ap2-mandate-verifier P1-10bを開始します。
+ap2-mandate-verifier P1-10cを進めたいです。
 https://github.com/cuichangquan/ap2-mandate-verifier
-
-最新main/Open PR/Issue、docs/HOST_REPLAY_P110A_EVIDENCE.md、
-docs/HOST_SECURITY_CONTRACT.md、docs/HOST_SECURITY_TEST_PLAN.md、
-docs/RESEARCH_DECISION.md §22を確認してください。
-
-P1-10aでHR10の4競合スケジュールをPG16で実測し、
-累計9/34 Host正本ケース・465 assertions全PASS。
-残り25件未実行です。同一DB行ロックの限定保証であり
-外部revocation providerの整合性は未証明です。
-
-次の1件のみHC06：外部Issuer/Agent/Buyer失効とHost final decision/
-COMMIT境界の設計・テスト戦略を提案。外部API/GCP/本番コード
-の実装はしない。PR/資料レビュー後のマージのみ検討。
-Gem/API、実決済、署名Receipt、他OSSは変更しない。
+最新main/Open PR/Issueと、
+docs/HOST_EXTERNAL_REVOCATION_HC06_DESIGN.md、
+docs/HOST_SECURITY_TEST_PLAN.md、docs/RESEARCH_DECISION.md §23を確認。
+HC06は設計のみでNOT RUN。Host実測は9/34件で25件未実行。
+今回の1件だけ、架空Authority/Hostのオフライン研究で
+外部再照会とCOMMITのTOCTOU負例、fenced権限の有無による
+違いを小さく検証し、強い保証を誤って主張しない。
+Gem/API/本番/実決済/Receipt/GCP/他OSSは変更しない。
 ```
