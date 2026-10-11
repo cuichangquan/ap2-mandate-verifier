@@ -1,0 +1,119 @@
+name: HC06 independent synthetic Authority/Host PG16 research (P1-10g)
+
+on:
+  pull_request:
+    paths:
+      - 'research/p1_10g/**'
+      - '.github/workflows/p1-10g-hc06-independent.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-er01-er02:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      authority_pg:
+        image: postgres@sha256:ddfe3e8713e3ee5b8f286082cb12512488dfbf3f5a1ecb0b74a42e6055af0a5f
+        env:
+          POSTGRES_DB: ap2g_authority
+          POSTGRES_USER: labuser
+          POSTGRES_PASSWORD: offline-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U labuser -d ap2g_authority"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      host_pg:
+        image: postgres@sha256:ddfe3e8713e3ee5b8f286082cb12512488dfbf3f5a1ecb0b74a42e6055af0a5f
+        env:
+          POSTGRES_DB: ap2g_host
+          POSTGRES_USER: labuser
+          POSTGRES_PASSWORD: offline-test-only
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U labuser -d ap2g_host"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      P110G_RESEARCH_ONLY: enabled
+      P110G_AUTH_URL: postgresql://labuser:offline-test-only@127.0.0.1:5432/ap2g_authority
+      P110G_HOST_URL: postgresql://labuser:offline-test-only@127.0.0.1:5433/ap2g_host
+      P110G_REPORT: p110g-report.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: false
+      - name: Install only PostgreSQL gem and record environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          gem install pg --version 1.5.9 --no-document
+          ruby -rpg -e 'abort "unexpected pg gem" unless Gem.loaded_specs.fetch("pg").version.to_s == "1.5.9"'
+          {
+            ruby -v
+            ruby -rpg -e 'puts "pg #{PG::VERSION}, libpq #{PG.library_version}"'
+            ruby -rpg -e '
+              %w[P110G_AUTH_URL P110G_HOST_URL].each do |env|
+                db=PG.connect(ENV.fetch(env))
+                puts "#{env}: db=#{db.exec("SELECT current_database()").first.values.first} pg=#{db.exec("SHOW server_version").first.values.first} system_id=#{db.exec("SELECT system_identifier::text FROM pg_control_system()").first.values.first}"
+                db.close
+              end'
+            docker image inspect postgres@sha256:ddfe3e8713e3ee5b8f286082cb12512488dfbf3f5a1ecb0b74a42e6055af0a5f --format 'postgres image={{.Id}} digest={{json .RepoDigests}}'
+          } | tee p110g-environment.txt
+      - name: Syntax-check narrow research worker and suite
+        run: |
+          ruby -c research/p1_10g/worker.rb
+          ruby -c research/p1_10g/test_independent_hc06_pg.rb
+      - name: Execute ONLY synthetic E-R01 E-R02
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby research/p1_10g/test_independent_hc06_pg.rb --verbose 2>&1 | tee p110g-run.log
+      - name: Reject missing or overstated durable evidence
+        if: success()
+        run: |
+          ruby -rjson -e '
+            result=JSON.parse(File.read("p110g-report.json"))
+            abort "canonical Host IDs must remain unchanged" unless result.fetch("canonical_host_ids_newly_proven") == 0
+            cases=result.fetch("cases")
+            abort "wrong set" unless cases.map{|x| x.fetch("id")}.sort == %w[E-R01 E-R02]
+            abort "not PASS" unless cases.all?{|x| x.fetch("result") == "PASS" && x.fetch("separate_postgres_system_identifiers") == true}
+            a=cases.find{|x| x.fetch("id") == "E-R01"}
+            b=cases.find{|x| x.fetch("id") == "E-R02"}
+            abort "E-R01 lacks pending/C/effective evidence" unless
+              a.fetch("r_request_only_pending") == true &&
+              a.fetch("durable_host_commit_before_authority_finalize") == true &&
+              a.fetch("effective_after_finalization") == true &&
+              a.fetch("operation_count") == 1 && a.fetch("outbox_count") == 1
+            abort "E-R02 lacks durable abort/independent SIGKILL/stale STOP" unless
+              b.fetch("actual_independent_sigkill") == true &&
+              b.fetch("durable_abort_recovered_without_ack") == true &&
+              b.fetch("stale_worker_released_after_effective") == true &&
+              b.fetch("stale_commit_stopped") == true &&
+              b.fetch("retry_stopped") == true &&
+              b.fetch("nonce_consumed") == false &&
+              b.fetch("operation_count") == 0 && b.fetch("outbox_count") == 0
+            puts "PASS: ONLY two synthetic scenarios; distributed HC06 remains HOLD"
+          '
+      - name: Upload sanitized evidence for limited retention
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-10g-hc06-isolated-evidence
+          path: |
+            p110g-environment.txt
+            p110g-run.log
+            p110g-report.json
+          retention-days: 7
+          if-no-files-found: warn
