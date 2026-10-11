@@ -62,6 +62,10 @@ AP2全部入りSDK、ウォレット、鍵発行、OAuth Server、MCP/A2A Server
 - D005: 公式仕様・SDK照合・相互運用・セキュリティ負例を検証してから実装と公開のGO/NO-GOを判定。
 - D006: ActingForとa2a-railsのCore/API/Schemaはこの研究段階では変更しない。
 
-## 7. 次の作業
+## 7. 現在の進捗・次の作業（2026-10-11）
 
-P0-1〜P0-5bの調査・公式Python実測（186 PASS / 2 FAIL、独立負例12 PASS）・[Fail Closed Profile](FAIL_CLOSED_PROFILE.md)は文書化済み。最新の[RESEARCH_DECISION](RESEARCH_DECISION.md) §9は**Autonomous/単一Agent/2hopの非本番Ruby研究PoCのみ条件付きGO**。汎用Gem、製品品質、実決済はHOLD/NO-GO。**P1-0は小さなRubyオフライン実験として14テスト成功**（[RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md)）。**P1-1では固定AP2 Python SDKによる実署名Root SD-JWTのRuby署名・開示digest検証10件が成功**（[RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md)）。Merchant制約の非開示は研究用Strict Profileで拒否した。**P1-2では固定AP2 Python SDK発行のOpen→Closed 2hopをRubyで15テスト成功**（[RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md)、P1-1回帰10件もPASS）。Rootの`cnf.jwk`、Agent署名、`sd_hash`、aud/nonceを確認。ただし**Merchant署名済Checkout JWTは未検証（ダミー使用）**。**P1-3ではMerchantがES256署名した架空Checkout JWTとHost正本の原文一致、Closed Hash、Open店舗・SKU・数量・単純価格合計をRubyで18テスト成功**（[RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md)、P1-2回帰15/P1-1回帰10件成功）。ただし実Checkoutの許可やreplay/receiptは未実装。**P1-4静的レビュー完了**：[SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md)に12項目のリスクと6受入れゲートを整理し、[RESEARCH_DECISION](RESEARCH_DECISION.md) §14で**汎用Gem実装HOLD／Production NO-GO**と再判定。次は**P1-5オフラインセキュリティ負例をテスト先行**で行う（別の明示承認が必要）。既存研究コード以外の汎用Gem/本番利用は引き続き未承認。
+P0-1〜P0-5bとP1-0〜P1-5を完了。公式AP2 v0.2 Python SDKの固定仕様を用い、P1-1 Root SD-JWT署名/開示、P1-2 2-hop Agent binding、P1-3 Merchant署名済Checkout JWT・Host正本/Hash/商品制約を限定研究として実証し、**既存回帰43テストPASS**を確認。
+
+[P1-4静的レビュー](SECURITY_GAP_REVIEW.md)で12リスク・6ゲートを定義。[P1-5署名付き負例](SECURITY_NEGATIVE_TESTS.md)を実際に実行した結果、**6 RED（本OSS Strict Profileで本来拒否するべき入力の受理）/ GREEN 11 / Host replay境界1**を記録。**P1-5では検証器本体を修正していない**。Gemの実装・公開や本番決済には進めないことを確認した。
+
+**最新判断:** [RESEARCH_DECISION](RESEARCH_DECISION.md) §15 — **研究のみCONDITIONAL GO、汎用Gem/API実装HOLD、公開・本番/実決済NO-GO**。次は別の明示承認後に**P1-6：6 REDの最小研究用対策と負例＋回帰再検証**。HostのIssuer/Merchant identity trust、replay/nonce一度限り消費、revocation/Receiptは依然未実装・未承認。
