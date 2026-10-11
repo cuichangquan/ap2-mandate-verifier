@@ -1,0 +1,99 @@
+name: P1-10r Fixed-Issuer GP01 Fail-Closed Regression (Synthetic Only)
+
+on:
+  pull_request:
+    paths:
+      - "research/p1_10r/**"
+      - "research/p1_10q/generate_gp01.py"
+      - "research/p1_3/checkout_binding_research.rb"
+      - "research/p1_3/generate_merchant_checkout.py"
+      - "research/p1_2/two_hop_research.rb"
+      - "research/p1_1/root_sdjwt_research.rb"
+      - "research/shared/strict_json_research.rb"
+      - ".github/workflows/p1-10r-gp01-regression.yml"
+      - "docs/VERIFIER_P110R_GP01_FIX_EVIDENCE.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gp01-strict-fixed-profile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout branch with no persisted authentication
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
+      - name: Checkout pinned official AP2 v0.2.0
+        shell: bash
+        run: |
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = "b4587ac1d055888a73b4b21750973cffba961793"
+      - name: Install pinned upstream source with PyPI direct dependencies
+        shell: bash
+        working-directory: ${{ runner.temp }}/ap2
+        run: |
+          # Official source SHA fixed, but not fully lockfile reproducible
+          # due to upstream private-registry transitive dependency entries.
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple -e .
+          python -m pip freeze > "$GITHUB_WORKSPACE/p110r-packages.txt"
+      - name: Generate ephemeral GP01 and known-good signed fixtures
+        shell: bash
+        run: |
+          python -m py_compile research/p1_10q/generate_gp01.py research/p1_3/generate_merchant_checkout.py
+          python research/p1_10q/generate_gp01.py "$RUNNER_TEMP/p110r-gp01.json"
+          python research/p1_3/generate_merchant_checkout.py "$RUNNER_TEMP/p110r-positive.json"
+          # Only disposable runner files; never upload fixture, JWT or private keys.
+      - name: Install Ruby JWT exact version
+        shell: bash
+        run: |
+          gem install jwt -v 3.3.0 --no-document
+          ruby -rjwt -e 'abort "wrong jwt version" unless Gem.loaded_specs.fetch("jwt").version.to_s == "3.3.0"'
+          ruby -c research/p1_3/checkout_binding_research.rb
+          ruby -c research/p1_10r/test_gp01_fix.rb
+      - name: Run exact signed GP01 REJECT and known-good positive tests
+        shell: bash
+        env:
+          AP2_P110R_GP01_FIXTURE: ${{ runner.temp }}/p110r-gp01.json
+          AP2_P110R_VALID_FIXTURE: ${{ runner.temp }}/p110r-positive.json
+          AP2_P110R_REPORT: p110r-gp01-report.json
+        run: |
+          set -o pipefail
+          ruby research/p1_10r/test_gp01_fix.rb --verbose 2>&1 | tee p110r-gp01.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("p110r-gp01-report.json").read_text())
+          assert report["pinned_ap2"] == "b4587ac1d055888a73b4b21750973cffba961793"
+          assert set(report["results"]) == {"GP01", "KNOWN_POSITIVE"}
+          assert report["results"]["GP01"]["outcome"] == "REJECT"
+          assert report["results"]["GP01"]["reason"] == "unsupported or missing signed Constraint profile fields"
+          assert report["results"]["GP01"]["previous_observation"] == "P1-10q GP01 ACCEPT / SECURITY RED_HOLD"
+          assert report["results"]["KNOWN_POSITIVE"]["outcome"] == "ACCEPT_EVIDENCE_ONLY"
+          assert report["no_general_ap2_conformance_claim"]
+          assert report["no_host_allow_or_replay_safety_claim"]
+          assert report["production_gem_hc06"] == "HOLD"
+          print("PASS: signed GP01 previously ACCEPT now specifically REJECT; signed synthetic positive intact")
+          print("LIMIT: no generalized AP2 verifier, Host ALLOW, nonce consumption or HC06 guarantee")
+          PY
+      - name: Upload sanitized research report only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p110r-bounded-gp01-regression
+          path: |
+            p110r-gp01-report.json
+            p110r-gp01.log
+            p110r-packages.txt
+          if-no-files-found: warn
+          retention-days: 7

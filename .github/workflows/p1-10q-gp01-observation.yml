@@ -73,7 +73,7 @@ jobs:
           assert evidence["probe"] == "GP01" and evidence["count"] == 1
           assert evidence["fixture_issuer_agent_merchant_signatures_checked"] is True
           assert evidence["root_disclosures_reverified_by_ruby"] is True
-          assert evidence["no_fix_applied_to_existing_verifier"] is True
+          assert evidence["observation_script_does_not_modify_verifier"] is True
           outcome = evidence["result"]["outcome"]
           if outcome == "ACCEPT":
               assert evidence["result"]["security_assessment"] == "RED_HOLD"
@@ -84,7 +84,7 @@ jobs:
               print("GP01 RESULT: REJECTED — one synthetic input only; no generic safety conclusion")
           else:
               raise AssertionError(("unclassified or inconclusive observation", outcome))
-          print("GP01 OBSERVATION COMPLETE: 1 case, existing verifier unchanged")
+          print("GP01 OBSERVATION COMPLETE: 1 case; observation script does not modify verifier (its implementation may differ by PR)")
           PY
       - name: Upload public-only sanitized evidence (never the signed fixture)
         if: always()

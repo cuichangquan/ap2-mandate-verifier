@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-12
-状態：**P0完了、P1-0〜P1-10qの限定研究実施。P1-10qは正署名GP01 1件でRubyが未知ネストConstraintを想定外ACCEPTしたため、セキュリティ判定RED/HOLD（既存Verifier未修正）。** [GP01証拠](VERIFIER_P110Q_GP01_EVIDENCE.md)、[最初の実測CI #38183751071](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38183751071) **1 run / 8 assertions（WorkflowのSUCCESSは観測成功のみ）**。P1-10oの別研究は8 runs/45 assertions・AN-N07 HOST_BOUNDARY、Host正本は9/34件実測・25 NOT RUN、外部HC06/HOST replay/一般Issuer/Gem API/本番統合HOLD、RubyGems公開/実決済/Receipt NO-GO。**次の一件はP1-10r：GP01限定Fail Closed対策（別承認）**。
+状態：**P0完了、P1-0〜P1-10rの限定研究まで実施。** [P1-10r GP01対策証拠](VERIFIER_P110R_GP01_FIX_EVIDENCE.md)：歴史的[P1-10q](VERIFIER_P110Q_GP01_EVIDENCE.md)では正署名未知ネストConstraintを**ACCEPT / SECURITY RED-HOLD**したが、限定研究用Verifierに固定Issuer Constraintキー集合の厳格照合を入れ、**GP01を意味検証でREJECT**。[P1-10r CI #38185735639](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38185735639) **2 runs/10 assertions（GP01負例＋正常signed Checkout）、失敗0**。旧[P1-10o回帰](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38185735652) **8 runs/45 assertions、AN-N07 HOST_BOUNDARY**。Host正本9/34件実測・25 NOT RUN。**汎用AP2/Issuer、Host replay、外部HC06、Gem/API/本番HOLD、RubyGems公開・決済/Receipt NO-GO。次はP1-10s（別承認）。**
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10q GP01反例の限定観測まで / 次はP1-10r別承認】
+### Phase 0 — 仕様・競合調査【P0完了 / Ruby P1-0〜P1-10rのGP01限定対策・回帰まで / 次はP1-10s別承認】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -171,8 +171,10 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - [VERIFIER_P110P_RESIDUAL_GAPS](VERIFIER_P110P_RESIDUAL_GAPS.md)：GP01〜GP09、新実測なし。GP01未知ネストConstraintの潜在的見落としは静的疑義のみ。
 - [x] **P1-10q（GP01 1件の署名済み未知ネストConstraintを観測、RED/HOLD）**
   - [VERIFIER_P110Q_GP01_EVIDENCE](VERIFIER_P110Q_GP01_EVIDENCE.md)：CIで署名・Disclosure・チェーン真正性を検証してから**既存RubyがACCEPT**。1 run / 8 assertions、**SECURITY RED/HOLD**。既存Verifier修正なし。
-- [ ] **P1-10r（次のおすすめ・明示承認後のみ）**
-  - 既知Issuer profileのネストConstraint未知権限属性を拒否する限定研究修正＋**GP01 REDからREJECTへの回帰**。既存正常系にも影響しないことを検査。Gem/API/本番/GCP/決済はなし。
+- [x] **P1-10r（GP01限定研究Verifier対策・正署名回帰）**
+  - [VERIFIER_P110R_GP01_FIX_EVIDENCE](VERIFIER_P110R_GP01_FIX_EVIDENCE.md)：歴史的ACCEPT/REDを保持し、同じ正署名GP01の**REJECT**と正常signed Checkoutの証拠のみACCEPTを観測。P1-10r 2/10、旧P1-10o 8/45回帰。Host/HC06/GemはHOLD。
+- [ ] **P1-10s（次のおすすめ・別途明示承認後のみ）**
+  - 固定Constraint構造の未知・欠落・型/ネスト意味の残余Gapを限定して整理。新コード/CI/GCP/実決済・Gem/APIへの自動拡大なし。
 
 
 
@@ -227,32 +229,33 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P1-10qのGP01署名付き反例は、Rubyで想定外ACCEPTしてSECURITY RED/HOLD。** GitHub最新main/Open PR/Issueを再確認し、[GP01証拠](VERIFIER_P110Q_GP01_EVIDENCE.md)→[静的Gap](VERIFIER_P110P_RESIDUAL_GAPS.md)→[前Stepの8-case証拠](VERIFIER_P110O_EVIDENCE.md)→[正式GO/HOLD判断§36](RESEARCH_DECISION.md)を読む。§36の汎用Gem/API/本番統合HOLDを変更しない。
+**P1-10rのGP01限定研究対策・署名回帰まで実施。** 最新main/Open PR/Issueとレビュー結果を確認し、[P1-10r対策証拠](VERIFIER_P110R_GP01_FIX_EVIDENCE.md)→[P1-10q修正前RED反例](VERIFIER_P110Q_GP01_EVIDENCE.md)→[P1-10p Gap](VERIFIER_P110P_RESIDUAL_GAPS.md)→[正式判断§36](RESEARCH_DECISION.md)を読む。
 
-- 公式v0.2.0固定SHA `b4587ac1d055888a73b4b21750973cffba961793`。GP01合成Issuer/Agent/Merchant実署名、Open Constraint disclosure＋digestを正しく再署名した一例について、[CI #38183751071](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38183751071)は**1 run/8 assertions、Ruby ACCEPT、SECURITY RED/HOLD**。CI緑色は署名・観測できたことだけを示す。
-- P1-10qでは既存`research/p1_1`、`p1_2`、`p1_3`を**修正していない**。狭い固定Issuer profileのネストConstraint`policy_override`が黙って無視されたという**合成研究の反例**であり、実商用AP2/Issuer脆弱性と断定しない。
-- P1-10oの別CIは**8 runs/45 assertions**（AN-N07 HOST_BOUNDARY）。Host正本**9/34、25 NOT RUN**、HC06分散強失効HOLD、P1-10i H01危険反例、公式Python SDK中間hop186 PASS/2 FAIL。混算しない。
-- **次の一件（明示承認後のみ）：P1-10r。** 固定IssuerプロファイルにおけるConstraint内部未知フィールドへの限定Fail Closed対策を研究コードで検討し、**このGP01 RED fixtureでREJECT回帰**を測定する。正常signed fixtureの回帰も必要。**本Stepの自動修正・本番Gem/API/GCP/実決済/Receipt/公開は許可されない。**
+- 公式AP2 v0.2.0固定SHA `b4587ac1d055888a73b4b21750973cffba961793`。旧GP01は**署名真正だが不適切にACCEPT/SECURITY RED-HOLD**。P1-10rは固定Issuerで`allowed_merchants`、`line_items`とそのネストの全キー集合を照合して、**意図した理由でREJECT**。[CI #38185735639](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38185735639) 2 runs / 10 assertions、正常Checkoutも検証成功。過去のRED履歴は消さない。
+- P1-10qの観測コード自身はVerifierを編集しないが、修正後Verifierを別runで使ったとき、以前の常時`no_fix_applied_to_existing_verifier`は誤解を招くため、P1-10rで**観測スクリプト非変更性**の表記に修正した。
+- 過去P1-10oは8 runs/45 assertions（AN-N07**HOST_BOUNDARY**）。Host正本9/34・25 NOT RUN、P1-10i H01外部失効危険反例、HC06/C01〜C12 HOLD、公式Python中間hop186 PASS/2 FAILは未解決。
+- **次の1件（ユーザー明示承認後のみ）：P1-10s**。固定Constraintプロファイルの残る未知・欠落・型/意味リスクを設計Gapで整理するか、狭い負例を定義して研究。汎用Gem/API、本番統合、GCP、実Issuer/決済/Receiptは許可しない。
 
-### 次のチャット用指示文
+### 次チャット用引き継ぎ文
 
 ```text
-ap2-mandate-verifier P1-10rの研究用Fail Closed対策を検討する。
+ap2-mandate-verifier P1-10sの残余Gapを検討したい。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-最初に最新main/Open PR/Issue・Codexレビューを確認し、
-docs/VERIFIER_P110Q_GP01_EVIDENCE.md
-docs/VERIFIER_P110P_RESIDUAL_GAPS.md
+最初にGitHub最新main/Open PR/Issue/レビュー状況を確認。
+docs/VERIFIER_P110R_GP01_FIX_EVIDENCE.md、
+docs/VERIFIER_P110Q_GP01_EVIDENCE.md、
 docs/RESEARCH_DECISION.md §36 を読む。
 
-P1-10qは固定AP2 v0.2.0の正しいIssuer/Agent/Merchant署名と
-Disclosureを持つGP01 1件で、既知Constraint内部の未知
-policy_override属性を現在のRuby研究VerifierがACCEPTした。
-SECURITY RED/HOLD（観測CIは1 run/8 assertionsでSUCCESS）。
-既存Verifierの修正なし。公式AP2一般脆弱性と断定しない。
+P1-10qでは正しい合成署名とDisclosureを持つ
+checkout.allowed_merchants.policy_override が旧Ruby Verifierで
+ACCEPTした（SECURITY RED/HOLD）。
+P1-10rでは固定IssuerのネストConstraintキーを厳格検査し、
+同じGP01をREJECT、別の正署名正常CheckoutはACCEPT
+（証拠のみ、Host ALLOWではない）。専用CI 2/10、
+既存P1-10oの8/45も回帰成功、AN-N07はHost境界。
 
-次の一件は固定IssuerプロファイルだけのネストConstraint
-未知属性のFail Closed対策＋GP01 RED再検証（別承認後のみ）。
-他の汎用Gem/API、本番Host、外部Authority/HC06、
-GCP、実決済・署名Receipt、公開・他OSS変更は禁止。
+一般Issuer/隠れたConstraint完全性、replay、外部HC06、
+汎用Gem/public API・本番統合HOLD、実決済/RubyGems NO-GO。
+P1-10sは別承認、勝手に実装・公開・GCPや実支払いしない。
 ```

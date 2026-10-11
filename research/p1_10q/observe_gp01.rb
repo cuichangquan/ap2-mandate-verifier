@@ -85,7 +85,7 @@ Minitest.after_run do
     root_disclosures_reverified_by_ruby: P110Q::ROOT_REVERIFIED[:completed],
     result: P110Q::RESULT,
     scope: "isolated research observation, not a security certification or Host checkout ALLOW",
-    no_fix_applied_to_existing_verifier: true
+    observation_script_does_not_modify_verifier: true
   }
   File.binwrite(path, JSON.pretty_generate(out) + "\n")
 end
