@@ -124,3 +124,16 @@
 **なぜ全部HOLDではなく限定GOか:** 公式SDKを固定して実行でき、重要な「不適切な受理」を12件の実署名/フルSDKプローブで確認した。この境界を避ける狭いfixtureと、失敗なら必ずREJECTとする仕様上の入口を設計できた。Ruby環境で成立するかを試すのはPoCの目的であり、Pythonの全188件PASSやIssue closeを無期限に待つより安価で検証可能。ただし**POCそのものの技術的成功はまだ証明されていない**。
 
 **次の1件（別途承認後のみ）:** **P1-0 — Ruby暗号・JSON Schemaのオフライン互換性Spike**。Gem/Railsアプリを作らず、隔離したRubyの小さな実験で \`ES256 JWS/JWK\`、\`SHA-256 checkout_hash\`、\`Open Checkout JSON Schema contains\`、invalid/missing-keyケースを固定Python fixtureと照合。**成果物は \`docs/RUBY_FEASIBILITY_SPIKE.md\` と最小研究テスト**。公開API実装、実決済、GCP利用は未承認。
+
+
+## 10. 2026-10-11 P1-0 実測後の判断（最新）
+
+**限定研究の互換性SpikeはPASS、PoC研究のCONDITIONAL GOを継続。ただし汎用Ruby Gem/API/公開はHOLD、本番・実決済はNO-GO。**
+
+- Ruby 3.3.12 + \`jwt 3.3.0\` + \`json_schemer 2.5.0\`のGitHub Actionsで**14 runs / 17 assertions / 0 failures / 0 errors / 0 skips**。一次証拠は[RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md)と[Actions run #38123249933](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38123249933)。
+- Python \`cryptography\`生成（**公式AP2テストベクトルではなく合成fixture**）のES256 JWTをRuby JWK検証し、別公開鍵、payload・署名改ざん、\`alg=none\`を拒否。SHA-256 Checkout JWT hashはPythonの値に一致。
+- AP2 \`v0.2.0\`固定CommitのOpen Checkout Schema（Git Blob SHA確認）をRuby \`json_schemer\`で検証し、\`contains\`による空constraints拒否、Quantity 0、誤vct、欠けたcnfを拒否した。
+- **この結果が示していないもの:** SD-JWTの選択的開示/Proof-of-Possession/issuer-trust、Open→Closed chain、Merchant正本Checkoutの完全な結合、nonce再使用防止、権限制約の完全性、本番安全性。P0-5aで再現したhidden Merchant Constraintの危険を緩和したとは主張しない。
+- **次の1件（別の明示依頼後）:** **P1-1：固定AP2 Python由来の署名付きSD-JWT Root・Disclosure digest・権限制約の完全性をRubyで評価する局所Spike**。不明・未開示のauthority constraintは必ずrejectするという方針を守り、Gem/public APIを構築しない。
+
+**P1-0のPASSはPhase 1すべての実装GOではない。** 技術研究用の狭いSpikeに限る。
