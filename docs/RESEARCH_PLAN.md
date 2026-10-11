@@ -28,7 +28,8 @@
 - [x] **P1-10c完了（HC06の架空Authority/Host状態モデルのみ）**：[HOST_EXTERNAL_REVOCATION_P110C_EVIDENCE](HOST_EXTERNAL_REVOCATION_P110C_EVIDENCE.md) — 再照会成功後の失効Q→R→C、fence発行のみで最終検査を省いたF→R→Cの**危険な負例2件**を再現。**共有Mutexによる人工的な最終認可境界**ならR<CでSTOP、C<Rで既存operationを偽取消しないなど、合計**8 Minitest runs/94 assertions/失敗0**（[CI #38137575582](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38137575582)）。実Authority/DB間の原子性は証明せず、**HC06完全PASSには数えない**。実DB Host正本9/34件、残り25件未実行を維持。
 - [x] **P1-10d完了（HC06の外部Authority/Host協調プロトコル設計のみ）**：[HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL](HOST_EXTERNAL_REVOCATION_P110D_PROTOCOL.md) — 外部の失効有効化RとHost耐久COMMIT Cの順序、予約P/失効要求の保留、fence強制境界、障害/不明COMMIT/遅延COMMIT/二重送出の判断表、候補方式A〜Fを整理。**実装・新テスト・CIなし**。実DBでの正本Host9/34件・25件NOT RUN、HC06フルHOLDのまま。
 - [x] **P1-10e完了（設計のみ／NOT RUN）**：[HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN](HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md) — 独立した架空Authority/Hostによる予約後失効要求、COMMIT応答不明、予約timeoutと遅延COMMITの3系統12将来計画ID、fault barrier、耐久証拠、不変条件I1〜I6を設計。**実装・新テスト/CI・新DB検証なし**。正本Host 9/34件・25件NOT RUN、HC06 FULL HOLDは不変。
-- [ ] **P1-10f（次のおすすめ1件・別途明示承認後のみ）**：E-R01/E-R02に絞り、独立プロセスと独立永続状態のオフライン検証環境を実装するか、障害注入方法/費用の採否を先に判断する。承認までは実装しない。
+- [x] **P1-10f完了（採否判断資料のみ・NOT RUN）**：[HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION](HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION.md) — E-R01/E-R02に限り、2独立Ruby worker＋別PG16インスタンス×2のローカル検証を**条件付き推奨**。abort gateの耐久・全C経路強制、barrier/障害注入・cleanup・費用/ローカル制約の着手ゲートを文書化。**実装/CI/新実測0**、HC06分散HOLD・Host正本9/34のまま。
+- [ ] **P1-10g（次のおすすめ1件・別途明示承認後のみ）**：P1-10f着手前の安全/環境/承認ゲートを満たせる場合に限り、E-R01/R02専用の隔離ハーネスを最小実装・実測する。条件未達はコードを書かずに再設計。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 
