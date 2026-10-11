@@ -56,6 +56,24 @@ jobs:
           echo "negative_probes_exit_code=$rc" | tee -a "$GITHUB_WORKSPACE/summary.txt"
           echo "Negative probe exit status: $rc" >> "$GITHUB_STEP_SUMMARY"
           exit 0
+      - name: Report upstream failures and enforce negative probe results
+        shell: bash
+        if: always()
+        run: |
+          test -f summary.txt || { echo "::error::Research summary missing"; exit 1; }
+          upstream=$(sed -n 's/^official_pytest_exit_code=//p' summary.txt)
+          negatives=$(sed -n 's/^negative_probes_exit_code=//p' summary.txt)
+          if [[ -z "$upstream" || -z "$negatives" ]]; then
+            echo "::error::Missing exit codes"; exit 1
+          fi
+          if [[ "$upstream" != "0" ]]; then
+            echo "::warning title=Official AP2 pytest failed::Exit $upstream, see official-pytest.log. Research workflow success is not upstream test success."
+          fi
+          if [[ "$negatives" != "0" ]]; then
+            echo "::error title=AP2 research probes failed::Exit $negatives"
+            exit 1
+          fi
+          echo "Research probes succeeded; official pytest exit $upstream" >> "$GITHUB_STEP_SUMMARY"
       - name: Upload isolated research results
         uses: actions/upload-artifact@v4
         if: always()
