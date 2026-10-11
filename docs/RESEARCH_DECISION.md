@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§28（P1-10g）：独立Ruby OS worker・2独立PG16によるE-R01/R02の限定合成試験2 runs/118 assertions PASS。ただしAuthority/Hostの分散原子性とHC06全体はHOLD、Host正本9/34件実測・25件NOT RUN。Gem/API・本番統合HOLD、RubyGems公開・実決済NO-GO。**
+> **最新判定は§29（P1-10h）：Authorityのfinalize盲信を危険と判定、Host耐久決定の真正性・再送・通信断の安全ゲートを設計レビュー（H01〜H12 NOT RUN）。既存Host正本9/34件実測・25件NOT RUN、HC06分散安全性・Gem/API・本番統合HOLD、RubyGems公開/実決済NO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -343,3 +343,15 @@ R_requestの受付とR_effectiveの失効完了を混同しない。COMMIT応答
 **判断：P1-10gの小さな合成研究のみPASS、HC06の外部分散安全性HOLD。Gem/API・本番Host統合HOLD、RubyGems公開・Production/実決済/署名Receipt NO-GO。** 自己レビューは独立セキュリティ監査ではない。
 
 **次のおすすめ1件（別のユーザー明示承認後のみ）：P1-10h** — Authorityが架空Coordinatorのfinalizeを盲信しないよう、Host耐久中止の証拠の真正性・再送/異常通信・失効確定条件を**設計レビューだけ**で整理する。実装/外部Authority/GCP/決済は追加承認。
+
+## 29. 2026-10-11 P1-10h Authority finalizeの証拠信頼境界レビュー（最新・設計のみ）
+
+**新規文書のみ、コード/DB/CI/テスト/外部Authorityの実行なし。** [HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW](HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW.md)で、[P1-10gのAuthority worker](../research/p1_10g/worker.rb)が**Coordinatorからの`finalize_commit`/`finalize_abort`をHost正本で検査せずに`revoke_effective=true`へ更新し得る**ことを根拠に、現行の強い失効確定契約を**HOLD**とした。P1-10gのE-R01/E-R02 2 runs/118 assertionsは**正しい合成Coordinatorの呼び出し順**の証拠であり、悪意ある/破損したCoordinatorの検証ではない。
+
+Hostの全C経路を耐久的に禁止するterminal abort、COMMITとabortの排他、一意なoperation/tenant/authority/epoch/Checkout版への束縛、Host identityの事前登録と鍵rotation、証拠digest/決定順序、Authority自身の原子的かつ冪等な記録など、**採用前に必要な条件**を整理。署名・mTLSは送信者を認証するだけでHost DBの耐久性や将来のCOMMIT不可能性を証明せず、Host自体が不正に振る舞う脅威モデルなら別の共有権威的順序が必要。将来負例`H01〜H12`（偽証拠、再送/誤結合、相反証拠、通信断、バックアップ復元等）を定義したが**12件すべてNOT RUN**。`R_request accepted`と`R_effective confirmed`を区別し、未解決はPENDING/STOP/調査。timeoutだけで有効化しない。強いHC06全体は**未実証**。
+
+**実測数は増加なし:** 過去Host正本9/34件実測・25 NOT RUN、12 runs/465 assertions（P1-10a）。P1-10c単一process合成8 runs/94 assertions、P1-10g別PG16のE-R01/R02合成2 runs/118 assertions（[Actions #38143454171](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38143454171)）は別枠で、今回新CI実行なし。N17 HOST_BOUNDARY、P1-4 G1〜G6/P1-7 T1〜T5、公式Python SDK中間hop186 PASS/2 FAILも未解決。
+
+**判断:** P1-10hレビュー文書のみ完了。Authorityの本番finalize/外部失効保証/HC06/Gem/API/本番Host連携**HOLD**、RubyGems公開・Production・実決済・署名Receipt**NO-GO**。自己レビューは独立セキュリティ監査ではない。
+
+**次のおすすめ1件（ユーザーの新たな明示承認後のみ）：P1-10i** — H01〜H06の狭いオフライン架空Authority負例を研究として検証し、Coordinator偽finalize/旧証拠の誤結合・相反する決定・durable gate未確定時のSTOP条件を見極める。実サービス/GCP/決済/Gem/APIへは進まない。

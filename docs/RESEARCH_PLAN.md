@@ -30,7 +30,8 @@
 - [x] **P1-10e完了（設計のみ／NOT RUN）**：[HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN](HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md) — 独立した架空Authority/Hostによる予約後失効要求、COMMIT応答不明、予約timeoutと遅延COMMITの3系統12将来計画ID、fault barrier、耐久証拠、不変条件I1〜I6を設計。**実装・新テスト/CI・新DB検証なし**。正本Host 9/34件・25件NOT RUN、HC06 FULL HOLDは不変。
 - [x] **P1-10f完了（採否判断資料のみ・NOT RUN）**：[HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION](HOST_EXTERNAL_REVOCATION_P110F_HARNESS_DECISION.md) — E-R01/E-R02に限り、2独立Ruby worker＋別PG16インスタンス×2のローカル検証を**条件付き推奨**。abort gateの耐久・全C経路強制、barrier/障害注入・cleanup・費用/ローカル制約の着手ゲートを文書化。**実装/CI/新実測0**、HC06分散HOLD・Host正本9/34のまま。
 - [x] **P1-10g完了（2限定合成ケースの実PG16実測のみ）**：[HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE](HOST_EXTERNAL_REVOCATION_P110G_EVIDENCE.md) — Ruby別プロセス＋**別PG16.9インスタンス×2**でE-R01/R02の隔離合成研究、[専用CI #38143039035](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38143039035) **2 runs/118 assertions/0 failures**。Host abort COMMIT後のSIGKILL、別接続復旧、遅延worker STOPを観測。Authorityの本当の線形化保証は**未実証**でHC06 HOLD。正本Host9/34・25 NOT RUNを維持。
-- [ ] **P1-10h（次のおすすめ1件・別途明示承認後のみ）**：架空Coordinator任せのAuthority finalizeを信用できない問題について、耐久中止証拠の真正性/再送/切断時の失効確定ゲートを**設計レビューのみ**。実装・外部接続は別承認。
+- [x] **P1-10h完了（信頼境界の設計レビューのみ・H01〜H12 NOT RUN）**：[HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW](HOST_EXTERNAL_REVOCATION_P110H_PROOF_BOUNDARY_REVIEW.md) — Coordinatorの偽`finalize_abort`を無条件に信じる現行合成Authorityの穴、Hostのdurable C/abort真正性・全C経路STOP・証拠束縛、再送/矛盾/partition/rollbackのFail Closedを整理。**実装・CI・テスト・DB新実測なし**、正本Host9/34・25 NOT RUN、HC06 FULL HOLD。
+- [ ] **P1-10i（次のおすすめ1件・別途明示承認後のみ）**：H01〜H06だけの隔離合成負例を限定実装・実測し、Coordinator偽finalize/旧証拠/他scope流用/相反証拠/中止未確定をどこでSTOPする必要があるか検討。既存HC06全体のGOを主張しない。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 
