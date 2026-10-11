@@ -9,7 +9,7 @@
 - [x] RubyGems/GitHubでAP2専用Gem、SD-JWT VC、JWT等を限定調査（[ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md)）。競合不存在は断定しない。
 - [x] 最小のVerifier API案・スコープ・未保証項目を**設計としてのみ整理**（[API_PROPOSAL](API_PROPOSAL.md)）。公開API未確定、未実装。
 - [x] P0-5でGO/HOLD/NO-GOを評価し、**HOLD**を記録（[RESEARCH_DECISION](RESEARCH_DECISION.md)）。Ruby実装は未承認。
-- [ ] P0-5a：公式Python SDKの隔離・オフライン基準テスト/優先負例を実行し、結果によってHOLDを再判定（**承認後のみ、Ruby実装なし**）。
+- [ ] P0-5a：公式Python SDKの隔離・オフライン基準テスト/優先負例を実行し、結果によってHOLDを再判定。**部分実施**：[限定サブセット11 PASS、公式pytestは環境制約で未実行](PYTHON_BASELINE_VERIFICATION.md)。残作業（全SDK/署名・Issuer/aud/nonce/非開示）は**別途承認後**。Ruby実装なし。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 
