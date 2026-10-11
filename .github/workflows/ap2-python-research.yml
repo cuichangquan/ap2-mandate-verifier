@@ -21,9 +21,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: false
       - name: Checkout immutable official AP2 v0.2.0
         shell: bash
         run: |
@@ -31,16 +28,20 @@ jobs:
           git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
           test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = "b4587ac1d055888a73b4b21750973cffba961793"
           echo "UPSTREAM_SHA=$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
-      - name: Install locked Python dependencies
+      - name: Install official pyproject pins from public PyPI
         shell: bash
         working-directory: ${{ runner.temp }}/ap2
-        run: uv sync --frozen --python python3.11
+        run: |
+          # Upstream uv.lock points at a private Artifact Registry (HTTP 401).
+          # Use pinned direct dependencies from upstream pyproject.toml; no upstream edits.
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple -e .
+          python -m pip freeze > "$GITHUB_WORKSPACE/installed-python-packages.txt"
       - name: Execute complete official Python SDK pytest
         shell: bash
         working-directory: ${{ runner.temp }}/ap2
         run: |
           set +e
-          uv run --frozen python -m pytest code/sdk/python/ap2/tests/ -q --tb=short --junitxml="$GITHUB_WORKSPACE/official-pytest.xml" 2>&1 | tee "$GITHUB_WORKSPACE/official-pytest.log"
+          python -m pytest code/sdk/python/ap2/tests/ -q --tb=short --junitxml="$GITHUB_WORKSPACE/official-pytest.xml" 2>&1 | tee "$GITHUB_WORKSPACE/official-pytest.log"
           rc=${PIPESTATUS[0]}
           echo "official_pytest_exit_code=$rc" | tee -a "$GITHUB_WORKSPACE/summary.txt"
           echo "Official pytest exit status: $rc" >> "$GITHUB_STEP_SUMMARY"
@@ -50,7 +51,7 @@ jobs:
         working-directory: ${{ runner.temp }}/ap2
         run: |
           set +e
-          uv run --frozen python -m pytest "$GITHUB_WORKSPACE/research/p0_5a/test_ap2_real_sdk_negatives.py" -q -vv --tb=short --junitxml="$GITHUB_WORKSPACE/negative-pytest.xml" 2>&1 | tee "$GITHUB_WORKSPACE/negative-pytest.log"
+          python -m pytest "$GITHUB_WORKSPACE/research/p0_5a/test_ap2_real_sdk_negatives.py" -q -vv --tb=short --junitxml="$GITHUB_WORKSPACE/negative-pytest.xml" 2>&1 | tee "$GITHUB_WORKSPACE/negative-pytest.log"
           rc=${PIPESTATUS[0]}
           echo "negative_probes_exit_code=$rc" | tee -a "$GITHUB_WORKSPACE/summary.txt"
           echo "Negative probe exit status: $rc" >> "$GITHUB_STEP_SUMMARY"
@@ -66,5 +67,6 @@ jobs:
             negative-pytest.log
             negative-pytest.xml
             summary.txt
+            installed-python-packages.txt
           if-no-files-found: warn
           retention-days: 7
