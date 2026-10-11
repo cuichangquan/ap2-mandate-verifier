@@ -24,12 +24,12 @@
 | **AN-N01** | Issuer署名は正しいがMerchant制約のDisclosureを欠落、さらに第3の権限制約を隠す/すべて開示して固定profile外へ出る | **REJECTED**（3負例）。**一般的な隠れた権限制約不存在の証明にはならない** |
 | **AN-N02** | 別Issuerの公開鍵・Issuer trust欠落・Merchant信頼鍵欠落 | **REJECTED**（3負例）。自称Issuer/任意trust rootの本番扱いなし |
 | **AN-N03** | `cnf`で指定されたAgent以外の実署名、未対応の`issuer_jwt_hash` mode、3要素chain | **REJECTED**（3負例）。固定2hop以外は未対応。3hop否定は**長さの検査**であり中間hopの安全性を一般検証したわけではない |
-| **AN-N04** | 誤/空nonce、誤audience、期限切れClosed、未来Closed iat、期限切れOpen、**Openの`exp`より短いが依然有効期間内の、Agent署名済Closed `exp`** | **REJECTED**（7負例）。最後は**"Closed changed a fixed Open claim"**という理由までassertし、単なる期限切れ拒否とは区別。Codex PR #35の**P1指摘に対する限定的な修正/実測** |
+| **AN-N04** | 誤/空nonce、誤audience、期限切れClosed、未来Closed iat、期限切れOpen、**期限内のAgent署名済Closed `exp`変更**、**Issuer署名済Openへ追加した`currency`固定claimをClosedが省略** | **REJECTED**（8負例）。前者は`Closed changed a fixed Open claim`、後者は`unsupported signed Open claim layout`という狙った理由までassert。形式エラーだけの拒否ではない |
 | **AN-N05** | Merchant ES256で正当に署名された二重payloadキー、二重JOSE `alg`、未対応`typ`/`jku`、16KiB超Checkout、48層の深いJSON、32KiB超Root | **REJECTED**（7負例）。厳格JSON parse/max nestingとbounded profileの部分的観測。全DoS/Unicode/JOSE変種網羅とは主張しない |
 | **AN-N06** | 署名有りCheckout JWTのhash偽、別Merchant鍵、Host元wireの不一致、数量不足、拒否Merchant、SKU不一致、余剰商品、合計不一致 | **REJECTED**（8負例）。公式Python SDKの数量の解釈との差は依然あり、Rubyは固定profileとしてexact quantityを強制 |
 | **AN-N07** | **同じ有効なchainを2回独立に検証し両方成功**、証拠が同じで`ALLOW`/Receiptがないことを確認 | **HOST_BOUNDARY** — **replay拒否を実測したのではない**。Hostのatomic nonce consumeなしでは二重許可を防げない |
 
-**8 test methods / 42 assertions**の中には、同じ分類ID内部に複数の署名付き変種がある。**42 assertionsを42独立セキュリティケースとは数えない**。合成fixture generator内部の検証もMinitestケース数に足さない。
+**8 test methods / 45 assertions**の中には、同じ分類ID内部に複数の署名付き変種がある。**45 assertionsを45独立セキュリティケースとは数えない**。合成fixture generator内部の検証もMinitestケース数に足さない。
 
 ## 3. R06 claim-preservation（前回PR #35 Codex P1指摘）
 
@@ -50,3 +50,15 @@
 **P1-10o判定：狭い合成2hop A-only研究の予定8 IDについて、署名付き正負入力を限定的に再実測し、P1指摘の固定claim書換えを拒否。** 他のIssuer/レイアウト・Host業務認可・replay・HC06/実決済の安全性は未証明。**汎用Gem/public API・本番Host統合HOLD、RubyGems公開・Production・実決済・署名Receipt NO-GO。** 自己レビューは独立セキュリティ監査ではない。
 
 **次のおすすめ1件（別途明示承認が必要）：P1-10p — 静的Gapレビューだけ。** 固定layoutの前提をHostが自分で確認できるか、Root/Closed間でClaimを余さず確認するにはどんなschema/登録が必要か、P1-10oの既存8ケースで**まだ許容してしまう未対応入力**を、新規コード/CIなしで危険度つきに整理する。新Gem/API・GCP/外部サービス・実決済は別承認。
+
+## 5. PR #36のCodex P1/P2フォローアップ（最終実測）
+
+[P1-10o最終の修正後CI #38154695155](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154695155)、head `12fe3b6d2cc70a7d9ed448ed99bc8d3cf76fe584`、**8 Minitest runs / 45 assertions / 0 failures / 0 errors / 0 skips**、期待した正例1・拒否6分類・AN-N07 **HOST_BOUNDARY**。証拠：[artifact 11708585368](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154695155/artifacts/11708585368)。文書更新後の最終PR headについてもPR Checksを別途確認する。過去の8/42は**レビュー修正前の別commit実測**であり最終の42件ではない。
+
+**Codex PR #36 P1：「Issuer署名Openの固定claimをAgentがClosedから省略すれば、共通キー交差で比較するだけでは見逃す」**。研究2hopのRootとClosedに固定Issuerの**厳格な許可キー集合**（Open: `cnf,constraints,exp,iat,vct`／Closed: `checkout_hash,checkout_jwt,exp,iat,vct`）を要求し、追加/未知固定claimを**署名が正しくても拒否**する。追加したAN-N04負例は、Issuer署名RootのOpen **Mandate disclosureそのもの**へ`currency`を加え、**DisclosureのSHA-256 digestの再計算・Root JWS再署名**を行い、公式SDKのRoot署名/開示検証でも受理された後、公式SDKでAgent署名Closedを発行。Rubyでは`unsupported signed Open claim layout`という意図した理由で拒否。**他のIssuer layoutまで互換/安全と主張しない。**
+
+**途中の失敗を保持：** [Actions #38154446241](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154446241)は追加claimを誤ってSD-JWT placeholderへ挿入したため`unhandled placeholder`でAN-N04失敗（**8 runs / 45 assertions / 1 failure**）。この段階では狙ったP1を未検証だったためDisclosureを修正した。次の[Actions #38154591430](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154591430)はRuby**8/45のassertion全部成功**でも、JSON evidence noteから`claim drift`語が抜けてCI集計ゲートが失敗し**Workflow FAILURE**。最終#38154695155ではどちらも修正して**Workflow SUCCESS**。初回#38153577136も別の結果順バグによるWorkflow FAILであり経緯は§1のとおり。
+
+**Codex PR #36 P2：** 8ケースに直接依存する`research/p1_1/root_sdjwt_research.rb`、`research/p1_3/checkout_binding_research.rb`、`research/p1_3/generate_merchant_checkout.py`、`research/shared/strict_json_research.rb`の変更にも専用CIが自動起動するよう、`pull_request.paths`に追加（既存のP1-2、P1-5も引き続き対象）。**この8-case CIは依存研究全体の完全回帰検証ではなく、一般プロトコル適合や本番利用GOにはならない。**
+
+**GO/HOLDは不変：** 合成固定Issuer研究に限る。一般的なhidden Constraint不存在、Host final ALLOW/atomic nonce/replay、外部Authority HC06、汎用Gem/本番は**HOLD**。RubyGems公開・実決済・署名Receipt**NO-GO**。

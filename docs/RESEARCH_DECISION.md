@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§36（P1-10o）：固定Issuer・Open→Closed 2hop・合成実署名のA-only試験AN-P01＋AN-N01〜N07を8 runs/42 assertions、失敗0で限定実測。Codex PR #35のP1固定claim書換え（期限内の正署名Closed exp変更）をRuby研究コードで拒否。AN-N07は2回verify成功のHOST_BOUNDARYであり、replay安全PASSではない。Host正本9/34・25 NOT RUN、隠れた制約の一般完全性・HC06・汎用Gem/API・本番統合HOLD、RubyGems/実決済NO-GO。**
+> **最新判定は§36（P1-10o）：固定Issuer・Open→Closed 2hop・合成実署名のA-only試験AN-P01＋AN-N01〜N07を8 runs/45 assertions、失敗0で限定実測。Codex PR #35のP1固定claim書換え（期限内の正署名Closed exp変更）をRuby研究コードで拒否。AN-N07は2回verify成功のHOST_BOUNDARYであり、replay安全PASSではない。Host正本9/34・25 NOT RUN、隠れた制約の一般完全性・HC06・汎用Gem/API・本番統合HOLD、RubyGems/実決済NO-GO。**
 
 **判断日:** 2026-10-12 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -428,7 +428,7 @@ guardは**別Host DBへの直接的な信頼済み読取り**で成立する人�
 
 ## 36. 2026-10-12 P1-10o A-only固定Issuer/2hopの実署名8-case統合研究（最新）
 
-[VERIFIER_P110O_EVIDENCE](VERIFIER_P110O_EVIDENCE.md)／[修正後SUCCESS CI #38153636500](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38153636500)にて、**Ruby 8 runs/42 assertions、0 failures/0 errors/0 skips**を実測。内訳：**AN-P01限定正例1件、AN-N01〜N06の拒否6カテゴリ、AN-N07の2回stateless verify成功をHOST_BOUNDARYとして観測1件**。合成実署名のIssuer/Agent/Merchantと公式AP2 v0.2.0 commit `b4587ac1d055888a73b4b21750973cffba961793`を固定、Ruby 3.3 / jwt 3.3.0。上流Python直接依存ピンは公開PyPIから取得し、private registry付きupstream lock完全再現ではない。
+[VERIFIER_P110O_EVIDENCE](VERIFIER_P110O_EVIDENCE.md)／[修正後SUCCESS CI #38154695155](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154695155)にて、**Ruby 8 runs/45 assertions、0 failures/0 errors/0 skips**を実測。内訳：**AN-P01限定正例1件、AN-N01〜N06の拒否6カテゴリ、AN-N07の2回stateless verify成功をHOST_BOUNDARYとして観測1件**。合成実署名のIssuer/Agent/Merchantと公式AP2 v0.2.0 commit `b4587ac1d055888a73b4b21750973cffba961793`を固定、Ruby 3.3 / jwt 3.3.0。上流Python直接依存ピンは公開PyPIから取得し、private registry付きupstream lock完全再現ではない。
 
 **初回[CI #38153577136](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38153577136)はFAILED。** Ruby8/42自体は成功していたが、報告JSONをlexical sortした`AN-P01`が後ろへ並ぶことをCIゲートが考慮しておらずPython集計assertが失敗。ID集合の厳密性/重複/分類を順序非依存に修正して再実行した。失敗を「当初から全CI成功」と誤記しない。
 
@@ -441,3 +441,5 @@ guardは**別Host DBへの直接的な信頼済み読取り**で成立する人�
 **判断：限定合成A-only verifier研究8ケース実測成功（replay Host境界は未解決）、汎用Gem/public API・本番Host統合HOLD、B/HC06分散強失効HOLD、C01〜C12 OPEN/UNCONFIRMED、RubyGems公開・Production・実決済・署名Receipt NO-GO。** 自己レビューは独立セキュリティ監査ではない。
 
 **次のおすすめ1件（別途明示承認後のみ）：P1-10p 設計Gapレビューだけ。** 認証済Issuer layoutの外部検証可能性、共有claimを改変できる余地、未対応の隠れた制約・不正入力の残余リスクを棚卸しする。新Rubyコード/CI/GCP/外部サービス/実決済/Gem公開は別承認。
+
+**P1-10o Codex追加レビュー・訂正（§36追記）:** [CI #38154695155](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154695155) にて**8 runs/45 assertions、0 failures/errors**。PR #36のP1は、Issuer署名Openの追加固定claimをClosedが省略すると、旧「共通キーの交差のみ」では見落とす点を指摘。Open/Closedの固定許可キー集合を研究2hopで厳格照合し、Issuerが署名してDisclosure/digest整合済みのOpen追加 `currency`、Closed欠落という正規構造の負例をAN-N04で`unsupported signed Open claim layout`として拒否。Codex P2（直接依存の変更でCIが起動しない）もWorkflow pathsに依存ファイルを補完。CI #38154446241は不正なplaceholder fixtureでRubyが失敗、#38154591430は8/45 Ruby PASSだが報告用文字列の不一致によりWorkflow失敗、上記#38154695155で修正後SUCCESS。中間失敗は隠さない。**AN-N07 Host replay境界、汎用Gem/API/本番・HC06 HOLD不変。**

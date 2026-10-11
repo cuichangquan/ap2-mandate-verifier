@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-12
-状態：**P0完了、P1-0〜P1-10o完了（P1-10oはA-only合成2hopの実署名統合8-case限定実測）**。[P1-10o証拠](VERIFIER_P110O_EVIDENCE.md)：修正後[CI #38153636500](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38153636500) **8 runs/42 assertions/失敗0**。AN-P01限定正例、AN-N01〜N06拒否、AN-N07二度verify成功は**HOST_BOUNDARY（replay未防御）**。前回PR #35 Codex P1指摘の**Open→Closed固定claim保持の漏れ**は研究用`p1_2`で修正し、署名正しい期限内Closed exp変更を拒否した。初回CIは集計順序のバグで失敗→修正後成功。Host正本**9/34件・25 NOT RUN／12 runs/465 assertions**は不変。隠れたConstraintの一般的完全性・B/HC06・本番Host統合・Gem/APIはHOLD、RubyGems公開・実決済NO-GO。次は**P1-10p設計のみ（別承認）**。
+状態：**P0完了、P1-0〜P1-10o完了（P1-10oはA-only合成2hopの実署名統合8-case限定実測）**。[P1-10o証拠](VERIFIER_P110O_EVIDENCE.md)：修正後[CI #38154695155](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154695155) **8 runs/45 assertions/失敗0**。AN-P01限定正例、AN-N01〜N06拒否、AN-N07二度verify成功は**HOST_BOUNDARY（replay未防御）**。前回PR #35 Codex P1指摘の**Open→Closed固定claim保持の漏れ**は研究用`p1_2`で修正し、署名正しい期限内Closed exp変更に加え、Issuer署名済Open追加固定claimのClosed欠落を厳格Open layoutで拒否した。PR #36のCodex P2に従いCI監視pathsも拡張した。初回CIは集計順序のバグで失敗→修正後成功。Host正本**9/34件・25 NOT RUN／12 runs/465 assertions**は不変。隠れたConstraintの一般的完全性・B/HC06・本番Host統合・Gem/APIはHOLD、RubyGems公開・実決済NO-GO。次は**P1-10p設計のみ（別承認）**。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -166,7 +166,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 - [x] **P1-10n（狭いA-only合成PoCの採否・設計だけ完了）**
   - [VERIFIER_P110N_OFFLINE_POC_GATE.md](VERIFIER_P110N_OFFLINE_POC_GATE.md)：G01〜G08・AN-P01/AN-N01〜N07は**将来のテスト案、NOT RUN**。固定Issuer layout・完全開示・2hopだけにCONDITIONAL GO CANDIDATE、一般Issuer/disclosure・Host replay/B/HC06はHOLD。P1-10n新実装・CIゼロ。
 - [x] **P1-10o（合成固定Issuer/2hop A-only実署名AN-P01＋AN-N01〜N07実測完了）**
-  - [VERIFIER_P110O_EVIDENCE.md](VERIFIER_P110O_EVIDENCE.md)：[修正後CI #38153636500](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38153636500) **8 runs/42 assertions/0 errors/failures**。1限定正例、6拒否カテゴリ、AN-N07は**HOST_BOUNDARY**。前回#35 Codex P1のOpen→Closed共有claim保持漏れ修正を実署名の期限内Closed exp変更で確認。初回CIはPython結果一覧順の誤りでFAILし修正。**汎用Gem/API/本番/HC06はHOLD、決済・公開NO-GO。**
+  - [VERIFIER_P110O_EVIDENCE.md](VERIFIER_P110O_EVIDENCE.md)：[修正後CI #38154695155](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154695155) **8 runs/45 assertions/0 errors/failures**。1限定正例、6拒否カテゴリ、AN-N07は**HOST_BOUNDARY**。前回#35 Codex P1のOpen→Closed共有claim保持漏れ修正を実署名の期限内Closed exp変更で確認。初回CIはPython結果一覧順の誤りでFAILし修正。**汎用Gem/API/本番/HC06はHOLD、決済・公開NO-GO。**
 - [ ] **P1-10p（次のおすすめ1件・別途明示承認後のみ）**
   - 未開示の権限制約完全性・Issuer発行レイアウト根拠・共有claim/未知入力・現状未試験の負例を**設計Gap表のみ**で評価。新コード/CI/実API/GCP/決済/Gem公開なし。
 
@@ -225,7 +225,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 **P1-10o A-onlyの合成固定Issuer・2hop・署名付き8ケースまで実測。** まずGitHub最新main/Open PR/Issueを再確認し、[P1-10o証拠](VERIFIER_P110O_EVIDENCE.md)→[P1-10n受入条件](VERIFIER_P110N_OFFLINE_POC_GATE.md)→[P1-10m責務分離](VERIFIER_VS_REVOCATION_P110M_SCOPE.md)→[研究判断§36](RESEARCH_DECISION.md)を読む。PR #36のmerge/レビュー状態は必ずGitHubで実確認する（この文書作成時はPR上）。
 
-- **実測:** [Actions #38153636500](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38153636500)、正例AN-P01、拒否AN-N01〜N06、N07 HOST_BOUNDARYの**8 runs/42 assertions/0失敗/エラー**。初回Actions #38153577136は集計順の誤りでWorkflow FAIL（Ruby8/42成功）→改修後CI成功。最終headへdocs追加後のCIも確認する。
+- **実測:** [Actions #38154695155](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38154695155)、正例AN-P01、拒否AN-N01〜N06、N07 HOST_BOUNDARYの**8 runs/45 assertions/0失敗/エラー**。初回Actions #38153577136は集計順の誤りでWorkflow FAIL（Ruby8/42成功）→改修後CI成功。最終headへdocs追加後のCIも確認する。
 - **Codex P1（前回PR #35）:** Open→Closedの共有固定claim（iat/exp）保持漏れ。研究`p1_2`で値保持を要求し、Root有効期間**内でも**Closed expが変化した**Agent署名済み**負例を拒否。正式Gem/APIはない。
 - **Host側責務:** AN-N07同一signed tokenは2回verify成功、**atomic replay/nonce**はHost別管理。正本Host9/34・25 NOT RUN／12 runs/465 assertions。P1-10iのH01 Authority失効後Host C成功の危険反例とHC06 HOLD、外部Host proof/C01〜C12未確認は変更なし。
 - **限定:** 固定Issuer layoutを合成fixture作成者が知っており一般的なhidden Constraintの不存在証明ではない。P1-4 G1〜G6、Host T1〜T5、公式Python186 PASS/2 FAIL、H07〜H12等の未解決項目を削除しない。Gem/API/本番統合HOLD、RubyGems公開・実決済/Receipt NO-GO。
@@ -245,7 +245,7 @@ docs/RESEARCH_DECISION.md §36 を読む。
 P1-10oは固定AP2 v0.2.0 commit
 b4587ac1d055888a73b4b21750973cffba961793 に基づく
 合成signed fixtureのA-only Open→Closed2hop8テスト。
-8 runs/42 assertions PASS、AN-N07はHost replay未解決境界。
+8 runs/45 assertions PASS、AN-N07はHost replay未解決境界。
 #35 Codex P1指摘のOpen/Closed claim保存を研究用Rubyで追加し、
 署名済Closed expが期限内でも変更されていればreject。
 Host正本9/34・25 NOT RUN、B/HC06・一般SD-JWT/GemはHOLD。
