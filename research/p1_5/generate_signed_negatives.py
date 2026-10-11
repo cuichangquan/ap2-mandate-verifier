@@ -42,6 +42,7 @@ def generate():
     agent = JWK.generate(kty="EC", crv="P-256")
     merchant = JWK.generate(kty="EC", crv="P-256")
     other_issuer = JWK.generate(kty="EC", crv="P-256")
+    wrong_agent = JWK.generate(kty="EC", crv="P-256")
     now = int(time.time())
     items = LineItems(items=[
         LineItemRequirements(
@@ -72,6 +73,9 @@ def generate():
 
     checkout_with_extra = dict(base_checkout)
     checkout_with_extra["opaque_unverified_authorization"] = {"role": "override"}
+    deep_nested = "leaf"
+    for _ in range(48):
+        deep_nested = {"nested": deep_nested}
     checkout_jwts = {
         "valid": sign_merchant_raw(merchant, base_checkout_json),
         "duplicate_merchant_id": sign_merchant_raw(merchant, duplicated_merchant_json),
@@ -91,21 +95,38 @@ def generate():
         "large_checkout": sign_merchant_raw(
             merchant, json_compact({**base_checkout, "padding": "A" * 19500})
         ),
+        # P1-10o: authentic ES256 JWT whose extra nested data exceeds the
+        # strict research JSON max nesting (distinct from an over-size token).
+        "deep_checkout": sign_merchant_raw(
+            merchant, json_compact({**base_checkout, "unexpected": deep_nested})
+        ),
     }
 
-    def terminal(jwt, exp=now + 3600, timestamp=now):
+    def terminal(jwt, exp=now + 3600, timestamp=now, signer=agent,
+                 hash_mode="sd_hash"):
         closed = CheckoutMandate(
             checkout_jwt=jwt, checkout_hash=b64(hashlib.sha256(jwt.encode()).digest()),
             iat=timestamp, exp=exp,
         )
         return kb_sd_jwt.create(
-            prev_token=common.parse_token(root), holder_key=agent, payload=closed,
-            aud=AUD, nonce=NONCE, sd=DisclosureMetadata(), hash_mode="sd_hash",
+            prev_token=common.parse_token(root), holder_key=signer, payload=closed,
+            aud=AUD, nonce=NONCE, sd=DisclosureMetadata(), hash_mode=hash_mode,
         ).sd_jwt_issuance
 
     terminal_variants = {k: terminal(jwt) for k, jwt in checkout_jwts.items()}
     terminal_variants["expired_closed"] = terminal(checkout_jwts["valid"], exp=now - 120)
     terminal_variants["future_closed_iat"] = terminal(checkout_jwts["valid"], timestamp=now + 1800)
+    # P1-10o / Codex P1 claim-preservation review: valid signed Closed
+    # still inside Root time window, but an Issuer fixed claim was changed.
+    terminal_variants["changed_closed_exp_in_window"] = terminal(
+        checkout_jwts["valid"], exp=now + 3000
+    )
+    terminal_variants["wrong_agent_signature"] = terminal(
+        checkout_jwts["valid"], signer=wrong_agent
+    )
+    terminal_variants["unsupported_hash_mode"] = terminal(
+        checkout_jwts["valid"], hash_mode="issuer_jwt_hash"
+    )
     # An already-expired-but-signed Root is tested separately: root signature
     # valid; Root clock should reject. Use an independent issuance.
     expired_root = MandateClient().create(
