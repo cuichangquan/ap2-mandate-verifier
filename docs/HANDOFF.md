@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**P0-1〜P0-5b・P1-0〜P1-5完了。P1-5は署名付きセキュリティ負例18ケースでGREEN 11 / RED 6 / Host replay境界1 / ERROR 0、P1-1〜P1-3回帰43件PASS**。次は**P1-6：研究用6 RED対策（別途承認必須）**。現状の研究用Verifierには想定外の受理が残る。**汎用Gem/API実装HOLD、RubyGems公開・Production/実決済NO-GO**。GCP/実決済/Host replay/Receiptは未実施。
+状態：**P0-1〜P0-5b・P1-0〜P1-6完了。P1-6では以前の6 REDをすべて拒否に変更し、署名付き18観測で17 GREEN / 0 RED / 0 ERROR / Host Replay境界1、既存43回帰成功**。次は**P1-7：Host信頼境界/Nonce/VerifiedEvidence責務の設計のみ（別途承認必須）**。**汎用Gem/API実装HOLD、RubyGems公開・Production/実決済NO-GO**。GCP/実決済/Host nonce消費・Receiptは未実装。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -13,7 +13,7 @@
 
 1. [README](../README.md) — Gemの目的・利用シーン・非スコープ
 2. [PROJECT](PROJECT.md) — D001〜D006、責務境界、独立OSS方針
-3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) / [RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) / [SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) / [SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md) — Ruby Root/2hop/Checkout、P1-4静的レビュー、P1-5 RED 6の実測
+3. [SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md) / [ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md) / [API_PROPOSAL](API_PROPOSAL.md) / [RESEARCH_DECISION](RESEARCH_DECISION.md) / [PYTHON_BASELINE_VERIFICATION](PYTHON_BASELINE_VERIFICATION.md) / [FAIL_CLOSED_PROFILE](FAIL_CLOSED_PROFILE.md) / [RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md) / [RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) / [RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) / [RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) / [SECURITY_GAP_REVIEW](SECURITY_GAP_REVIEW.md) / [SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md) / [SECURITY_HARDENING_RESEARCH](SECURITY_HARDENING_RESEARCH.md) — P1-5旧RED 6とP1-6研究修正後0 REDの一次記録
 4. [OFFICIAL_SOURCES](OFFICIAL_SOURCES.md) — AP2/FIDO/IETFの一次資料・ウォッチリスト
 5. [RESEARCH_PLAN](RESEARCH_PLAN.md) — Phase 0〜3 の全体工程
 6. [SECURITY_BOUNDARY](SECURITY_BOUNDARY.md) — 未信頼Mandateの扱いとFail Closed
@@ -41,7 +41,7 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-5完了 / 次はP1-6】
+### Phase 0 — 仕様・競合調査【P0-1〜P0-5b完了 / Ruby P1-0〜P1-6完了 / 次はP1-7】
 
 - [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
@@ -119,9 +119,15 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
   - 既存P1-1回帰10/10、P1-2 15/15、P1-3 18/18成功。**検証器本体変更なし**。CI観測stepはREDで意図的に失敗、Artifact保全のためworkflowはsuccess扱いなので**「セキュリティ全部PASS」としない**。
   - Host原子的nonce/replay、Receipt、Issuer trust運用、一般的Decoy/Deep JSON/SD-JWT完全性は未検証。Gem/API/ProductionはHOLD/NO-GO。
 
-- [ ] **P1-6：6 REDに対する狭い研究用対策・再検証（次の1件／別途明示承認）**
-  - 署名済JWTの重複JSONキー/JOSE拒否、Closed内部時刻/期限、Merchant `typ`、strict Checkout未知fieldを研究Verifierに限定して対策。18負例＋43回帰の結果を再実行/記録。
-  - **成果物案：** `docs/SECURITY_HARDENING_RESEARCH.md` と研究コード/テストのみ。Gem雛形/API/RubyGems、GCP/実決済、Host永続nonce/Receiptは禁止。
+- [x] **P1-6：署名付き6 REDの研究用対策と再検証（完了：[SECURITY_HARDENING_RESEARCH.md](SECURITY_HARDENING_RESEARCH.md)）**
+  - 同じP1-5 18観測で**GREEN 17（正例1＋拒否16）/ RED 0 / ERROR 0 / HOST_BOUNDARY 1**、P1-1〜P1-3回帰**43件すべてPASS**。[Actions #38128152237](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38128152237)。
+  - 重複JSON/JOSE、Closed内部iat/exp、Merchant JWT `typ`、未知Checkout fieldsを**研究用Strict Profile**に限定して拒否。署名済JWT原文/Hashの照合を維持。
+  - **Host replay/nonce原子的消費未実装。** G1〜G6完全達成は主張しない。公開/汎用Gem/APIと本番実決済はHOLD/NO-GO。
+
+- [ ] **P1-7：Host Trust/VerifiedEvidence/Nonce契約・ClockとReceiptの責務分離設計（次の1件／明示承認後のみ）**
+  - Issuer/Agent/Buyer/Merchant IDと登録JWK、VerifiedEvidence≠Host ALLOW、nonce原子的消費をどの責務で保証するか、Replay/失効/Checkout正本/Clock/Receiptとフェイルクローズを整理する。
+  - **成果物案：** `docs/HOST_SECURITY_CONTRACT.md`とテスト計画のみ。Gem/API・Host DB/本番・GCP/決済・他OSS実装は禁止。
+
 
 
 
@@ -174,36 +180,37 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**P0-1〜P0-5b、P1-0〜P1-5完了。最新はP1-5署名付き負例実測。** [SECURITY_NEGATIVE_TESTS](SECURITY_NEGATIVE_TESTS.md)、[RESEARCH_DECISION](RESEARCH_DECISION.md) §15、[P1-4レビュー](SECURITY_GAP_REVIEW.md)を必ず参照。
+**P0-1〜P0-5b、P1-0〜P1-6完了。最新[P1-6研究レポート](SECURITY_HARDENING_RESEARCH.md)、[P1-5旧RED実測](SECURITY_NEGATIVE_TESTS.md)、[RESEARCH_DECISION](RESEARCH_DECISION.md) §16を読むこと。**
 
-**最重要結果:** GitHub Actions [#38127279271](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38127279271)で、固定AP2 v0.2 Python SDK署名済Open/Closed＋Merchant実署名JWTによる**18観測、GREEN 11 / RED 6 / HOST_BOUNDARY 1 / ERROR 0**。既存Ruby回帰43テストはPASS。**6件の想定外受理（RED）は未修正。** REDはduplicate Merchant JSON `id`、JOSE `alg` duplicate、Expired Closed `exp`、未来Closed `iat`、想定外Merchant JWT `typ`、未知Checkoutフィールド。初期Strict Profileのfail-closed policyに対する結果であり、一般AP2仕様違反や実決済攻撃成功とは言わない。
+**最新証拠:** [GitHub Actions #38128152237](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38128152237)で固定AP2 v0.2 SDKが生成した合成Issuer/Agent/Merchant署名付き18ケースを再実行し、**17 GREEN / 0 RED / 0 ERROR / 1 HOST_BOUNDARY**。Root/2hop/Merchant Checkoutの既存**43件回帰も全成功**。P1-5の6 RED（duplicate Merchant JSON id/JOSE alg、Closed exp/iat、Merchant JWT typ、unknown checkout field）は研究コード限定で修正した。以前のRED記録は履歴として残す。
 
-**実行環境:** GitHub Actions GitHub-hosted Ubuntu/Ruby3.3 + `jwt 3.3.0`、Python3.11・固定SDK SHA `b4587ac1d055888a73b4b21750973cffba961793`。P1-5 observerはRED時に**exit 1**、workflowはログ保全のためそのstepだけ`continue-on-error: true`。全体successと安全性PASSを混同しない。研究用CIはマージ時点で**手動起動専用**。
+**重要なHOLD:** 汎用Gem/API実装・公開はHOLD、RubyGems/Production/実決済はNO-GO。stateless nonce照合だけでは**Replayを阻止できない**。Issuer/Merchant ID/Agent/Buyerの信頼鍵登録・ローテーション/失効、Host正本/Clock注入、購入ALLOW、Receiptは未実装。全AP2・全SD-JWT対応は未証明。公式AP2 v0.2 SHAは`b4587ac1d055888a73b4b21750973cffba961793`。
 
-**判断:** 汎用Gem/API実装**HOLD**、公開・Production/実決済**NO-GO**。研究用の最小対策P1-6のみCONDITIONAL GO候補。Issuer trust key-ID管理、unknown SD-JWT layout、atomic nonce/replay、Revocation/Receiptと実Host認可は未実装。
+**P1-6コード差分:** `research/shared/strict_json_research.rb`（重複JSON拒否）、`research/p1_1/root_sdjwt_research.rb`（Root/Terminal原文の厳格Parse）、`research/p1_2/two_hop_research.rb`（Closed内時刻）、`research/p1_3/checkout_binding_research.rb`（Merchant JOSE/Checkout field）、`.github/workflows/p1-6-hardening.yml`（手動起動のみ）。Gem雛形なし。
 
-**次の1件（別のユーザー明示承認後のみ）：P1-6。** 既存Ruby研究Verifierを限定して6 REDをGREENにするための最小修正、P1-5 18ケース＋過去43回帰を再実行。結果を`docs/SECURITY_HARDENING_RESEARCH.md`に記録。Gem/公開API/実決済/GCP/Host永続state・他OSS変更は禁止。
+**次の1件（新たなユーザー承認後のみ）：P1-7**。Host trust/VerifiedEvidence≠ALLOW/nonce atomic consumption/Clock/Revocation/Receipt責務の**設計文書と安全テスト計画のみ**を作成。Gem本体やHostアプリ/DB、実決済/GCP、ActingFor/a2a-railsは変更しない。
 
 ### 次チャット用指示文
 
 ```text
-ap2-mandate-verifier P1-6を開始します。
+ap2-mandate-verifier P1-7を開始します。
 https://github.com/cuichangquan/ap2-mandate-verifier
 
-最新main/Issue/Open PRを確認し、
+GitHub最新main、Open Issue/PRを確認し、
+docs/HANDOFF.md、docs/SECURITY_HARDENING_RESEARCH.md、
 docs/SECURITY_NEGATIVE_TESTS.md、docs/SECURITY_GAP_REVIEW.md、
-docs/RESEARCH_DECISION.md §15、research/p1_5/observe_security_negatives.rb、
-research/p1_5/generate_signed_negatives.py と P1-1〜P1-3の研究コードを読む。
+docs/RESEARCH_DECISION.md §16、docs/FAIL_CLOSED_PROFILE.mdを読んでください。
 
-P1-5では署名付き負例18観測中6 RED（予期しないACCEPTED）を実測。
-過去43回帰はPASS。CIがsuccessでもP1-5 observer stepはREDでexit 1。
-今回は研究コードだけで6 REDをFail Closedへ修正し、
-同じ18負例（N00〜N17）と43既存回帰を再実行してください。
-Root/Terminal署名・JWT original bytes/Hashの完全性を保ったまま、
-JSON重複キー、Closed内部iat/exp、JOSE typ、未知Checkout fieldを対策。
-Hostのatomic replay/失効/Receiptは別責務のままにしてください。
+P1-6で同じ署名付き18観測の6 REDを研究コードだけで修正し、
+17 GREEN / 0 RED / 0 ERROR / HOST_BOUNDARY 1。
+P1-1〜P1-3の43回帰もPASSしました。
+ただしReplay/nonce一度限り消費は実装されていません。
 
-docs/SECURITY_HARDENING_RESEARCH.mdにGREEN/RED/ERRORを証拠付きで記録。
-Gem/API/公開/Production・実決済・GCP・他OSS変更は禁止。
-次段階への自動GO判断をしない。PRレビュー後mainへマージ。
+今回はHost trust（Issuer/Buyer/Agent/Merchant登録鍵/ID）、
+VerifiedEvidence != ALLOW、Checkout正本、atomic nonce consume、
+失効、clock/TTL、署名Receiptの責務を
+docs/HOST_SECURITY_CONTRACT.mdとして整理し、
+負例・失敗/競合時STOPをテスト計画にします。
+追加のGem/API・Host DB/本番コード・公開/決済・GCP・他OSS変更は禁止。
+PRレビュー後mainへマージしてください。
 ```
