@@ -1,7 +1,7 @@
 # AP2 Mandate Verifier for Ruby — 開発引き継ぎ指示書 / TODO
 
 更新日：2026-10-11
-状態：**研究準備完了 / Phase 0 未着手**。Gem実装・公開・適合性検証・本番安全性検証は未実施。
+状態：**Phase 0 / P0-1 完了、P0-2 未着手**。Gem実装・公開・適合性検証・本番安全性検証は未実施。
 
 ## 1. 新しいチャットで最初に読むこと
 
@@ -40,16 +40,16 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 3. 全体のTODOと実行順序
 
-### Phase 0 — 仕様・競合調査【次に着手】
+### Phase 0 — 仕様・競合調査【P0-1完了 / P0-2が次】
 
-- [ ] **P0-1：AP2仕様の基準点を固定（最優先・最初の1タスク）**
+- [x] **P0-1：AP2仕様の基準点を固定（完了： [SPEC_BASELINE.md](SPEC_BASELINE.md)）**
   - 公式AP2 v0.2のSpecification / Agent Authorization / Checkout Mandate、および対応する公式Python SDKを確認する。
   - 関連タグ・Commit SHA・参照URL・確認日・仕様の現行状態を記録し、v0.1と混同しない。
   - 上流Issueや仕様の未決定・曖昧な点も明示する。実装やAPI設計はまだ行わない。
   - **成果物案：** `docs/SPEC_BASELINE.md`
   - **完了条件：** 再現可能な参照元が特定され、後続調査が同一基準で進められること。
 
-- [ ] **P0-2：Verifier必須要件とTrust Boundaryを整理**
+- [ ] **P0-2：Verifier必須要件とTrust Boundaryを整理【次に着手】**
   - 署名・SD-JWT/開示・発行者の信頼・Agent/holder鍵との結び付け・aud/nonce/期限・Delegation chain・Open/Closed Checkout・制約・取引内容との一致を、**仕様が要求する範囲を確認して**整理する。
   - `MUST` / `SHOULD` / 仕様で未規定 / Host責務を混同しない。各判断に一次資料の該当節を付ける。
   - 不正・期限切れ・鍵不一致・未知の必須制約等のFail Closed条件をテスト観点として列挙する。
@@ -118,28 +118,26 @@ ActingFor（Rails内部のDelegationとAudit）・a2a-rails（A2A通信）とは
 
 ## 6. 次のチャットで最初に行うこと
 
-**最初に P0-1 だけ着手する。** GitHubの最新main・Issue・Open PRを確認し、AP2 v0.2関連の一次資料および公式Python SDKの**対象バージョン/Commit SHA**を記録する。`docs/SPEC_BASELINE.md`を作成したら、結果・曖昧点・次のベスト1を報告する。**コード実装はしない。**
+**P0-1は完了。** 公式AP2 v0.2.0 tag / Commit、対応Python SDKのソース・package version、上流の未解決論点は [SPEC_BASELINE.md](SPEC_BASELINE.md) に固定した。作業時は新しいmain・Issue・Open PRを再確認する。
+
+**次はP0-2だけ着手する。** 固定仕様の [Specification](https://ap2-protocol.org/ap2/specification/) / [Agent Authorization](https://ap2-protocol.org/ap2/agent_authorization/) / [Checkout Mandate](https://ap2-protocol.org/ap2/checkout_mandate/) を根拠に、Verifier側のMUST/SHOULD、Fail ClosedとHost責務を明確にした `docs/VERIFIER_REQUIREMENTS.md` を設計する。Gem実装、API確定、ActingFor・a2a-railsの変更はしない。
 
 ### 新しいチャットに貼り付ける指示文
 
 ```text
-新しいOSSプロジェクト ap2-mandate-verifier の続きを始めます。
+ap2-mandate-verifier の続きを始めます。
+正本: https://github.com/cuichangquan/ap2-mandate-verifier/tree/main
 
-正本:
-https://github.com/cuichangquan/ap2-mandate-verifier/tree/main
+GitHub最新main、Issue、Open PRを確認し、
+docs/HANDOFF.md、docs/SPEC_BASELINE.md、docs/PROJECT.md、
+docs/RESEARCH_PLAN.md、docs/SECURITY_BOUNDARY.md を読んでください。
 
-まずGitHub最新main、Issue、Open PRを確認し、
-docs/HANDOFF.md、docs/PROJECT.md、docs/RESEARCH_PLAN.md、
-docs/OFFICIAL_SOURCES.md、docs/SECURITY_BOUNDARY.md を読んでください。
+P0-1完了の固定AP2 v0.2公式Commitを基準に、
+今回は Phase 0 / P0-2 のみ行ってください。
+Checkout Mandate VerifierのMUST/SHOULD/仕様未規定/Host責務を
+仕様節・根拠URL付きで docs/VERIFIER_REQUIREMENTS.md に整理し、
+不正系・未知Constraint・信頼境界をFail Closedとして明示してください。
 
-今回の作業は Phase 0 の P0-1 のみ。
-AP2 v0.2の公式仕様（Specification / Agent Authorization /
-Checkout Mandate）と公式Python SDKの版・Commit SHAを確定し、
-docs/SPEC_BASELINE.md に出典付きで記録してください。
-
-未確定事項とv0.1との差異を整理し、実装コード、Gem API、
-ActingFor、a2a-rails、既存Demoは変更しないでください。
-
-完了時は変更ファイル、Commit SHA、確認結果、未解決事項、
-次の重要な1項目だけ報告してください。
+Gem/API実装とActingFor、a2a-railsへの変更は禁止。
+変更ファイル・Commit SHA・未解決事項・次の重要な1項目を報告してください。
 ```
