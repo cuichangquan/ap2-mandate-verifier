@@ -8,7 +8,8 @@
 - [x] 公式Python SDKの対応範囲、署名・開示・チェーン検証を**ソースとテストで静的照合**（[ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md)、実行検証は未実施）。
 - [x] RubyGems/GitHubでAP2専用Gem、SD-JWT VC、JWT等を限定調査（[ECOSYSTEM_RESEARCH](ECOSYSTEM_RESEARCH.md)）。競合不存在は断定しない。
 - [x] 最小のVerifier API案・スコープ・未保証項目を**設計としてのみ整理**（[API_PROPOSAL](API_PROPOSAL.md)）。公開API未確定、未実装。
-- [ ] 実装のGO/NO-GOを記録。必要性が弱ければ現状維持を選ぶ。
+- [x] P0-5でGO/HOLD/NO-GOを評価し、**HOLD**を記録（[RESEARCH_DECISION](RESEARCH_DECISION.md)）。Ruby実装は未承認。
+- [ ] P0-5a：公式Python SDKの隔離・オフライン基準テスト/優先負例を実行し、結果によってHOLDを再判定（**承認後のみ、Ruby実装なし**）。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 
