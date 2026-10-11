@@ -17,6 +17,11 @@ module AP2TwoHopResearch
 
       root_wire, terminal_wire = chain
       root = AP2RootSDJWTResearch.verify_full_root!(root_wire, trusted_jwk: issuer_jwk)
+      # The lab supports exactly this Issuer-signed Open layout. Comparing
+      # only the intersection of Open/Closed keys is insufficient: an Agent
+      # could simply OMIT an extra issuer-fixed Open claim from the Closed.
+      raise Rejected, "unsupported signed Open claim layout" unless
+        root.keys.sort == %w[cnf constraints exp iat vct].sort
       agent_jwk = root.fetch("cnf").fetch("jwk")
       raise Rejected, "root holder key not trusted expected Agent" unless public_key?(agent_jwk, expected_agent_jwk)
 
@@ -42,6 +47,8 @@ module AP2TwoHopResearch
         payloads.length == 1 && payloads.first.is_a?(Hash)
       closed = payloads.first
       raise Rejected, "terminal must be Closed Checkout" unless closed["vct"] == "mandate.checkout.1"
+      raise Rejected, "unsupported signed Closed claim layout" unless
+        closed.keys.sort == %w[checkout_hash checkout_jwt exp iat vct].sort
       # The outer KB-SD-JWT iat does NOT establish validity of the nested
       # Agent-signed Closed Mandate. Check its own signed iat/exp separately.
       closed_iat, closed_exp = closed.values_at("iat", "exp")
