@@ -64,8 +64,8 @@ AP2全部入りSDK、ウォレット、鍵発行、OAuth Server、MCP/A2A Server
 
 ## 7. 現在の進捗・次の作業（2026-10-11）
 
-P0-1〜P0-5b、P1-0〜P1-6までの研究完了。固定AP2 v0.2公式Python SDKを利用したP1-1 Root/Disclosures、P1-2 2hop Agent署名、P1-3 Merchant署名済CheckoutをRubyで検証する限定研究PoCを維持。P1-4で12リスク・6ゲートを記録し、P1-5で署名済入力18件中**6 RED**を観測した。
+P0-1〜P0-5b、P1-0〜P1-7までの研究を進めた。固定AP2 v0.2公式Python SDK由来の限定Ruby研究PoCは、Issuer Root→Agent 2hop→Merchant署名Checkoutの検証、P1-5の6 REDの発見、P1-6の研究修正で**同じ18観測に対して17 GREEN/0 RED/Host Replay境界1**と43件回帰成功を記録済み（[P1-6証拠](SECURITY_HARDENING_RESEARCH.md)）。
 
-**[P1-6の研究用修正](SECURITY_HARDENING_RESEARCH.md)**では、これらの6 REDを重複JSON/JOSEの厳格処理、Closed内部iat/exp、Merchant typ、Checkout field allowlistで修正。**同じ18観測で17 GREEN / 0 RED / 0 ERROR / Host replay境界1、過去の43テストも全成功**（[CI #38128152237](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38128152237)）。
+**P1-7（今回・文書設計のみ）:** [HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md)と[HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md)で、Host登録Issuer/Merchant/Agentの鍵・Buyer資格、Checkout正本、VerifiedEvidenceと購入ALLOWの境界、nonce消費と注文操作の原子的な整合性、失効・Clock・Receipt/障害対応を明確化した。Host trust/Replay/Receiptの**将来テスト34件は全件未実行**。新Rubyコード/CI/DB/実決済は一切追加していない。
 
-**最新判断：** [RESEARCH_DECISION](RESEARCH_DECISION.md) §16。研究PoCのみCONDITIONAL GO、**汎用Gem/API実装HOLD、RubyGems公開・実決済/Production NO-GO**。Issuer/Buyer/Agent/MerchantのHost trust運用、Atomic nonce消費、失効/Receipt/業務認可は未設計・未実装。**次の1件（別途明示承認後のみ）：P1-7 — Host責務/信頼境界の設計・テスト計画資料**。Gem/本番実装に自動的には進まない。
+**最新判断:** [RESEARCH_DECISION](RESEARCH_DECISION.md) §17 — 非本番の研究/設計のみCONDITIONAL GO、**汎用Ruby Gem/API実装HOLD、公開・実決済・Production NO-GO**。次の1件（別途承認後のみ）は**P1-8：ローカルDBによるHost nonce/Checkout競合を検証するためのテスト実施設計・採用判断**。本StepでGem実装・Host DB実装・クラウドへは進まない。
