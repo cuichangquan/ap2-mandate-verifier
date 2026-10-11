@@ -67,18 +67,26 @@ module AP2CheckoutBindingResearch
       allowed = constraints.find { |c| c["type"] == "checkout.allowed_merchants" }
       required = constraints.find { |c| c["type"] == "checkout.line_items" }
       raise Rejected, "missing constraints" unless allowed && required
+      # P1-10r: fixed Issuer research profile, not the general AP2 schema.
+      # Unknown NESTED signed authority fields cannot be silently ignored.
+      # No wildcard/forward compatibility is claimed by this offline spike.
+      require_exact_constraint_keys!(allowed, %w[allowed type])
+      require_exact_constraint_keys!(required, %w[items type])
       merchant_allow = allowed.fetch("allowed")
       raise Rejected, "unsupported multiple Merchant rules" unless merchant_allow.is_a?(Array) &&
         merchant_allow.length == 1 && merchant_allow.first.is_a?(Hash) &&
         merchant_allow.first["id"] == expected_merchant_id
+      require_exact_constraint_keys!(merchant_allow.first, %w[id name])
       requirements = required.fetch("items")
       raise Rejected, "unsupported multiple required lines" unless requirements.is_a?(Array) &&
         requirements.size == 1
       requirement = requirements.first
+      require_exact_constraint_keys!(requirement, %w[acceptable_items id quantity])
       accepted = requirement.fetch("acceptable_items")
       raise Rejected, "unsupported multiple SKU alternatives" unless accepted.is_a?(Array) &&
         accepted.size == 1 && accepted.first.is_a?(Hash) &&
         present_string?(accepted.first["id"]) && present_string?(accepted.first["title"])
+      require_exact_constraint_keys!(accepted.first, %w[id title])
       expected_quantity = requirement.fetch("quantity")
       raise Rejected, "invalid required quantity" unless expected_quantity.is_a?(Integer) && expected_quantity.positive?
 
@@ -113,6 +121,11 @@ module AP2CheckoutBindingResearch
 
     def present_string?(v)
       v.is_a?(String) && !v.empty?
+    end
+
+    def require_exact_constraint_keys!(object, keys)
+      raise Rejected, "unsupported or missing signed Constraint profile fields" unless
+        object.is_a?(Hash) && object.keys.sort == keys.sort
     end
 
     def require_exact_keys!(object, keys)
