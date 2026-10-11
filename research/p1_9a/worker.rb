@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# P1-9a: intentionally isolated research-only transaction worker.
+# P1-9a/P1-9b: intentionally isolated research-only transaction worker.
 # NO AP2 verifier/API, networking, payment, or real buyer data.
 require "pg"
 require "json"
@@ -10,11 +10,18 @@ class HostStop < StandardError; end
 
 STDOUT.sync = true
 tenant, checkout_id, challenge_id, mode = ARGV
-abort "usage: worker.rb TENANT CHECKOUT_ID CHALLENGE_ID hold|normal" unless
+allowed_modes = %w[hold normal]
+allowed_modes.concat(%w[before_commit after_commit]) if ENV["P19B_CRASH_HOOKS"] == "enabled"
+abort "usage: worker.rb TENANT CHECKOUT_ID CHALLENGE_ID allowed_mode" unless
   [tenant, checkout_id, challenge_id].all? { |v| v && /\A[a-z0-9_-]{1,60}\z/.match?(v) } &&
-  %w[hold normal].include?(mode)
+  allowed_modes.include?(mode)
 
 db = PG.connect(ENV.fetch("P19A_DATABASE_URL"))
+# Crash hooks must NEVER operate against an ordinary Host/business database.
+if %w[before_commit after_commit].include?(mode) &&
+   db.exec("SELECT current_database() AS db").first.fetch("db") != "ap2_research"
+  abort "crash_hook_refuses_non_research_database"
+end
 begin
   # Coordinator must observe *actual PG lock contention*, not merely a delay.
   puts "TRY:#{db.backend_pid}" if mode == "normal"
@@ -65,7 +72,22 @@ begin
     "INSERT INTO p19a_outbox (operation_id, status) VALUES ($1, 'PENDING')",
     [operation_id]
   )
+  if mode == "before_commit"
+    # The coordinator must SIGKILL this OS process while all four writes are
+    # still UNCOMMITTED. EOF/GO cannot convert the test into a successful commit.
+    puts "BEFORE_COMMIT:#{db.backend_pid}"
+    STDIN.gets
+    raise HostStop, "crash_hook_not_killed"
+  end
+
   db.exec("COMMIT")
+  if mode == "after_commit"
+    # PostgreSQL has ACKed COMMIT. Do not send/execute any external action.
+    # The coordinator must SIGKILL this process before a normal return.
+    puts "AFTER_COMMIT:#{db.backend_pid}"
+    STDIN.gets
+    raise HostStop, "crash_hook_not_killed"
+  end
   puts "RESULT:#{JSON.generate(outcome: 'COMMITTED', nonce_rows: claimed.ntuples, operation_id: operation_id)}"
 rescue HostStop => e
   db.exec("ROLLBACK")
