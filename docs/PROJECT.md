@@ -64,4 +64,4 @@ AP2全部入りSDK、ウォレット、鍵発行、OAuth Server、MCP/A2A Server
 
 ## 7. 次の作業
 
-P0-1〜P0-5bの調査・公式Python実測（186 PASS / 2 FAIL、独立負例12 PASS）・[Fail Closed Profile](FAIL_CLOSED_PROFILE.md)は文書化済み。最新の[RESEARCH_DECISION](RESEARCH_DECISION.md) §9は**Autonomous/単一Agent/2hopの非本番Ruby研究PoCのみ条件付きGO**。汎用Gem、製品品質、実決済はHOLD/NO-GO。**P1-0は小さなRubyオフライン実験として14テスト成功**（[RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md)）。次のP1-1は実署名SD-JWT Root・Disclosureの検証を、別の明示承認後に実施する。公開Gem/本番利用は引き続き未承認。
+P0-1〜P0-5bの調査・公式Python実測（186 PASS / 2 FAIL、独立負例12 PASS）・[Fail Closed Profile](FAIL_CLOSED_PROFILE.md)は文書化済み。最新の[RESEARCH_DECISION](RESEARCH_DECISION.md) §9は**Autonomous/単一Agent/2hopの非本番Ruby研究PoCのみ条件付きGO**。汎用Gem、製品品質、実決済はHOLD/NO-GO。**P1-0は小さなRubyオフライン実験として14テスト成功**（[RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md)）。**P1-1では固定AP2 Python SDKによる実署名Root SD-JWTのRuby署名・開示digest検証10件が成功**（[RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md)）。Merchant制約の非開示は研究用Strict Profileで拒否した。次のP1-2はTerminal Agent署名・`sd_hash`・aud/nonceの2-hop検証で、別の明示承認後のみ実施する。汎用Gem/本番利用は引き続き未承認。
