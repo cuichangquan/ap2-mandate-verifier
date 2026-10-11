@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新判定は§17（P1-7）：Host信頼境界/Nonce/Receiptの設計と34件の将来テストケースを作成。新しいHost/CI実測はゼロ。汎用Gem/API実装HOLD、公開/本番/実決済NO-GO。**
+> **最新判定は§26（P1-10e）：独立した架空Authority/Hostの障害注入テスト計画のみ完了（NOT RUN）。既存Host正本9/34件実測・25件NOT RUN、HC06の分散安全性HOLD。汎用Gem/API実装HOLD、公開/本番/実決済NO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -309,3 +309,15 @@
 **正本HC06は未実装・NOT FULL PASS / HOLD。** 従来の実PG16 Host研究は34件中9件のみ実測・25件未実行（[P1-10a最終CI #38136570328](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38136570328)：12 runs/465 assertions PASS）。P1-10cの8 runs/94 assertions（危険性を再現する負例2件込み）は**単一Rubyプロセスの合成モデル**であって新しい正本IDとして数えない。今回docs-onlyでActionsを新規実行していない。N17 stateless HOST_BOUNDARYとP1-4 G1〜G6/P1-7 T1〜T5、公式Python SDKの186 PASS/2 FAILは引き続き未解決。
 
 **判断：P1-10d設計文書のみ限定GO。Gem/API、実Host統合HOLD、RubyGems公開・Production・実決済・署名Receipt NO-GO。** 次の1件（別途ユーザー明示承認後）：**P1-10e**、P先行でR_requestが競合／Host COMMIT ACK不明／timeoutによる予約解放という3ケースの**独立した架空Authority/Host検証設計のみ**。外部API/GCP/実実装は別承認。
+
+## 26. 2026-10-11 P1-10e HC06 独立Authority/Host障害注入テスト計画（最新・設計のみ）
+
+**資料のみ作成、新規コード・テスト・CI・PostgreSQL/外部Authority実験なし。** [HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN](HOST_EXTERNAL_REVOCATION_P110E_TEST_PLAN.md)に3系統：予約P後の失効要求（E-R01〜04）、Host durable COMMIT ACK喪失と不明結果（E-U01〜04）、予約期限切れと遅延COMMIT（E-T01〜04）を整理。**12件はいずれも将来用の計画IDでNOT RUN**。独立OSプロセス/耐久ストア、pause/barrier、ACK drop、partition、SIGKILL/restart、因果ログ・durable証拠・不変条件I1〜I6を定義した。
+
+R_requestの受付とR_effectiveの失効完了を混同しない。COMMIT応答不明、Host row不在、lease期限切れだけで予約を解放しない。Hostの将来C不能を耐久的に強制する境界を**まだ実装しておらず**、共通の権威的順序を証明できないテスト結果はUNPROVEN/HOLD。意図した危険なbaseline再現を安全性PASSと数えない。失効長期保留の可用性リスク、外部Provider D/複数Authorityの未実証も明記。
+
+過去のPG16 Host正本は**9/34件、25件NOT RUN、12 runs/465 assertions PASS**（P1-10a）。P1-10cの単一プロセス合成**8 runs/94 assertions**は分散実験ではない。本Stepでは新規CIを実行していない。N17 HOST_BOUNDARY、G1〜G6/T1〜T5、公式Python SDK中間hop**186 PASS / 2 FAIL**は継続。
+
+**判定：P1-10e計画文書のみCONDITIONAL GO。HC06分散安全性・Gem/API・本番Host連携HOLD、RubyGems公開・Production/実決済/署名Receipt NO-GO。** 自己レビューは独立セキュリティ監査ではない。
+
+**次のおすすめ1件（別途明示承認後）：P1-10f** — E-R01/E-R02に限定し、独立プロセス・独立永続ストアのオフライン実験環境を作るか、barrier/通信障害注入方式と費用・制約を先に採否判断する。自動着手しない。
