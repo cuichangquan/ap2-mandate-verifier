@@ -247,3 +247,13 @@
 **次の1件（別の明示承認後のみ）:** **P1-9a**、隔離PG16/2 Ruby workerで**HR01/02/03/08**の最小同時性試験を実装・実測。Crash/Retry/Receipt/全34件の実装を一括承認しない。固定AP2 v0.2公式Commit `b4587ac1d055888a73b4b21750973cffba961793`を維持、公式Python SDK 186 PASS / 2 FAIL（中間hop aud/nonce）を解消済みとしない。
 
 **GO/HOLD:** 限定オフライン研究のみCONDITIONAL GO、汎用Gem/public API実装HOLD、RubyGems公開・本番/実決済NO-GO。
+
+## 19. 2026-10-11 P1-9a PostgreSQL Replay最小実測とGO/HOLD（最新）
+
+**限定Host DB研究として4ケースを実測しPASS。** [HOST_REPLAY_P19A_EVIDENCE](HOST_REPLAY_P19A_EVIDENCE.md) と [GitHub Actions #38133951057](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38133951057)、[PGコンテナdigest固定の再検証 #38134040469](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38134040469)に証拠。PostgreSQL 16.9/Ruby 3.3.12/pg 1.5.9、独立OSプロセス2worker/異なるDB接続で実際のロック競合をDBに問い合わせて確認。**HR01同nonce、HR02異nonce同Checkout、HR03 nonce CAS 0行、HR08 Replay**の4つで**4 runs / 108 assertions / 0 failures / 0 errors / 0 skips**。同一Checkout operationとoutboxの一回限り登録、nonce消費、再送STOP、追加のDB UNIQUE違反の観測を確認した。最初のCI [#38133875041](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38133875041)はRubyテスト構文エラーによりFAIL・テスト0件実行であり、隠さず記録。
+
+**未達・正確な範囲:** P1-7 Hostテスト34件中**4実装・30未実装/未実行**。これは**架空のHost session/evidenceに対する限定したDB transaction研究**であり、AP2署名/Buyer認可/ライブ失効・元Checkout/Provider送信・Crashやunknown commit/Receipt/本番安全性を証明しない。N17の**stateless Verifierは同一有効Mandateを2回検証可能**というHOST_BOUNDARY自体は継続。外部Providerの二重課金防止も未実証。上流Python SDKの中間hop aud/nonce 186 PASS/2 FAILは解消済み扱いにしない。
+
+**判断:** 研究用P1-9aはPASS/限定GO（実際のDB競合・失敗分岐を実測した範囲に限る）。Gem/public API実装と全面的Host統合は**HOLD**、RubyGems公開・実決済・本番は**NO-GO**。P1-4のG1〜G6およびP1-7のT1〜T5を完全クリアしたと主張しない。
+
+**次の一件（新しいユーザー明示承認後のみ）：P1-9b。** HR04/HR05の**COMMIT前/後プロセスクラッシュ**と原子Rollback/復元を同じ一時PG16環境で実測。HR06/HR07の不明commit・Provider retry、署名ReceiptやGem化はさらに後の独立タスクとする。

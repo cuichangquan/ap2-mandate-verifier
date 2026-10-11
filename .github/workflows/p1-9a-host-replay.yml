@@ -1,0 +1,85 @@
+name: P1-9a Host Replay PostgreSQL 16 (research only)
+
+on:
+  pull_request:
+    paths:
+      - 'research/p1_9a/**'
+      - '.github/workflows/p1-9a-host-replay.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-pg16-atomic-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres@sha256:ddfe3e8713e3ee5b8f286082cb12512488dfbf3f5a1ecb0b74a42e6055af0a5f
+        env:
+          POSTGRES_USER: labuser
+          POSTGRES_PASSWORD: offline-test-only
+          POSTGRES_DB: ap2_research
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U labuser -d ap2_research"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      P19A_DATABASE_URL: postgresql://labuser:offline-test-only@127.0.0.1:5432/ap2_research
+      P19A_REPORT: p19a-report.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: false
+      - name: Install narrow PostgreSQL client gem
+        run: |
+          gem install pg --version 1.5.9 --no-document
+          ruby -rpg -e 'abort "Unexpected pg gem" unless Gem.loaded_specs.fetch("pg").version.to_s == "1.5.9"'
+      - name: Record runner and DB version for evidence
+        run: |
+          {
+            ruby -v
+            ruby -rpg -e 'puts "pg gem #{Gem.loaded_specs.fetch("pg").version}"; puts "libpq #{PG.library_version}"'
+            ruby -rpg -e 'db=PG.connect(ENV.fetch("P19A_DATABASE_URL")); puts "postgres #{db.exec("SHOW server_version").first.fetch("server_version")}"; db.close'
+            docker image inspect postgres@sha256:ddfe3e8713e3ee5b8f286082cb12512488dfbf3f5a1ecb0b74a42e6055af0a5f --format 'postgres image ID={{.Id}} digests={{json .RepoDigests}}'
+          } | tee p19a-environment.txt
+      - name: Run four isolated Host DB security experiments
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby research/p1_9a/test_host_replay_pg.rb --verbose 2>&1 | tee p19a-run.log
+      - name: Reject incomplete or incorrect evidence
+        if: success()
+        run: |
+          ruby -rjson -e '
+            r=JSON.parse(File.read("p19a-report.json"))
+            cases=r.fetch("executed_cases")
+            abort "Expected exactly four cases" unless cases.map{|x| x.fetch("id")}.sort == %w[HR01 HR02 HR03 HR08]
+            abort "All must PASS" unless cases.all?{|x| x.fetch("result") == "PASS"}
+            abort "No actual PG blocking evidence" unless %w[HR01 HR02].all?{|id|
+              cases.find{|x| x["id"] == id}.fetch("pg_lock_wait_observed") == true
+            }
+            abort "Unique constraint not verified" unless cases.find{|x| x["id"] == "HR02"}.fetch("unique_conflict_observed") == true
+            abort "CAS 0-row not observed" unless cases.find{|x| x["id"] == "HR03"}.fetch("cas_zero_observed") == true
+            abort "Replay not rejected" unless cases.find{|x| x["id"] == "HR08"}.fetch("replay_rejected") == true
+            puts "PASS: four research-only Host DB scenarios; NO AP2/Payment/Receipt claim"
+          '
+      - name: Upload time-limited, sanitized research evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-9a-postgresql-evidence
+          path: |
+            p19a-report.json
+            p19a-run.log
+            p19a-environment.txt
+          retention-days: 7
+          if-no-files-found: warn

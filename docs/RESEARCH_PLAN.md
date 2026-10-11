@@ -20,7 +20,8 @@
 - [x] **P1-6完了（研究コード修正のみ）**：[SECURITY_HARDENING_RESEARCH](SECURITY_HARDENING_RESEARCH.md)、[CI #38128152237](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38128152237)。以前の**6 REDをすべてGREEN化**。署名付き観測18件=**17 GREEN / 0 RED / 0 ERROR / 1 Host Boundary**。P1-1〜3回帰**10+15+18=43件成功**。重複JSON/JOSE・Closed内時刻・Merchant JWT typ・未知Checkout fieldを厳格化。**Gem実装/公開・実決済はHOLD/NO-GO**。
 - [x] **P1-7完了（設計資料のみ）**：[HOST_SECURITY_CONTRACT](HOST_SECURITY_CONTRACT.md) / [HOST_SECURITY_TEST_PLAN](HOST_SECURITY_TEST_PLAN.md)。Issuer/Buyer/Agent/MerchantのHost鍵信頼登録、Host current Checkout、`VerifiedEvidence ≠ ALLOW`、nonceと注文の**原子的な一度限り遷移**、失効・Clock・外部処理Idempotency/Receiptの責務を分け、**34件の将来テストID**を設計。**新テスト/CI、Host DB/実決済、Gem/API実装なし**。汎用Gem実装HOLD・Production NO-GO。
 - [x] **P1-8完了（設計のみ）**：[HOST_REPLAY_LAB_DESIGN](HOST_REPLAY_LAB_DESIGN.md) — SQLiteとPostgreSQLを比較して**一時PG16**を採用候補に選定。2 worker、nonce CAS＋Checkout unique、commit前後crash/Retry、Fake Provider idempotency、費用/cleanup、HR01〜HR10試験順序とGO/HOLDを設計。**Host DB・新CI・新テストなし、34件すべてNOT RUN。**
-- [ ] **P1-9a（次・別途明示承認後のみ）**：一時PG16とRuby 2workerで**HR01/02/03/08**だけのrace/重複拒否を実測。Crash/Receipt/決済/GCP/Gemの実装は未承認。
+- [x] **P1-9a完了（隔離Host DB研究のみ）**：[HOST_REPLAY_P19A_EVIDENCE](HOST_REPLAY_P19A_EVIDENCE.md) — PostgreSQL 16.9とRuby 2独立worker、実DBロック競合測定、nonce CAS/Checkout unique/Outbox。**HR01/02/03/08の4ケース：CI 4 runs・108 assertions・0 failures/0 errors**（[Actions #38133951057](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38133951057)、[digest-pinned再検証 #38134040469](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38134040469)）。初回構文エラーのCI失敗も記録。**残り30 HostケースはNOT RUN、Gem/API/実決済は未実装**。
+- [ ] **P1-9b（次・別途明示承認後のみ）**：HR04/05（commit前・commit後の独立worker強制終了、DB rollback/復元）を隔離DBで実測。unknown commit/Provider timeout/Receiptはさらに別Step。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 

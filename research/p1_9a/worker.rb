@@ -1,0 +1,87 @@
+# frozen_string_literal: true
+
+# P1-9a: intentionally isolated research-only transaction worker.
+# NO AP2 verifier/API, networking, payment, or real buyer data.
+require "pg"
+require "json"
+require "securerandom"
+
+class HostStop < StandardError; end
+
+STDOUT.sync = true
+tenant, checkout_id, challenge_id, mode = ARGV
+abort "usage: worker.rb TENANT CHECKOUT_ID CHALLENGE_ID hold|normal" unless
+  [tenant, checkout_id, challenge_id].all? { |v| v && /\A[a-z0-9_-]{1,60}\z/.match?(v) } &&
+  %w[hold normal].include?(mode)
+
+db = PG.connect(ENV.fetch("P19A_DATABASE_URL"))
+begin
+  # Coordinator must observe *actual PG lock contention*, not merely a delay.
+  puts "TRY:#{db.backend_pid}" if mode == "normal"
+  db.exec("BEGIN")
+  db.exec("SET LOCAL lock_timeout = '7s'")
+  db.exec("SET LOCAL statement_timeout = '10s'")
+  db.exec("SET TRANSACTION ISOLATION LEVEL READ COMMITTED")
+
+  checkout = db.exec_params(
+    "SELECT version, status FROM p19a_checkouts WHERE tenant_id = $1 AND checkout_id = $2 FOR UPDATE",
+    [tenant, checkout_id]
+  ).first
+
+  if mode == "hold"
+    puts "LOCKED:#{db.backend_pid}"
+    raise HostStop, "barrier_not_released" unless STDIN.gets&.strip == "GO"
+  end
+
+  raise HostStop, "checkout_unavailable" unless checkout && checkout.fetch("status") == "OPEN"
+
+  # Deliberately exercise UPDATE ... RETURNING 0-row CAS in HR03.
+  claimed = db.exec_params(<<~SQL, [tenant, checkout_id, challenge_id, checkout.fetch("version")])
+    UPDATE p19a_challenges SET state = 'CONSUMED'
+    WHERE tenant_id = $1 AND checkout_id = $2 AND challenge_id = $3
+      AND checkout_version = $4::integer
+      AND state = 'ISSUED' AND expires_at > clock_timestamp()
+    RETURNING challenge_id
+  SQL
+  raise HostStop, "nonce_cas_zero" unless claimed.ntuples == 1
+
+  changed = db.exec_params(<<~SQL, [tenant, checkout_id, checkout.fetch("version")])
+    UPDATE p19a_checkouts SET status = 'RESERVED'
+    WHERE tenant_id = $1 AND checkout_id = $2
+      AND version = $3::integer AND status = 'OPEN'
+    RETURNING checkout_id
+  SQL
+  raise HostStop, "checkout_cas_zero" unless changed.ntuples == 1
+
+  operation_id = SecureRandom.hex(16)
+  # Stable, Host-side operation identity is deliberately tied to one-time Checkout.
+  idem_key = "offline-#{tenant}-#{checkout_id}"
+  db.exec_params(<<~SQL, [operation_id, tenant, checkout_id, challenge_id, idem_key])
+    INSERT INTO p19a_operations
+      (operation_id, tenant_id, checkout_id, challenge_id, idempotency_key)
+    VALUES ($1, $2, $3, $4, $5)
+  SQL
+  db.exec_params(
+    "INSERT INTO p19a_outbox (operation_id, status) VALUES ($1, 'PENDING')",
+    [operation_id]
+  )
+  db.exec("COMMIT")
+  puts "RESULT:#{JSON.generate(outcome: 'COMMITTED', nonce_rows: claimed.ntuples, operation_id: operation_id)}"
+rescue HostStop => e
+  db.exec("ROLLBACK")
+  puts "RESULT:#{JSON.generate(outcome: 'STOP', reason: e.message)}"
+rescue PG::UniqueViolation
+  db.exec("ROLLBACK")
+  puts "RESULT:#{JSON.generate(outcome: 'STOP', reason: 'unique_conflict')}"
+rescue StandardError => e
+  begin
+    db.exec("ROLLBACK")
+  rescue PG::Error
+    # Keep unknown DB outcomes an ERROR, not an ALLOW or a spurious PASS.
+  end
+  warn "WORKER_ERROR:#{e.class}" # no raw SQL/JWT/credentials
+  puts "RESULT:#{JSON.generate(outcome: 'ERROR', type: e.class.name)}"
+  exit 2
+ensure
+  db.close unless db.finished?
+end
