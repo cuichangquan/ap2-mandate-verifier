@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier for Ruby
 
-> **Status: research/PoC only — P1-0 Ruby interoperability spike passed 14 tests (0 failures). No AP2 Ruby verifier Gem or public API exists. Narrow offline PoC remains conditionally permitted with separate approval; generic Gem/release HOLD, production use NO-GO. AP2 v0.2 Python SDK: 186 passed / 2 failed.**
+> **Status: research/PoC only — P1-1 pinned Python AP2 SD-JWT issuer-root signed/disclosure Ruby spike passed 10 tests (0 failures), including reject of hidden merchant constraint. No full AP2 Ruby Verifier Gem or public API. Narrow offline PoC CONDITIONAL GO only; general Gem/release HOLD, production NO-GO. Official Python SDK: 186 PASS / 2 FAIL.**
 >
 > Independent, unofficial Ruby OSS exploration. Not affiliated with Google, the AP2 project, or FIDO Alliance.
 
@@ -72,6 +72,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [Python baseline verification — P0-5a: official pytest 186 PASS / 2 FAIL, signed negative probes 12 PASS (plus earlier isolated 11 PASS)](docs/PYTHON_BASELINE_VERIFICATION.md)
 - [Minimal Fail Closed Profile — strict two-hop autonomous Checkout and Host trust gates (P0-5b)](docs/FAIL_CLOSED_PROFILE.md)
 - [Ruby interoperability feasibility — P1-0 ES256/JWK + Checkout Hash + official schema: 14 PASS](docs/RUBY_FEASIBILITY_SPIKE.md)
+- [Ruby SD-JWT Root & Disclosure — P1-1 pinned Python SDK issuance, hidden constraint fail closed: 10 PASS](docs/RUBY_SDJWT_RESEARCH.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)
