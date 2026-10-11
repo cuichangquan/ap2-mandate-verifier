@@ -22,7 +22,7 @@ jobs:
           POSTGRES_USER: labuser
           POSTGRES_PASSWORD: offline-test-only
         ports:
-          - 5432:5432
+          - 127.0.0.1:5432:5432
         options: >-
           --health-cmd "pg_isready -U labuser -d ap2g_authority"
           --health-interval 5s
@@ -35,7 +35,7 @@ jobs:
           POSTGRES_USER: labuser
           POSTGRES_PASSWORD: offline-test-only
         ports:
-          - 5433:5432
+          - 127.0.0.1:5433:5432
         options: >-
           --health-cmd "pg_isready -U labuser -d ap2g_host"
           --health-interval 5s
