@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# P1-9a/P1-9b: intentionally isolated research-only transaction worker.
+# P1-9a/P1-9b/P1-9c: intentionally isolated research-only transaction worker.
 # NO AP2 verifier/API, networking, payment, or real buyer data.
 require "pg"
 require "json"
@@ -12,13 +12,14 @@ STDOUT.sync = true
 tenant, checkout_id, challenge_id, mode = ARGV
 allowed_modes = %w[hold normal]
 allowed_modes.concat(%w[before_commit after_commit]) if ENV["P19B_CRASH_HOOKS"] == "enabled"
+allowed_modes << "commit_unobserved" if ENV["P19C_FAULT_HOOKS"] == "enabled"
 abort "usage: worker.rb TENANT CHECKOUT_ID CHALLENGE_ID allowed_mode" unless
   [tenant, checkout_id, challenge_id].all? { |v| v && /\A[a-z0-9_-]{1,60}\z/.match?(v) } &&
   allowed_modes.include?(mode)
 
 db = PG.connect(ENV.fetch("P19A_DATABASE_URL"))
 # Crash hooks must NEVER operate against an ordinary Host/business database.
-if %w[before_commit after_commit].include?(mode) &&
+if %w[before_commit after_commit commit_unobserved].include?(mode) &&
    db.exec("SELECT current_database() AS db").first.fetch("db") != "ap2_research"
   abort "crash_hook_refuses_non_research_database"
 end
@@ -78,6 +79,17 @@ begin
     puts "BEFORE_COMMIT:#{db.backend_pid}"
     STDIN.gets
     raise HostStop, "crash_hook_not_killed"
+  end
+
+  if mode == "commit_unobserved"
+    # Client submits COMMIT asynchronously; it MUST NOT read libpq's result.
+    # Coordinator will SIGKILL while the outcome is unknown to the caller.
+    # Independent PG observation determines the server's actual final state.
+    submitted = db.send_query("COMMIT")
+    raise HostStop, "commit_submission_failed" unless submitted
+    puts "COMMIT_SENT_NO_ACK:#{db.backend_pid}"
+    STDIN.gets
+    raise HostStop, "uncertain_commit_hook_not_killed"
   end
 
   db.exec("COMMIT")
