@@ -1,0 +1,84 @@
+name: P1-3 Merchant Checkout binding research
+
+# P1-3 research runs manually after verified PR results.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  merchant-checkout-spike:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: false
+      - name: Checkout immutable upstream AP2 v0.2 source
+        shell: bash
+        run: |
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = b4587ac1d055888a73b4b21750973cffba961793
+      - name: Install upstream Python direct dependency pins from public PyPI
+        shell: bash
+        working-directory: ${{ runner.temp }}/ap2
+        run: |
+          # upstream uv.lock requires private Artifact Registry credentials;
+          # exact pyproject direct pins, transitive lock not reproduced.
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple -e .
+          python -m pip freeze > "$GITHUB_WORKSPACE/p1-3-python-packages.txt"
+      - name: Generate real signed AP2 and Merchant JWTs on isolated runner
+        shell: bash
+        run: |
+          python -m py_compile research/p1_3/generate_merchant_checkout.py
+          python research/p1_3/generate_merchant_checkout.py "$RUNNER_TEMP/p1-3-checkout.json"
+          python research/p1_2/generate_two_hop_python.py "$RUNNER_TEMP/p1-2-chain.json"
+          python research/p1_1/generate_python_sdjwt.py "$RUNNER_TEMP/p1-1-root.json"
+      - name: Install Ruby JOSE verifier
+        shell: bash
+        run: |
+          gem install jwt -v 3.3.0 --no-document
+          ruby -v
+          ruby -rjwt -e 'puts "JWT: #{Gem.loaded_specs.fetch("jwt").version}"'
+      - name: Run P1-1 Root SD-JWT regression
+        shell: bash
+        env:
+          AP2_P11_FIXTURES: ${{ runner.temp }}/p1-1-root.json
+        run: |
+          set -o pipefail
+          ruby research/p1_1/test_ruby_root_sdjwt.rb --verbose 2>&1 | tee p1-3-regression-root.log
+      - name: Run P1-2 two-hop regression
+        shell: bash
+        env:
+          AP2_P12_FIXTURES: ${{ runner.temp }}/p1-2-chain.json
+        run: |
+          set -o pipefail
+          ruby research/p1_2/test_ruby_two_hop.rb --verbose 2>&1 | tee p1-3-regression-two-hop.log
+      - name: Run P1-3 merchant signed Checkout binding tests
+        shell: bash
+        env:
+          AP2_P13_FIXTURES: ${{ runner.temp }}/p1-3-checkout.json
+        run: |
+          set -o pipefail
+          ruby research/p1_3/test_checkout_binding.rb --verbose 2>&1 | tee p1-3-checkout.log
+      - name: Upload short-lived logs, not synthetic signing private keys
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-3-checkout-research-logs
+          path: |
+            p1-3-regression-root.log
+            p1-3-regression-two-hop.log
+            p1-3-checkout.log
+            p1-3-python-packages.txt
+          retention-days: 7
+          if-no-files-found: warn

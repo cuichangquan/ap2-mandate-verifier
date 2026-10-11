@@ -14,7 +14,8 @@
 - [x] **P1-0完了**：合成Python ES256 JWS fixtureと固定AP2公式Open Checkout Schemaに対するRuby `jwt`・`json_schemer`互換性試験 **14 runs/17 assertions, 0 failures**。([RUBY_FEASIBILITY_SPIKE](RUBY_FEASIBILITY_SPIKE.md)、[CI実測](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38123249933))。Gem実装ではない。
 - [x] **P1-1完了**：[RUBY_SDJWT_RESEARCH](RUBY_SDJWT_RESEARCH.md) — 固定AP2 v0.2 Python SDKで実署名Root SD-JWTを生成し、RubyでES256 Root署名＋array disclosure digestの完全開示を検証。Merchant制約の非開示／署名・開示改ざんは拒否。**10 runs/22 assertions、0 failures**（[CI実測](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38123828122)）。研究用Strict Profileのみ、Gem実装ではない。
 - [x] **P1-2完了**：[RUBY_DELEGATION_SPIKE](RUBY_DELEGATION_SPIKE.md) — 固定AP2 v0.2公式Python SDK発行・Python検証済みOpen→ClosedをRubyで検証。Root `cnf`、Terminal ES256署名、`sd_hash`、Host `aud`/`nonce`の正負を確認 **15 runs/32 assertions、失敗0**。P1-1回帰 **10 runs/22 assertions、失敗0**（[CI](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38124823804)）。実Checkout JWTはダミー。
-- [ ] **P1-3（次・別途明示承認後のみ）**：HostのMerchant署名済Checkout JWT正本とClosed内の原文・`checkout_hash`、Openの`allowed_merchants`/`line_items`を**オフライン統合検証**。汎用Gem/API、実決済、stateful replay/Receiptは作らない。
+- [x] **P1-3完了**：[RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md) — 公式AP2 v0.2 Open→Closed＋**Merchant ES256署名済Checkout JWT**を生成し、Host JWT正本のバイト一致、SHA-256 hash、店舗/商品/数量/単純合計の厳格評価をRubyで確認。**18 runs/40 assertions、0 failures**、P1-2回帰15 PASS、P1-1回帰10 PASS（[GitHub Actions](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38126247946)）。SDK数量評価との差異を記録。
+- [ ] **P1-4（次・別途明示承認後のみ）**：P1-1〜P1-3研究の**セキュリティ負債レビューとGem実装GO/HOLD判断**を文書化（JWT JSON重複キー/JOSE header、hidden constraints、タイム境界、Host trust、Replay/nonce消費等）。Gem/本番実装は先行しない。
 
 ## Phase 1 — Checkout Mandate PoC（GO後）
 

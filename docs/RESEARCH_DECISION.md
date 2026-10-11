@@ -1,6 +1,6 @@
 # Research Decision — Phase 0 / P0-5 (GO / HOLD / NO-GO)
 
-> **最新の判定は§12（P1-2）を参照：非本番Ruby研究PoCのみCONDITIONAL GO。汎用Gem/API/リリースはHOLD、本番/実決済はNO-GO。**
+> **最新の判定は§13（P1-3）を参照：非本番Ruby研究PoCのみCONDITIONAL GO。汎用Gem/API/リリースはHOLD、本番/実決済はNO-GO。**
 
 **判断日:** 2026-10-11 JST  
 **決定:** **HOLD — Ruby Gem / 最小Ruby Checkout Mandate PoCの実装開始をいったん保留**。  
@@ -160,3 +160,15 @@
 - 根拠の範囲はstrict single Issuer layout + exactly two hopsで、任意AP2／SD-JWT、Issuer trust infrastructure、stateful replay/nonce消費、Receipt、本番の安全性には広げない。固定上流公式pytestの失敗2件（intermediate aud/nonce）も解消していない。
 
 **次の1件（新しい明示承認後のみ）：P1-3 — Merchant-signed Checkout JWTのHost正本・原文・SHA-256 checkout_hash、Open `allowed_merchants`/`line_items`をオフラインで統合する小さなRuby Spike。** Gem雛形、安定API、公開、決済実行・GCP・nonce消費・Receiptは未承認。
+
+## 13. 2026-10-11 P1-3 Checkout JWT / Host正本 / Constraint実測後の判断（最新）
+
+**CONDITIONAL GOは非本番研究PoCの範囲のみ継続。汎用Gem/API/リリースはHOLD、実決済・ProductionはNO-GO。** 根拠は[RUBY_CHECKOUT_BINDING_SPIKE](RUBY_CHECKOUT_BINDING_SPIKE.md)と[CI Run #38126247946](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38126247946)。
+
+- 固定AP2 Python SDKによる署名済Open Root→Agent Closed Terminalを使い、さらに**独立Merchant鍵のES256署名付き架空Checkout JWT**を発行。RubyはHostが登録したMerchant公開JWKで検証し、Host正本JWTとClosed `checkout_jwt`の原文一致、Closed `checkout_hash`の独立SHA-256 base64url計算、RootのMerchant/SKU/Quantity、HostのCheckout ID/Currency/Totalを評価した。
+- **P1-3：18 runs/40 assertions、失敗0**。Root署名/Disclosure P1-1回帰**10 PASS**、2-hop署名binding P1-2回帰**15 PASS**。**合計43テストが成功**したが、別階層の限定研究結果をAP2標準合格とみなさない。
+- **重要な発見:** 上流SDKの`check_checkout_constraints`は、今回の「必要数量2 / 実Checkout数量1」に違反を返さなかった。Ruby研究プロフィールは数量の**完全一致を追加のHost policy**として要求。公式の仕様違反と断定せず、数量一般の解釈を未解決とする。さらに**同じCheckout JSONを再署名するとJWT原文が異なる**ため、Host正本の署名済JWTの**同一バイト列を再利用**するようfixtureを修正した。
+- **未実証のまま:** 多店舗/複数SKU、税・割引・送料、任意UCP Schema、署名アルゴリズム/JOSE変種、完全なConstraint/Disclosure一般化、Issuer trust keyの運用、時刻境界とExpired Terminal、**nonce消費/replay、注文・価格・在庫の業務正本、Revocation、署名Receipt、実決済**。これは本番利用を正当化しない。
+- **次の1件（別の明示依頼後のみ）：P1-4 — 研究コードP1-1〜P1-3の攻撃面・安全負債レビューと、実際に汎用Gem開発へ進むかのGO/HOLD判断を文書化。** まだGem/API実装しない。
+
+**この文書でP1-3完了を記録することは、Gem実装許可・実決済許可にはならない。**
