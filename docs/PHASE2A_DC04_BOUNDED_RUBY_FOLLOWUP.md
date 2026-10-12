@@ -104,3 +104,13 @@ A public-only synthetic replay archive with SHA256/byte-length manifest was uplo
 a pinned official Root JOSE `typ` check (P2); the signed wrong-kind test is
 included in this follow-up. A NEW latest-HEAD Codex review and an approved
 parent Issue #47 decision remain outstanding. This observation does not itself close Issue #54 or approve Phase 2-B.
+
+## Final PR #55 disposition (2026-10-13 JST; supersedes interim HOLD above)
+
+PR [#55](https://github.com/cuichangquan/ap2-mandate-verifier/pull/55) **merged** as main `14ec39bdbcebef2bb926fbc1fabfd1f117426ed4`; [Issue #54](https://github.com/cuichangquan/ap2-mandate-verifier/issues/54) **closed for the bounded DC04 experiment only**.
+
+The **final verified PR HEAD** was `db853500e10a31bd84e7d6d689d3e23ce4e4c369`. All seven scoped PR CI workflows passed, specifically [DC04 run #38267343136](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38267343136) with signed FULL `LIMITED_POSITIVE`, two genuine M0/S0 negatives `incomplete_disclosure: missing disclosure`, and signed unexpected path, decoy and incorrect Root kind rejected. Latest-HEAD Codex review completed on `db85350` without new unresolved P1/P2; three earlier findings were fixed with regression tests and all review threads resolved.
+
+The public-only replay archive (artifact ID `11754668981`, archive SHA256 `455b6588c85e956f457c6a89037cd98fec53977cbe22457b8c59835be0a7f64c`) expires on **2026-10-19 15:03:16 UTC**. The original P1-1 legacy resolver still rejects nested FULL and retains its original `RED_HOLD` diagnostic, while the opt-in candidate has only `LIMITED_DC04_OBSERVED`. This is **not a blanket security gate GO**.
+
+**Remaining:** [DC05 independent signed decoy gate](PHASE2A_DC05_OBSERVATION.md) is separate. Parent [Issue #47](https://github.com/cuichangquan/ap2-mandate-verifier/issues/47) stays OPEN; Phase 2-B, Gem, production Checkout/Host nonce-CAS/HC06/payments remain HOLD.
