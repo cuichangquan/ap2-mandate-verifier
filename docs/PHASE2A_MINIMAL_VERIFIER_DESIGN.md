@@ -39,15 +39,15 @@
 | `issuer_trust_profile` | **TRUSTED Host policy**。許可Issuer ID、kid→公開鍵、用途、ES256/P-256、rotation/有効期間（**有限not_after**）、固定発行・Disclosure layout、**不変なpolicy_version**。検証時のactive/非失効をHost正本で確認 | `untrusted_issuer` / `unsupported_profile` / `incomplete_context` |
 | `merchant_trust_profile` | **TRUSTED Host policy**。対象Merchant ID・Tenant、Merchant JWT署名の許可鍵/alg/rotation、鍵の**有限not_after**、**不変なpolicy_version**、検証時のactive/非失効状態 | `incomplete_context` / `invalid_checkout_signature` |
 | `signed_checkout_jwt_wire`, `checkout_ref` | **同じTRUSTED Host current checkout record正本**から取得。`checkout_ref = (tenant_id, checkout_id, checkout_version)`は必須の不変なsnapshot識別子で、**このrecordに実際に保存された原文JWT**との結合をHostが保証する（単なるAgent/Callerの自己申告IDは不可）。Verifierは元JWTのSHA-256を計算し、challenge recordのtenant/checkout id/versionとの一致を必ず検査。AのJWTとBのchallengeは拒否 | `incomplete_context` / `checkout_context_mismatch` / `checkout_jwt_mismatch` |
-| `merchant_id`, `expected_agent_key` | **TRUSTED Host** の取引・Agent identity文脈。初期profileでは**両方必須**。`expected_agent_key` はHostが当該Checkoutで承認した**公開鍵（または検証済み鍵thumbprint）**であり、Agentの名前文字列やpresentation中の自称鍵で代替しない。HostのAgent受入policyについても不変`policy_version`、有限`not_after`、検証時active/非失効状態が必要 | `incomplete_context` / `expected_agent_mismatch` |
-| `challenge_ref`, `challenge_checkout_ref`, `expected_audience`, `expected_nonce`, `challenge_expires_at` | **TRUSTED Host-issued challenge正本**。すべて必須。`challenge_ref` はHost永続レコードに一意・不変に結び付き、**`challenge_checkout_ref = (tenant_id,checkout_id,checkout_version)`**と期待aud/nonce、有効期限を事前解決する。**この`challenge_checkout_ref`とHost JWT正本の`checkout_ref`をVerifierが同一性検査**する。Agentが提示する自己申告値は使わない | `incomplete_context` / `checkout_context_mismatch` / `invalid_nonce` / `invalid_audience` / `invalid_time` |
+| `merchant_id`, `expected_agent_key`, `buyer_account_ref` | **TRUSTED Host** の取引・Agent identity文脈。初期profileでは**全て必須**。`expected_agent_key` はHostが当該Checkoutで承認した公開鍵（または検証済み鍵thumbprint）、`buyer_account_ref`はHostが当該取引に結び付けた**非機密の不変・opaque account参照**。Agent名やpresentation中の自称鍵/Buyerを代用しない。HostのAgent受入policyについても不変`policy_version`、有限`not_after`、検証時active/非失効状態が必要。Buyer/Accountの権利・同意そのものの確認はHostの別責務 | `incomplete_context` / `expected_agent_mismatch` / `buyer_context_mismatch` |
+| `challenge_ref`, `challenge_checkout_ref`, `challenge_agent_key_thumbprint`, `challenge_buyer_account_ref`, `expected_audience`, `expected_nonce`, `challenge_expires_at` | **TRUSTED Host-issued immutable challenge正本**。すべて必須。`challenge_ref` は永続レコードに一意・不変に結び付き、**`challenge_checkout_ref = (tenant_id,checkout_id,checkout_version)`**、**発行時に承認したAgent鍵thumbprint**、Host Buyer/Account opaque ref、期待aud/nonce、有効期限を事前解決する。Verifierは**challenge Agent鍵＝Host current `expected_agent_key`＝Issuer署名済Root `cnf.jwk`（鍵同一性）**、challenge Buyer ref＝Host current `buyer_account_ref`＝Checkout正本Buyer ref、challenge Checkout ref＝Host JWT正本Checkout refを全て検査する。Agentの自己申告値は使わない | `incomplete_context` / `checkout_context_mismatch` / `expected_agent_mismatch` / `buyer_context_mismatch` / `invalid_nonce` / `invalid_audience` / `invalid_time` |
 | `now`, `ttl_policy`, `resource_limits` | **TRUSTED Host** 時計、有限のroot age/skew、最大wire長・hop・Disclosure数・ネスト深度等 | `incomplete_context` / `invalid_time` / `resource_limit_exceeded` |
 | `constraint_policy` | **TRUSTED Host** が固定Issuer layoutに対して適用する許容Constraint型・shapeと評価/完全性ルール | `unsupported_profile` / `incomplete_disclosure` |
 
 - 未定値（具体的なTTL・バイト上限・鍵更新の有効ウィンドウ）は**未決としてHOLD**。無制限・暗黙のデフォルト・ネットワーク鍵自動取得は許可しない。
 - `expected_nonce` の**一致**と、Hostでの**一度限り消費**は別の保証。Hostは同一取引の再発行でもchallengeごとに**一意の`challenge_ref`**を使用し、別のnonceへ付け替えない。**Challenge正本とCheckout JWT正本のtenant/checkout/versionを一つのHost信頼snapshotとして関連付け、別々に取得した任意recordを組み合わせない**。関連付けの安全性はHost依存で、Verifierは提供された両正本参照の一致を必ず確認する。
 - 前処理の非信頼デコード結果は識別子探索の「候補」にだけ使える。Host登録のTrust policyで検証されるまでIssuer/Agent identityとして出力しない。
-- **Agent認可の追加不変条件:** RootのIssuer署名を検証した後、そのRootの`cnf.jwk`とHostが事前承認した`expected_agent_key`が同一の暗号鍵を表すことを**正規化した公開鍵パラメータ（kty/crv/x/yなど）または検証済みJWK thumbprintで厳密照合**する。JWK JSONの生文字列比較や`kid`/表示名だけの比較をしない。鍵が未設定、別鍵、比較不能なら`Rejection(expected_agent_mismatch/incomplete_context)`。Issuerが任意のAgentに発行した有効なMandateは、その事実だけで**このHostのCheckoutのAgent承認**を代替しない。
+- **Agent認可・challenge固定の追加不変条件:** RootのIssuer署名を検証した後、そのRootの`cnf.jwk`とHostが現在承認した`expected_agent_key`と**Hostのchallenge発行時に固定した`challenge_agent_key_thumbprint`**が**同一の暗号鍵**を表すことを、正規化公開鍵パラメータ/検証済みJWK thumbprintで厳密照合する。JWK JSONの生文字列や`kid`/表示名比較は不可。鍵が未設定、別鍵、比較不能なら`Rejection(expected_agent_mismatch/incomplete_context)`。**Host承認Agentが後から変わっても既発行challengeのAgentを勝手に書き換えず、別challengeを発行する。** Issuerが別Agentに発行した有効MandateではHostの当該challengeの承認にならない。`buyer_account_ref`もHost checkout正本とchallengeの間で必ず同一のopaque参照と確認するが、Buyerの実際の同意はHostが別に確認する。
 
 ## 3. 出力 — 必ず区別する
 
@@ -63,7 +63,8 @@ VerifiedEvidence (only after ALL supported gates pass):
   trusted_issuer_ref    Host policyに照合済みの参照
   verified_agent_key_ref Root cnf とTerminal署名に結び付いた鍵の参照
   checkout_binding:     { tenant_id, checkout_id, checkout_version,
-                          signed_checkout_jwt_sha256, host_challenge_ref }
+                          buyer_account_ref, signed_checkout_jwt_sha256,
+                          host_challenge_ref }
                         Host現在注文正本とHost challengeの同一取引対応、
                         実際に検証したHost正本JWT原文digestを束ねる（必須）
   trust_snapshot        { issuer_key_ref, issuer_policy_version,
@@ -72,7 +73,9 @@ VerifiedEvidence (only after ALL supported gates pass):
                         Hostが登録・検証時点で承認した鍵と方針の不変参照（必須）
   constraints_checked   検証済み・評価済み制約の安全な要約
   verified_challenge:    { host_challenge_ref, verified_audience,
-                           verified_nonce_sha256, verified_at }
+                           verified_nonce_sha256, verified_at,
+                           approved_agent_key_thumbprint,
+                           buyer_account_ref }
                          Hostで事前解決した一意・不変のchallenge参照と、
                          Terminal署名済みaud/nonceとの検証済み対応を必須出力
   valid_until           Root/Closed/Terminal・challenge・有限TTL・
@@ -86,16 +89,16 @@ Rejection:
   profile_ref           確定できるときのみ。機密payloadは返さない
 ```
 
-**不変条件:** `VerifiedEvidence` は署名・構造・制約を通過した**技術的証拠**であり、`approved`、`allow`、`authorized`、`payment_succeeded`、`nonce_consumed`、`not_revoked` を**含めない**。`verified_challenge` は**必須**であり、Hostの事前解決済み一意`challenge_ref`、署名検証済みTerminal `aud`、署名検証済みTerminal `nonce`のSHA-256 digest（公開ログにraw nonceを出さない）、信頼済み`now`由来の`verified_at`を含める。**`valid_until`も必須**。Issuer検証済みRootの`exp`、検証済みClosed内部・Terminalの`exp`（存在する場合）、Host challenge期限・Host指定の有限TTL/最大経過時間、**Host承認Issuer・Merchant・Agent鍵/信頼ポリシーの有効終了時刻`not_after`**から算出される**最も早いdeadline**を表す。`trust_snapshot` は、実際に検証に使ったHost承認鍵参照と、issuer/merchant/agentそれぞれの不変なtrust policy versionを必須出力とする。**`checkout_binding`も必須**。同じHost正本由来の`checkout_ref`とchallenge recordの`challenge_checkout_ref`が一致していることを検証した上で、実際に署名検証したJWT原文のSHA-256 digestと`host_challenge_ref`を固定して出力する。Issuer/Agentの自己申告checkout IDをHost IDとして出力しない。期限claimが省略可能ならHostの有限policyで上界を定め、それも不可能なら`Rejection(invalid_time/incomplete_context)`。検証時だけ期限内でも、Host処理時の有効性は保証せず**HostはCASで再判定**する。未認証nonce/Issuer claimや単なる任意文字列のchallenge refをそのまま証拠化しない。裸の `true` や「例外がなければ成功」は使わない。未知・内部障害・可視性不明は `Rejection`（または呼び出し自体HOLD）にする。理由と監査IDはサニタイズし、raw tokens / JWK秘密情報をログ・返却に混ぜない。
+**不変条件:** `VerifiedEvidence` は署名・構造・制約を通過した**技術的証拠**であり、`approved`、`allow`、`authorized`、`payment_succeeded`、`nonce_consumed`、`not_revoked` を**含めない**。`verified_challenge` は**必須**であり、Hostの事前解決済み一意`challenge_ref`、署名検証済みTerminal `aud`、署名検証済みTerminal `nonce`のSHA-256 digest（公開ログにraw nonceを出さない）、信頼済み`now`由来の`verified_at`、**Host challengeに発行時から固定された承認Agent鍵thumbprintとopaque Buyer/Account参照**を含める。Buyerの同意/本人性をここで証明したことにはならない。**`valid_until`も必須**。Issuer検証済みRootの`exp`、検証済みClosed内部・Terminalの`exp`（存在する場合）、Host challenge期限・Host指定の有限TTL/最大経過時間、**Host承認Issuer・Merchant・Agent鍵/信頼ポリシーの有効終了時刻`not_after`**から算出される**最も早いdeadline**を表す。`trust_snapshot` は、実際に検証に使ったHost承認鍵参照と、issuer/merchant/agentそれぞれの不変なtrust policy versionを必須出力とする。**`checkout_binding`も必須**。同じHost正本由来の`checkout_ref`とchallenge recordの`challenge_checkout_ref`が一致していることを検証した上で、実際に署名検証したJWT原文のSHA-256 digestと`host_challenge_ref`を固定して出力する。Issuer/Agentの自己申告checkout IDをHost IDとして出力しない。期限claimが省略可能ならHostの有限policyで上界を定め、それも不可能なら`Rejection(invalid_time/incomplete_context)`。検証時だけ期限内でも、Host処理時の有効性は保証せず**HostはCASで再判定**する。未認証nonce/Issuer claimや単なる任意文字列のchallenge refをそのまま証拠化しない。裸の `true` や「例外がなければ成功」は使わない。未知・内部障害・可視性不明は `Rejection`（または呼び出し自体HOLD）にする。理由と監査IDはサニタイズし、raw tokens / JWK秘密情報をログ・返却に混ぜない。
 
 ## 4. 検証順序とFail Closed decision table
 
 順番（設計案）:
 1. **pre-auth / unambiguous signed bytes** wireサイズ・構文/深さ/要素数上限・hop数をチェックし、**Root、Terminal、Merchantの各JWS protected JOSE headerおよび署名済みpayload（ネストしたMerchantオブジェクトも）、SD-JWT disclosuresなど全てのJSONを元の署名対象byte表現から重複キー拒否の厳格parserで解析**する。JSON escape後に同じキーとなる表記も重複として拒否。署名済みpayloadやheaderを再直列化して署名入力を変えない。`alg`重複・`merchant.id`重複・不正UTF-8/JSON/非対応headerがあれば**crypto/Schema成功前に拒否**。JOSEは各署名主体に対するHost許可`alg`/`typ`/鍵種別/曲線/用途を厳格照合し、`none`、未知`crit`、`b64=false`等非対応仕様、自己申告`jwk`/`jku`/`x5u`によるTrust昇格を拒否。**未署名claimに基づくTrustの確立は禁止**。上記は研究時にN01/N02限定修正があったものの、全JOSE/JSONの網羅を実証済みとはしない。
-2. **Trust + crypto + Host Agent binding** Hostの許可Issuer鍵でRoot署名、Disclosures digest、Root署名済み`cnf.jwk` とTerminal署名/PoP、`sd_hash` を元wireに対して照合。**Issuer/Merchant/Agentの各Host信頼ポリシーが検証時active・非失効であること、各鍵/方針の有限`not_after`と不変`policy_version`が取得できることを必須**とし、実際に使用した許可鍵とpolicy versionを`trust_snapshot`に記録する。**さらにその検証済みRoot `cnf.jwk` とHost事前承認`expected_agent_key`の暗号鍵同一性を必ず比較し、不一致なら `expected_agent_mismatch` で拒否。** Root→TerminalのPoPだけではHostが当該Agentを許可した証明にならない。root/terminal JWSどちらかだけで成功しない。
+2. **Trust + crypto + Host Agent binding** Hostの許可Issuer鍵でRoot署名、Disclosures digest、Root署名済み`cnf.jwk` とTerminal署名/PoP、`sd_hash` を元wireに対して照合。**Issuer/Merchant/Agentの各Host信頼ポリシーが検証時active・非失効であること、各鍵/方針の有限`not_after`と不変`policy_version`が取得できることを必須**とし、実際に使用した許可鍵とpolicy versionを`trust_snapshot`に記録する。**検証済みRoot `cnf.jwk` とHostの`expected_agent_key`とHost challenge発行時固定`challenge_agent_key_thumbprint`の三者で暗号鍵同一性を必ず比較し、不一致なら `expected_agent_mismatch`で拒否。** Root→TerminalのPoPだけではHostが当該challengeのAgentを許可した証明にならない。root/terminal JWSどちらかだけで成功しない。
 3. **Claims + schema + challenge evidence** 認証済みOpen/Closedの `vct`、**Root・Closed内部・Terminal各層の署名済み時刻/有効期限**、Open→Closed保持、Host `aud`/`nonce` を確認。**必須のHost `challenge_ref` がそのCheckoutの永続正本に紐付くことをHost入力契約として要求し、実際に一致確認したTerminal `aud`/`nonce`に基づく`verified_challenge`だけを成功時のEvidenceへ載せる**。さらに認証済み期限、Hostが指定したchallenge/TTL期限、**検証に使ったIssuer/Merchant/Agent trust policyおよび鍵の`not_after`**の**最短値を必須`valid_until`として返す**。Issuer/Merchant/Agent鍵の方針が有効か、有限期限上界やversionが不明ならEvidence禁止。公式 pinned Open/Closed/Merchant JSON Schemaの対応する**全ての必要な型・必須・形状制約**と、より狭い本OSSの形状ポリシーを別々に適用する。
 4. **Completeness + constraints** 固定Issuer layoutで権限制約が完全に見えると証明し、全Constraintを意味評価。未知/非開示/型逸脱/数量・商品・Merchant不一致で拒否。
-5. **Checkout + Host challenge binding** Host正本JWTのMerchant署名を検証し、Closed内の `checkout_jwt` 原文と一致、`checkout_hash` をJWT**フィールド値**のハッシュとして独立再計算（当初sha-256のみ）。**Hostが正本として提供したJWT recordのtenant/checkout ID/versionと、独立のHost challenge recordが指すtenant/checkout ID/versionが一致しなければ`checkout_context_mismatch`で拒否**（誤って異なる注文の有効JWTを渡しても通さない）。**実際に検証したHost JWT原文SHA-256＋一致したcheckout_id/version＋challenge_refを`checkout_binding`として必須出力**する。Hostがrecord↔JWTの出所対応を示せず曖昧な場合はSTOP。署名確認とhash比較を混同しない。
+5. **Checkout + Host challenge binding** Host正本JWTのMerchant署名を検証し、Closed内の `checkout_jwt` 原文と一致、`checkout_hash` をJWT**フィールド値**のハッシュとして独立再計算（当初sha-256のみ）。**Hostが正本として提供したJWT recordのtenant/checkout ID/versionと、独立のHost challenge recordが指すtenant/checkout ID/versionが一致しなければ`checkout_context_mismatch`で拒否**（誤って異なる注文の有効JWTを渡しても通さない）。**実際に検証したHost JWT原文SHA-256＋一致したcheckout_id/version＋challenge_refを`checkout_binding`として必須出力**する。Hostがrecord↔JWTの出所対応を示せず曖昧な場合、または**Host challengeのBuyer/Account refとCheckout正本Buyer/Account refが不一致/未確定ならSTOP**。署名確認とhash比較を混同しない。
 6. **全ゲート成功**でのみEvidence。これでも最終許可ではない。
 
 | ID | 観測/入力条件 | Verifier結果案 | 根拠・境界 |
@@ -104,7 +107,8 @@ Rejection:
 | D01A | **署名VALID**でもRoot/Terminal/Merchant JWS protected headerの`alg`二重定義、Merchant payloadの`merchant.id`二重定義、SD-JWT disclosureのネストJSON重複、不正/非対応JOSE header | `Rejection(ambiguous_signed_json/unsupported_jose_header)` | N01/N02歴史的回帰を維持。署名の正当性は曖昧なJSON受理を正当化しない |
 | D02 | Issuer不明、自己申告 `kid`/`x5c` だけ、Key/alg違い | `Rejection(untrusted_issuer/invalid_signature)` | Root trust |
 | D03 | Agent PoP・`cnf`・Disclosure digest・`sd_hash` 不整合、3hop | `Rejection(invalid_chain_binding/unsupported_profile)` | 厳格2hop |
-| D03A | **Issuer署名とRoot→Terminal PoPがVALID**だが、Rootの検証済み`cnf.jwk`がHostの`expected_agent_key`と違う、またはHost期待鍵がない | `Rejection(expected_agent_mismatch/incomplete_context)` | **Hostが承認したAgent鍵との必須一致**。Issuer署名済み別Agentは承認Agentではない |
+| D03A | **Issuer署名とRoot→Terminal PoPがVALID**だが、Root `cnf.jwk`、Host `expected_agent_key`、発行時challenge `challenge_agent_key_thumbprint`のどれかが異なる、またはHost期待鍵がない | `Rejection(expected_agent_mismatch/incomplete_context)` | **challengeで承認したAgent鍵との三者必須一致**。Issuer署名済み別Agentは承認Agentではない |
+| D03B | 発行時challengeのBuyer/Account refがHost checkout正本または実行時のHost account refと異なる/不明（署名・nonceはVALID） | `Rejection(buyer_context_mismatch/incomplete_context)` または遅延後なら**Host CAS STOP** | Host Buyer/Accountの取り違えを防止。Buyerの同意・資格判定そのものはHost |
 | D04 | Terminal `aud`/`nonce` 欠落・不一致、Root/Closed/Terminal/鍵Trust期限外、または有限の`valid_until`を決められない | `Rejection(invalid_audience/invalid_nonce/invalid_time/incomplete_context)` | Host-issued期待値、Replay消費は別。**署名・Host鍵方針・challenge全ての有効期限を必須化** |
 | D05 | **署名VALID**でもRequirement `id:123`（S01）、Merchant `name:123`（S02）、nullや必須欠落 | `Rejection(invalid_schema_type)` | 公式SchemaのString要求。**S01限定修正は実測、S02は未実測** |
 | D06 | **署名VALID**でも許可済みConstraint内に `policy_override` 等未知のネストキー（GP01） | `Rejection(unsupported_constraint_shape)` | 本OSS strict keys。GP01限定実測済み |
@@ -125,8 +129,8 @@ Rejection:
 | --- | --- |
 | Host登録TrustでRoot/Agent/Merchant署名、Disclosureと鍵binding検証 | Trusted Issuer/Agent/Merchant鍵の登録、使用用途、rotation、失効時の入力方針 |
 | 公式Schemaと厳格Profile型・完全開示・制約評価、全ての署名付きJSONの重複key・JOSE header厳格拒否 | 認証済みBuyer/Account/Tenant、Agent資格とConsentの成立確認 |
-| Host提供aud/nonce/署名済みMandate各層の時刻・期限を評価し、**必須のverified_challengeと`valid_until`を返却** | Challengeの一意・不変な発行/永続管理。Evidenceの`host_challenge_ref`、`verified_audience`、`verified_nonce_sha256`が**現行永続challenge正本/tenant/Checkout版と一致**することをHostがCASと同じ安全境界で再確認する。同時に**Hostの信頼時計でCAS現在時刻 `< valid_until`**と最新challenge期限を再判定し、**Issuer/Merchant/Agent全てのtrust_snapshot鍵参照・policy_versionをHost現在の信頼正本へ再解決してactive/非失効/期限内・版一致を確認**する（回転/失効/版変化/Authority不確実ならSTOP・再検証。古いpolicyを自動承認しない）。その上でnonceを**原子的に一度だけ消費**、Checkout状態CAS。古いEvidenceや期限切れEvidenceを使い回してはならない |
-| Host正本JWTの署名/原文/hashを照合し、**Host checkout_refとHost challenge_checkout_refの一致、および必須checkout_bindingの作成** | **最新注文正本**の版・在庫・価格・支払方法・リスク・注文実行の判断。Host CASでは**Evidence.checkout_bindingのtenant/checkout ID/versionを現在の注文とchallengeの両正本に照合し、Evidence中の`signed_checkout_jwt_sha256`を現在保存している署名済JWT**原文から再計算したdigestと原子的に比較**。どれか違えばnonceを消費せずSTOP。JWT差し替え/古い版/別注文を許可しない |
+| Host提供aud/nonce/署名済みMandate各層の時刻・期限を評価し、**必須のverified_challengeと`valid_until`を返却** | Challengeの一意・不変な発行/永続管理。Evidenceの`host_challenge_ref`、`verified_audience`、`verified_nonce_sha256`、**`approved_agent_key_thumbprint`、`buyer_account_ref`**が**現行永続challenge正本/tenant/Checkout版/承認Agent鍵/Buyer account**と一致することをHostがCASと同じ安全境界で再確認する。Host current `expected_agent_key`・agent policy・checkout buyer/account refとも再照合し、発行時Agent/Buyerの差し替えならSTOPする。同時に**Hostの信頼時計でCAS現在時刻 `< valid_until`**と最新challenge期限を再判定し、**Issuer/Merchant/Agent全てのtrust_snapshot鍵参照・policy_versionをHost現在の信頼正本へ再解決してactive/非失効/期限内・版一致を確認**する（回転/失効/版変化/Authority不確実ならSTOP・再検証。古いpolicyを自動承認しない）。その上でnonceを**原子的に一度だけ消費**、Checkout状態CAS。古いEvidenceや期限切れEvidenceを使い回してはならない |
+| Host正本JWTの署名/原文/hashを照合し、**Host checkout_refとHost challenge_checkout_refの一致、および必須checkout_bindingの作成** | **最新注文正本**の版・在庫・価格・支払方法・リスク・注文実行の判断。Host CASでは**Evidence.checkout_bindingのtenant/checkout ID/version/buyer_account_refを現在の注文とchallengeの両正本に照合し、Evidence中の`signed_checkout_jwt_sha256`を現在保存している署名済JWT原文から再計算したdigestと原子的に比較**する。どれか違えばnonceを消費せずSTOP。JWT差し替え/古い版/別注文を許可しない |
 | `VerifiedEvidence` / `Rejection` のサニタイズ返却 | 外部失効Authorityとの別契約、UNKNOWNならSTOP、永続operation/idempotency/outbox/回復 |
 | DB/ネットワーク/Payment/Receipt処理は**しない** | Provider実行判断、Receiptの正しい署名/記録/送信、障害時に成功を偽装しない |
 
@@ -156,18 +160,20 @@ VerifierがEvidenceを返してもHost ALLOWは**必ず独立**しており、Ho
 | A16 | T0時点でHost trust policy versionsとIssuer/Merchant/Agent鍵がactiveな正署名CheckoutはEvidenceを返すが、T1のHost CAS前に同じ鍵が失効・ローテーション等でHost正本のpolicy_versionや有効状態が変わった | **Host CASはSTOP/再検証**。Evidence`trust_snapshot`の全鍵ref/versionを現行Host Trust正本に再解決し、同一versionかつactive・非失効・期限内の場合だけ後段業務判定へ進む。期限の未到達だけでは失効の保証にならない |
 | A17 | **Hostで別々に正当に署名・保存されたCheckout A/BのJWTを準備**し、Host challengeはBのtenant/id/version/nonceに紐付き、VerifierへはAのcurrent signed JWT recordを渡す。AのJWS/hash/Constraintsは正しく再署名・整合 | **Verifierは`checkout_context_mismatch`でREJECT**。両JWTの署名VALIDでもHost challenge↔JWT record sourceのtenant/id/versionが違うため成功Evidenceは禁止。独立Host正本参照オラクルが必要 |
 | A18 | T0で正署名JWTとHost challengeが同一Checkout ID/versionでEvidenceを生成。T1のCAS直前にHostが同一CheckoutのJWT内容/版を更新、または別recordのJWTに差し替えた | **Host CASはSTOP**。`checkout_binding`のchallenge_ref、tenant/id/version、signed JWT digestをHost現行のchallenge/Checkout両正本と**原子的に比較**し、nonce消費前に不一致を拒否。署名自体がVALIDでも古い証拠は無効 |
+| A19 | **同じcheckoutにAgent A/B両方が登録**され、challengeは発行時Agent A鍵に固定。Hostの後続`expected_agent_key`がAgent Bへ変わり、IssuerはBの鍵でVALID Rootを再署名、BがClosedを署名。checkout/nonce/時刻/署名/hashは全て整合 | **`Rejection(expected_agent_mismatch)`**。challenge固定Agent Aの鍵thumbprintとHost B鍵/Root `cnf.jwk`が違うため、別Agentの有効署名では旧nonce使用不可。Host CASでもchallenge agent ref照合でSTOP |
+| A20 | 発行時challengeはHost Buyer/Account A、現在のHost checkout/実行AccountはBへ変更（別々に署名VALID、同じcheckout ID/versionなどその他は整合） | **`Rejection(buyer_context_mismatch)` またはHost CAS STOP**。challengeのopaque Buyer/Account IDをEvidenceに固定し、Host保存Checkout・現行Accountに一致しなければnonce消費不可。VerifierはBuyer同意の証明を返さない |
 
 必要な最低限の証拠: fixture生成時の**非本番の独立署名真正性**、pinned公式SchemaのVALID/INVALID、Rubyの正確なREJECT/Evidence、negativeの攻撃種別、出力が業務ALLOWでないこと、GitHub Actionsが実行された場合のみ具体的なrun URL。**観測した「危険ACCEPT」によるテストGREENを安全成功と呼ばない。** プライベート署名鍵はcommitしない。
 
 ## 7. Review gate / 次に進める条件
 
 - [ ] Root発行profileと**Disclosure完全性を独立判定できる契約**をレビューし、デコイ・未知Issuerと混同しない。
-- [ ] `TrustedInputs` の出所・必須性・欠落時拒否と、固定2hop/Direct非対応を承認。特に**Host承認Agent鍵と検証済みRoot `cnf.jwk`の一致**、A12別Agent有効署名負例のオラクルを確認。
+- [ ] `TrustedInputs` の出所・必須性・欠落時拒否と、固定2hop/Direct非対応を承認。特に**challenge発行時Agent鍵＝Host期待Agent鍵＝検証済みRoot `cnf.jwk`の三者一致**、challenge/checkout/Host Buyer Account参照一致、A12/A19/A20の負例を確認。
 - [ ] Evidenceにauthorization文言が入らず、失敗に成功fallbackがないこと、**検証したHost challenge_ref/aud/nonce digest/verified_at、全Issuer/Merchant/Agent信頼鍵refとpolicy_version、checkout id/version/JWT digest/challenge refの`checkout_binding`、最短deadlineの`valid_until`が必須**で、別nonce/別注文/JWT変更/鍵失効/版変更/期限切れ時はHost CASが必ずSTOPすることを確認。
 - [ ] Root/Terminal/Merchant/Disclosureの全JSONに対する重複キー拒否と、JOSE `alg`/`typ`/`crit`/許可鍵ポリシーのstrict parse/拒否（N01/N02回帰）を確認。
 - [ ] 公式JSON Schemaの型/必須とローカルstrictキー制限（S01/S02、GP01、optional `website`）を区別。
 - [ ] Host最終ALLOW/nonce CAS/注文・失効/Receiptとの責任境界、およびHC06 HOLDを確認。
-- [ ] A01–A18の各オラクル・今後の負例実行範囲、TTL/上限の未定事項を合意.
+- [ ] A01–A20の各オラクル・今後の負例実行範囲、TTL/上限の未定事項を合意.
 - [ ] 以上の未解決点を記録した上で、**別の明示的なPhase 2-B PoC GO/HOLD判断**を行う。**設計PRのマージだけでは実装開始しない**。
 
 **今回の判定:** `PROPOSED / DESIGN ONLY`。新たなテストは `NOT RUN`、Ruby Gem/API/本番は `HOLD`、実決済・外部HC06の強い安全保証は `NO-GO`。
