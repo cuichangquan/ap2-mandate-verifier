@@ -46,7 +46,7 @@ def verify_pinned_checkout_before_import():
 
     def raw_git_blob_sha1(file_path):
         content = file_path.read_bytes()
-        prefix = f"blob {len(content)}\\0".encode("ascii")
+        prefix = f"blob {len(content)}".encode("ascii") + bytes([0])
         return hashlib.sha1(prefix + content).hexdigest()
 
     # Direct raw-byte hashing: no Git attributes / smudge / clean filters.
@@ -65,10 +65,10 @@ def verify_pinned_checkout_before_import():
     # ls-tree reads the immutable pinned COMMIT tree, not the mutable index.
     tree = subprocess.check_output([*git, "ls-tree", "-r", "-z", SHA, "--", sdk_tree])
     expected_files = {}
-    for row in tree.split(b"\\0"):
+    for row in tree.split(bytes([0])):
         if not row:
             continue
-        metadata, separator, raw_name = row.partition(b"\\t")
+        metadata, separator, raw_name = row.partition(bytes([9]))
         fields = metadata.split()
         if not separator or len(fields) != 3 or fields[1] != b"blob":
             raise RuntimeError("Unexpected entry in pinned AP2 Python SDK tree")
