@@ -56,6 +56,6 @@ fi
 
 - **Ruby研究Verifierの一箇所のみ**修正。P1-10tの歴史的危険受理観測は維持。S02（Merchant name String）・S03〜S08・一般Schema・一般Issuer・未知/未開示Constraint・replayはこの修正対象外。
 - Host canonical **9/34実測・25 NOT RUN**、Authority→Host C01〜C12 UNKNOWN、HC06 **HOLD**。
-- GitHub Actionsは本PRで**NOT RUN**。先行P1-10t workflow追加がplatform safety checkで拒否された経緯を迂回しない。**CIを実行したという主張をしない**。
+- PR #42で自動起動した**既存GitHub Actions 3件**は成功：[P1-10o（#38225024091）](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38225024091)、[P1-10q（#38225023906）](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38225023906)、[P1-10r（#38225023980）](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38225023980)。**今回新規のP1-10u signed S01 + signed positive 2件はこれらのCIで実行されていない／NOT RUN**。先行P1-10t workflow追加がplatform safety checkで拒否された経緯を迂回しない。既存CIの成功をS01対策の成功と混同しない。
 - Gem/API/本番統合 **HOLD**、RubyGems公開・実決済・Receipt **NO-GO**。
 - Docker結果・Codexレビュー・PR差分を確認するまで**マージしない**。
