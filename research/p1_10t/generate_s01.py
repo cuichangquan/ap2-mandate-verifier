@@ -28,8 +28,14 @@ def verify_pinned_checkout_before_import():
     open_schema_path = upstream / "code/sdk/schemas/ap2/open_checkout_mandate.json"
     merchant_schema_path = upstream / "code/sdk/schemas/ap2/types/merchant.json"
 
+    # Never run Git with checkout-local fsmonitor hooks or external diff tools.
+    # These command-line overrides take precedence over the checkout's .git/config.
+    git = [
+        "git", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null",
+        "-c", "diff.external=", "-C", str(upstream),
+    ]
     checkout_sha = subprocess.check_output(
-        ["git", "-C", str(upstream), "rev-parse", "HEAD"], text=True,
+        [*git, "rev-parse", "HEAD"], text=True,
     ).strip()
     if checkout_sha != SHA:
         raise RuntimeError("AP2 source checkout is not the fixed v0.2.0 commit")
@@ -39,7 +45,7 @@ def verify_pinned_checkout_before_import():
     }
     for path, expected_blob in expected_blobs.items():
         actual_blob = subprocess.check_output(
-            ["git", "-C", str(upstream), "hash-object", str(path)], text=True,
+            [*git, "hash-object", str(path)], text=True,
         ).strip()
         if actual_blob != expected_blob:
             raise RuntimeError(f"AP2 official schema bytes changed: {path}")
@@ -47,20 +53,35 @@ def verify_pinned_checkout_before_import():
     # Check the entire imported SDK tree, not just the main module's path.
     sdk_tree = "code/sdk/python"
     sdk_diff = subprocess.run(
-        ["git", "-C", str(upstream), "diff", "--quiet", "HEAD", "--", sdk_tree],
+        [*git, "diff", "--no-ext-diff", "--no-textconv", "--quiet", "HEAD", "--", sdk_tree],
         capture_output=True, text=True, check=False,
     )
     if sdk_diff.returncode != 0:
         raise RuntimeError("AP2 Python SDK tracked sources differ from pinned commit")
-    # Do NOT use --exclude-standard here. Python can import files hidden by
-    # .gitignore, .git/info/exclude, or a global excludesfile.
-    # Enumerate *all* untracked source names, including ignored directories.
+    # No --exclude-standard: ignored code, bytecode, extension modules and
+    # directory symlinks can be imported when SDK_ROOT is placed on sys.path.
+    # Reject EVERY untracked SDK artifact except ordinary pip editable-install
+    # metadata under a root-level *.egg-info directory (never importable).
     sdk_untracked = subprocess.check_output(
-        ["git", "-C", str(upstream), "ls-files", "--others", "--", sdk_tree],
-        text=True,
+        [*git, "ls-files", "--others", "--", sdk_tree], text=True,
     ).splitlines()
-    if any(path.endswith(".py") for path in sdk_untracked):
-        raise RuntimeError("AP2 Python SDK contains untracked or ignored Python source files")
+
+    def allowed_editable_metadata(path):
+        relative = Path(path).relative_to(Path(sdk_tree))
+        parts = relative.parts
+        if len(parts) != 2 or not parts[0].endswith(".egg-info"):
+            return False
+        filename = parts[1]
+        return filename in {"PKG-INFO", "SOURCES.txt", "dependency_links.txt",
+                            "requires.txt", "top_level.txt", "entry_points.txt",
+                            "direct_url.json", "not-zip-safe", "zip-safe"}
+
+    unexpected = [path for path in sdk_untracked if not allowed_editable_metadata(path)]
+    if unexpected:
+        raise RuntimeError(
+            "AP2 Python SDK contains untracked or ignored importable/unknown artifacts "
+            "(including bytecode, extensions or symlinks); use a clean pinned SDK tree"
+        )
 
     expected_mandate = upstream / "code/sdk/python/ap2/sdk/mandate.py"
     if not expected_mandate.is_file():
