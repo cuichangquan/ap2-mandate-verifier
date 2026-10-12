@@ -106,7 +106,8 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [S01 Signed Requirement ID Type Mismatch — P1-10t: latest corrected observer local Docker signature VALID, official Schema INVALID, Ruby ACCEPT / RED-HOLD (1 run / 6 assertions; earlier 1/7 historical; no CI)](docs/VERIFIER_P110T_S01_PREPARED_NOT_RUN.md)
 - [P1-10u signed S01 String type check + separate signed positive regression — PR #42, Mac Docker 2 runs / 12 assertions / 0 failures: signed S01 exact-type REJECT and known-good evidence-only ACCEPT; dedicated CI NOT RUN, general Gem/production HOLD](docs/VERIFIER_P110U_S01_TYPE_FIX_PREPARED_NOT_RUN.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
-- [Current next steps / new-chat handoff — P1-10t local RED evidence and proposed S01-only P1-10u fix (Japanese)](docs/VERIFIER_P110T_S01_PREPARED_NOT_RUN.md#5-新チャット引き継ぎ次の作業2026-10-12)
+- [Current P1-10u verification evidence and post-test merge gate — signed S01 type REJECT, signed positive ACCEPT, user Docker 2/12 (Japanese)](docs/VERIFIER_P110U_S01_TYPE_FIX_PREPARED_NOT_RUN.md)
+- [Historical P1-10t new-chat handoff — proposes P1-10u and is now superseded; do not rerun as current instructions](docs/VERIFIER_P110T_S01_PREPARED_NOT_RUN.md#5-新チャット引き継ぎ次の作業2026-10-12)
 - [Historical project-wide handoff — Japanese (P1-10r era; P1-10s next-task text not yet updated)](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)
 
