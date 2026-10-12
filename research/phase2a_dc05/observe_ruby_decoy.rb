@@ -66,7 +66,7 @@ raise "wrong negative reason: #{negative}" unless negative.fetch(:reason).match?
 )
 raise "incorrect Ruby rejection origin" unless
   negative.fetch(:origin).fetch(:file) == "fixed_issuer_verifier.rb" &&
-  %w[verify_signed_payload! walk!].include?(negative.fetch(:origin).fetch(:method))
+  %w[verify_signed_payload! walk! exact_keys_subset!].include?(negative.fetch(:origin).fetch(:method))
 
 # The independent Python oracle will establish signing and exact unresolved
 # digest paths. This Ruby rejection by itself is NEVER the decoy safety proof.
