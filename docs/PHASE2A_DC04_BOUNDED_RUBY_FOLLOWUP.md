@@ -13,7 +13,11 @@ not a successful hidden-constraint negative.
 This change introduces `research/phase2a_dc04/fixed_issuer_verifier.rb`, an
 **opt-in exact-shape experiment**. P1-1 remains unchanged. The P1-2 / P1-3
 offline verification modules accept *only* the original P1-1 resolver or the
-named DC04 candidate, never arbitrary injected resolvers. They continue to
+named DC04 candidate, never arbitrary injected resolvers. Comparisons use
+`TrustedModule.equal?(caller_resolver)`: calling `caller_resolver.equal?`
+instead would allow a malicious resolver object to spoof trust and skip
+Issuer verification (P1 identified by Codex and addressed with an explicit
+spoofed-`equal?` negative). They continue to
 check holder key, Terminal signature / `sd_hash` / aud / nonce / time and
 signed Merchant Checkout JWT / Host amount, while the DC04 candidate checks
 the issuer's Root signature and disclosure graph.
@@ -54,6 +58,10 @@ Terminal signatures. The follow-up also produces:
   fully disclosed Open claims remain identical.
 - A **genuinely signed issuer decoy** with the pinned official SDK's
   `add_decoy_claims=True` option. The candidate must not ignore it.
+- A **genuinely Issuer-signed wrong Root JOSE type**, minted through the pinned
+  SDK issuer primitive with `typ=kb+sd-jwt` rather than the genuine official
+  Root `typ=example+sd-jwt`. Matching signed authority alone cannot turn
+  a Terminal-kind token into an accepted Root.
 - Locally mutated duplicate/empty/tampered disclosures and JWS, wrong Issuer,
   Agent, `sd_hash` presentation and Host checkout; these are **not** counted
   as genuine signed missing-constraint evidence.
@@ -92,4 +100,7 @@ Python's independent signed-wire O1–O4, actual per-presentation official Schem
 
 Research candidate gate for this HEAD: `LIMITED_DC04_OBSERVED`.
 Legacy gate remains `RED_HOLD`; there is **no blanket security gate GO**.
-A public-only synthetic replay archive with SHA256/byte-length manifest was uploaded as the 7-day Actions artifact. Both review of the **latest PR HEAD** and an approved parent Issue #47 decision remain outstanding. This observation does not itself close Issue #54 or approve Phase 2-B.
+A public-only synthetic replay archive with SHA256/byte-length manifest was uploaded as the 7-day Actions artifact. Codex's first review on an older commit also identified and motivated
+a pinned official Root JOSE `typ` check (P2); the signed wrong-kind test is
+included in this follow-up. A NEW latest-HEAD Codex review and an approved
+parent Issue #47 decision remain outstanding. This observation does not itself close Issue #54 or approve Phase 2-B.
