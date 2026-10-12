@@ -183,6 +183,27 @@ def observe(f, schema_path, merchant_schema_path):
         root, terminal = f["roots"][name], f["terminals"][name]
         root_jws, disclosures = segments(root)
         issuer_claims = jws_payload(root_jws, f["trusted_issuer_public_jwk"])
+        # Authenticate the disclosed Open wrapper against its *signed* array
+        # digest, then check that this issuer-endorsed holder key is exactly
+        # the separately pinned Host Agent key. Not merely a passing Agent JWS.
+        decoded_disclosures = [
+            (d, strict_json(decode64(d))) for d in disclosures
+        ]
+        disclosed_open = [
+            (d, decoded[1]) for d, decoded in decoded_disclosures
+            if isinstance(decoded, list) and len(decoded) == 2 and
+            isinstance(decoded[1], dict) and
+            decoded[1].get("vct") == "mandate.checkout.open.1"
+        ]
+        require(len(disclosed_open) == 1, "missing/duplicate signed Open disclosure")
+        open_wire, signed_open = disclosed_open[0]
+        require(issuer_claims.get("delegate_payload") and
+                len(issuer_claims["delegate_payload"]) == 1 and
+                issuer_claims["delegate_payload"][0] == {
+                    "...": b64url(hashlib.sha256(open_wire.encode("ascii")).digest())
+                }, "disclosed Open is not bound to Issuer-signed placeholder")
+        require(signed_open["cnf"]["jwk"] == f["expected_agent_public_jwk"],
+                "Terminal signer not bound to Issuer-endorsed Agent public key")
         header = strict_json(decode64(root_jws.split(".")[0]))
         require(header.get("alg") == "ES256" and header.get("typ") == "example+sd-jwt",
                 "Root JOSE signed profile mismatch")
@@ -219,6 +240,20 @@ def observe(f, schema_path, merchant_schema_path):
             require(reason == "incomplete_disclosure: signed commitment not disclosed",
                     "signed missing field did not cause independent incomplete-disclosure")
             signed_path = "$/delegate_payload/0/disclosed/constraints/1/_sd"
+            # Independently match the ONE withheld object-property disclosure
+            # to the actual signed nested _sd digest, rather than accepting
+            # any unrelated incomplete disclosure as a DC06 negative.
+            full_disclosures = segments(f["roots"]["signed_nested_sd_full"])[1]
+            future = [
+                part for part in full_disclosures
+                if (lambda obj: isinstance(obj, list) and len(obj) == 3
+                    and obj[1] == UNKNOWN_KEY)(strict_json(decode64(part)))
+            ]
+            require(len(future) == 1, "no unique issuer-signed future field")
+            hidden_digest = b64url(hashlib.sha256(future[0].encode("ascii")).digest())
+            require(hidden_digest == f["hidden_authority_disclosure_sha256"] and
+                    hidden_digest in signed_open["constraints"][1]["_sd"] and
+                    future[0] not in disclosures, "wrong nested signed digest withheld")
             # Official presented schema must be obtained from the real partial
             # presentation instead of pre-filling the missing signed value.
             from jwcrypto.jwk import JWK
