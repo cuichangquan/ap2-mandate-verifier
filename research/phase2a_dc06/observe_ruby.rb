@@ -57,7 +57,7 @@ terminals = f.fetch("terminals")
 expected = {
   "signed_root_sibling" => ["unsupported signed JOSE/Root claims", "exact_keys_subset!"],
   "signed_nested_unknown" => ["unsupported fixed-Issuer signed claim layout", "exact_keys!"],
-  "signed_nested_sd_full" => ["unsupported object SD/decoy or misplaced marker", "walk!"],
+  "signed_nested_sd_full" => ["unsupported non-array disclosure", "verify_signed_payload!"],
   "signed_nested_sd_hidden" => ["unsupported object SD/decoy or misplaced marker", "walk!"]
 }
 raise "DC06 fixture variants mismatch" unless roots.keys.sort ==
