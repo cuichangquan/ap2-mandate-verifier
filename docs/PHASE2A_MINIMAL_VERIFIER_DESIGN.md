@@ -39,7 +39,7 @@
 | `issuer_trust_profile` | **TRUSTED Host policy**。許可Issuer ID、kid→公開鍵、用途、ES256/P-256、rotation/有効期間、固定発行・Disclosure layout、version | `untrusted_issuer` / `unsupported_profile` |
 | `merchant_trust_profile` | **TRUSTED Host policy**。対象Merchant ID・Tenant、Merchant JWT署名の許可鍵/alg/rotation | `incomplete_context` / `invalid_checkout_signature` |
 | `signed_checkout_jwt_wire` | **TRUSTED Host current checkout record** から取得。Agentが自称する値を正本にしない | `incomplete_context` / `checkout_jwt_mismatch` |
-| `merchant_id`, `expected_agent_key` | **TRUSTED Host** の取引・Agent identity文脈。Agent識別子の文字列だけで鍵承認を代替しない | `incomplete_context` / `expected_agent_mismatch` |
+| `merchant_id`, `expected_agent_key` | **TRUSTED Host** の取引・Agent identity文脈。初期profileでは**両方必須**。`expected_agent_key` はHostが当該Checkoutで承認した**公開鍵（または検証済み鍵thumbprint）**であり、Agentの名前文字列やpresentation中の自称鍵で代替しない | `incomplete_context` / `expected_agent_mismatch` |
 | `expected_audience`, `expected_nonce` | **TRUSTED Host-issued challenge**。非空、取引に紐付き、発行・期限状態をHostが保持 | `incomplete_context` / `invalid_nonce` / `invalid_audience` |
 | `now`, `ttl_policy`, `resource_limits` | **TRUSTED Host** 時計、有限のroot age/skew、最大wire長・hop・Disclosure数・ネスト深度等 | `incomplete_context` / `invalid_time` / `resource_limit_exceeded` |
 | `constraint_policy` | **TRUSTED Host** が固定Issuer layoutに対して適用する許容Constraint型・shapeと評価/完全性ルール | `unsupported_profile` / `incomplete_disclosure` |
@@ -47,6 +47,7 @@
 - 未定値（具体的なTTL・バイト上限・鍵更新の有効ウィンドウ）は**未決としてHOLD**。無制限・暗黙のデフォルト・ネットワーク鍵自動取得は許可しない。
 - `expected_nonce` の**一致**と、Hostでの**一度限り消費**は別の保証。
 - 前処理の非信頼デコード結果は識別子探索の「候補」にだけ使える。Host登録のTrust policyで検証されるまでIssuer/Agent identityとして出力しない。
+- **Agent認可の追加不変条件:** RootのIssuer署名を検証した後、そのRootの`cnf.jwk`とHostが事前承認した`expected_agent_key`が同一の暗号鍵を表すことを**正規化した公開鍵パラメータ（kty/crv/x/yなど）または検証済みJWK thumbprintで厳密照合**する。JWK JSONの生文字列比較や`kid`/表示名だけの比較をしない。鍵が未設定、別鍵、比較不能なら`Rejection(expected_agent_mismatch/incomplete_context)`。Issuerが任意のAgentに発行した有効なMandateは、その事実だけで**このHostのCheckoutのAgent承認**を代替しない。
 
 ## 3. 出力 — 必ず区別する
 
@@ -78,7 +79,7 @@ Rejection:
 
 順番（設計案）:
 1. **pre-auth** wireサイズ・構文上限・hop数・非対応alg等を上限チェック。未署名claimに基づくTrustの確立は禁止。
-2. **Trust + crypto** Hostの許可Issuer鍵でRoot署名、Disclosures digest、Root `cnf` とTerminal署名/PoP、`sd_hash` を元wireに対して照合。root/terminal JWSどちらかだけで成功しない。
+2. **Trust + crypto + Host Agent binding** Hostの許可Issuer鍵でRoot署名、Disclosures digest、Root署名済み`cnf.jwk` とTerminal署名/PoP、`sd_hash` を元wireに対して照合。**さらにその検証済みRoot `cnf.jwk` とHost事前承認`expected_agent_key`の暗号鍵同一性を必ず比較し、不一致なら `expected_agent_mismatch` で拒否。** Root→TerminalのPoPだけではHostが当該Agentを許可した証明にならない。root/terminal JWSどちらかだけで成功しない。
 3. **Claims + schema** 認証済みOpen/Closedの `vct`、時間、Open→Closed保持、Host `aud`/`nonce` を確認。公式 pinned Open/Closed/Merchant JSON Schemaの対応する**全ての必要な型・必須・形状制約**と、より狭い本OSSの形状ポリシーを別々に適用する。
 4. **Completeness + constraints** 固定Issuer layoutで権限制約が完全に見えると証明し、全Constraintを意味評価。未知/非開示/型逸脱/数量・商品・Merchant不一致で拒否。
 5. **Checkout binding** Host正本JWTのMerchant署名を検証し、Closed内の `checkout_jwt` 原文と一致、`checkout_hash` をJWT**フィールド値**のハッシュとして独立再計算（当初sha-256のみ）。署名確認とhash比較を混同しない。
@@ -89,6 +90,7 @@ Rejection:
 | D01 | 固定Issuer/2hop/完全開示、全署名・公式Schema・制約・Checkout照合成立 | `VerifiedEvidence` **候補のみ** | **必要な証拠が全部成立した場合**。Phase 2-Aで実行済みではない |
 | D02 | Issuer不明、自己申告 `kid`/`x5c` だけ、Key/alg違い | `Rejection(untrusted_issuer/invalid_signature)` | Root trust |
 | D03 | Agent PoP・`cnf`・Disclosure digest・`sd_hash` 不整合、3hop | `Rejection(invalid_chain_binding/unsupported_profile)` | 厳格2hop |
+| D03A | **Issuer署名とRoot→Terminal PoPがVALID**だが、Rootの検証済み`cnf.jwk`がHostの`expected_agent_key`と違う、またはHost期待鍵がない | `Rejection(expected_agent_mismatch/incomplete_context)` | **Hostが承認したAgent鍵との必須一致**。Issuer署名済み別Agentは承認Agentではない |
 | D04 | Terminal `aud`/`nonce` 欠落・不一致、有限期限外 | `Rejection(invalid_audience/invalid_nonce/invalid_time)` | Host-issued期待値、Replay消費は別 |
 | D05 | **署名VALID**でもRequirement `id:123`（S01）、Merchant `name:123`（S02）、nullや必須欠落 | `Rejection(invalid_schema_type)` | 公式SchemaのString要求。**S01限定修正は実測、S02は未実測** |
 | D06 | **署名VALID**でも許可済みConstraint内に `policy_override` 等未知のネストキー（GP01） | `Rejection(unsupported_constraint_shape)` | 本OSS strict keys。GP01限定実測済み |
@@ -121,7 +123,7 @@ VerifierがEvidenceを返してもHost ALLOWは**必ず独立**しており、Ho
 
 | Case | 合成・真の再署名を要求する入力 | 期待結果 / 独立オラクル |
 | --- | --- | --- |
-| A01 | 固定Issuer+Agent+Merchantの3系統署名、有効な1商品Checkout | Profile限定Evidence。Issuer/Agent/Merchant署名VALID、公式Schema VALID を**独立**確認 |
+| A01 | 固定Issuer+Agent+Merchantの3系統署名、有効な1商品Checkout、**Host承認`expected_agent_key`が検証済みRoot `cnf.jwk`と一致** | Profile限定Evidence。Issuer/Agent/Merchant署名VALID、公式Schema VALID と**Host鍵同一性**を**独立**確認 |
 | A02 | 同じ正署名profileでIssuer未登録/鍵違い | REJECT untrusted。Host trust入力と署名真正性を独立記録 |
 | A03 | Issuer/Agent署名はVALID、S01 `Requirement.id=123` | 公式Open Schema **INVALID**、REJECT `invalid_schema_type`。P1-10t危険受理の回帰 |
 | A04 | Issuer/Agent署名はVALID、S02 `Merchant.name=123` | 公式Merchant Schema **INVALID**、REJECT。**S02は新規未実測** |
@@ -132,17 +134,18 @@ VerifierがEvidenceを返してもHost ALLOWは**必ず独立**しており、Ho
 | A09 | 3hop、Direct、`website`付きMerchant、未知alg/`vct` | unsupportedとしてREJECT（AP2一般違反とは主張しない） |
 | A10 | 同じVALID presentationの再提出 | Verifierのstateless評価と**Host nonce CASによるSTOP**を別のオラクルで測る。Verifierのみではreplay防御PASSにしない |
 | A11 | Context/Issuer profile/有限resource上限欠落、未証明issuer disclosure layout | REJECT/HOLD。無制限デフォルト・成功fallback禁止 |
+| A12 | **正当な固定Issuerが別Agent鍵で署名したRoot** + その別Agentが正しくTerminal署名。Root/Terminal/Merchant署名、PoP、Disclosure、Schema、aud/nonce、Checkout制約・hashがすべてVALID。ただしHostはA01の元Agent公開鍵を`expected_agent_key`として保持 | **`Rejection(expected_agent_mismatch)`**。Root→Terminal署名だけではHost Agent承認を代替しないことを独立の鍵thumbprint比較で確認。Host期待鍵欠落も`incomplete_context`で拒否 |
 
 必要な最低限の証拠: fixture生成時の**非本番の独立署名真正性**、pinned公式SchemaのVALID/INVALID、Rubyの正確なREJECT/Evidence、negativeの攻撃種別、出力が業務ALLOWでないこと、GitHub Actionsが実行された場合のみ具体的なrun URL。**観測した「危険ACCEPT」によるテストGREENを安全成功と呼ばない。** プライベート署名鍵はcommitしない。
 
 ## 7. Review gate / 次に進める条件
 
 - [ ] Root発行profileと**Disclosure完全性を独立判定できる契約**をレビューし、デコイ・未知Issuerと混同しない。
-- [ ] `TrustedInputs` の出所・必須性・欠落時拒否と、固定2hop/Direct非対応を承認。
+- [ ] `TrustedInputs` の出所・必須性・欠落時拒否と、固定2hop/Direct非対応を承認。特に**Host承認Agent鍵と検証済みRoot `cnf.jwk`の一致**、A12別Agent有効署名負例のオラクルを確認。
 - [ ] Evidenceにauthorization文言が入らず、失敗に成功fallbackがないことを確認。
 - [ ] 公式JSON Schemaの型/必須とローカルstrictキー制限（S01/S02、GP01、optional `website`）を区別。
 - [ ] Host最終ALLOW/nonce CAS/注文・失効/Receiptとの責任境界、およびHC06 HOLDを確認。
-- [ ] A01–A11の各オラクル・今後の負例実行範囲、TTL/上限の未定事項を合意。
+- [ ] A01–A12の各オラクル・今後の負例実行範囲、TTL/上限の未定事項を合意。
 - [ ] 以上の未解決点を記録した上で、**別の明示的なPhase 2-B PoC GO/HOLD判断**を行う。**設計PRのマージだけでは実装開始しない**。
 
 **今回の判定:** `PROPOSED / DESIGN ONLY`。新たなテストは `NOT RUN`、Ruby Gem/API/本番は `HOLD`、実決済・外部HC06の強い安全保証は `NO-GO`。
