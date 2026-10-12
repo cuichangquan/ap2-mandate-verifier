@@ -58,14 +58,17 @@ class P110TSingleSignedInvalidTypeProbe < Minitest::Test
       )
       puts "S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)"
     rescue AP2RootSDJWTResearch::Rejected => e
+      # This PR documents unsafe ACCEPT only. A REJECT could instead mean a
+      # stale terminal, invalid Agent/Merchant signature, or mismatched context.
+      # Never mark an unrelated rejection as successful S01 type enforcement.
       P110T::REPORT.merge!(
-        outcome: "REJECT", security: "LIMITED_REJECTION_ONLY",
+        outcome: "REJECT", security: "INCONCLUSIVE_HOLD",
         rejection_reason: e.message,
-        meaning: "Only this signed schema-invalid fixture was rejected"
+        meaning: "Unexpected rejection; no evidence of requirement id type enforcement"
       )
-      puts "S01 OBSERVED: REJECT — limited fixture, not general conformance"
+      flunk "S01 observation inconclusive (unexpected REJECT: #{e.message})"
     end
-    assert_includes %w[ACCEPT REJECT], P110T::REPORT.fetch(:outcome)
+    assert_equal "ACCEPT", P110T::REPORT.fetch(:outcome)
   end
 end
 
