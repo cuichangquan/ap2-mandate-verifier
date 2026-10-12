@@ -2,7 +2,7 @@
 
 **2026-10-12 JST / [Issue #47](https://github.com/cuichangquan/ap2-mandate-verifier/issues/47) / 合成research-only / 本番・Gem・実決済なし**
 
-> **PR作成時: PREPARED / NOT RUN。** 本PRのGitHub Actions実測・ログとCodexの最新HEADレビューを確認するまでは、DC03の成功を主張しない。Phase 2-B実装、Gem/API公開、Host/外部失効/HC06、実決済は引き続き**HOLD/NO-GO**。
+> **現在の判定：LIMITED_DC03_OBSERVED（合成Issuer/Agent/Merchant真正署名と研究用Ruby Resolver段階の拒否に限定）。** 初回CIは集計キーの誤りでFAIL、その後修正したCIで実測を確認。最新HEADのCodexレビュー・PRマージは別途確認。Phase 2-B実装、Gem/API公開、Host/外部失効/HC06、実決済は引き続き**HOLD/NO-GO**。
 
 ## 実験の主眼
 
@@ -33,4 +33,14 @@ Issuer署名済みRoot JWSの原文は**完全提示と非開示提示で同じ*
 - どれかの前提が不成立、別の障害・署名ミスマッチ・Schema-onlyの拒否しか示せない場合は**BLOCKED/FAIL/HOLD**。何より**Phase 2-BのGate順序の正式証明には数えない**。
 - DC04／DC05、未知Root commitmentの本物の署名付き異常負例、Host nonce CAS、失効・HC06・Receipt、本番Merchant／実Issuerは対象外であり、Issue #47を閉じない。
 
-**実測（PR作成時点）：DC03 NOT RUN。** 完了した専用CIのURL・HEAD・結果と限界を、CI後に追記する。
+## 実測結果（2026-10-12 JST）
+
+- **初回CI [#38258138466](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38258138466)：FAIL。** 根拠となるPython O1〜O4とRuby O5の観測は実行されたが、最終検証スクリプトにDC02由来の古い出力key `o5_ruby_hidden_merchant` が残り `KeyError` を発生。**初回CIはGREENではない**。結果の手動成功判定に読み替えず修正した。
+- **修正版CI [#38258273193](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38258273193)：SUCCESS、HEAD `f890398b84311b50974f7c4a585dda00c63c5940`**。Issuer ES256 JWS原文は対照と隠蔽提示で同一・署名VALID、Agent Terminalは提示ごとに別署名し各`sd_hash`・aud/nonce VALID、Merchant JWS・Checkout hashもVALID。公式上流`verify_chain`も両提示でVALID。
+- **O3:** Issuer署名済みRootの元signed-wireから入れ子 `$/delegate_payload/0/disclosed/constraints/0` にある**必須`checkout.line_items`のdigestを特定**。対照は全commitment開示済みで残余0。非開示提示はこのdigestだけが欠けるため `incomplete_disclosure: signed commitment not disclosed`、Issuer署名不正やAgent`sd_hash`違反ではない。
+- **O4:** 実際の非開示提示から得たOpenをpinned公式JSON Schemaで評価すると **INVALID（`constraints.contains`）**。完全開示対照はVALID。**このSchema INVALIDだけで安全性PASSとはしない**。
+- **O5:** 既存Ruby研究Verifierは完全開示の限定正常Checkoutを成功させ、隠蔽提示では `missing disclosure` でREJECT。Ruby `TracePoint(:raise)` の検証により、拒否が **`root_sdjwt_research.rb` の `resolve` メソッド内**で起きたことを記録し、cart比較に到達しない。Ruby出力中のMinitest `0 runs / 0 assertions` は自動runnerの副作用であり、O5の検証は直接メソッド呼び出し＋明示的なassertionで行った。
+- 合成JWS/Disclosureのバイト列・2hop Chain・公開JWK、Python/Rubyの結果JSON、依存freeze、公式AP2 SHAと研究HEADの各ファイルを最終SHA256/byte-length manifestで照合。Actions artifact `phase2a-dc03-synthetic-public-replay` ID `11751730749`、約20 KB、**2026-10-19 13:48 UTC期限**。短期保存のため恒久的な第三者リプレイ保証は未達。上流 `uv.lock` にprivate registryがありPython推移依存の完全lock再現も未達。
+
+**残る重要な境界:** 既存Ruby研究Verifierは公式Schema検証を実装しておらず、`TracePoint`は**研究用Root Resolverが業務比較より先に例外を発生させる**ことだけを実証する。**Phase 2-B実装での開示完全性GateとSchema Gateの順序・安全性を実証したわけではない**。真正署名付き未知path負例、DC04/DC05、Host nonce CAS/強失効HC06/Receipt、Gem/API/実決済も依然HOLD/NOT RUN。Issue #47はOPEN。
+
