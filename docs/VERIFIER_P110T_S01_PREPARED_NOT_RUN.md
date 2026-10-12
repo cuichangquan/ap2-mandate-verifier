@@ -165,6 +165,14 @@ S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)
 
 **留保：** これはユーザー実行の合成ローカルDocker実測で、GitHub Actions CIはこのPRで **0件 / NOT RUN**。全ての異常provenance経路を攻撃的にテストした証拠ではない。既存Ruby Verifierの型検証は未修正、P1-10uを別作業とする。汎用Gem/API/Host/HC06、本番決済は引き続きHOLD/NO-GO。S02およびその他型違反ケースはNOT RUN。新規署名トークン/秘密鍵/fixture本体はPRへコミットしない。
 
+### 3d. 最新Codex P2: REJECTを誤ってテストPASSに数える問題への対処（2026-10-12）
+
+最新HEAD `d9b7912` に対するCodex再レビュー（[該当P2](https://github.com/cuichangquan/ap2-mandate-verifier/pull/41#discussion_r4245916832)）で、観測用Rubyテストが`AP2RootSDJWTResearch::Rejected`を無条件に捕捉し、**staleなterminal iat、Agent/Merchant署名・aud/nonce不正など別の理由で拒否されても緑になる**点を指摘された。
+
+`research/p1_10t/observe_s01.rb` の観測用判定を限定修正：**実際にACCEPTを観測した場合だけMinitest成功（引き続きSECURITY RED_HOLD）**。理由を独立認証できていない`REJECT`の場合はレポートに`REJECT / INCONCLUSIVE_HOLD`と理由を残し、`flunk`でテスト失敗にする。これは既存Ruby Verifierの型違反対策ではなく、P1-10uの「意図したID型理由でのREJECT」検証に代わるものでもない。
+
+**この変更後の新HEADについてDocker再実行・GitHub Actions CI成功の実測はまだない。** 上記の`12ad006`での1 run/7 assertionsは**変更前の歴史的ローカル証拠**として保持し、新しいコードのテスト結果と混同しない。改めてクリーンAP2環境で生成器→Ruby観測を一連実行し、最新Codexレビューを確認するまでPR #41はマージHOLD。
+
 ## 4. 次の判断と境界
 
 **P1-10t観測はローカル実測でRED/HOLD。** 原因に対するVerifierの修正・正常署名回帰・別署名負例は**本PRの承認範囲外**。GP01とは別の**S01型検証の反例**として記録し、S02その他の未検証リスクにGOは出さない。
