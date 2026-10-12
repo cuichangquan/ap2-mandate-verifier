@@ -4,7 +4,7 @@
 
 ## 結論を先に
 
-**Phase 1の限定的な研究成果は「次の最小仕様を設計するための材料」として十分。Phase 2の`設計のみ`はCONDITIONAL GO、Ruby Gem/API実装・公開・本番Merchant導入はHOLD、実決済・Receipt・外部Authority連携はNO-GO。**
+**Phase 1の限定的な研究成果は「次の最小仕様を設計するための材料」として十分。新Phase 2-Aの`設計のみ`はCONDITIONAL GO、Ruby Gem/API実装・公開・本番Merchant導入はHOLD、実決済・Receipt・外部Authority連携はNO-GO。** 旧[RESEARCH_PLAN](RESEARCH_PLAN.md)の旧Phase 2『セキュリティ負例（GO後）』は初期ロードマップの履歴で、**新Phase 2-Aを指さず、現行の着手許可でもない**。
 
 `P1-10a`〜`P1-10u` は機能完成率ではなく、暗号Verifier、Merchant Host、外部Authorityの**異なる信頼境界**に関する調査の枝番号。**新しい`P1-10v`を追加することは、研究を終わらせる条件ではない。** 何かがテストでGREENでも、他の境界やAP2の一般適合性までGREENにしてはならない。
 
