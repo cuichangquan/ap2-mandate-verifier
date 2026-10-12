@@ -122,7 +122,7 @@ jobs:
                      "incomplete_disclosure: missing disclosure"
                      for k in ["hidden_merchant_element", "hidden_sku_element"])
           assert set(candidate["candidate_signed_layout_negatives"]) == {
-              "unexpected_nested_path", "issuer_decoy",
+              "unexpected_nested_path", "issuer_decoy", "wrong_root_typ",
           }
           assert all(item["status"] == "REJECT"
                      for item in candidate["candidate_signed_layout_negatives"].values())
@@ -149,6 +149,7 @@ jobs:
                       "fixed-ruby-observation.json",
                       "issuer_decoy-root-sdjwt.txt", "issuer_decoy-terminal-sdjwt.txt",
                       "unexpected_nested_path-root-sdjwt.txt", "unexpected_nested_path-terminal-sdjwt.txt",
+                      "wrong_root_typ-root-sdjwt.txt", "wrong_root_typ-terminal-sdjwt.txt",
                       "public-fixture.json", "python-freeze.txt",
                       "upstream-sha.txt", "research-head-sha.txt"}
           assert expected <= {q.name for q in p.iterdir() if q.is_file()}
