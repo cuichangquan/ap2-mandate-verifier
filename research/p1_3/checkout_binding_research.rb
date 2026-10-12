@@ -82,6 +82,11 @@ module AP2CheckoutBindingResearch
         requirements.size == 1
       requirement = requirements.first
       require_exact_constraint_keys!(requirement, %w[acceptable_items id quantity])
+      # P1-10u: a genuine signed requirement ID must satisfy the pinned
+      # official Open Checkout schema's String type. Strict profile only;
+      # do not silently accept an integer just because this ID is not used
+      # in the one-line price/SKU comparison below.
+      raise Rejected, "invalid signed requirement id type" unless requirement["id"].is_a?(String)
       accepted = requirement.fetch("acceptable_items")
       raise Rejected, "unsupported multiple SKU alternatives" unless accepted.is_a?(Array) &&
         accepted.size == 1 && accepted.first.is_a?(Hash) &&
