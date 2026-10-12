@@ -65,6 +65,12 @@ Security: RED_HOLD
 P1-10t観測**生成器だけ**を次のように1行修正して再実行：
 `JWK.from_json(json.dumps(public_jwk))`（PR head `82e2788`）。再実行後に上記の**署名VALID＋Schema INVALID＋Ruby ACCEPT**まで確認。**既存Ruby Verifier実装への修正は0件**。また`anyOf`/`contains`の合成Schemaエラーを1件と取り違えないための観測生成器修正も含む。
 
+### 3a. 観測後のCodexレビュー対応（未再実行）
+
+2026-10-12、PR #41へのCodex指摘（P2：**公式AP2 SDKを検証する前にimportしていた**）に対応し、コミット `5aea5c203151b2fdc5f7ee23dd093e180b181017` で生成器のみ修正した。Pythonの`-O`禁止、公式リポジトリHEAD・Open/Merchant Schema実ファイルのGit blob・SDK tracked差分・untracked Pythonファイル確認を**`ap2.*`とローカル補助生成器のimport前**に実行する。事前ロード済み`ap2`は拒否し、検証済みSDKのパスを優先してimport後に`mandate.py`の読込元も確認する。
+
+GitHub上のソース順序チェック **10項目は確認済み**だが、**この新しいコミットではDockerによるPython生成・Ruby観測を再実行していない**。PR headのGitHub Actionsも **0件 / NOT RUN**。したがって第1節の`ACCEPT / RED_HOLD`は**以前の実測commit `82e2788`の証拠**に限定し、更新版生成器での再現や対策の成功を主張しない。Ruby研究Verifierは未変更。PRはDraftのまま実行検証と最新レビューを待ち、安全性GREENと混同しない。
+
 ## 4. 次の判断と境界
 
 **P1-10t観測はローカル実測でRED/HOLD。** 原因に対するVerifierの修正・正常署名回帰・別署名負例は**本PRの承認範囲外**。GP01とは別の**S01型検証の反例**として記録し、S02その他の未検証リスクにGOは出さない。
