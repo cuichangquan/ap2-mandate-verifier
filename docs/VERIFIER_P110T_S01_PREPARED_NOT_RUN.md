@@ -65,11 +65,30 @@ Security: RED_HOLD
 P1-10t観測**生成器だけ**を次のように1行修正して再実行：
 `JWK.from_json(json.dumps(public_jwk))`（PR head `82e2788`）。再実行後に上記の**署名VALID＋Schema INVALID＋Ruby ACCEPT**まで確認。**既存Ruby Verifier実装への修正は0件**。また`anyOf`/`contains`の合成Schemaエラーを1件と取り違えないための観測生成器修正も含む。
 
-### 3a. 観測後のCodexレビュー対応（未再実行）
+### 3a. 最新ヘッドのDocker再実測とCodexのpre-import境界（2026-10-12 JST）
 
-2026-10-12、PR #41へのCodex指摘（P2：**公式AP2 SDKを検証する前にimportしていた**）に対応し、コミット `5aea5c203151b2fdc5f7ee23dd093e180b181017` で生成器のみ修正した。Pythonの`-O`禁止、公式リポジトリHEAD・Open/Merchant Schema実ファイルのGit blob・SDK tracked差分・untracked Pythonファイル確認を**`ap2.*`とローカル補助生成器のimport前**に実行する。事前ロード済み`ap2`は拒否し、検証済みSDKのパスを優先してimport後に`mandate.py`の読込元も確認する。
+CodexレビューP2に対応した`5aea5c203151b2fdc5f7ee23dd093e180b181017`では、生成器の`ap2.*` import **より前**に次を検証するよう修正した：`python -O`禁止、公式AP2 Checkout HEAD `b4587ac1d055888a73b4b21750973cffba961793`、Open/Merchant Schemaの実Git blob、SDK tracked差分、untracked `.py` の有無。検証済みSDKツリーを`sys.path`に優先追加し、import済`ap2`の先行混入は拒否、import後に`mandate.py`実パスも検証する。**これらのpre-import guardの個別異常系を全件実行したとの主張ではない。**
 
-GitHub上のソース順序チェック **10項目は確認済み**だが、**この新しいコミットではDockerによるPython生成・Ruby観測を再実行していない**。PR headのGitHub Actionsも **0件 / NOT RUN**。したがって第1節の`ACCEPT / RED_HOLD`は**以前の実測commit `82e2788`の証拠**に限定し、更新版生成器での再現や対策の成功を主張しない。Ruby研究Verifierは未変更。PRはDraftのまま実行検証と最新レビューを待ち、安全性GREENと混同しない。
+**更新版もDockerで正常に動作した。** ユーザーがMac上の既存Dockerコンテナ`/work/verifier`内で、PR #41ブランチを`git fetch`/`switch`/`pull --ff-only`し、`git rev-parse HEAD`で正確に **`eb83e26cb569e5717205e5314f532ce655d43b06`** を確認した（後続ドキュメントコミットより前）。同じ`AP2_P110T_UPSTREAM_ROOT=/work/AP2`で下記を実行した：
+
+```bash
+python research/p1_10t/generate_s01.py /work/s01.json
+export AP2_P110T_FIXTURE=/work/s01.json
+export AP2_P110T_REPORT=/work/s01-report.json
+ruby research/p1_10t/observe_s01.rb --verbose
+```
+
+確認できた出力（抜粋、実行者提供・秘密鍵/JWT/fixtureは非転載）：
+
+```text
+S01 SIGNATURE VALID: issuer disclosure/commitment, agent PoP and merchant JWS
+S01 SCHEMA INVALID: pinned anyOf/contains errors; nested id type:string violation (integer 123)
+S01: synthetic ephemeral signing keys never written/uploaded
+S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)
+1 runs, 7 assertions, 0 failures, 0 errors, 0 skips
+```
+
+**結論：** `eb83e26`でpre-import修正後の正規条件の合成S01生成・Ruby観測を再現（Schema INVALID、Ruby ACCEPT / **SECURITY RED-HOLD**）。旧`82e2788`での危険受理と整合し、**Ruby Verifier側の型検証欠落はまだ解消していない**。この結果は**ユーザー実行のDockerローカル証拠**であり、ChatGPT自身の実行やGitHub Actions CIの成功ではない。GitHub Actionsは **0件 / NOT RUN**。Codex再レビュー結果・未解決スレッドを別途検査し、実装対策は次のP1-10uに限定する。外部Issuer/Host/本番Gemは依然HOLD。
 
 ## 4. 次の判断と境界
 
