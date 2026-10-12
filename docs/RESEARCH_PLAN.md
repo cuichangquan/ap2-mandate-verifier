@@ -48,9 +48,13 @@
 - [x] **P1-10r限定研究用Fail Closed対策＋署名付き回帰実測**：[VERIFIER_P110R_GP01_FIX_EVIDENCE](VERIFIER_P110R_GP01_FIX_EVIDENCE.md) — [CI #38185735639](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38185735639) **2 runs/10 assertions/失敗0**。旧P1-10qで**ACCEPT/RED**だった署名付きGP01を、固定IssuerのネストConstraint内部フィールド集合完全一致で**意図した理由によりREJECT**。別の合成正常署名Checkoutは検証成功（ALLOWなし）。旧P1-10o 8 runs/45 assertionsも回帰成功、N07 HOST_BOUNDARY不変。初回CI #38185616542は正常テストの不要keyword引数でFAILしており、その後修正。**汎用Issuer/Gem API/本番/Host/HC06 HOLD・決済公開NO-GO**。
 - [x] **P1-10s（Constraintのキー・必須・型・意味の残余Gapを静的レビュー、実装・新CI・新テスト0）**：[VERIFIER_P110S_CONSTRAINT_SHAPE_TYPE_GAPS](VERIFIER_P110S_CONSTRAINT_SHAPE_TYPE_GAPS.md) — **S01〜S08は今回新規NOT RUN**。固定Issuer研究コードでは `items[0].id`（公式String）と `allowed[0].name`（公式String）の**値型未検査**を静的に確認。GP01未知キーはP1-10rで限定REJECT実測済み、正常署名は2/10成功、P1-10o 8/45回帰、AN-N07 HOST_BOUNDARY。公式Merchant optional `website`は研究profile非対応であってAP2欠陥ではない。**Gem/API/本番/HC06 HOLD、決済・公開NO-GO不変。**
 - [x] **P1-10t（ユーザーのMac上DockerでS01正署名型不一致を限定実測 — SECURITY RED/HOLD）**：[VERIFIER_P110T_S01_PREPARED_NOT_RUN（現在は実測記録）](VERIFIER_P110T_S01_PREPARED_NOT_RUN.md) — AP2公式固定SHA `b4587ac1d055888a73b4b21750973cffba961793`、PR #41 `82e2788` の研究生成器。Issuer/Agent/Merchant署名・Disclosure **VALID**、公式Open Schema **INVALID**（Constraint requirement `id: 123` はString要件違反）、**未修正Ruby研究Verifier ACCEPT => RED/HOLD**。修正後observer `3978a852` のクリーン公式AP2 Docker再実測は**1 run/6 assertions/失敗0**（危険ACCEPTを観測した意味であり、セキュリティPASSではない）。旧**1 run/7 assertions/失敗0**は修正前observerの歴史的証拠。無関係なREJECTは観測失敗と扱うが、REJECT経路の独立故障注入はNOT RUN。**GitHub Actions新規CI 0 / NOT RUN**。初回`JWK.from_json`へのdict渡しが不具合で停止、生成器だけ修正して再実行成功。既存Verifierは未変更、S02/他の署名負例NOT RUN、Gem/API/本番/外部HC06 HOLD、公開/実決済NO-GO。
-- [x] **P1-10u（[PR #42](https://github.com/cuichangquan/ap2-mandate-verifier/pull/42)、限定ローカル実測完了・PRマージ判定待ち）**：[VERIFIER_P110U_S01_TYPE_FIX_PREPARED_NOT_RUN（現在は実測記録）](VERIFIER_P110U_S01_TYPE_FIX_PREPARED_NOT_RUN.md) — 固定Issuer研究用Verifierに正署名S01 Requirement `id`の**String型だけ**Fail Closedを追加。公式固定AP2のクリーンworktreeで生成した正署名の不正`id: 123`を、Rubyによる署名再検証後に**正確な型理由`invalid signed requirement id type`でREJECT**し、別途生成した正常な正署名Checkoutは**evidence-only ACCEPT**：ユーザーMac DockerのHEAD `b7aba6d` で **2 runs / 12 assertions / 0 failures・0 errors・0 skips**。**新専用2件のGitHub ActionsはNOT RUN**（既存P1-10o/q/r Actions 3件は同HEADで成功）。旧P1-10t ACCEPT/SECURITY RED_HOLDは修正前の歴史的観測として維持。S02その他のGap、汎用Issuer/Gem/API/GCP/本番決済/HC06はHOLD。
+- [x] **P1-10u（[PR #42](https://github.com/cuichangquan/ap2-mandate-verifier/pull/42)、限定ローカル実測完了・2026-10-12にmainへSquashマージ済み `09c71903d0ac5a36b88002f59402c0371b20c2ba`）**：[VERIFIER_P110U_S01_TYPE_FIX_PREPARED_NOT_RUN（現在は実測記録）](VERIFIER_P110U_S01_TYPE_FIX_PREPARED_NOT_RUN.md) — 固定Issuer研究用Verifierに正署名S01 Requirement `id`の**String型だけ**Fail Closedを追加。公式固定AP2のクリーンworktreeで生成した正署名の不正`id: 123`を、Rubyによる署名再検証後に**正確な型理由`invalid signed requirement id type`でREJECT**し、別途生成した正常な正署名Checkoutは**evidence-only ACCEPT**：ユーザーMac DockerのHEAD `b7aba6d` で **2 runs / 12 assertions / 0 failures・0 errors・0 skips**。**新専用2件のGitHub ActionsはNOT RUN**（既存P1-10o/q/r Actions 3件は同HEADで成功）。旧P1-10t ACCEPT/SECURITY RED_HOLDは修正前の歴史的観測として維持。S02その他のGap、汎用Issuer/Gem/API/GCP/本番決済/HC06はHOLD。
 
-## Phase 1 — Checkout Mandate PoC（GO後）
+## 旧Phaseロードマップ（履歴・SUPERSEDED、以下のチェックボックスは現行作業指示ではない）
+
+以下の旧Phase 1/2/3は初期計画時点の未完了チェック欄を**改変せずに残す履歴**。2026-10-12からの現行の段階定義と着手ゲートは[Phase 1総括と新Phase 2-A設計入口](PHASE1_RESEARCH_CLOSURE_PHASE2_GATE.md)のみを正本とする。旧Phase 2は『将来のセキュリティ負例研究』という元の分類名であり、**新Phase 2-A（最小仕様の設計のみ）と同じではない**。下の未チェック件数を現在の研究未実行件数と誤算せず、Phase 2の実装・テスト開始許可に利用しない。
+
+### 旧Phase 1 — Checkout Mandate PoC（初期構想・HISTORICAL）
 
 - [ ] 正しいMandate形式・バージョン（vct）・Open/Closedの扱い。
 - [ ] SD-JWT署名、開示、Agent鍵・Proof-of-Possession、aud/nonce/期限など仕様が要求する確認。
@@ -58,14 +62,14 @@
 - [ ] 委任チェーン、Mandate制約、merchant-signed checkoutとhashの照合。
 - [ ] Verifier結果は「Verified Evidence」であって最終ALLOWではない。
 
-## Phase 2 — セキュリティ負例（GO後）
+### 旧Phase 2 — セキュリティ負例（初期構想・HISTORICAL／現在のPhase 2-Aではない）
 
 - [ ] 改ざん、誤った鍵・Issuer、不正アルゴリズム、期限外、別Agentへの転用。
 - [ ] Audience/Nonce不一致、key binding欠落、未開示/未知の必須Constraint。
 - [ ] Checkout/金額/通貨/取引先不一致、委任範囲の拡大、replay対策の責務。
 - [ ] 巨大Payload/長いチェーンのリソース制限と、情報漏えい防止。
 
-## Phase 3 — 相互運用と公開判断（GO後）
+### 旧Phase 3 — 相互運用と公開判断（初期構想・HISTORICAL）
 
 - [ ] 公式Python実装と同じ正例・負例をRubyでも検証。
 - [ ] 仕様との差分があればテスト証拠を残し、必要に応じupstreamへ報告。
