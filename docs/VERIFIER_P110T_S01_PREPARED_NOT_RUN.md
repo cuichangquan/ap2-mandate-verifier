@@ -75,3 +75,59 @@ P1-10t観測**生成器だけ**を次のように1行修正して再実行：
 - 汎用Gem/Public API/本番利用 **HOLD**、RubyGems公開・実決済・署名Receipt **NO-GO**。
 - GitHub Actionsの新規workflow追加は前にプラットフォーム安全性チェックでブロックされており**迂回せず**。**CIは未実行**。PRをどの条件でReady/mergeするかはレビューと証拠の追加判断で決める。
 - **次のおすすめ1件（別途ユーザー承認後のみ）：P1-10u**、固定Issuer研究用Verifierで`line_item_requirements.id`の型をFail Closedにする小さな修正を設計し、同じ正署名S01の**REJECT**と別の正署名正常Checkoutの非退行を検証する。S02/汎用Issuer/Gem/本番まで自動拡張しない。
+
+## 5. 新チャット引き継ぎ・次の作業（2026-10-12）
+
+**この文書と[RESEARCH_PLAN](RESEARCH_PLAN.md)を現時点の引き継ぎ正本とする。** 旧[HANDOFF](HANDOFF.md)にはまだ「次はP1-10s」の古い記述が残る（以前、同ファイルの編集が安全性チェックでブロックされたため）。古い指示は再実行しない。PRのマージ後は、**GitHubの最新main / Open PR / Open Issue / 未解決レビュー・CIを最初に実確認**すること。この節の旧SHAを最新と決めつけない。
+
+**現在地：**
+- 最終固定AP2公式 v0.2.0 commit \`b4587ac1d055888a73b4b21750973cffba961793\`。
+- P1-10t 1件の正署名S01（Requirement \`id: 123\`）は公式Schema **INVALID**だが、未修正Ruby研究Verifierで **ACCEPT / SECURITY RED-HOLD**。ユーザーのMac Docker（Ruby 3.4.11/jwt 3.3.0、Python 3.11.2/jsonschema 4.25.1、公式AP2 SDK）は**1 run/7 assertions/0 failures**。テスト緑は「危険なACCEPT観測を正確に記録」、安全性PASSではない。**GitHub Actions CIではない**。
+- P1-10q歴史的GP01（未知ネストキーの正署名ACCEPT/RED）、P1-10r修正後GP01限定REJECT＋正常signed 2/10、P1-10o別CI 8/45（AN-N07は**HOST_BOUNDARY**）を別実行として維持。
+- Host canonical **9/34測定・25 NOT RUN**。Authority→Host C01–C12 OPEN/UNCONFIRMED、外部HC06、汎用Issuer/SD-JWTの隠れConstraint完全性、Host replay/最終business ALLOW、公開Gem/API、本番統合は**HOLD**。RubyGems/実決済/署名Receiptは**NO-GO**。
+- P1-10sのS02（署名済Merchant \`allowed[0].name\`型）や他のS03–S08は未検証。P1-10uに自動追加しない。
+- 秘密鍵や署名済みfixture JSONをコミットしない。GCP、実Issuer/実Host/Authority、production Checkout/receiptには進まない。
+
+**次のおすすめ1件（別途ユーザー承認が必要）：P1-10u** — 固定合成Issuer研究用 \`research/p1_3/checkout_binding_research.rb\` に限り、\`line_item_requirements.id\`が**String**であることを確認し、不正な型ならFail Closedで拒否する。**同じ正署名S01を意図した理由でREJECT**し、別の正常な正署名Checkoutが引き続き**証拠のみACCEPT（Host ALLOWではない）**する2系統の回帰を、許可されたDocker/CIで観測する。S02や汎用Schema完全適合への拡張なし。PRは小さく、レビュー指摘とテスト結果を検査してから**マージできるものだけSquashマージ**、Open PR/Issueとmainを再確認。予期しないACCEPTやテスト未実行はそのままRED/HOLDとして報告し、緑と誤認しない。
+
+### 新しいチャットに貼り付ける指示文
+
+\`\`\`text
+ap2-mandate-verifierの開発をP1-10tのDocker実測から引き継いで続けたい。
+https://github.com/cuichangquan/ap2-mandate-verifier
+
+まずGitHub最新main、Open PR/Issue、CI、Codex/未解決レビューを確認。
+マージ可能なPRは、安全性・実測・レビュー結果を確認後にSquashマージ。
+作業単位を小さくし、mainとPR状況を毎回更新して進めてほしい。
+
+最重要資料：
+docs/VERIFIER_P110T_S01_PREPARED_NOT_RUN.md
+（ファイル名は過去のままだが、中身はP1-10tのDocker実測RED記録）
+docs/VERIFIER_P110S_CONSTRAINT_SHAPE_TYPE_GAPS.md
+docs/RESEARCH_PLAN.md
+docs/VERIFIER_P110R_GP01_FIX_EVIDENCE.md
+docs/VERIFIER_P110Q_GP01_EVIDENCE.md
+docs/RESEARCH_DECISION.md §36
+
+公式AP2 v0.2.0 SHA：
+b4587ac1d055888a73b4b21750973cffba961793
+
+P1-10t：合成Issuer/Agent/Merchant署名・Disclosure VALID、
+公式Open Checkout Schema INVALID（line_items.items[0].id=123、
+String必須）、未修正Ruby研究VerifierがACCEPT / RED-HOLD。
+Mac Dockerで1 run/7 assertions/0 failures＝危険受理の観測成功。
+GitHub Actions CIではない。JWK公開鍵dictエラーを生成器のみ修正。
+Verifier本体の修正はまだ行っていない。
+
+次の候補はP1-10u：S01 Requirement.idの型だけ固定Issuer研究
+VerifierでFail Closedにし、同じ正署名S01 REJECT＋別の正署名
+正常Checkout（evidence only）を回帰確認する限定対策。
+S02等の他Gapへ勝手に拡張しない。必要な次Step承認を尊重する。
+
+歴史的GP01 pre-fix ACCEPT/REDとP1-10r post-fix GP01 REJECT
+（2/10）、P1-10o 8/45（N07 HOST_BOUNDARY）は混同しない。
+Host正本9/34測定・25 NOT RUN、HC06/C01–C12と一般Gem/API/
+本番統合HOLD。公開Gem/RubyGems/実決済/ReceiptはNO-GO。
+新PRでもテストとレビューを確認し、マージ可能なもののみマージ。
+旧docs/HANDOFF.mdの次P1-10s記述は古いので従わない。
+\`\`\`
