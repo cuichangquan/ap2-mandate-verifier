@@ -32,7 +32,7 @@
 
 | 証明対象 | 証拠の原本 | NGの場合 |
 | --- | --- | --- |
-| **Authenticity**: Issuer署名、agent PoP、disclosure digest、`sd_hash` が一致 | Issuerが署名したJWT原文 + 提示されたdisclosure + Host信頼鍵 | `invalid_signature` / `invalid_chain_binding` |
+| **Authenticity**: Issuer署名、Agent署名/PoP、disclosure digest、Terminal `sd_hash` が一致 | **Issuer署名済Root SD-JWT原文 + Agent署名済Terminal KB-SD-JWT原文** + 開示されたDisclosure元表現 + Hostが登録したIssuer公開鍵 + **検証済みRootの`cnf.jwk`でTerminal署名を検証した証拠**。Terminalの署名と`sd_hash`をRoot/Disclosure提示wireに対して独立照合 | `invalid_signature` / `invalid_chain_binding` |
 | **Structure**: Issuer認可scope内の正確なOpen/`constraints`階層・数・型・未知フィールドなし | **署名元wireの構造** + Hostに固定したIssuer Profile / pinned schema | `unsupported_profile` / `invalid_schema_type` |
 | **Completeness**: 権限を変更し得るすべてのsigned commitmentが解決されていて、隠れた権限candidateが残らない | **署名元wireのcommitment graph**と検証済みDisclosureの厳格な一対一の消費証拠 | `incomplete_disclosure`。decoyとの区別不能でも同じ |
 | **Authorization meaning**: 全ConstraintをCheckoutに対して正しく評価した | 完全性が成立したOpen + Host正本Merchant JWT | `constraint_violation` / `unknown_constraint` |
@@ -81,7 +81,7 @@ Issuerが`constraints`のID・個数・型・commitment digestやallowed許可�
 | DC01 | 候補Aの固定2Constraint・全Disclosure・決済なしの合成正常例 | Issuer/Agent/Merchant署名・digest chain・公式Schemaを**独立に**検査。Root signed-wire commitmentから残余なし、profile一致を示した時だけEvidence**候補** |
 | DC02 | Issuer署名VALID、`allowed_merchants`全体を隠す or そのconstraint placeholder disclosureを抜く | 可視`line_items`はVALIDでも `incomplete_disclosure` で拒否。可視違反数0は成功ではない |
 | DC03 | Issuer署名VALID、`line_items` constraintを非開示にする or 要素を欠落 | `incomplete_disclosure`または公式Schema INVALID + REJECT。Constraint完全性とSchema型を別オラクルで確認 |
-| DC04 | `allowed[0]`・`acceptable_items[0]`のdisclosureを1つ隠す。Merchant/Itemの可視集合は残るように工夫 | Hidden array elementを許容集合から黙って落とさずREJECT。権限縮小方向が一般に安全との推測で初期候補Aを緩和しない |
+| DC04 | **候補Aの許容1要素**を使い、Issuer署名済み`allowed[0]`または`acceptable_items[0]`の**唯一のDisclosureを除外**した負例をそれぞれ用意。対照は同じIssuer-signed structureの全開示正例。変更後の提示wireに合わせて**Terminalは正当に再署名し、`sd_hash`の不一致を原因にしない**。1要素profileなので隠した側に可視Merchant/Itemは残らない | 元の**Issuer署名済みplaceholderが未解決であることを独立オラクルで確認**し、**cardinality/空配列やConstraint違反より前の開示完全性Gateで`incomplete_disclosure`として拒否**。単なる空配列REJECTをcompleteness PASSと数えない。2要素に増やすとprofile外となるため、この検証では追加しない |
 | DC05 | Issuer `add_decoy_claims=True`（生成APIにフラグがある）でdecoyの残余commitmentがあるpresentation | decoyと権限欠落の曖昧さを「無害」とせず `incomplete_disclosure/unsupported_profile`。実現方法・SDK挙動は独立検証が必要 |
 | DC06 | 未知Constraint/権限関連ネストキー、`_sd`別path、余剰Root payload、同じdigest複数回、unused Disclosure | 全部REJECT、偽装署名失敗ではなく**真正署名の範囲内での構造拒否**を独立測定 |
 | DC07 | 固定Issuerとは異なる有効署名Issuer、同Issuerの異なるprofile version、Host許可レイアウトと異なる発行 | `untrusted_issuer/unsupported_profile`。鍵署名VALIDとHost Profile承認は別 |
