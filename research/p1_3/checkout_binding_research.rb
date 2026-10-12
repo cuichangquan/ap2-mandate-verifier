@@ -10,7 +10,8 @@ module AP2CheckoutBindingResearch
   class << self
     def verify!(chain:, issuer_jwk:, expected_agent_jwk:, expected_aud:, expected_nonce:,
                 merchant_jwk:, host_checkout_jwt:, expected_checkout_id:,
-                expected_merchant_id:, expected_currency:, expected_total_minor:)
+                expected_merchant_id:, expected_currency:, expected_total_minor:,
+                root_research: AP2RootSDJWTResearch)
       raise Rejected, "trusted merchant public key required" unless merchant_jwk.is_a?(Hash)
       raise Rejected, "Host signed Checkout JWT required" unless host_checkout_jwt.is_a?(String) &&
         host_checkout_jwt.bytesize.between?(1, 16_384)
@@ -23,7 +24,7 @@ module AP2CheckoutBindingResearch
       result = AP2TwoHopResearch.verify!(
         chain: chain, issuer_jwk: issuer_jwk,
         expected_agent_jwk: expected_agent_jwk, expected_aud: expected_aud,
-        expected_nonce: expected_nonce
+        expected_nonce: expected_nonce, root_research: root_research
       )
       open = result.fetch(:verified_open)
       closed = result.fetch(:verified_closed)
