@@ -75,3 +75,21 @@ synthetic fixed-Issuer signed examples and not generic AP2, arbitrary SD-JWT,
 multiple merchants/SKUs, issuer discovery, revocation, Host nonce-CAS,
 HC06/receipt or real payment authorization. Parent Issue #47 and Phase 2-B stay
 OPEN/HOLD until separately justified.
+
+## First measured candidate result (2026-10-12 JST)
+
+On [GitHub Actions run #38266472490](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38266472490), research HEAD `e7eab5168172812f9db11ed547dd03a169ad9b15`, all seven triggered PR workflows succeeded. Specifically:
+
+| Scenario | Legacy P1-1/P1-3 | Isolated fixed-Issuer Ruby candidate |
+| --- | --- | --- |
+| Genuine FULL | REJECT `unsupported array disclosure location` | **LIMITED_POSITIVE** |
+| Genuine M0 hidden Merchant[0] | REJECT unsupported location | REJECT `incomplete_disclosure: missing disclosure` |
+| Genuine S0 hidden SKU[0] | REJECT unsupported location | REJECT `incomplete_disclosure: missing disclosure` |
+| Issuer-signed unexpected nested commitment | Not supported | REJECT |
+| Issuer-signed decoy | Not supported | REJECT |
+
+Python's independent signed-wire O1–O4, actual per-presentation official Schema, Agent Terminal and Merchant cryptographic checks succeeded before the Ruby observations. The fixture-generation bug that initially prevented the alternate signed layout check was corrected: the Python schema loop had shadowed its earlier immutable FULL reference. The later Ruby test-harness key-name/expected-error fixes did **not** loosen the candidate acceptance logic.
+
+Research candidate gate for this HEAD: `LIMITED_DC04_OBSERVED`.
+Legacy gate remains `RED_HOLD`; there is **no blanket security gate GO**.
+A public-only synthetic replay archive with SHA256/byte-length manifest was uploaded as the 7-day Actions artifact. Both review of the **latest PR HEAD** and an approved parent Issue #47 decision remain outstanding. This observation does not itself close Issue #54 or approve Phase 2-B.
