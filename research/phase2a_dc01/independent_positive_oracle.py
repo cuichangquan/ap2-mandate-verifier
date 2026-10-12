@@ -182,6 +182,19 @@ def run(args):
     root_signed = jws_payload(root_jws, fixture["trusted_issuer_public_jwk"])
     require(set(root_signed) <= {"delegate_payload", "_sd", "_sd_alg"}, "unknown signed root sibling claim")
     root_resolved, root_graph = raw_commitment_graph(root_signed, root_disclosures)
+    # Candidate A requires a versioned, EXACT issuer commitment layout, not
+    # merely a zero-residual disclosure graph. Even a *fully disclosed* new
+    # root-level _sd or nested placeholder is unsupported. The two allowed
+    # array paths come from the narrowly pinned P1-3 issuer metadata:
+    # delegate_payload[0] and constraints[1] (allowed Merchants).
+    allowed_root_commitments = {
+        ("$/delegate_payload/0", "array"),
+        ("$/delegate_payload/0/disclosed/constraints/1", "array"),
+    }
+    observed_root_commitments = {(x["path"], x["kind"]) for x in root_graph}
+    require(len(root_graph) == len(allowed_root_commitments) and
+            observed_root_commitments == allowed_root_commitments,
+            "unsupported_profile: unknown signed Root commitment path or kind")
     require(set(root_resolved) <= {"delegate_payload", "_sd_alg"}, "unknown resolved root claim")
     require(root_resolved.get("_sd_alg") in (None, "sha-256"), "unsupported SD hash algorithm")
     require(len(root_resolved.get("delegate_payload", [])) == 1, "not exactly one signed Open")
@@ -201,6 +214,11 @@ def run(args):
     require(terminal_signed.get("nonce") == fixture["expected_nonce"], "Terminal nonce mismatch")
     require(isinstance(terminal_signed.get("iat"), int), "Terminal iat missing")
     term_resolved, terminal_graph = raw_commitment_graph(terminal_signed, terminal_disclosures)
+    # Terminal has exactly one SD-wrapped Closed payload in this subset.
+    require(len(terminal_graph) == 1 and
+            (terminal_graph[0]["path"], terminal_graph[0]["kind"]) ==
+            ("$/delegate_payload/0", "array"),
+            "unsupported_profile: unknown signed Terminal commitment layout")
     require(len(term_resolved.get("delegate_payload", [])) == 1, "invalid terminal delegate_payload")
     closed = term_resolved["delegate_payload"][0]
     require(isinstance(closed, dict) and closed.get("vct") == "mandate.checkout.1", "invalid Closed mandate")
