@@ -96,7 +96,7 @@ jobs:
           assert py["o4_partial_issuer_profile"] == "REJECT"
           assert py["o4_visible_constraint_types"] == ["checkout.allowed_merchants"]
           assert rb["o5_ruby_full_control"] == "LIMITED_POSITIVE"
-          assert rb["o5_ruby_hidden_merchant"] == "REJECT"
+          assert rb["o5_ruby_hidden_line_items"] == "REJECT"
           assert rb["o5_rejection_reason"] == "missing disclosure"
           assert rb["o5_no_business_allow"] is True
           trace = rb["ruby_gate_order_evidence"]
