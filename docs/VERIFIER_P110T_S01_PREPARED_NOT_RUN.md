@@ -30,3 +30,11 @@
 [P1-10q](VERIFIER_P110Q_GP01_EVIDENCE.md)の**修正前GP01 ACCEPT / RED-HOLD**は歴史的に維持し、[P1-10r](VERIFIER_P110R_GP01_FIX_EVIDENCE.md)の固定Issuer GP01 **REJECT＋正常署名**（2 runs/10 assertions）とは別。P1-10o 8 runs/45 assertions（AN-N07 **HOST_BOUNDARY**）、Host正本9/34件・25 NOT RUN、P1-10i H01旧Authorityの危険反例、外部HC06強い失効 **HOLD**。汎用Gem/Public API/本番統合は**HOLD**、RubyGems/実決済/署名Receiptは**NO-GO**。
 
 **次の一件:** 安全性チェックの制限を回避せず、許可された検証ワークフローが明確になるまで本草稿を保留。S01を実測できた段階で初めて`RED/HOLD`または限定REJECTの新判断を記録する。
+
+## 追加の静的点検（同日・署名実行なし）
+
+DraftのS01 generatorを読むと、当初は公式JSON Schemaの検証エラーを**トップレベル1件の`type`違反**と想定していた。しかし固定公式Open Schemaは`constraints.items.anyOf`と`constraints.contains`で構成される。そこで修正後の`generate_s01.py`では、**`constraints[0]`の`anyOf`、`constraints`全体の`contains`の複合失敗**を確認し、`anyOf`の`context`に含まれる**`items[0].id`の`type: string`違反**を検出してフルパスを組み立てるようにした。
+
+この構造は**公式Schemaから抽出した最小構成のローカルJSON Schema例**でのみ検査した（`jsonschema` 4.26.0：トップレベル`anyOf`＋`contains`の2件、`anyOf.context`内に1つの`type`違反）。**公式AP2の完全なSchema・実署名fixture・RubyでのS01検証を実行したわけではない**。修正箇所は観測プログラムの**エラー収集方法だけ**で、Verifier本体やS01の安全性判断は変更していない。
+
+**依然としてP1-10tはNOT RUN、Ruby結果UNKNOWN、PRはDraft／main未反映。** GitHub Actions新設の安全性ブロックを他の方法で回避しない。
