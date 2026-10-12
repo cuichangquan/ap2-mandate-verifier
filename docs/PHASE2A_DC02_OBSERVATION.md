@@ -2,7 +2,7 @@
 
 **2026-10-12 JST / [Issue #47](https://github.com/cuichangquan/ap2-mandate-verifier/issues/47) / research-only / no payments / no production Gem**
 
-> **開始時状態：PREPARED / NOT RUN。** 本文中の「期待値」は新CIの実測で代替せず、Actionsの実行・ログ・CodexレビューとPR HEADを確認するまで安全性PASSを主張しない。DC03–DC05はNOT RUN、Phase 2-B・公開Gem/API・本番Host/失効/実決済/HC06は引き続きHOLD/NO-GO。
+> **実測判定：LIMITED_DC02_OBSERVED（合成署名・固定Issuerレイアウト限定）。** 専用Actionsが成功し、Issuer/Agent/Merchantの真正署名が両提示で成立、公式Schemaも両提示でVALID、Merchant権限commitmentだけが未解決となり、既存Ruby研究Verifierが`missing disclosure`で拒否することを観測。**Codexレビューと最新HEADのマージ判断は別途必要。**DC03–DC05はNOT RUN、Phase 2-B・公開Gem/API・本番Host/失効/実決済/HC06は引き続きHOLD/NO-GO。
 
 ## なぜDC02をやるか
 
@@ -30,4 +30,14 @@
 - 完全提示が正常成功、非開示の方もO1/O2が**有効な真の署名**、O3が本当にIssuer-signed未解決Merchant digestを特定、O4がSchemaとprofileを区別、Rubyが事前指定した `missing disclosure` でREJECTして初めて**限定DC02 POSITIVE SECURITY OBSERVATION**。例外や他原因で拒否した場合はBLOCKED/FAIL/HOLD。
 - DC02実測でIssue #47が全完了にはならない。署名付き未知path負例、DC03〜DC05、Host CAS/Checkout現行性、HC06、汎用Issuerの相互運用は未証明。
 
-**実測欄（PR作成時点）:** DC02 NOT RUN、専用CI/レビュー結果は未確認。実行後は実際のrun URL/HEAD SHA/ログ/残課題を追記する。
+## 実測結果（2026-10-12 / 初回HEAD）
+
+- **[GitHub Actions #38256150327](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38256150327)：SUCCESS、1 job成功、初回HEAD `a1128de5b98821ceecddf383d0b11fd6f4b0797c`**。
+- Pythonログ：`Issuer, Agent and Merchant signatures VALID for both full and hidden presentations`、`signed Merchant constraint digest OMITTED; independent completeness REJECT`、`official Open Schema VALID for both; local fixed Issuer profile REJECT for hidden`。公式AP2の`verify_chain`も**完全・非開示の両提示**で成立。すなわち**非開示側の拒否はIssuer/Agent署名不正やstale `sd_hash`、Schema INVALIDによるものではない**。
+- 既存Ruby研究Verifier `AP2CheckoutBindingResearch.verify!`：完全開示の対照は**限定正常成功**（業務ALLOWなし）、Merchant制約非開示側は **`missing disclosure` によるREJECT**。異なる理由で拒否されてもCIを成功させない設計。CIログのMinitest `0 runs / 0 assertions` はRubyスクリプトの自動runner表示であり、実測は明示的なRubyメソッド呼出と確認文によるもの。
+- 署名済みRoot JWS原文は全開示・部分提示で一致。Issuer署名済み`allowed_merchants` disclosureだけ非提示にし、Agent Terminalは各Rootに合わせ真正再署名。O3は元JWT生wireから入れ子placeholderを識別し、Merchant制約の未解決digestを確認。**O4公式Open Schemaは両方VALID**である一方、固定Issuer権限完全性profileは部分提示をREJECT。
+- 合成の署名原文・全Disclosureと順序・2hop chain・公開JWK・Host合成期待値・Python/Rubyの観測JSON・依存freeze・AP2 SHAと研究HEADを**生成後の`evidence-manifest.json`でSHA256/バイト長検証**。Artifact名`phase2a-dc02-synthetic-public-replay`、ID `11749877904`、約19.7KB、**2026-10-19 13:30 UTCに期限切れ**。恒久的リプレイ保存は未実施。
+- Pythonは固定公式依存の直接pin＋`jsonschema==4.26.0`、Rubyは`jwt==3.3.0`。`uv.lock` private registryにより**transitive full lock再現はしていない**。
+
+**重要な残課題:** これは**既存Ruby研究コードの固定Issuer2hop/1 Merchant/1 SKUに限った負例**。署名付き未知pathの拒否、DC03〜DC05、隠れた権限全一般形・実Issuer・Host nonce/Checkout現行性・HC06/失効/決済は未保証。**Issue #47はOPEN、Phase 2-B/Gem/API/本番はHOLD**。PR #51のCodexレビュー未完了ならマージしない。
+
