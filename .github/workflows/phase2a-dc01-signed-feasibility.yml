@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - "research/phase2a_dc01/**"
+      - "research/p1_1/**"
+      - "research/p1_2/**"
+      - "research/p1_3/**"
+      - "research/shared/**"
       - ".github/workflows/phase2a-dc01-signed-feasibility.yml"
       - "docs/PHASE2A_DC01_OBSERVATION.md"
   workflow_dispatch:
@@ -96,6 +100,30 @@ jobs:
           assert obs["o4_official_schema"] == "VALID" and obs["o4_local_profile"] == "PASS"
           assert ruby["o5_legacy_ruby_research"] == "LIMITED_POSITIVE"
           assert obs["outcome"] == "O1_O4_FEASIBILITY_ONLY"
+          # Finalize a second digest manifest only AFTER O1-O5 reports and
+          # toolchain/source records exist. The first manifest records replay
+          # wires; this final one protects replay bytes AND observed evidence.
+          names = {x.name for x in p.iterdir() if x.is_file()}
+          essential = {"manifest.json", "python-observation.json", "ruby-observation.json",
+                       "python-freeze.txt", "upstream-sha.txt", "research-head-sha.txt",
+                       "synthetic-fixture.json", "root-jws.txt", "root-sdjwt.txt",
+                       "terminal-jws.txt", "terminal-sdjwt.txt", "merchant-jwt.txt", "chain.txt"}
+          assert essential <= names, sorted(essential - names)
+          entries = []
+          for file in sorted(p.iterdir()):
+              if file.is_file() and file.name != "evidence-manifest.json":
+                  data = file.read_bytes()
+                  entries.append({"path": file.name, "sha256": hashlib.sha256(data).hexdigest(),
+                                  "byte_length": len(data)})
+          evidence_manifest = {"case_id": "DC01", "pinned_ap2_sha": obs["pinned_ap2_sha"],
+                               "files": entries, "scope": "synthetic signed replay and evidence only"}
+          (p / "evidence-manifest.json").write_text(json.dumps(evidence_manifest, indent=2, sort_keys=True) + "\n")
+          for item in json.loads((p / "evidence-manifest.json").read_text())["files"]:
+              data = (p / item["path"]).read_bytes()
+              assert len(data) == item["byte_length"]
+              assert hashlib.sha256(data).hexdigest() == item["sha256"]
+          assert (p / "upstream-sha.txt").read_text().strip() == obs["pinned_ap2_sha"]
+          print("DC01 evidence-manifest: complete signed wire + both observations + pinned provenance")
           print("DC01: independent signed positive O1-O4 plus legacy O5")
           print("LIMIT: ephemeral CI evidence, not Phase 2-B or DC02-DC05, NO business ALLOW")
           PY
