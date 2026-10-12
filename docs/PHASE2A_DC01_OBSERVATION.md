@@ -39,4 +39,12 @@
 
 **明示的な境界:** 旧P1-3研究用VerifierはPhase 2-A `VerifiedEvidence` 完成形ではなく、今回O5は完全性Gate順序・隠れた権限拒否・Host challenge CAS/Checkoutの最新性・失効の証明ではない。**DC02–DC05はNOT RUN / Issue #47 OPEN**。この成果を `DC01限定の正常実測` と呼び、**Phase 2-A独立開示完全性Gate、Phase 2-B実装・Gem公開・本番/決済はHOLD/NO-GO**。将来、時間依存でない公的リプレイfixtureの別管理と追加負例実行が必要。
 
+### Codex P1/P2修正後の再実測（現行の厳格化版）
+
+- 初回PRレビューで **P1 1件・P2 2件**を受領。**P1:** Root全体の未解決commitment残余ゼロだけでは不十分なので、**Issuer profileで許可された正確なcommitment path＋array/object kind（Root 2箇所、Terminal 1箇所）だけ**を受け入れるよう変更。署名が真正かつ全開示でも未知pathは `unsupported_profile` で拒否予定（新しい署名付き負例自体はまだNOT RUN）。
+- **P2:** Workflowのtriggerに、再利用するP1-1/P1-2/P1-3/shared依存コードを追加。Replay wireだけでなく**観測結果（Python/Ruby）、依存freeze、固定AP2 SHA、研究HEAD SHAの全ファイル**を最終 `evidence-manifest.json` でSHA256・byte_length照合するよう変更。
+- **[修正後GitHub Actions #38248786233](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38248786233): SUCCESS**、PR HEAD `05dadfeaf6a980108118969bbe15f449a2e00cd7`、Root commitments 2件・Terminal 1件、O1–O4 independent observerとO5旧Ruby research比較・final evidence manifest確認が成功。生成データはすべてsynthetic/公開鍵のみ。Artifact ID `11747495671`、約18.5KB、**2026-10-19 12:24 UTCまで**。全ファイルの再検証可能性は**artifactが取得可能な期間に限られる**。
+- Ruby比較器は既存研究コードのメソッドを1回呼んで結果を検査している。ログに表示される `0 runs, 0 assertions` は読み込まれたMinitest自動runnerの件数で、O5実測回数を表さない。**成功したメソッド呼び出しと明示的チェックのみの限定観測**として扱う。
+- **P1の真正署名付き未知path拒否テスト、DC02〜DC05、恒久的に凍結されたリプレイfixture、Host nonce-CAS等は依然NOT RUN / HOLD**。最新Codexレビュー完了と未解決threadゼロが確認されるまで本PRはマージしない。
+
 **Codexレビュー/PRマージ判定:** この文書の最新HEADレビュー結果を別途確認するまでマージしない。
