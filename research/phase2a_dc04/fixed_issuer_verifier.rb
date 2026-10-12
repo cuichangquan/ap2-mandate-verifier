@@ -84,6 +84,8 @@ module AP2DC04FixedIssuerResearch
       header, signed_payload = AP2StrictJSONResearch.validate_signed_jws_json!(parts.first)
       exact_keys_subset!(header, %w[alg kid typ])
       raise Rejected, "unsupported issuer signing algorithm" unless header["alg"] == "ES256"
+      # Official pinned SDK root is typ=example+sd-jwt, not a Terminal JWT.
+      raise Rejected, "unsupported Root JOSE typ" unless header["typ"] == "example+sd-jwt"
       exact_keys_subset!(signed_payload, %w[delegate_payload _sd_alg])
       raise Rejected, "unsupported root hash algorithm" unless [nil, "sha-256"].include?(signed_payload["_sd_alg"])
       raise Rejected, "invalid signed Root array" unless
