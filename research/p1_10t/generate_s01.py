@@ -52,13 +52,15 @@ def verify_pinned_checkout_before_import():
     )
     if sdk_diff.returncode != 0:
         raise RuntimeError("AP2 Python SDK tracked sources differ from pinned commit")
+    # Do NOT use --exclude-standard here. Python can import files hidden by
+    # .gitignore, .git/info/exclude, or a global excludesfile.
+    # Enumerate *all* untracked source names, including ignored directories.
     sdk_untracked = subprocess.check_output(
-        ["git", "-C", str(upstream), "ls-files", "--others",
-         "--exclude-standard", "--", sdk_tree],
+        ["git", "-C", str(upstream), "ls-files", "--others", "--", sdk_tree],
         text=True,
     ).splitlines()
     if any(path.endswith(".py") for path in sdk_untracked):
-        raise RuntimeError("AP2 Python SDK contains untracked Python source files")
+        raise RuntimeError("AP2 Python SDK contains untracked or ignored Python source files")
 
     expected_mandate = upstream / "code/sdk/python/ap2/sdk/mandate.py"
     if not expected_mandate.is_file():
