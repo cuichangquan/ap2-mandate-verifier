@@ -1,40 +1,77 @@
-# P1-10t — S01 正署名・公式Schema型不一致の観測準備（未実行 / HOLD）
+# P1-10t — S01 正署名・公式Schema型不一致のDockerローカル実測：ACCEPT / RED-HOLD
 
-**2026-10-12 JST / PREPARED ONLY / NOT RUN / NO SECURITY RESULT CLAIM**
+**2026-10-12 JST / FIXED SYNTHETIC ISSUER / LOCAL DOCKER OBSERVED / SECURITY RED-HOLD / CI NOT RUN**
 
-[P1-10s静的Gapレビュー](VERIFIER_P110S_CONSTRAINT_SHAPE_TYPE_GAPS.md)の最優先 **S01**：公式AP2 v0.2.0 Open Checkout JSON Schemaでは`line_item_requirements.id`は**String**だが、既存Ruby研究Verifier `research/p1_3/checkout_binding_research.rb`はキー集合だけを確認し、Requirement `id`の値のString型を検査しない、という**静的疑義**を対象にする。
+**対象：** [P1-10sで見つけたS01](VERIFIER_P110S_CONSTRAINT_SHAPE_TYPE_GAPS.md)。固定AP2 v0.2.0公式SHA `b4587ac1d055888a73b4b21750973cffba961793`、[公式Open Schema](https://github.com/google-agentic-commerce/AP2/blob/b4587ac1d055888a73b4b21750973cffba961793/code/sdk/schemas/ap2/open_checkout_mandate.json)。Open Checkoutの`checkout.line_items.items[0].id`（Constraint requirement `id`）を**文字列`"req-1"`から数値`123`**にした**合成Issuer署名済みMandate 1件**。公式JSON Schemaでは文字列型必須。この型の未検査は[既存Ruby研究Verifier](../research/p1_3/checkout_binding_research.rb)に限定される。
 
-## 今回準備できたこと（結果ではない）
+## 1. ユーザー提供Docker実測（GitHub Actionsではない）
 
-- `research/p1_10t/generate_s01.py`：公式固定AP2 v0.2.0 commit `b4587ac1d055888a73b4b21750973cffba961793` のPython SDKを前提として、正常な合成Open→Closed 2hopを作り、**Openのline_items.items[0].idだけを文字列`req-1`から整数`123`へ変更**するよう設計。Open disclosure digestの再計算とIssuer再署名、Agent署名Closed、Merchant署名Checkout JWT、公式Python署名/chain検証、公式JSON Schema Draft 2020-12による**唯一の型エラーの確認**をすべて実行時の前提にする。既知Merchant Schemaの参照も固定ローカルファイルで解決する予定。
-- `research/p1_10t/observe_s01.rb`：生成した公開鍵・署名トークンをRubyで独立に検証し、署名済み整数`id`の存在をassertした後、**未修正`AP2CheckoutBindingResearch.verify!`の受理/拒否を1件だけ観測**するよう準備。`ACCEPT`の場合に`RED_HOLD`、`REJECT`の場合に`LIMITED_REJECTION_ONLY`を記録する意図。
-- **秘密署名鍵・実Checkout・公開Gem/API・GCP・実Issuer/Authority・実決済は使わない**想定。ただし上記コードは**実行していないため署名検証成功や動作保証はまだない**。
+ユーザーがMac（Apple Silicon）から実行したDocker `ruby:3.4-bookworm` コンテナの**実際のターミナルログを受領**した。ChatGPT自身がDocker内部を操作・再実行したログではない。PR #41ブランチ `82e278815537d41252a4e8ac25ee1cb50d0f3ba2` の検証プログラム、公式AP2 `b4587ac1d055888a73b4b21750973cffba961793` に固定して実行した。環境：Ruby **3.4.11**（aarch64-linux）、jwt **3.3.0**、Python **3.11.2**、jsonschema **4.25.1**、jwcrypto **1.5.6**。コードは研究用であり、Gem/API・本番システムではない。
 
-## ブロッカーと判定
+| 判定レイヤー | ローカル実測 | 証拠の意味 |
+| --- | --- | --- |
+| Issuer署名・SD-JWT Disclosure digest・Agent PoP/チェーン・Merchant Checkout JWS | **VALID** | Python検証生成器が`S01 SIGNATURE VALID: issuer disclosure/commitment, agent PoP and merchant JWS`と出力 |
+| 固定公式AP2 Open Checkout JSON Schema Draft 2020-12 | **INVALID** | `S01 SCHEMA INVALID: pinned anyOf/contains errors; nested id type:string violation (integer 123)`と出力。トップレベル`anyOf`/`contains`内のネストした`type:string`違反を検出 |
+| Ruby側Issuer Root検証 | **true** | Rubyレポートの`ruby_signed_root_verified: true` |
+| 既存の未修正`AP2CheckoutBindingResearch.verify!` | **ACCEPT** | `S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)` |
+| 専用Ruby Minitest 1件 | **1 run / 7 assertions / failures 0 / errors 0 / skips 0** | **危険なACCEPTの観測に成功**という意味。セキュリティPASSではない |
+| Ruby `observed.security` | **RED_HOLD** | ローカル研究コードは型違反の署名済みConstraintを受理 |
+| GitHub Actions | **新規0件 / NOT RUN** | CI未実施。ローカル観測と混同しない |
 
-**専用`.github/workflows/p1-10t-s01-observation.yml`の作成がプラットフォーム安全性チェックによりブロックされた。** この制限を**迂回していない**。よってCI用workflowを作成・実行できず、Ruby/Pythonテスト実行結果も**0件**。当該S01の公式Schema INVALID（コードで意図した条件）と暗号VALID（コードで意図した条件）を**実測したとは主張しない**。Rubyの`ACCEPT/REJECT`は**UNKNOWN / NOT RUN**。
+**検証結論：この限定研究用Verifierに対し、正しく署名・開示されたものの公式Schemaに違反する`Requirement.id: 123`を受理する具体的な再現例が成立。P1-10t SECURITY RED/HOLD。** 有効署名はSchema適合を保証しない。合成入力の実測であって、実際の決済悪用・一般的AP2プロファイル・外部Issuerが同じ条件で受理されるとの実証ではない。
 
-現時点では**P1-10tを研究PRの草稿（Draft）に留め、CI未検証のままmainへマージしない**。安全性チェックのブロックについて、変更を別ファイル/別手段へ移すなどの回避は行わない。再開するには、許可された検証手段と明示的な実行条件を確認する必要がある。
+## 2. 実行ログの必要部分（秘密鍵・JWT・fixtureは転載しない）
 
-| 項目 | 現状 |
-| --- | --- |
-| 正署名の合成S01（数値`id`） | **コードは準備済み、署名・Disclosureの実測NOT RUN** |
-| 公式Schema検査 | **予定、NOT RUN**（公式Schema固定SHAは参照済み） |
-| Rubyの`ACCEPT / REJECT` | **UNKNOWN / NOT RUN** |
-| 新規テスト/CI成功数 | **0** |
-| 既存Verifier修正 | **なし** |
-| PRの扱い | **Draft / HOLD / main未反映** |
+公式コードの取得は次を`git rev-parse HEAD`で確認：
+- PR #41 head（ローカル実行時点）：`82e278815537d41252a4e8ac25ee1cb50d0f3ba2`
+- 公式 AP2：`b4587ac1d055888a73b4b21750973cffba961793`
 
-## 既存の実測と継続HOLD
+ユーザー実行コマンド：
 
-[P1-10q](VERIFIER_P110Q_GP01_EVIDENCE.md)の**修正前GP01 ACCEPT / RED-HOLD**は歴史的に維持し、[P1-10r](VERIFIER_P110R_GP01_FIX_EVIDENCE.md)の固定Issuer GP01 **REJECT＋正常署名**（2 runs/10 assertions）とは別。P1-10o 8 runs/45 assertions（AN-N07 **HOST_BOUNDARY**）、Host正本9/34件・25 NOT RUN、P1-10i H01旧Authorityの危険反例、外部HC06強い失効 **HOLD**。汎用Gem/Public API/本番統合は**HOLD**、RubyGems/実決済/署名Receiptは**NO-GO**。
+```bash
+export AP2_P110T_UPSTREAM_ROOT=/work/AP2
+python /work/verifier/research/p1_10t/generate_s01.py /work/s01.json
 
-**次の一件:** 安全性チェックの制限を回避せず、許可された検証ワークフローが明確になるまで本草稿を保留。S01を実測できた段階で初めて`RED/HOLD`または限定REJECTの新判断を記録する。
+export AP2_P110T_FIXTURE=/work/s01.json
+export AP2_P110T_REPORT=/work/s01-report.json
+ruby /work/verifier/research/p1_10t/observe_s01.rb --verbose
+```
 
-## 追加の静的点検（同日・署名実行なし）
+生成スクリプト実際の出力（抜粋）：
 
-DraftのS01 generatorを読むと、当初は公式JSON Schemaの検証エラーを**トップレベル1件の`type`違反**と想定していた。しかし固定公式Open Schemaは`constraints.items.anyOf`と`constraints.contains`で構成される。そこで修正後の`generate_s01.py`では、**`constraints[0]`の`anyOf`、`constraints`全体の`contains`の複合失敗**を確認し、`anyOf`の`context`に含まれる**`items[0].id`の`type: string`違反**を検出してフルパスを組み立てるようにした。
+```text
+S01 SIGNATURE VALID: issuer disclosure/commitment, agent PoP and merchant JWS
+S01 SCHEMA INVALID: pinned anyOf/contains errors; nested id type:string violation (integer 123)
+S01: synthetic ephemeral signing keys never written/uploaded
+```
 
-この構造は**公式Schemaから抽出した最小構成のローカルJSON Schema例**でのみ検査した（`jsonschema` 4.26.0：トップレベル`anyOf`＋`contains`の2件、`anyOf.context`内に1つの`type`違反）。**公式AP2の完全なSchema・実署名fixture・RubyでのS01検証を実行したわけではない**。修正箇所は観測プログラムの**エラー収集方法だけ**で、Verifier本体やS01の安全性判断は変更していない。
+Ruby実際の出力（抜粋）：
 
-**依然としてP1-10tはNOT RUN、Ruby結果UNKNOWN、PRはDraft／main未反映。** GitHub Actions新設の安全性ブロックを他の方法で回避しない。
+```text
+S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)
+Finished in 0.006583s, 151.9045 runs/s, 1063.3316 assertions/s.
+1 runs, 7 assertions, 0 failures, 0 errors, 0 skips
+Ruby署名検証: True
+Ruby判定: ACCEPT
+Security: RED_HOLD
+```
+
+この`1 runs ... 0 failures`は意図した**観測テストの成功**であって**拒否テスト合格ではない**。ユーザーが実行した生のログに対する記録であり、署名済みfixture JSONや秘密鍵はPRに含めていない。生成器はRAMで一時署名鍵を生成し、JSONには合成署名済みトークンと公開JWKのみを出力する。
+
+## 3. 観測前の1件の検証器スクリプト不具合と修正
+
+ローカル初回の`generate_s01.py`は**`jwcrypto.JWK.from_json(public_jwk)`にPython dictを渡し、`InvalidJWKValue`で停止**。Issuerの改変RootおよびSchema検証は通過していたが、その時点ではMerchant署名・2hopチェーンの完成を主張できなかった。
+
+P1-10t観測**生成器だけ**を次のように1行修正して再実行：
+`JWK.from_json(json.dumps(public_jwk))`（PR head `82e2788`）。再実行後に上記の**署名VALID＋Schema INVALID＋Ruby ACCEPT**まで確認。**既存Ruby Verifier実装への修正は0件**。また`anyOf`/`contains`の合成Schemaエラーを1件と取り違えないための観測生成器修正も含む。
+
+## 4. 次の判断と境界
+
+**P1-10t観測はローカル実測でRED/HOLD。** 原因に対するVerifierの修正・正常署名回帰・別署名負例は**本PRの承認範囲外**。GP01とは別の**S01型検証の反例**として記録し、S02その他の未検証リスクにGOは出さない。
+
+- [P1-10q修正前GP01 RED](VERIFIER_P110Q_GP01_EVIDENCE.md)は歴史的事実として維持。[P1-10rのGP01限定対策と正常signed正例](VERIFIER_P110R_GP01_FIX_EVIDENCE.md)：**2 runs / 10 assertions、0 failures**（別CI）。
+- P1-10o：**8 runs / 45 assertions**（別CI、AN-N07は**HOST_BOUNDARY**でありリプレイ防止PASSでない）。
+- Host正本 **9/34実測・25 NOT RUN**、外部Authority→Host契約C01〜C12 OPEN/UNCONFIRMED、強い失効HC06 **HOLD**。
+- 汎用Gem/Public API/本番利用 **HOLD**、RubyGems公開・実決済・署名Receipt **NO-GO**。
+- GitHub Actionsの新規workflow追加は前にプラットフォーム安全性チェックでブロックされており**迂回せず**。**CIは未実行**。PRをどの条件でReady/mergeするかはレビューと証拠の追加判断で決める。
+- **次のおすすめ1件（別途ユーザー承認後のみ）：P1-10u**、固定Issuer研究用Verifierで`line_item_requirements.id`の型をFail Closedにする小さな修正を設計し、同じ正署名S01の**REJECT**と別の正署名正常Checkoutの非退行を検証する。S02/汎用Issuer/Gem/本番まで自動拡張しない。
