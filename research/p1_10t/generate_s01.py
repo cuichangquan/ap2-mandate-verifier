@@ -5,6 +5,7 @@ keys in RAM. Mutate one line_item_requirements.id from "req-1" to INTEGER 123
 within the genuinely Issuer-signed Open disclosure, re-commit digest and
 re-sign Root. Do not write/upload private keys or real Checkout data.
 """
+import hashlib
 import json
 import os
 import subprocess
@@ -28,10 +29,13 @@ def verify_pinned_checkout_before_import():
     open_schema_path = upstream / "code/sdk/schemas/ap2/open_checkout_mandate.json"
     merchant_schema_path = upstream / "code/sdk/schemas/ap2/types/merchant.json"
 
-    # Never run Git with checkout-local fsmonitor hooks or external diff tools.
-    # These command-line overrides take precedence over the checkout's .git/config.
+    # Provenance is based on pinned Git tree blobs and ACTUAL file bytes.
+    # Never trust Git worktree diff/status/index flags or clean filters:
+    # they can hide bytes Python will import (see Codex P2 review threads).
+    # --no-replace-objects prevents refs/replace from substituting a tree.
     git = [
-        "git", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null",
+        "git", "--no-replace-objects",
+        "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null",
         "-c", "diff.external=", "-C", str(upstream),
     ]
     checkout_sha = subprocess.check_output(
@@ -39,49 +43,84 @@ def verify_pinned_checkout_before_import():
     ).strip()
     if checkout_sha != SHA:
         raise RuntimeError("AP2 source checkout is not the fixed v0.2.0 commit")
+
+    def raw_git_blob_sha1(file_path):
+        content = file_path.read_bytes()
+        prefix = f"blob {len(content)}\\0".encode("ascii")
+        return hashlib.sha1(prefix + content).hexdigest()
+
+    # Direct raw-byte hashing: no Git attributes / smudge / clean filters.
     expected_blobs = {
-        open_schema_path: "e3d9cafa7311d90612c7f908ae9b8821ddc8735a",
-        merchant_schema_path: "2e44a4dc943c009af106e7103e9e30f4e556b98c",
+        upstream / "code/sdk/schemas/ap2/open_checkout_mandate.json":
+            "e3d9cafa7311d90612c7f908ae9b8821ddc8735a",
+        upstream / "code/sdk/schemas/ap2/types/merchant.json":
+            "2e44a4dc943c009af106e7103e9e30f4e556b98c",
     }
     for path, expected_blob in expected_blobs.items():
-        actual_blob = subprocess.check_output(
-            [*git, "hash-object", str(path)], text=True,
-        ).strip()
-        if actual_blob != expected_blob:
+        if path.is_symlink() or raw_git_blob_sha1(path) != expected_blob:
             raise RuntimeError(f"AP2 official schema bytes changed: {path}")
 
-    # Check the entire imported SDK tree, not just the main module's path.
     sdk_tree = "code/sdk/python"
-    sdk_diff = subprocess.run(
-        [*git, "diff", "--no-ext-diff", "--no-textconv", "--quiet", "HEAD", "--", sdk_tree],
-        capture_output=True, text=True, check=False,
-    )
-    if sdk_diff.returncode != 0:
-        raise RuntimeError("AP2 Python SDK tracked sources differ from pinned commit")
-    # No --exclude-standard: ignored code, bytecode, extension modules and
-    # directory symlinks can be imported when SDK_ROOT is placed on sys.path.
-    # Reject EVERY untracked SDK artifact except ordinary pip editable-install
-    # metadata under a root-level *.egg-info directory (never importable).
-    sdk_untracked = subprocess.check_output(
-        [*git, "ls-files", "--others", "--", sdk_tree], text=True,
-    ).splitlines()
+    sdk_root = upstream / sdk_tree
+    # ls-tree reads the immutable pinned COMMIT tree, not the mutable index.
+    tree = subprocess.check_output([*git, "ls-tree", "-r", "-z", SHA, "--", sdk_tree])
+    expected_files = {}
+    for row in tree.split(b"\\0"):
+        if not row:
+            continue
+        metadata, separator, raw_name = row.partition(b"\\t")
+        fields = metadata.split()
+        if not separator or len(fields) != 3 or fields[1] != b"blob":
+            raise RuntimeError("Unexpected entry in pinned AP2 Python SDK tree")
+        mode, _, expected_blob = fields
+        if mode not in (b"100644", b"100755"):
+            raise RuntimeError("Unsupported tracked AP2 SDK file mode")
+        name = Path(os.fsdecode(raw_name)).relative_to(sdk_tree).as_posix()
+        if name in expected_files:
+            raise RuntimeError("Duplicate SDK path in pinned tree")
+        expected_files[name] = expected_blob.decode("ascii")
+    if "ap2/sdk/mandate.py" not in expected_files:
+        raise RuntimeError("Pinned AP2 mandate SDK file absent from Git tree")
 
-    def allowed_editable_metadata(path):
-        relative = Path(path).relative_to(Path(sdk_tree))
-        parts = relative.parts
-        if len(parts) != 2 or not parts[0].endswith(".egg-info"):
-            return False
-        filename = parts[1]
-        return filename in {"PKG-INFO", "SOURCES.txt", "dependency_links.txt",
-                            "requires.txt", "top_level.txt", "entry_points.txt",
-                            "direct_url.json", "not-zip-safe", "zip-safe"}
-
-    unexpected = [path for path in sdk_untracked if not allowed_editable_metadata(path)]
-    if unexpected:
-        raise RuntimeError(
-            "AP2 Python SDK contains untracked or ignored importable/unknown artifacts "
-            "(including bytecode, extensions or symlinks); use a clean pinned SDK tree"
+    # Check EVERY tracked SDK file's actual raw bytes; this catches files
+    # hidden by assume-unchanged/skip-worktree or altered by clean filters.
+    expected_directories = set()
+    for relative_name, blob in expected_files.items():
+        relative = Path(relative_name)
+        expected_directories.update(
+            parent.as_posix() for parent in relative.parents if parent != Path(".")
         )
+        file_path = sdk_root / relative
+        if (file_path.is_symlink() or not file_path.is_file()
+                or file_path.resolve(strict=True) != file_path
+                or raw_git_blob_sha1(file_path) != blob):
+            raise RuntimeError(f"AP2 Python SDK tracked source bytes changed: {relative_name}")
+
+    def allowed_editable_metadata(relative):
+        parts = relative.parts
+        return (len(parts) == 2 and parts[0].endswith(".egg-info")
+                and parts[1] in {
+                    "PKG-INFO", "SOURCES.txt", "dependency_links.txt",
+                    "requires.txt", "top_level.txt", "entry_points.txt",
+                    "direct_url.json", "not-zip-safe", "zip-safe",
+                })
+
+    # Walk the actual filesystem, including ignored content. Fail closed on
+    # extra files, unknown directories, symlinks, bytecode and extensions.
+    # Only standard root-level *.egg-info metadata is allowed for pip -e.
+    for path in sdk_root.rglob("*"):
+        relative = path.relative_to(sdk_root)
+        name = relative.as_posix()
+        if path.is_symlink():
+            raise RuntimeError(f"AP2 SDK symlink is not approved: {name}")
+        if path.is_dir():
+            if name in expected_directories or (
+                    len(relative.parts) == 1 and name.endswith(".egg-info")):
+                continue
+        elif path.is_file():
+            if name in expected_files or allowed_editable_metadata(relative):
+                continue
+        raise RuntimeError(f"AP2 SDK contains untracked/ignored artifact: {name}")
 
     expected_mandate = upstream / "code/sdk/python/ap2/sdk/mandate.py"
     if not expected_mandate.is_file():
