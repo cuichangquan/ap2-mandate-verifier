@@ -20,9 +20,9 @@ module AP2TwoHopResearch
       # The only opt-in alternative is the named DC04 fixed-Issuer research
       # resolver. Never accept an arbitrary caller-supplied resolver.
       allowed_dc04 = defined?(AP2DC04FixedIssuerResearch) &&
-        root_research.equal?(AP2DC04FixedIssuerResearch)
+        AP2DC04FixedIssuerResearch.equal?(root_research)
       raise Rejected, "unsupported Root research resolver" unless
-        root_research.equal?(AP2RootSDJWTResearch) || allowed_dc04
+        AP2RootSDJWTResearch.equal?(root_research) || allowed_dc04
       root = root_research.verify_full_root!(root_wire, trusted_jwk: issuer_jwk)
       # The lab supports exactly this Issuer-signed Open layout. Comparing
       # only the intersection of Open/Closed keys is insufficient: an Agent
