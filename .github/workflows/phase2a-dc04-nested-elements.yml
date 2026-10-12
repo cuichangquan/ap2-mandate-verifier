@@ -127,7 +127,7 @@ jobs:
           assert all(item["status"] == "REJECT"
                      for item in candidate["candidate_signed_layout_negatives"].values())
           assert set(py["additional_genuine_signed_negatives"]) == {
-              "unexpected_nested_path", "issuer_decoy",
+              "unexpected_nested_path", "issuer_decoy", "wrong_root_typ",
           }
           assert candidate["candidate_gate"] == "LIMITED_DC04_OBSERVED"
           control = ruby["legacy_ruby_observations"]["full"]
