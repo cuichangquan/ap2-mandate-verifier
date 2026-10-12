@@ -51,3 +51,31 @@ P1-10rの`require_exact_constraint_keys!`は署名済みConstraintオブジェ�
 **次の1件 P1-10t（別途ユーザー明示承認後のみ）：S01に限定した合成正署名・Schema-invalid型の観測。** `checkout.line_items.items[0].id` を合成`123`の数値へ変更し、**Disclosure digest・Issuer/Agent JWSは有効であることを独立に確認**した上で、**公式JSON SchemaではINVALID**であることを別途検証し、**既存Ruby研究VerifierのACCEPT/REJECTをそのまま観測**する。**もしACCEPTならRED/HOLDと記録、コード修正はさらに別承認。** 署名の有効性と公式Schema適合を混同しない。新規テスト/CI/研究コードをこのP1-10s PRでは作成・実行しない。
 
 **維持する既存数値：** Host正本 **9/34実測・25 NOT RUN（過去12 runs/465 assertions）**、P1-10r **2/10**、P1-10o **8/45**、P1-10q修正前 **ACCEPT/RED-HOLD**、公式Python intermediate hop **186 PASS / 2 FAIL**未解決。各実行は独立、合算して安全性を主張しない。
+
+## 5. 現在の引き継ぎ先（旧HANDOFFからの移行に注意）
+
+**新しいチャットでは、このP1-10s資料と[更新済みRESEARCH_PLAN](RESEARCH_PLAN.md)を最新の作業指示とする。** [旧HANDOFF](HANDOFF.md)はプロジェクト全体の過去経緯の参照用であり、同書の「次はP1-10s」は**更新未了の古い指示**なので再実行しない。編集の安全性チェックにより同ファイルは今回変更できておらず、変更済みとは主張しない。正式[RESEARCH_DECISION §36](RESEARCH_DECISION.md)のGem/API/本番HOLDは不変。
+
+### 次のチャットで渡す指示文
+
+```text
+ap2-mandate-verifierのP1-10tを検討したい。
+https://github.com/cuichangquan/ap2-mandate-verifier
+
+最初にGitHub最新main/Open PR/IssueとCodexレビュー状態を確認。
+docs/VERIFIER_P110S_CONSTRAINT_SHAPE_TYPE_GAPS.md と
+docs/RESEARCH_PLAN.md を現行の引き継ぎ資料として読む。
+docs/HANDOFF.mdの次はP1-10sという記述は古く、再実行しない。
+
+P1-10sは静的設計レビューだけ完了。S01は公式Open Checkout
+JSON SchemaでString必須のitems[0].idがRubyでは型未検査、
+S02はMerchant nameのString型未検査。両方とも新署名負例NOT RUN。
+
+P1-10tは別途明示承認後のみ、S01数値idの合成署名・Disclosure
+真正性VALIDと公式Schema INVALIDを独立に確認し、現行Rubyの
+ACCEPT/REJECTを1件だけ観測。不適切なACCEPTならRED/HOLDを記録。
+修正コードはさらに別承認。
+P1-10r GP01限定修正2/10、P1-10o 8/45（N07 HOST_BOUNDARY）、
+Host正本9/34・25 NOT RUN、HC06/一般Gem/本番HOLDを維持。
+新しいGem/API、GCP、実Issuer/Authority/Host、決済、Receiptは禁止。
+```
