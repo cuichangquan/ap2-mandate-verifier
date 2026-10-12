@@ -26,6 +26,11 @@ from ap2.sdk.sdjwt import common, kb_sd_jwt
 from ap2.sdk.sdjwt.chain import verify_chain
 from ap2.sdk.sdjwt.sd_jwt import verify as verify_root
 
+# Proof assertions elsewhere in this one-case lab must never be optimized away.
+# This explicit guard itself still executes under python -O / PYTHONOPTIMIZE.
+if not __debug__:
+    raise RuntimeError("P1-10t cannot run with Python -O: signed-evidence checks require assertions")
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "p1_10q"))
 from generate_gp01 import decode, compact, sign_compact, digest, rewrite_unique_placeholder  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "p1_3"))
@@ -49,7 +54,8 @@ def schema_validator():
     checkout_sha = subprocess.check_output(
         ["git", "-C", str(upstream), "rev-parse", "HEAD"], text=True,
     ).strip()
-    assert checkout_sha == SHA, "AP2 source checkout is not the fixed v0.2.0 commit"
+    if checkout_sha != SHA:
+        raise RuntimeError("AP2 source checkout is not the fixed v0.2.0 commit")
     expected_blobs = {
         open_schema_path: "e3d9cafa7311d90612c7f908ae9b8821ddc8735a",
         merchant_schema_path: "2e44a4dc943c009af106e7103e9e30f4e556b98c",
@@ -58,10 +64,12 @@ def schema_validator():
         actual_blob = subprocess.check_output(
             ["git", "-C", str(upstream), "hash-object", str(path)], text=True,
         ).strip()
-        assert actual_blob == expected_blob, f"AP2 official schema bytes changed: {path}"
+        if actual_blob != expected_blob:
+            raise RuntimeError(f"AP2 official schema bytes changed: {path}")
     imported_mandate = Path(sys.modules["ap2.sdk.mandate"].__file__).resolve(strict=True)
     expected_mandate = (upstream / "code/sdk/python/ap2/sdk/mandate.py").resolve(strict=True)
-    assert imported_mandate == expected_mandate, "Installed AP2 SDK is not loaded from pinned checkout"
+    if imported_mandate != expected_mandate:
+        raise RuntimeError("Installed AP2 SDK is not loaded from pinned checkout")
 
     # Review P2 follow-up: a pinned HEAD does not prove tracked SDK sources
     # were not edited in the worktree after checkout. Reject any staged or
@@ -71,15 +79,15 @@ def schema_validator():
         ["git", "-C", str(upstream), "diff", "--quiet", "HEAD", "--", sdk_tree],
         capture_output=True, text=True, check=False,
     )
-    assert sdk_diff.returncode == 0, "AP2 Python SDK tracked sources differ from pinned commit"
+    if sdk_diff.returncode != 0:
+        raise RuntimeError("AP2 Python SDK tracked sources differ from pinned commit")
     sdk_untracked = subprocess.check_output(
         ["git", "-C", str(upstream), "ls-files", "--others",
          "--exclude-standard", "--", sdk_tree],
         text=True,
     ).splitlines()
-    assert not any(path.endswith(".py") for path in sdk_untracked), (
-        "AP2 Python SDK contains untracked Python source files"
-    )
+    if any(path.endswith(".py") for path in sdk_untracked):
+        raise RuntimeError("AP2 Python SDK contains untracked Python source files")
     open_schema = json.loads(open_schema_path.read_text())
     merchant_schema = json.loads(merchant_schema_path.read_text())
     Draft202012Validator.check_schema(open_schema)
