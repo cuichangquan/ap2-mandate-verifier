@@ -36,7 +36,7 @@
 | **OBSERVED（限定）** | 固定合成正例のIssuer/Agent/Merchant真正署名・SD-JWT binding・公式SchemaとRuby限定受理 | DC01、DC04候補。Trust設定は合成Host入力であって実Issuer契約ではない。 |
 | **OBSERVED（限定）** | 元署名済みRootのdigest／配列placeholderをPython別経路で全走査して、部分非開示・未知位置・decoy・追加Root slot等を識別 | DC02–DC06。O3独立オラクルの結果をそのままRubyの全能力に帰属させない。 |
 | **OBSERVED（限定）** | 許容していない真正署名付き構造を、狭いRuby研究候補がFail Closedで拒否 | DC04–DC06。旧RubyのFULL受理・全負例・一般入力を含む主張にはならない。 |
-| **UNPROVEN / BLOCKER** | Host固定の**Issuer ID + 公開鍵 + profile version + 許可レイアウト + 発行経路/decoy方針**が、検証時の正本と一致し、実Isssuerに適用可能な独立検査可能契約として定義・固定されていること | 合成発行者と暫定Ruby検証器の試験は、**発行者がそのprofileに従うという認証済み保証**を代替しない。Hostの信頼policyとIssuer署名が証明する事実を区別する。 |
+| **UNPROVEN / BLOCKER** | Host固定の**Issuer ID + 公開鍵 + profile version + 許可レイアウト + 発行経路/decoy方針**が、検証時の正本と一致し、実Issuerに適用可能な独立検査可能契約として定義・固定されていること | 合成発行者と暫定Ruby検証器の試験は、**発行者がそのprofileに従うという認証済み保証**を代替しない。Hostの信頼policyとIssuer署名が証明する事実を区別する。 |
 | **UNPROVEN / BLOCKER** | Phase 2-Bで署名済みRoot全体の厳格parse、commitment残余の一対一照合、未知・重複・decoyの拒否が、**署名検証・Schema・Constraint意味評価との明示した順序**で統合されること | 現在の隔離Ruby候補は汎用統合実装ではなく、DC03やDC06の先行拒否では統合順序を証明できない。 |
 | **UNPROVEN / BLOCKER** | profile変更/署名鍵rotationと失効、固定上限（wire bytes / depth / disclosures / digests / JWT count / 実行時間）、二重JSON key・JOSE曖昧表現等を横断的に保証 | [最小Verifier契約](PHASE2A_MINIMAL_VERIFIER_DESIGN.md)は固定資源値を未決としている。無制限defaultを許可しない。 |
 | **UNSUPPORTED（候補A）** | 汎用Issuer・未知/複数Open/Constraint、任意hop、多Merchant/SKU、decoy許容profile、部分的に秘匿した権限、未知nested SD方式 | 正規AP2でも受理しないことがある。候補Aはプライバシーより**曖昧ならSTOP**を優先する。 |
