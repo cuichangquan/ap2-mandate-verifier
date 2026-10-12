@@ -90,6 +90,12 @@ S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)
 
 **結論：** `eb83e26`でpre-import修正後の正規条件の合成S01生成・Ruby観測を再現（Schema INVALID、Ruby ACCEPT / **SECURITY RED-HOLD**）。旧`82e2788`での危険受理と整合し、**Ruby Verifier側の型検証欠落はまだ解消していない**。この結果は**ユーザー実行のDockerローカル証拠**であり、ChatGPT自身の実行やGitHub Actions CIの成功ではない。GitHub Actionsは **0件 / NOT RUN**。Codex再レビュー結果・未解決スレッドを別途検査し、実装対策は次のP1-10uに限定する。外部Issuer/Host/本番Gemは依然HOLD。
 
+### 3b. Codex追加P2：ignored Python SDK sourceをpre-importで拒否（修正後のDocker未実行）
+
+`eb83e26`の再レビューでは、`git ls-files --others --exclude-standard` が `.gitignore`・`.git/info/exclude`・global excludesの対象を表示せず、SDK配下の無追跡Python `.py` がimport可能なまま残る問題を指摘された。後続コミット `6bca6a43ecc2336ff5ecf06a98158b1e1ef35a93` で **`--exclude-standard`を外し、ignoredを含む無追跡`.py`をSDK import前に拒否**するよう修正した。別途、孤立した一時Gitリポジトリ上で `.gitignore`により隠した`code/sdk/python/ignored.py`が`git ls-files --others`に列挙されることを確認した（Git列挙挙動のみの確認で、AP2の新規統合試験ではない）。
+
+**最新の修正コミット `6bca6a4` はまだユーザーDockerで再実行されていない**。第3a節の最新**実測**は依然として`eb83e26`に対応する。過去の署名VALID・Schema INVALID・Ruby ACCEPT / **SECURITY RED-HOLD**は有効だが、新HEADのテスト結果と読み替えない。GitHub Actionsは依然 **0件 / NOT RUN**。Codex追加P2の再レビュー・最新版Docker再検証が済むまで本PRはDraft/HOLD。
+
 ## 4. 次の判断と境界
 
 **P1-10t観測はローカル実測でRED/HOLD。** 原因に対するVerifierの修正・正常署名回帰・別署名負例は**本PRの承認範囲外**。GP01とは別の**S01型検証の反例**として記録し、S02その他の未検証リスクにGOは出さない。
