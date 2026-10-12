@@ -135,12 +135,34 @@ def generate():
     ][0]["items"]
     assert signed_requirements[0]["id"] == S01_BAD_ID
     assert type(signed_requirements[0]["id"]) is int
-    # Independently assert INVALID using the exact pinned official Draft 2020-12 schema.
-    errors = sorted(official_validator.iter_errors(verified_open), key=lambda e: list(map(str, e.path)))
-    assert len(errors) == 1, [str(e) for e in errors]
-    error = errors[0]
-    assert list(error.path) == ["constraints", 0, "items", 0, "id"], list(error.path)
-    assert error.validator == "type" and error.validator_value == "string"
+    # The pinned schema composes constraints with items.anyOf and contains.
+    # One invalid requirement id produces TWO top-level composite failures
+    # (anyOf at constraints[0], contains at constraints), while the actual
+    # type:string violation is nested in the anyOf error.context.
+    # Do not mistake a composite validator error for malformed cryptography
+    # or require a nonexistent top-level 'type' error.
+    errors = list(official_validator.iter_errors(verified_open))
+    error_shapes = {(tuple(e.path), e.validator) for e in errors}
+    expected_shapes = {
+        (("constraints", 0), "anyOf"),
+        (("constraints",), "contains"),
+    }
+    assert len(errors) == 2 and error_shapes == expected_shapes, [
+        (list(e.path), e.validator, e.message) for e in errors
+    ]
+    compound = next(e for e in errors if e.validator == "anyOf")
+    type_errors = [
+        child for child in compound.context
+        if list(child.path) == ["items", 0, "id"]
+        and child.validator == "type"
+        and child.validator_value == "string"
+    ]
+    assert len(type_errors) == 1, [
+        (list(child.path), child.validator) for child in compound.context
+    ]
+    error = type_errors[0]
+    full_error_path = [*compound.path, *error.path]
+    assert full_error_path == ["constraints", 0, "items", 0, "id"]
 
     checkout = checkout_json()
     checkout_wire = sign_compact(merchant, compact(checkout))
@@ -162,7 +184,7 @@ def generate():
     )
     assert len(verified_chain) == 2, "pinned official signed Issuer/Agent chain verification"
     print("S01 SIGNATURE VALID: issuer disclosure/commitment, agent PoP and merchant JWS")
-    print("S01 SCHEMA INVALID: exactly one official Open id type error (integer 123, expected string)")
+    print("S01 SCHEMA INVALID: pinned anyOf/contains errors; nested id type:string violation (integer 123)")
     return {
         "ap2_commit": SHA,
         "probe_id": "S01",
@@ -170,7 +192,7 @@ def generate():
         "mutation_value": S01_BAD_ID,
         "upstream_signatures_verified": True,
         "official_schema_invalid": True,
-        "schema_error_path": list(error.path),
+        "schema_error_path": full_error_path,
         "schema_error_keyword": error.validator,
         "root_open_sdjwt": signed_root,
         "valid_terminal": closed_wire,
