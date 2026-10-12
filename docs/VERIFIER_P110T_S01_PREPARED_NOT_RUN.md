@@ -90,11 +90,21 @@ S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)
 
 **結論：** `eb83e26`でpre-import修正後の正規条件の合成S01生成・Ruby観測を再現（Schema INVALID、Ruby ACCEPT / **SECURITY RED-HOLD**）。旧`82e2788`での危険受理と整合し、**Ruby Verifier側の型検証欠落はまだ解消していない**。この結果は**ユーザー実行のDockerローカル証拠**であり、ChatGPT自身の実行やGitHub Actions CIの成功ではない。GitHub Actionsは **0件 / NOT RUN**。Codex再レビュー結果・未解決スレッドを別途検査し、実装対策は次のP1-10uに限定する。外部Issuer/Host/本番Gemは依然HOLD。
 
-### 3b. Codex追加P2：ignored Python SDK sourceをpre-importで拒否（修正後のDocker未実行）
+### 3b. Codex追加P2：ignored SDK Pythonソースの検証漏れと最新版Docker再実測（2026-10-12 JST）
 
-`eb83e26`の再レビューでは、`git ls-files --others --exclude-standard` が `.gitignore`・`.git/info/exclude`・global excludesの対象を表示せず、SDK配下の無追跡Python `.py` がimport可能なまま残る問題を指摘された。後続コミット `6bca6a43ecc2336ff5ecf06a98158b1e1ef35a93` で **`--exclude-standard`を外し、ignoredを含む無追跡`.py`をSDK import前に拒否**するよう修正した。別途、孤立した一時Gitリポジトリ上で `.gitignore`により隠した`code/sdk/python/ignored.py`が`git ls-files --others`に列挙されることを確認した（Git列挙挙動のみの確認で、AP2の新規統合試験ではない）。
+`eb83e26`へのCodex再レビューで、`git ls-files --others --exclude-standard` が`.gitignore`・`.git/info/exclude`・global excludesの対象を列挙せず、ignored SDK Pythonソースがpre-import検証を通過し得ることが指摘された。コミット`6bca6a43ecc2336ff5ecf06a98158b1e1ef35a93`は`--exclude-standard`を削除し、ignoredを含むSDKツリーの無追跡`.py`をSDK import前に拒否するよう修正した。隔離した一時Gitリポジトリでも、無視対象`code/sdk/python/hidden.py`が`git ls-files --others -- code/sdk/python`に列挙され、`--exclude-standard`指定時には列挙されないことを実測確認した（Git列挙挙動の確認であり、異常なAP2 SDKの実行ではない）。
 
-**最新の修正コミット `6bca6a4` はまだユーザーDockerで再実行されていない**。第3a節の最新**実測**は依然として`eb83e26`に対応する。過去の署名VALID・Schema INVALID・Ruby ACCEPT / **SECURITY RED-HOLD**は有効だが、新HEADのテスト結果と読み替えない。GitHub Actionsは依然 **0件 / NOT RUN**。Codex追加P2の再レビュー・最新版Docker再検証が済むまで本PRはDraft/HOLD。
+**最新Docker実測：** ユーザーが`/work/verifier`で`git pull --ff-only`し、実際のHEADを **`db732295a26fbf213f65af74d385715fb6abb698`** と確認。すなわち、Codex P2のpre-importおよびignoredソース列挙対策を含むコミットである。続けて前節と同じ`AP2_P110T_UPSTREAM_ROOT=/work/AP2`、`generate_s01.py`、`observe_s01.rb --verbose`を実行し、次の結果を提供した：
+
+```text
+S01 SIGNATURE VALID: issuer disclosure/commitment, agent PoP and merchant JWS
+S01 SCHEMA INVALID: pinned anyOf/contains errors; nested id type:string violation (integer 123)
+S01: synthetic ephemeral signing keys never written/uploaded
+S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)
+1 runs, 7 assertions, 0 failures, 0 errors, 0 skips
+```
+
+**判定：`db732295`最新版の合成・正常なSDK環境でも署名VALID / 公式Schema INVALID / Ruby研究Verifier ACCEPT、よって依然 SECURITY RED/HOLD。** これはローカル実測された危険受理の再現であり、修正された型検査の成功ではない。異常なignored SDKを配置したnegative実行テストや総合的ソース完全性、GitHub Actions CIの成功は主張しない。**GitHub Actionsは本PRで0件 / NOT RUN**。Gem/API/本番/HC06は引き続きHOLD、決済・公開はNO-GO。
 
 ## 4. 次の判断と境界
 
