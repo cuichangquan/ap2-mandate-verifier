@@ -1,0 +1,146 @@
+name: Phase 2-A DC06 Remaining Genuinely Signed Ambiguities (research only)
+
+on:
+  pull_request:
+    paths:
+      - "research/phase2a_dc06/**"
+      - "research/phase2a_dc04/**"
+      - "research/phase2a_dc01/**"
+      - "research/p1_3/**"
+      - "research/shared/**"
+      - "docs/PHASE2A_DC06_FOLLOWUP_OBSERVATION.md"
+      - ".github/workflows/phase2a-dc06-followup-signed.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-dc06-followup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout research
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
+      - name: Pinned AP2 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = b4587ac1d055888a73b4b21750973cffba961793
+      - name: Install research dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -e "$RUNNER_TEMP/ap2"
+          python -m pip install --disable-pip-version-check jsonschema==4.26.0
+          gem install jwt -v 3.3.0 --no-document
+          python -m pip freeze > "$RUNNER_TEMP/dc06-followup-freeze.txt"
+          ruby -rjwt -e 'abort "wrong Ruby JWT" unless Gem.loaded_specs.fetch("jwt").version.to_s == "3.3.0"'
+      - name: O1-O4 independently verify true Issuer-signed duplicate and hidden second authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python -B research/phase2a_dc06/followup_signed_ambiguity.py \
+            --fixture "$RUNNER_TEMP/dc06-followup-fixture.json" \
+            --schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/open_checkout_mandate.json" \
+            --merchant-schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/types/merchant.json" \
+            --replay-dir "$RUNNER_TEMP/dc06-followup-replay"
+      - name: O5 Ruby fixed-Issuer candidate must reject signed excess Root authority
+        env:
+          AP2_DC06_FOLLOWUP_FIXTURE: ${{ runner.temp }}/dc06-followup-fixture.json
+          AP2_DC06_FOLLOWUP_REPORT: ${{ runner.temp }}/dc06-followup-replay/ruby-observation.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -c research/phase2a_dc06/followup_observe_ruby.rb
+          ruby research/phase2a_dc06/followup_observe_ruby.rb
+      - name: Publish only explicitly bounded positive/negative evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/dc06-followup-freeze.txt" "$RUNNER_TEMP/dc06-followup-replay/python-freeze.txt"
+          git rev-parse HEAD > "$RUNNER_TEMP/dc06-followup-replay/research-head.txt"
+          git -C "$RUNNER_TEMP/ap2" rev-parse HEAD > "$RUNNER_TEMP/dc06-followup-replay/upstream-head.txt"
+          python - "$RUNNER_TEMP/dc06-followup-replay" <<'PY'
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+
+          folder = Path(sys.argv[1])
+          o = json.loads((folder / "python-observation.json").read_text())
+          ruby = json.loads((folder / "ruby-observation.json").read_text())
+          f = json.loads((folder / "public-fixture.json").read_text())
+          cases = {
+              "full", "repeated_signed_root_digest",
+              "two_signed_open_full", "two_signed_open_hidden",
+          }
+          assert o["case_id"] == ruby["case_id"] == f["case_id"] == "DC06-FOLLOWUP"
+          assert o["pinned_ap2_sha"] == ruby["pinned_ap2_sha"] == (
+              folder / "upstream-head.txt").read_text().strip()
+          assert set(o["cases"]) == set(f["roots"]) == set(f["terminals"]) == cases
+          assert all(o["cases"][name]["issuer_agent_merchant"] == "VALID"
+                     for name in cases)
+          assert all(o["cases"][name]["official_first_open_schema"] == "VALID"
+                     for name in cases)
+          assert o["cases"]["repeated_signed_root_digest"]["independent_duplicate"] == (
+              "repeated signed commitment")
+          assert o["cases"]["two_signed_open_full"]["official_second_open_schema"] == "VALID"
+          assert o["cases"]["two_signed_open_hidden"]["independent_incomplete"] == (
+              "incomplete_disclosure: signed commitment not disclosed")
+          assert o["cases"]["two_signed_open_hidden"]["official_second_open_schema"] == (
+              "UNAVAILABLE_UNDISCLOSED")
+          assert ruby["full"]["status"] == "LIMITED_POSITIVE"
+          assert set(ruby["signed_negatives"]) == cases - {"full"}
+          assert all(x["status"] == "REJECT" and
+                     x["reason"] == "invalid signed Root array" and
+                     x["origin"]["path"] == "fixed_issuer_verifier.rb" and
+                     x["origin"]["method"] == "verify_signed_payload!"
+                     for x in ruby["signed_negatives"].values())
+          assert ruby["gate"] == "LIMITED_DC06_FOLLOWUP_STRUCTURAL_REJECT"
+          for key in ("trusted_issuer_public_jwk", "expected_agent_public_jwk",
+                      "trusted_merchant_public_jwk"):
+              assert "d" not in f[key]
+          for name in cases:
+              assert (folder / f"{name}-root.txt").read_text() == f["roots"][name]
+              assert (folder / f"{name}-terminal.txt").read_text() == f["terminals"][name]
+          recs = []
+          for path in sorted(folder.iterdir()):
+              if path.is_file() and path.name != "evidence-manifest.json":
+                  data = path.read_bytes()
+                  recs.append({"path": path.name, "sha256": hashlib.sha256(data).hexdigest(),
+                               "byte_length": len(data)})
+          manifest = {
+              "case_id": "DC06-FOLLOWUP",
+              "gate": ruby["gate"],
+              "scope": "genuine issuer signatures, bounded early Root cardinality reject only",
+              "not_proven": "general SD-JWT repeated-digest semantics, generic AP2 Issuer or Phase 2-B",
+              "files": recs,
+          }
+          (folder / "evidence-manifest.json").write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+          assert all(hashlib.sha256((folder / e["path"]).read_bytes()).hexdigest()
+                     == e["sha256"] for e in recs)
+          print("DC06 follow-up bounded structural rejection PASS")
+          print("ISSUER-signed negative is independently verified; Ruby rejects early.")
+          print("Phase 2-A parent #47 OPEN, Phase 2-B/Gem/production HOLD")
+          PY
+      - name: Upload ephemeral synthetic public-only signed replay
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2a-dc06-followup-genuine-signed-ambiguity
+          path: ${{ runner.temp }}/dc06-followup-replay/
+          retention-days: 7
+          if-no-files-found: warn
