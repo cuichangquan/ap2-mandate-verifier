@@ -104,7 +104,8 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [GP01 Fixed-Issuer Nested Constraint Allowlist — P1-10r: historic RED to bounded REJECT + signed positive, dedicated 2 runs / 10 assertions (RESEARCH ONLY)](docs/VERIFIER_P110R_GP01_FIX_EVIDENCE.md)
 - [Signed Constraint Shape and Value-Type Residual Gaps — P1-10s: S01–S08, including requirement ID and Merchant name types (DESIGN ONLY, all new cases NOT RUN)](docs/VERIFIER_P110S_CONSTRAINT_SHAPE_TYPE_GAPS.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
-- [Next steps / new-chat handoff — Japanese](docs/HANDOFF.md)
+- [Current next steps / new-chat context — P1-10s review and P1-10t approval gate (Japanese)](docs/VERIFIER_P110S_CONSTRAINT_SHAPE_TYPE_GAPS.md)
+- [Historical project-wide handoff — Japanese (P1-10r era; P1-10s next-task text not yet updated)](docs/HANDOFF.md)
 - [Trust model and security boundaries](docs/SECURITY_BOUNDARY.md)
 
 ## Primary official references
