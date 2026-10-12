@@ -1,0 +1,149 @@
+name: Phase 2-A DC06 Genuinely Signed Unknown Authority Layouts (partial research)
+
+on:
+  pull_request:
+    paths:
+      - "research/phase2a_dc06/**"
+      - "research/phase2a_dc04/**"
+      - "research/phase2a_dc01/**"
+      - "research/p1_1/**"
+      - "research/p1_2/**"
+      - "research/p1_3/**"
+      - "research/shared/**"
+      - "docs/PHASE2A_DC06_OBSERVATION.md"
+      - ".github/workflows/phase2a-dc06-signed-unknown.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dc06-bounded-signed-oracles:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout research
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
+      - name: Pinned AP2 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = b4587ac1d055888a73b4b21750973cffba961793
+      - name: Install pinned direct research dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple -e "$RUNNER_TEMP/ap2"
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple jsonschema==4.26.0
+          gem install jwt -v 3.3.0 --no-document
+          python -m pip freeze > "$RUNNER_TEMP/dc06-freeze.txt"
+          ruby -rjwt -e 'abort "incorrect Ruby JWT" unless Gem.loaded_specs.fetch("jwt").version.to_s == "3.3.0"'
+      - name: O1-O4 issue and independently verify signed authority-unknown candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python -B research/phase2a_dc06/generate_and_observe.py \
+            --fixture "$RUNNER_TEMP/dc06-fixture.json" \
+            --schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/open_checkout_mandate.json" \
+            --merchant-schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/types/merchant.json" \
+            --replay-dir "$RUNNER_TEMP/dc06-replay"
+      - name: O5 Ruby strictly reject genuine signed unknown profiles
+        shell: bash
+        env:
+          AP2_DC06_FIXTURE: ${{ runner.temp }}/dc06-fixture.json
+          AP2_DC06_RUBY_REPORT: ${{ runner.temp }}/dc06-replay/ruby-oracle.json
+        run: |
+          set -euo pipefail
+          ruby -c research/phase2a_dc06/observe_ruby.rb
+          ruby research/phase2a_dc06/observe_ruby.rb
+      - name: Check complete signed negative matrices and public-only content-addressed replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/dc06-freeze.txt" "$RUNNER_TEMP/dc06-replay/python-freeze.txt"
+          git rev-parse HEAD > "$RUNNER_TEMP/dc06-replay/research-head.txt"
+          git -C "$RUNNER_TEMP/ap2" rev-parse HEAD > "$RUNNER_TEMP/dc06-replay/upstream-head.txt"
+          python - "$RUNNER_TEMP/dc06-replay" <<'PY'
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+
+          folder = Path(sys.argv[1])
+          o = json.loads((folder / "python-oracle.json").read_text())
+          ruby = json.loads((folder / "ruby-oracle.json").read_text())
+          f = json.loads((folder / "synthetic-public-fixture.json").read_text())
+          names = {
+              "full", "signed_root_sibling", "signed_nested_unknown",
+              "signed_nested_sd_full", "signed_nested_sd_hidden",
+          }
+          assert o["case_id"] == ruby["case_id"] == f["case_id"] == "DC06"
+          assert o["pinned_ap2_sha"] == ruby["pinned_ap2_sha"] == (
+              folder / "upstream-head.txt").read_text().strip()
+          assert o["o1_o2"] == "ALL_CASES_VALID_SIGNATURES_AND_BINDING"
+          assert set(o["o3_o4_cases"]) == names
+          assert all(o["o3_o4_cases"][n]["issuer_agent_merchant_signatures"] == "VALID"
+                     for n in names)
+          # The unknown signed negatives must remain schema-VALID:
+          # otherwise a schema-only rejection could falsely pass the
+          # bounded Ruby profile oracle and exaggerate DC06 evidence.
+          assert all(o["o3_o4_cases"][n]["official_schema_presented"] == "VALID"
+                     for n in names), "DC06: every signed presentation must be schema VALID"
+          assert o["o3_o4_cases"]["signed_nested_sd_hidden"]["raw_completeness"] == (
+              "incomplete_disclosure: signed commitment not disclosed")
+          assert ruby["candidate_full"]["status"] == "LIMITED_POSITIVE"
+          assert set(ruby["signed_unknown_negatives"]) == names - {"full"}
+          assert all(item["status"] == "REJECT" and
+                     item["origin"]["file"] == "fixed_issuer_verifier.rb"
+                     for item in ruby["signed_unknown_negatives"].values())
+          assert ruby["gate"] == "LIMITED_DC06_PARTIAL_OBSERVED"
+          assert len(ruby["unexecuted"]) == 2
+          for k in ("trusted_issuer_public_jwk", "expected_agent_public_jwk",
+                    "trusted_merchant_public_jwk"):
+              assert "d" not in f[k]
+          for name in names:
+              assert (folder / f"{name}-root-sdjwt.txt").read_text() == f["roots"][name]
+              assert (folder / f"{name}-terminal-sdjwt.txt").read_text() == f["terminals"][name]
+          records = []
+          for entry in sorted(folder.iterdir()):
+              if entry.is_file() and entry.name != "evidence-manifest.json":
+                  contents = entry.read_bytes()
+                  records.append({
+                      "path": entry.name, "sha256": hashlib.sha256(contents).hexdigest(),
+                      "byte_length": len(contents),
+                  })
+          manifest = {
+              "case_id": "DC06",
+              "profile": "research-only fixed Issuer",
+              "gate": "LIMITED_DC06_PARTIAL_OBSERVED",
+              "remaining_unexecuted": ruby["unexecuted"],
+              "files": records,
+          }
+          (folder / "evidence-manifest.json").write_text(
+              json.dumps(manifest, sort_keys=True, indent=2) + "\n")
+          for entry in records:
+              contents = (folder / entry["path"]).read_bytes()
+              assert len(contents) == entry["byte_length"]
+              assert hashlib.sha256(contents).hexdigest() == entry["sha256"]
+          print("DC06 candidate:", ruby["gate"])
+          print("DC06 HOLD: two signed cases NOT RUN; Phase 2-B/Gem/production/Host HOLD")
+          PY
+      - name: Upload only synthetic public-key signed replay and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2a-dc06-genuine-signed-unknown-research
+          path: ${{ runner.temp }}/dc06-replay/
+          retention-days: 7
+          if-no-files-found: warn
