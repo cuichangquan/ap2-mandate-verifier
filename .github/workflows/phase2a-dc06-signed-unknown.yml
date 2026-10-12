@@ -95,7 +95,11 @@ jobs:
           assert set(o["o3_o4_cases"]) == names
           assert all(o["o3_o4_cases"][n]["issuer_agent_merchant_signatures"] == "VALID"
                      for n in names)
-          assert o["o3_o4_cases"]["full"]["official_schema_presented"] == "VALID"
+          # The unknown signed negatives must remain schema-VALID:
+          # otherwise a schema-only rejection could falsely pass the
+          # bounded Ruby profile oracle and exaggerate DC06 evidence.
+          assert all(o["o3_o4_cases"][n]["official_schema_presented"] == "VALID"
+                     for n in names), "DC06: every signed presentation must be schema VALID"
           assert o["o3_o4_cases"]["signed_nested_sd_hidden"]["raw_completeness"] == (
               "incomplete_disclosure: signed commitment not disclosed")
           assert ruby["candidate_full"]["status"] == "LIMITED_POSITIVE"
