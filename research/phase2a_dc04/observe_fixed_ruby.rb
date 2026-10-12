@@ -53,14 +53,17 @@ end
 
 extra = {}
 f.fetch("additional_signed_negatives").each do |name, pair|
-  expected = name == "unexpected_nested_path" ?
-    /unsupported signed commitment path/ : /unsupported/
+  expected = case name
+             when "unexpected_nested_path" then /unsupported signed commitment path/
+             when "wrong_root_typ" then /unsupported Root JOSE typ/
+             else /unsupported/
+             end
   extra[name] = must_reject!(
     ctx, pair.fetch("root"), pair.fetch("terminal"), expected: expected
   )
 end
 raise "missing independent signed negative" unless extra.keys.sort ==
-  %w[issuer_decoy unexpected_nested_path]
+  %w[issuer_decoy unexpected_nested_path wrong_root_typ]
 
 # Fail-closed mutation regression. Each starts from a genuinely signed Root;
 # tampering must not be counted as an authentic hidden-element oracle.
