@@ -1,0 +1,131 @@
+name: Phase 2-A DC02 Genuine Signed Hidden Merchant (research only)
+
+on:
+  pull_request:
+    paths:
+      - "research/phase2a_dc02/**"
+      - "research/phase2a_dc01/**"
+      - "research/p1_1/**"
+      - "research/p1_2/**"
+      - "research/p1_3/**"
+      - "research/shared/**"
+      - ".github/workflows/phase2a-dc02-hidden-merchant.yml"
+      - "docs/PHASE2A_DC02_OBSERVATION.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signed-hidden-merchant:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source read-only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
+      - name: Checkout exact official AP2 v0.2 SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = "b4587ac1d055888a73b4b21750973cffba961793"
+      - name: Install official direct pins and independent schema tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple -e "$RUNNER_TEMP/ap2"
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple jsonschema==4.26.0
+          gem install jwt -v 3.3.0 --no-document
+          python -m pip freeze > "$RUNNER_TEMP/dc02-python-freeze.txt"
+          ruby -rjwt -e 'abort "wrong JWT version" unless Gem.loaded_specs.fetch("jwt").version.to_s == "3.3.0"'
+      - name: Signed control and hidden Merchant root/terminal with O1-O4
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONDONTWRITEBYTECODE=1
+          python -B research/phase2a_dc02/generate_and_observe.py \
+            --fixture "$RUNNER_TEMP/dc02-fixture.json" \
+            --schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/open_checkout_mandate.json" \
+            --merchant-schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/types/merchant.json" \
+            --replay-dir "$RUNNER_TEMP/dc02-replay"
+      - name: Ruby O5 complete control vs authentically signed hidden Merchant
+        shell: bash
+        env:
+          AP2_DC02_FIXTURE: ${{ runner.temp }}/dc02-fixture.json
+          AP2_DC02_RUBY_REPORT: ${{ runner.temp }}/dc02-replay/ruby-observation.json
+        run: |
+          set -euo pipefail
+          ruby -c research/phase2a_dc02/observe_ruby.rb
+          ruby research/phase2a_dc02/observe_ruby.rb
+          cp "$RUNNER_TEMP/dc02-python-freeze.txt" "$RUNNER_TEMP/dc02-replay/python-freeze.txt"
+          git -C "$RUNNER_TEMP/ap2" rev-parse HEAD > "$RUNNER_TEMP/dc02-replay/upstream-sha.txt"
+          git rev-parse HEAD > "$RUNNER_TEMP/dc02-replay/research-head-sha.txt"
+      - name: Validate independent outcomes and hash every replay artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - "$RUNNER_TEMP/dc02-replay" <<'PY'
+          from pathlib import Path
+          import hashlib, json, sys
+          p = Path(sys.argv[1])
+          py = json.loads((p / "python-observation.json").read_text())
+          rb = json.loads((p / "ruby-observation.json").read_text())
+          assert py["case_id"] == rb["case_id"] == "DC02"
+          assert py["o1_issuer_signature_full"] == py["o1_issuer_signature_hidden"] == "PASS"
+          assert py["o2_merchant_signature"] == "PASS"
+          assert py["o2_both_agent_signatures_and_sd_hash"] == "PASS"
+          assert py["o2_upstream_verify_chain_both"] == "PASS"
+          assert py["o3_control_root_unresolved"] == 0
+          assert py["o3_hidden_root_unresolved"] == 1
+          assert py["o3_hidden_path"] == "$/delegate_payload/0/disclosed/constraints/1"
+          assert py["o3_reason"] == "incomplete_disclosure: signed commitment not disclosed"
+          assert py["o4_control_schema"] == py["o4_hidden_presentation_schema"] == "VALID"
+          assert py["o4_partial_issuer_profile"] == "REJECT"
+          assert rb["o5_ruby_full_control"] == "LIMITED_POSITIVE"
+          assert rb["o5_ruby_hidden_merchant"] == "REJECT"
+          assert rb["o5_rejection_reason"] == "missing disclosure"
+          assert rb["o5_no_business_allow"] is True
+          assert (p / "upstream-sha.txt").read_text().strip() == py["pinned_ap2_sha"]
+          expected = {"full-root-jws.txt", "hidden-root-jws.txt", "full-root-sdjwt.txt",
+                      "hidden-root-sdjwt.txt", "full-terminal-sdjwt.txt",
+                      "hidden-terminal-sdjwt.txt", "merchant-jwt.txt",
+                      "fixture-public.json", "python-observation.json",
+                      "ruby-observation.json", "python-freeze.txt",
+                      "upstream-sha.txt", "research-head-sha.txt"}
+          have = {x.name for x in p.iterdir() if x.is_file()}
+          assert expected <= have, expected - have
+          original = (p / "full-root-jws.txt").read_bytes()
+          assert original == (p / "hidden-root-jws.txt").read_bytes()
+          entries = []
+          for f in sorted(p.iterdir()):
+              if f.is_file() and f.name != "evidence-manifest.json":
+                  b = f.read_bytes()
+                  entries.append({"path": f.name, "sha256": hashlib.sha256(b).hexdigest(),
+                                  "byte_length": len(b)})
+          manifest = {"case_id": "DC02", "ap2_sha": py["pinned_ap2_sha"],
+                      "public_only": True, "files": entries}
+          (p / "evidence-manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+          for e in manifest["files"]:
+              b = (p / e["path"]).read_bytes()
+              assert hashlib.sha256(b).hexdigest() == e["sha256"] and len(b) == e["byte_length"]
+          print("DC02 observed: true Issuer+Agent+Merchant signatures; profile-incomplete signed authority; reason-attributed Ruby REJECT")
+          print("IMPORTANT: synthetic research only, no Host ALLOW or Phase 2-B GO")
+          PY
+      - name: Upload only synthetic signed replay and public-key evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2a-dc02-synthetic-public-replay
+          path: ${{ runner.temp }}/dc02-replay/
+          retention-days: 7
+          if-no-files-found: warn
