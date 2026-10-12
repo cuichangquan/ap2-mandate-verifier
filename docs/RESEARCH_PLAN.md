@@ -2,6 +2,11 @@
 
 更新日：2026-10-12。**研究・小さなオフライン技術検証を実施。Ruby Gem/API実装・公開は未実施。**
 
+## 現在の判断（Issue #43）
+
+[**Phase 1研究総括 / Phase 2入口判定**](PHASE1_RESEARCH_CLOSURE_PHASE2_GATE.md)を現在の意思決定資料とする。P1-10t [PR #41](https://github.com/cuichangquan/ap2-mandate-verifier/pull/41)は修正前の署名付きS01危険ACCEPTの記録、P1-10u [PR #42](https://github.com/cuichangquan/ap2-mandate-verifier/pull/42)は署名付きS01の正確な型REJECT＋正常例evidence-only ACCEPT（ユーザーDocker **2 runs/12 assertions/失敗0**）の**限定修正・マージ済み**。**専用P1-10u GitHub ActionsはNOT RUN**。次は`P1-10v`等の追加を自動開始せず、**Phase 2-Aの最小Verifier仕様を設計するだけCONDITIONAL GO**。Gem/API実装・本番連携HOLD、実決済/RubyGems公開NO-GO。旧各Stepの「次の手順」は歴史的指示として扱う。
+
+
 ## Phase 0 — 仕様と競合調査
 
 - [x] AP2 v0.2の公式Commit SHAを固定してCheckout Mandate検証のMUSTを一覧化（[SPEC_BASELINE](SPEC_BASELINE.md) / [VERIFIER_REQUIREMENTS](VERIFIER_REQUIREMENTS.md)）。
