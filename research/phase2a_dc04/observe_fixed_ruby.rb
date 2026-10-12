@@ -102,7 +102,7 @@ must_reject!(ctx, full, terminals.fetch("hidden_sku_element"),
 wrong_issuer = ctx.merge(issuer_jwk: ctx.fetch(:expected_agent_jwk))
 must_reject!(wrong_issuer, full, terminal, expected: /invalid signed fixture/)
 wrong_agent = ctx.merge(expected_agent_jwk: ctx.fetch(:merchant_jwk))
-must_reject!(wrong_agent, full, terminal, expected: /Agent public key/)
+must_reject!(wrong_agent, full, terminal, expected: /root holder key not trusted expected Agent/)
 wrong_host_jwt = ctx.merge(host_checkout_jwt: "not-the-host-signed-JWT")
 must_reject!(wrong_host_jwt, full, terminal, expected: /Closed Checkout JWT differs/)
 
