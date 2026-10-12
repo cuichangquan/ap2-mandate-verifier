@@ -321,8 +321,11 @@ def verify_and_observe(f, schema_path, merchant_schema_path):
                     {(x["path"], x["kind"]) for x in extra_graph} != EXPECTED_ROOT_PATHS and
                     any(x["path"] == "$/delegate_payload/0/disclosed/constraints/1"
                         for x in extra_graph), "extra issuer-signed path not produced")
-            require(extra_open["delegate_payload"][0] == opened,
-                    "unexpected-path control changed Open semantics")
+            if extra_open["delegate_payload"][0] != opened:
+                print("DEBUG: expected signed Open", json.dumps(opened, sort_keys=True))
+                print("DEBUG: unexpected signed Open", json.dumps(
+                    extra_open["delegate_payload"][0], sort_keys=True))
+                raise ValueError("unexpected-path control changed Open semantics")
             extra_observations[kind] = {
                 "crypto": "VALID", "signed_path": "extra constraints/1",
                 "open_same_as_full": True,
