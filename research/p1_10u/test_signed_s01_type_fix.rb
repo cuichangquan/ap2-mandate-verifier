@@ -89,7 +89,8 @@ Minitest.after_run do
     results: P110U::RESULTS,
     official_schema_s01_invalid: true,
     other_schema_gaps: "NOT TESTED",
-    github_actions_ci: "NOT RUN",
+    p110u_signed_case_ci: "NOT RUN",
+    existing_ci_regressions: "TRACKED_SEPARATELY",
     general_gem_host_hc06_payment: "HOLD_NO_GO"
   }) + "\n")
 end
