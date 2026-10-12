@@ -1,0 +1,151 @@
+name: Phase 2-A DC05 Genuine Signed Decoy Ambiguity (research only)
+
+on:
+  pull_request:
+    paths:
+      - "research/phase2a_dc05/**"
+      - "research/phase2a_dc04/**"
+      - "research/phase2a_dc01/**"
+      - "research/p1_1/**"
+      - "research/p1_2/**"
+      - "research/p1_3/**"
+      - "research/shared/**"
+      - "docs/PHASE2A_DC05_OBSERVATION.md"
+      - ".github/workflows/phase2a-dc05-signed-decoy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dc05-authentic-decoy-oracles:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout research
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
+      - name: Checkout official pinned AP2 v0.2.0 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = "b4587ac1d055888a73b4b21750973cffba961793"
+      - name: Install pinned direct research dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple -e "$RUNNER_TEMP/ap2"
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple jsonschema==4.26.0
+          gem install jwt -v 3.3.0 --no-document
+          python -m pip freeze > "$RUNNER_TEMP/dc05-freeze.txt"
+          ruby -rjwt -e 'abort "unexpected jwt version" unless Gem.loaded_specs.fetch("jwt").version.to_s == "3.3.0"'
+      - name: Generate same official signed DC04 control with issuer decoy; never export secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python -B research/phase2a_dc04/generate_and_observe.py \
+            --fixture "$RUNNER_TEMP/dc05-fixture.json" \
+            --schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/open_checkout_mandate.json" \
+            --merchant-schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/types/merchant.json" \
+            --replay-dir "$RUNNER_TEMP/dc05-replay"
+      - name: DC05 O1-O4 whole issuer-signed decoy digest classification independent of SDK resolved Open
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python -B research/phase2a_dc05/observe_signed_decoy.py \
+            --fixture "$RUNNER_TEMP/dc05-fixture.json" \
+            --schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/open_checkout_mandate.json" \
+            --merchant-schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/types/merchant.json" \
+            --report "$RUNNER_TEMP/dc05-replay/dc05-python-oracle.json"
+      - name: DC05 O5 Ruby attribution of decoy failure after FULL positive
+        shell: bash
+        env:
+          AP2_DC05_FIXTURE: ${{ runner.temp }}/dc05-fixture.json
+          AP2_DC05_RUBY_REPORT: ${{ runner.temp }}/dc05-replay/dc05-ruby-oracle.json
+        run: |
+          set -euo pipefail
+          ruby -c research/phase2a_dc05/observe_ruby_decoy.rb
+          ruby research/phase2a_dc05/observe_ruby_decoy.rb
+      - name: Validate independent gates and content-addressed signed public replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/dc05-freeze.txt" "$RUNNER_TEMP/dc05-replay/python-freeze.txt"
+          git -C "$RUNNER_TEMP/ap2" rev-parse HEAD > "$RUNNER_TEMP/dc05-replay/official-source-head.txt"
+          git rev-parse HEAD > "$RUNNER_TEMP/dc05-replay/verifier-head.txt"
+          python - "$RUNNER_TEMP/dc05-replay" <<'PY'
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+
+          d = Path(sys.argv[1])
+          py = json.loads((d / "dc05-python-oracle.json").read_text())
+          rb = json.loads((d / "dc05-ruby-oracle.json").read_text())
+          assert py["case_id"] == rb["case_id"] == "DC05"
+          assert py["pinned_ap2_sha"] == "b4587ac1d055888a73b4b21750973cffba961793"
+          assert (d / "official-source-head.txt").read_text().strip() == py["pinned_ap2_sha"]
+          assert py["o1_issuer_signatures"] == "BOTH_VALID"
+          assert py["o2_agent_merchant_signatures_binding"] == "BOTH_VALID"
+          assert py["o3_decoy_residual_count"] >= 1
+          assert len(py["o3_decoy_residual_paths"]) == py["o3_decoy_residual_count"]
+          assert all("/_sd/" in p for p in py["o3_decoy_residual_paths"])
+          assert py["o3_independent_completeness_rejection"] == (
+              "incomplete_disclosure: signed commitment not disclosed")
+          assert py["o4_official_schema_control"] == "VALID"
+          assert py["o4_official_schema_decoy_presented"] == "VALID"
+          assert py["o4_official_sdk_resolved_open_same"] is True
+          assert rb["positive"]["status"] == "LIMITED_POSITIVE"
+          assert rb["issuer_signed_decoy_negative"]["status"] == "REJECT"
+          assert rb["issuer_signed_decoy_negative"]["origin"]["file"] == "fixed_issuer_verifier.rb"
+          assert rb["attributable_reason_family"] == "unsupported_profile"
+          assert rb["gate"] == "LIMITED_DC05_OBSERVED"
+          assert (d / "full-root-jws.txt").read_bytes() != (
+              d / "issuer_decoy-root-sdjwt.txt").read_bytes()
+          assert (d / "public-fixture.json").is_file()
+          private_markers = [b'"d":', b'PRIVATE KEY', b'-----BEGIN EC PRIVATE KEY-----']
+          # Inspect only the exported public-only fixture, not unrelated libraries.
+          data = (d / "public-fixture.json").read_bytes()
+          assert not any(marker in data for marker in private_markers)
+          entries = []
+          for f in sorted(d.iterdir()):
+              if f.is_file() and f.name != "dc05-evidence-manifest.json":
+                  buf = f.read_bytes()
+                  entries.append({"path": f.name,
+                                  "byte_length": len(buf),
+                                  "sha256": hashlib.sha256(buf).hexdigest()})
+          manifest = {
+              "case_id": "DC05",
+              "research_only": True,
+              "candidate_gate": rb["gate"],
+              "signed_decoy_residual_count": py["o3_decoy_residual_count"],
+              "files": entries,
+          }
+          (d / "dc05-evidence-manifest.json").write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+          for entry in manifest["files"]:
+              b = (d / entry["path"]).read_bytes()
+              assert len(b) == entry["byte_length"]
+              assert hashlib.sha256(b).hexdigest() == entry["sha256"]
+          print("DC05 candidate:", rb["gate"])
+          print("DC05 signed unknown residual paths:", py["o3_decoy_residual_paths"])
+          print("HOLD: no general AP2 conformance, Phase 2-B, Gem or payments")
+          PY
+      - name: Upload only synthetic public-key signed wires and observations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2a-dc05-signed-decoy-research
+          path: ${{ runner.temp }}/dc05-replay/
+          retention-days: 7
+          if-no-files-found: warn
