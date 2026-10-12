@@ -35,7 +35,7 @@ from ap2.sdk.generated.open_checkout_mandate import (
 )
 from ap2.sdk.generated.types.merchant import Merchant
 from ap2.sdk.mandate import MandateClient
-from ap2.sdk.sdjwt import common, kb_sd_jwt
+from ap2.sdk.sdjwt import common, kb_sd_jwt, sd_jwt
 from ap2.sdk.sdjwt.chain import verify_chain
 
 MERCHANT_PATH = "$/delegate_payload/0/disclosed/constraints/1/allowed/0"
@@ -136,6 +136,35 @@ def generate():
             k: b64url(hashlib.sha256(v.encode("ascii")).digest()) for k, v in by_target.items()
         },
     }
+    # Additional *genuinely issuer-signed* layout negatives. These must not
+    # be confused with unsigned JSON edits or mutations of Root's JWS bytes.
+    # In the first case, constraints[1] itself is SD-disclosed, moving the
+    # nested Merchant element to a non-allowlisted signed-wire path.
+    unexpected_sd = DisclosureMetadata(children={
+        "constraints": DisclosureMetadata(
+            sd_array_indices=[1],
+            array_children=metadata.children["constraints"].array_children,
+        ),
+    })
+    unexpected_root = MandateClient().create(
+        payloads=[mandate], issuer_key=issuer, sd=unexpected_sd,
+    )
+    # The official issuer also supports adding cryptographic decoy digests.
+    # Our fixed profile cannot distinguish their authority and must HOLD.
+    decoy_root = sd_jwt.create(
+        payload=mandate, issuer_key=issuer, sd=metadata, add_decoy_claims=True,
+    ).sd_jwt_issuance
+    fixture["additional_signed_negatives"] = {}
+    for kind, root in (("unexpected_nested_path", unexpected_root),
+                       ("issuer_decoy", decoy_root)):
+        terminal = kb_sd_jwt.create(
+            prev_token=common.parse_token(root), holder_key=agent,
+            payload=checkout, aud=AUD, nonce=NONCE,
+            sd=DisclosureMetadata(), hash_mode="sd_hash",
+        ).sd_jwt_issuance
+        fixture["additional_signed_negatives"][kind] = {
+            "root": root, "terminal": terminal,
+        }
     for key in ("trusted_issuer_public_jwk", "expected_agent_public_jwk", "trusted_merchant_public_jwk"):
         require(isinstance(fixture[key], dict) and "d" not in fixture[key], "secret JWK detected")
     return fixture
@@ -268,6 +297,50 @@ def verify_and_observe(f, schema_path, merchant_schema_path):
             and f["terminals"]["full"] != f["terminals"]["hidden_sku_element"],
             "Terminals not independently re-signed")
 
+    # Independent signatures and holder binding for additional negatives.
+    # The unexpected location has a completely disclosed, schema-valid Open;
+    # failure must be attributable to the issuer-signed commitment location.
+    extra_observations = {}
+    for kind, pair in f["additional_signed_negatives"].items():
+        raw_root, raw_term = pair["root"], pair["terminal"]
+        signed_extra = jws_payload(segments(raw_root)[0], f["trusted_issuer_public_jwk"])
+        signed_term = jws_payload(
+            segments(raw_term)[0], f["expected_agent_public_jwk"],
+            expected_typ="kb+sd-jwt",
+        )
+        require(signed_term.get("sd_hash") ==
+                b64url(hashlib.sha256(raw_root.encode("ascii")).digest()),
+                "extra signed Terminal not bound to exact Root")
+        require(signed_term.get("aud") == f["expected_aud"] and
+                signed_term.get("nonce") == f["expected_nonce"],
+                "extra signed Terminal wrong audience/nonce")
+        if kind == "unexpected_nested_path":
+            extra_open, extra_graph = raw_commitment_graph(
+                signed_extra, segments(raw_root)[1])
+            require(len(extra_graph) >= 4 and
+                    {(x["path"], x["kind"]) for x in extra_graph} != EXPECTED_ROOT_PATHS and
+                    any(x["path"] == "$/delegate_payload/0/disclosed/constraints/1"
+                        for x in extra_graph), "extra issuer-signed path not produced")
+            require(extra_open["delegate_payload"][0] == opened,
+                    "unexpected-path control changed Open semantics")
+            extra_observations[kind] = {
+                "crypto": "VALID", "signed_path": "extra constraints/1",
+                "open_same_as_full": True,
+            }
+        else:
+            # The decoy must be a signed commitment, not an unused fabricated
+            # disclosure. This independent policy never ignores unknown _sd.
+            def has_sd(obj):
+                if isinstance(obj, dict):
+                    return "_sd" in obj or any(has_sd(x) for x in obj.values())
+                if isinstance(obj, list):
+                    return any(has_sd(x) for x in obj)
+                return False
+            require(has_sd(signed_extra), "official decoy not emitted")
+            extra_observations[kind] = {
+                "crypto": "VALID", "signed_decoy_present": True,
+            }
+
     return {
         "case_id": "DC04", "pinned_ap2_sha": PINNED_AP2,
         "o1_o2": "ALL_THREE_VARIANTS_CRYPTO_VALID_AND_UPSTREAM_CHAIN_VALID",
@@ -277,6 +350,7 @@ def verify_and_observe(f, schema_path, merchant_schema_path):
         "o3_commitment_paths": sorted(x["path"] for x in graph),
         "o4_o3_variants": outcomes,
         "o5_legacy_ruby": "NOT_RUN_YET",
+        "additional_genuine_signed_negatives": extra_observations,
         "conclusion_before_o5": "O1_O4_ONLY_NOT_A_DC04_SECURITY_PASS",
         "evidence_boundary": "research-only synthetic signed nested element examples; no business ALLOW, no Phase2-B Gate proof",
     }
@@ -297,6 +371,9 @@ def save_artifacts(directory, f, obs):
             (directory / f"{kind}-root-disclosure-{i:02d}.txt").write_text(value)
         for i, value in enumerate(tdisclosures):
             (directory / f"{kind}-terminal-disclosure-{i:02d}.txt").write_text(value)
+    for kind, pair in f["additional_signed_negatives"].items():
+        (directory / f"{kind}-root-sdjwt.txt").write_text(pair["root"])
+        (directory / f"{kind}-terminal-sdjwt.txt").write_text(pair["terminal"])
     (directory / "merchant-jwt.txt").write_text(f["host_checkout_jwt"])
     (directory / "public-fixture.json").write_text(json.dumps(f, indent=2, sort_keys=True) + "\n")
     (directory / "python-observation.json").write_text(json.dumps(obs, indent=2, sort_keys=True) + "\n")
