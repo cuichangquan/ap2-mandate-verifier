@@ -144,6 +144,27 @@ RuntimeError: AP2 Python SDK contains untracked or ignored importable/unknown ar
 
 次は既存`/work/AP2`を削除・変更せず、同じ公式SHAから別Git worktree（例：`mktemp -d`＋`git worktree add --detach`）を作り、`PYTHONDONTWRITEBYTECODE=1 python -B`でキャッシュなしのsigned S01 fixtureを**新しい一時ディレクトリへ生成**する。**生成成功した時だけ**Ruby observerへ渡し、`invalid terminal iat`の古いfixtureを再利用しない。証拠はDocker/ユーザー実測としてのみ記録、CI 0件、P1-10t Ruby verifier未修正 / SECURITY RED-HOLD / PR Draft・未マージ、Gem/HC06/実決済HOLD。
 
+### 3f. クリーンworktreeでの最新版Docker実測 — S01 ACCEPT / RED-HOLD（2026-10-12 JST）
+
+ユーザーがローカルDockerでPR #41の**実行時点の完全なHEAD `12ad00668a3281b0e38361b4d30f37dd7c0dd802`**（生バイト・固定Git tree manifestでSDKを検証する生成器`e9a4759`を含む）を取得・確認。既存`/work/AP2`は変更せず、一時ディレクトリへ公式AP2 **`b4587ac1d055888a73b4b21750973cffba961793`** の`git worktree add --detach`を作成した。新規`RUN_DIR`に出力先を分離し、`PYTHONDONTWRITEBYTECODE=1 python -B`でキャッシュを生成せずに合成S01を作成。**Python生成成功のときだけ**同じrunの`s01.json`をRubyの観測へ渡した。
+
+実際のターミナル出力（抜粋）：
+
+```text
+12ad00668a3281b0e38361b4d30f37dd7c0dd802
+Preparing worktree (detached HEAD b4587ac)
+HEAD is now at b4587ac feat: Release Ap2 v0.2 (#233)
+S01 SIGNATURE VALID: issuer disclosure/commitment, agent PoP and merchant JWS
+S01 SCHEMA INVALID: pinned anyOf/contains errors; nested id type:string violation (integer 123)
+S01: synthetic ephemeral signing keys never written/uploaded
+S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)
+1 runs, 7 assertions, 0 failures, 0 errors, 0 skips
+```
+
+**結論：最新版の正常なクリーンAP2環境で、正しく署名された公式Schema INVALIDなS01（要求ID `123`）が、未修正Ruby研究VerifierによりACCEPTされたことを一貫して再現した。SECURITY RED/HOLD維持。** 上記の1/7は危険な受理の**観測成功**であり、型検証修正のPASSではない。前回`806d251`での生成器停止＋古いfixtureを使った`REJECT / invalid terminal iat`は、今回の新fixtureの結果とは明確に区別する。Python生成が成功した同一runの証拠に限って採用している。
+
+**留保：** これはユーザー実行の合成ローカルDocker実測で、GitHub Actions CIはこのPRで **0件 / NOT RUN**。全ての異常provenance経路を攻撃的にテストした証拠ではない。既存Ruby Verifierの型検証は未修正、P1-10uを別作業とする。汎用Gem/API/Host/HC06、本番決済は引き続きHOLD/NO-GO。S02およびその他型違反ケースはNOT RUN。新規署名トークン/秘密鍵/fixture本体はPRへコミットしない。
+
 ## 4. 次の判断と境界
 
 **P1-10t観測はローカル実測でRED/HOLD。** 原因に対するVerifierの修正・正常署名回帰・別署名負例は**本PRの承認範囲外**。GP01とは別の**S01型検証の反例**として記録し、S02その他の未検証リスクにGOは出さない。
