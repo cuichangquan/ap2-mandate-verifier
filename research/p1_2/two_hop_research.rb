@@ -9,14 +9,21 @@ module AP2TwoHopResearch
   Rejected = AP2RootSDJWTResearch::Rejected
 
   class << self
-    def verify!(chain:, issuer_jwk:, expected_agent_jwk:, expected_aud:, expected_nonce:)
+    def verify!(chain:, issuer_jwk:, expected_agent_jwk:, expected_aud:, expected_nonce:,
+                root_research: AP2RootSDJWTResearch)
       raise Rejected, "expected audience required" unless expected_aud.is_a?(String) && !expected_aud.empty?
       raise Rejected, "expected nonce required" unless expected_nonce.is_a?(String) && !expected_nonce.empty?
       raise Rejected, "Host expected Agent public key required" unless expected_agent_jwk.is_a?(Hash)
       raise Rejected, "exactly two SD-JWT tokens required" unless chain.is_a?(Array) && chain.length == 2
 
       root_wire, terminal_wire = chain
-      root = AP2RootSDJWTResearch.verify_full_root!(root_wire, trusted_jwk: issuer_jwk)
+      # The only opt-in alternative is the named DC04 fixed-Issuer research
+      # resolver. Never accept an arbitrary caller-supplied resolver.
+      allowed_dc04 = defined?(AP2DC04FixedIssuerResearch) &&
+        AP2DC04FixedIssuerResearch.equal?(root_research)
+      raise Rejected, "unsupported Root research resolver" unless
+        AP2RootSDJWTResearch.equal?(root_research) || allowed_dc04
+      root = root_research.verify_full_root!(root_wire, trusted_jwk: issuer_jwk)
       # The lab supports exactly this Issuer-signed Open layout. Comparing
       # only the intersection of Open/Closed keys is insufficient: an Agent
       # could simply OMIT an extra issuer-fixed Open claim from the Closed.

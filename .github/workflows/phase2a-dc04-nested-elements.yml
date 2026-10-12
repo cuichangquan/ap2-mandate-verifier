@@ -69,6 +69,18 @@ jobs:
           cp "$RUNNER_TEMP/dc04-python-freeze.txt" "$RUNNER_TEMP/dc04-replay/python-freeze.txt"
           git -C "$RUNNER_TEMP/ap2" rev-parse HEAD > "$RUNNER_TEMP/dc04-replay/upstream-sha.txt"
           git rev-parse HEAD > "$RUNNER_TEMP/dc04-replay/research-head-sha.txt"
+      - name: O6 evaluate isolated fixed-Issuer Ruby candidate without relaxing legacy
+        shell: bash
+        env:
+          AP2_DC04_FIXTURE: ${{ runner.temp }}/dc04-fixture.json
+          AP2_DC04_FIXED_RUBY_REPORT: ${{ runner.temp }}/dc04-replay/fixed-ruby-observation.json
+        run: |
+          set -euo pipefail
+          ruby -c research/phase2a_dc04/fixed_issuer_verifier.rb
+          ruby -c research/phase2a_dc04/observe_fixed_ruby.rb
+          ruby -c research/p1_2/two_hop_research.rb
+          ruby -c research/p1_3/checkout_binding_research.rb
+          ruby research/phase2a_dc04/observe_fixed_ruby.rb
       - name: Verify evidence and report DC04 security gate distinct from CI harness
         shell: bash
         run: |
@@ -100,6 +112,24 @@ jobs:
               assert py["o4_o3_variants"][k]["raw_wire_reason"] == \
                   "incomplete_disclosure: signed commitment not disclosed"
           assert py["o4_o3_variants"]["full"]["official_open_schema"] == "VALID"
+          candidate = json.loads((p / "fixed-ruby-observation.json").read_text())
+          assert candidate["case_id"] == "DC04"
+          assert candidate["profile"] == "dc04-v1-exact-three-array-commitments"
+          assert candidate["pinned_ap2_sha"] == py["pinned_ap2_sha"]
+          assert candidate["candidate_full"]["status"] == "LIMITED_POSITIVE"
+          assert all(candidate["candidate_hidden"][k]["status"] == "REJECT" and
+                     candidate["candidate_hidden"][k]["reason"] ==
+                     "incomplete_disclosure: missing disclosure"
+                     for k in ["hidden_merchant_element", "hidden_sku_element"])
+          assert set(candidate["candidate_signed_layout_negatives"]) == {
+              "unexpected_nested_path", "issuer_decoy", "wrong_root_typ",
+          }
+          assert all(item["status"] == "REJECT"
+                     for item in candidate["candidate_signed_layout_negatives"].values())
+          assert set(py["additional_genuine_signed_negatives"]) == {
+              "unexpected_nested_path", "issuer_decoy", "wrong_root_typ",
+          }
+          assert candidate["candidate_gate"] == "LIMITED_DC04_OBSERVED"
           control = ruby["legacy_ruby_observations"]["full"]
           approved = control["status"] == "LIMITED_POSITIVE" and all(
               ruby["legacy_ruby_observations"][k]["reason"] == "missing disclosure"
@@ -116,6 +146,10 @@ jobs:
                       "full-terminal-sdjwt.txt", "hidden_merchant_element-terminal-sdjwt.txt",
                       "hidden_sku_element-terminal-sdjwt.txt", "merchant-jwt.txt",
                       "python-observation.json", "ruby-observation.json",
+                      "fixed-ruby-observation.json",
+                      "issuer_decoy-root-sdjwt.txt", "issuer_decoy-terminal-sdjwt.txt",
+                      "unexpected_nested_path-root-sdjwt.txt", "unexpected_nested_path-terminal-sdjwt.txt",
+                      "wrong_root_typ-root-sdjwt.txt", "wrong_root_typ-terminal-sdjwt.txt",
                       "public-fixture.json", "python-freeze.txt",
                       "upstream-sha.txt", "research-head-sha.txt"}
           assert expected <= {q.name for q in p.iterdir() if q.is_file()}
@@ -126,14 +160,17 @@ jobs:
                   entries.append({"path": file.name, "sha256": hashlib.sha256(data).hexdigest(),
                                   "byte_length": len(data)})
           (p / "evidence-manifest.json").write_text(
-              json.dumps({"case_id": "DC04", "research_gate": expected_gate,
+              json.dumps({"case_id": "DC04", "legacy_gate": expected_gate,
+                          "fixed_issuer_candidate_gate": candidate["candidate_gate"],
                           "files": entries}, sort_keys=True, indent=2) + "\n")
           for e in json.loads((p / "evidence-manifest.json").read_text())["files"]:
               data = (p / e["path"]).read_bytes()
               assert hashlib.sha256(data).hexdigest() == e["sha256"]
               assert len(data) == e["byte_length"]
           print("DC04 O1–O4 issued and independently checked real synthetic signatures")
-          print("DC04 SECURITY GATE:", expected_gate)
+          print("DC04 LEGACY SECURITY GATE:", expected_gate)
+          print("DC04 FIXED-ISSUER CANDIDATE GATE:", candidate["candidate_gate"])
+          print("HOLD: independent latest-HEAD review and parent Issue #47 are not complete")
           if expected_gate == "RED_HOLD":
               print("WARNING: CI probe success does NOT mean DC04 gate passed")
           PY
