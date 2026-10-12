@@ -1,0 +1,137 @@
+name: Phase 2-A DC01 Synthetic Signed Feasibility (O1-O5 research only)
+
+on:
+  pull_request:
+    paths:
+      - "research/phase2a_dc01/**"
+      - "research/p1_1/**"
+      - "research/p1_2/**"
+      - "research/p1_3/**"
+      - "research/shared/**"
+      - ".github/workflows/phase2a-dc01-signed-feasibility.yml"
+      - "docs/PHASE2A_DC01_OBSERVATION.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dc01-independent-signed:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source without credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
+      - name: Pin official AP2 v0.2 upstream commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = "b4587ac1d055888a73b4b21750973cffba961793"
+      - name: Install pinned upstream direct pins and independent schema evaluator
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The upstream uv.lock contains a private-registry entry; PyPI direct pins only.
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple -e "$RUNNER_TEMP/ap2"
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple jsonschema==4.26.0
+          gem install jwt -v 3.3.0 --no-document
+          python -m pip freeze > "$RUNNER_TEMP/dc01-python-freeze.txt"
+          ruby -rjwt -e 'abort "wrong JWT" unless Gem.loaded_specs.fetch("jwt").version.to_s == "3.3.0"'
+      - name: Generate signed synthetic fixture using fixed official SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONDONTWRITEBYTECODE=1
+          python -B research/p1_3/generate_merchant_checkout.py "$RUNNER_TEMP/dc01-fixture.json"
+      - name: DC01 independent O1-O4 crypto wire commitments schema and profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONDONTWRITEBYTECODE=1
+          python -B research/phase2a_dc01/independent_positive_oracle.py \
+            --fixture "$RUNNER_TEMP/dc01-fixture.json" \
+            --schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/open_checkout_mandate.json" \
+            --merchant-schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/types/merchant.json" \
+            --artifacts "$RUNNER_TEMP/dc01-replay"
+      - name: DC01 O5 legacy Ruby research verifier comparison
+        shell: bash
+        env:
+          AP2_DC01_FIXTURE: ${{ runner.temp }}/dc01-fixture.json
+          AP2_DC01_RUBY_REPORT: ${{ runner.temp }}/dc01-replay/ruby-observation.json
+        run: |
+          set -euo pipefail
+          ruby -c research/phase2a_dc01/compare_existing_ruby.rb
+          ruby research/phase2a_dc01/compare_existing_ruby.rb
+          cp "$RUNNER_TEMP/dc01-python-freeze.txt" "$RUNNER_TEMP/dc01-replay/python-freeze.txt"
+          git -C "$RUNNER_TEMP/ap2" rev-parse HEAD > "$RUNNER_TEMP/dc01-replay/upstream-sha.txt"
+          git rev-parse HEAD > "$RUNNER_TEMP/dc01-replay/research-head-sha.txt"
+      - name: Check replay hashes and expected five observations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - "$RUNNER_TEMP/dc01-replay" <<'PY'
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+          p = Path(sys.argv[1])
+          m = json.loads((p / "manifest.json").read_text())
+          for item in m["files"]:
+              data = (p / item["path"]).read_bytes()
+              assert len(data) == item["byte_length"] and hashlib.sha256(data).hexdigest() == item["sha256"], item["path"]
+          obs = json.loads((p / "python-observation.json").read_text())
+          ruby = json.loads((p / "ruby-observation.json").read_text())
+          assert obs["case_id"] == "DC01"
+          assert obs["o1_issuer_jws"] == "PASS"
+          assert obs["o2_agent_terminal_sd_hash_merchant"] == "PASS"
+          assert obs["o3_signed_root_whole_graph"] == "PASS"
+          assert obs["root_unresolved_count"] == 0
+          assert obs["o4_official_schema"] == "VALID" and obs["o4_local_profile"] == "PASS"
+          assert ruby["o5_legacy_ruby_research"] == "LIMITED_POSITIVE"
+          assert obs["outcome"] == "O1_O4_FEASIBILITY_ONLY"
+          # Finalize a second digest manifest only AFTER O1-O5 reports and
+          # toolchain/source records exist. The first manifest records replay
+          # wires; this final one protects replay bytes AND observed evidence.
+          names = {x.name for x in p.iterdir() if x.is_file()}
+          essential = {"manifest.json", "python-observation.json", "ruby-observation.json",
+                       "python-freeze.txt", "upstream-sha.txt", "research-head-sha.txt",
+                       "synthetic-fixture.json", "root-jws.txt", "root-sdjwt.txt",
+                       "terminal-jws.txt", "terminal-sdjwt.txt", "merchant-jwt.txt", "chain.txt"}
+          assert essential <= names, sorted(essential - names)
+          entries = []
+          for file in sorted(p.iterdir()):
+              if file.is_file() and file.name != "evidence-manifest.json":
+                  data = file.read_bytes()
+                  entries.append({"path": file.name, "sha256": hashlib.sha256(data).hexdigest(),
+                                  "byte_length": len(data)})
+          evidence_manifest = {"case_id": "DC01", "pinned_ap2_sha": obs["pinned_ap2_sha"],
+                               "files": entries, "scope": "synthetic signed replay and evidence only"}
+          (p / "evidence-manifest.json").write_text(json.dumps(evidence_manifest, indent=2, sort_keys=True) + "\n")
+          for item in json.loads((p / "evidence-manifest.json").read_text())["files"]:
+              data = (p / item["path"]).read_bytes()
+              assert len(data) == item["byte_length"]
+              assert hashlib.sha256(data).hexdigest() == item["sha256"]
+          assert (p / "upstream-sha.txt").read_text().strip() == obs["pinned_ap2_sha"]
+          print("DC01 evidence-manifest: complete signed wire + both observations + pinned provenance")
+          print("DC01: independent signed positive O1-O4 plus legacy O5")
+          print("LIMIT: ephemeral CI evidence, not Phase 2-B or DC02-DC05, NO business ALLOW")
+          PY
+      - name: Upload synthetic public-key replay artifacts and observations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2a-dc01-synthetic-signed-replay
+          path: ${{ runner.temp }}/dc01-replay/
+          retention-days: 7
+          if-no-files-found: warn
