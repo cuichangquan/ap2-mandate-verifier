@@ -1,6 +1,6 @@
 # Phase 2-A DC05 — Genuine issuer-signed decoy ambiguity gate (Issue #56)
 
-**2026-10-13 JST / research-only / initial status: NOT RUN / Phase 2-B HOLD.**
+**2026-10-13 JST / research-only / bounded candidate: LIMITED_DC05_OBSERVED / Phase 2-B HOLD.**
 
 This is a follow-up to [DC04 bounded Ruby result](PHASE2A_DC04_BOUNDED_RUBY_FOLLOWUP.md), not a generic SD-JWT decoy feature. AP2 v0.2.0 source and official SDK are pinned to commit `b4587ac1d055888a73b4b21750973cffba961793`.
 
@@ -28,4 +28,18 @@ Issue #47 remains OPEN. DC06/unknown-authority broad negative matrix and Phase 2
 
 ## Observation
 
-**NOT RUN — do not fill in success until the separate GitHub Actions evidence and latest-HEAD review are checked.**
+### First run and correction
+
+- [CI run #38274144885](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38274144885): O1–O4 established **35 genuinely issuer-signed unresolved decoy digests**, including Root-level `$/_sd/*`, but O5 CI FAILED from a test harness method-attribution allowlist that omitted the legitimate `exact_keys_subset!` method. This was NOT recorded as a DC05 gate pass. No verifier acceptance rules were loosened.
+- Updated the Ruby origin allowlist to record this exact fixed-Issuer helper as a rejection site; source remains `fixed_issuer_verifier.rb`.
+
+### Signed evidence on corrected HEAD
+
+- [CI run #38274251265](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38274251265) on `b6df55cabbc51f36b08dc6833a77e1927036f0e0`: **SUCCESS**.
+- **O1/O2:** Issuer/Agent/Merchant JWS signatures, actual Terminal `sd_hash` of each Root presentation, Host aud/nonce, Checkout JWS original/hash VALID. The exact official AP2 v0.2.0 source commit was checked out and its schema read.
+- **O3:** `30` genuine, **unpresented, issuer-signed object digest commitments** detected by independent whole-wire traversal, spanning root-level `$/_sd/*`, Open, constraints, SKU, Merchant and Agent key objects. The exact list, individual SHA256 digests and presented status are in `dc05-python-oracle.json`. Official decoy generation is randomized, so this count is an **observation for this run**, not a fixed profile assumption. The independent `raw_commitment_graph` rejects the genuine signed residual with `incomplete_disclosure: signed commitment not disclosed`.
+- **O4:** The official SDK's resolved Open in FULL and signed-decoy cases was identical. The *actual presented* official Open JSON Schema was **VALID for both**. Hence schema/SDK GREEN does not prove signed authority completeness.
+- **O5:** The **same** Ruby fixed-Issuer profile from merged PR #55 returns FULL `LIMITED_POSITIVE`, and **genuinely signed decoy REJECT** traced to the Ruby fixed-Issuer signed claim guard; category `unsupported_profile`. No generalized decoy acceptance or whitelist was introduced.
+- **Content-addressed evidence:** Actions artifact ID `11757992384`, SHA256 of archive `7aa49323b865bf170bea791bfb1495ca85b4f89dc6dfbe9ff7723b21f1d998f1`; includes original synthetic signed wires, disclosed element bytes, public JWKs, O1–O5 observations, dependency freeze and file SHA256/byte-length manifest. It expires **2026-10-19 16:00:15 UTC**. Do **not** claim permanent independent replay.
+
+**Candidate research observation:** `LIMITED_DC05_OBSERVED` for that CI HEAD. It is **not a generalized decoy detection proof** and does not establish Phase 2-A parent gate completeness. Codex latest-HEAD review and issue closure are separate requirements. Issue #47 and Phase 2-B/Gem/production/Host/HC06/payments remain HOLD.
