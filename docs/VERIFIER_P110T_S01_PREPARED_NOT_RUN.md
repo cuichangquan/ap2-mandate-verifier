@@ -131,6 +131,19 @@ RuntimeError: AP2 Python SDK contains untracked or ignored importable/unknown ar
 
 **判定：新HEAD `806d251`はpre-import制御のため試験未完了 / HOLD。** 最後の一貫した「同じ実行の新規生成＋Ruby観測」は`db732295`での署名VALID、Schema INVALID、Ruby ACCEPT / **RED-HOLD**。GitHub Actions CIは0件/NOT RUN、PRはDraft維持。次のステップは`git ls-files --others -- code/sdk/python`（必要なhook無効化と共に）を**読み取り専用**で実行し、原因ファイル名を確認すること。**やみくもに削除・allowlist緩和・古いfixture再利用・実決済へ移行しない**。
 
+### 3e. キャッシュ原因とCodex追加レビュー（2026-10-12 JST）
+
+ユーザーの読み取り専用調査で、公式AP2 SDK `/work/AP2/code/sdk/python`配下の無追跡ファイルが、`ap2.egg-info/`のpip editable-installメタデータ（`PKG-INFO`等）と、`ap2/sdk/**/__pycache__/*.cpython-311.pyc`のPythonバイトコードキャッシュであることを確認した。生成器のstrict pre-import guardは後者を拒否した。SDKソースの改竄や悪用があったという証拠ではなく、通常のPython実行後に起こり得る環境汚れだが、`.pyc`を安易に例外許容しない。ユーザーのRuby側レポート`observed.rejection_reason`は**`invalid terminal iat`**であり、前回の署名済みfixtureの古い時刻による拒否と整合する。今回の生成器は失敗しており、これは**S01 Requirement.id型違反のFail Closed証拠ではない**。
+
+さらにCodexが`806d251`に対して3件のP2を報告：
+- Gitの`refs/replace`により固定SHAのオブジェクトを別treeへ差し替える可能性
+- `.git/info/attributes`・Git clean filter等が`hash-object` / `diff`を攪乱する可能性
+- Git indexの`assume-unchanged` / `skip-worktree`属性が実SDKファイルの改変を隠す可能性
+
+研究用生成器の狭いpre-import検証をコミット`13f55e3`と`e9a4759a9975bd37067c79932fc628c7824389cd`で更新。**`git --no-replace-objects ls-tree -r -z`で固定コミットのSDKファイルmanifestを取得し、公式SchemaとSDK実ファイルのGit blob SHA-1をPythonで生バイトから直接計算・照合**するため、Git index状態・clean filter・fsmonitor・Git差分解釈に依存しない。SDK実ディレクトリを`rglob("*")`で巡回し、trackedの期待ファイル・通常のroot-level `*.egg-info`メタデータ以外（キャッシュ・symlink・unknown directory等）は拒否する。スクリプトは`ap2` SDK importより先にfail-closed。**この修正版のユーザーDocker実測はNOT RUN**。Gitのpreflight安全性が汎用的に証明されたとの主張はしない。
+
+次は既存`/work/AP2`を削除・変更せず、同じ公式SHAから別Git worktree（例：`mktemp -d`＋`git worktree add --detach`）を作り、`PYTHONDONTWRITEBYTECODE=1 python -B`でキャッシュなしのsigned S01 fixtureを**新しい一時ディレクトリへ生成**する。**生成成功した時だけ**Ruby observerへ渡し、`invalid terminal iat`の古いfixtureを再利用しない。証拠はDocker/ユーザー実測としてのみ記録、CI 0件、P1-10t Ruby verifier未修正 / SECURITY RED-HOLD / PR Draft・未マージ、Gem/HC06/実決済HOLD。
+
 ## 4. 次の判断と境界
 
 **P1-10t観測はローカル実測でRED/HOLD。** 原因に対するVerifierの修正・正常署名回帰・別署名負例は**本PRの承認範囲外**。GP01とは別の**S01型検証の反例**として記録し、S02その他の未検証リスクにGOは出さない。
