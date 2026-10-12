@@ -53,7 +53,7 @@ def schema_validator():
 def verify_merchant_signed_jwt(wire, public_jwk, expected_checkout):
     signer = jws.JWS()
     signer.deserialize(wire)
-    signer.verify(JWK.from_json(public_jwk))
+    signer.verify(JWK.from_json(json.dumps(public_jwk)))
     assert signer.jose_header["alg"] == "ES256"
     assert signer.payload.decode("utf-8") == compact(expected_checkout)
 
