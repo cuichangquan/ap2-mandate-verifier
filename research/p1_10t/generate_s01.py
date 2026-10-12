@@ -38,9 +38,30 @@ S01_SCOPE = "checkout.line_items.items[0].id"
 
 def schema_validator():
     """Load pinned official AP2 v0.2 files, no online $ref fetch allowed."""
-    upstream = Path(__import__("os").environ["AP2_P110T_UPSTREAM_ROOT"])
+    upstream = Path(__import__("os").environ["AP2_P110T_UPSTREAM_ROOT"]).resolve(strict=True)
     open_schema_path = upstream / "code/sdk/schemas/ap2/open_checkout_mandate.json"
     merchant_schema_path = upstream / "code/sdk/schemas/ap2/types/merchant.json"
+
+    # Review P2: never label a fixture as the pinned AP2 revision merely
+    # because a caller supplied a path. Authenticate the checkout HEAD, both
+    # on-disk schema blobs, and the imported SDK module's exact source path.
+    import subprocess
+    checkout_sha = subprocess.check_output(
+        ["git", "-C", str(upstream), "rev-parse", "HEAD"], text=True,
+    ).strip()
+    assert checkout_sha == SHA, "AP2 source checkout is not the fixed v0.2.0 commit"
+    expected_blobs = {
+        open_schema_path: "e3d9cafa7311d90612c7f908ae9b8821ddc8735a",
+        merchant_schema_path: "2e44a4dc943c009af106e7103e9e30f4e556b98c",
+    }
+    for path, expected_blob in expected_blobs.items():
+        actual_blob = subprocess.check_output(
+            ["git", "-C", str(upstream), "hash-object", str(path)], text=True,
+        ).strip()
+        assert actual_blob == expected_blob, f"AP2 official schema bytes changed: {path}"
+    imported_mandate = Path(sys.modules["ap2.sdk.mandate"].__file__).resolve(strict=True)
+    expected_mandate = (upstream / "code/sdk/python/ap2/sdk/mandate.py").resolve(strict=True)
+    assert imported_mandate == expected_mandate, "Installed AP2 SDK is not loaded from pinned checkout"
     open_schema = json.loads(open_schema_path.read_text())
     merchant_schema = json.loads(merchant_schema_path.read_text())
     Draft202012Validator.check_schema(open_schema)
