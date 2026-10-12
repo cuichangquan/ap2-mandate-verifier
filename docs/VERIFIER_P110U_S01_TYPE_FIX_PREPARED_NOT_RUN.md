@@ -1,6 +1,6 @@
 # P1-10u — S01 signed Requirement.id 型検証の限定修正（PREPARED / NOT RUN）
 
-**2026-10-12 JST — Fixed synthetic Issuer research only / Docker NOT RUN / GitHub Actions NOT RUN / HOLD.**
+**2026-10-12 JST — Fixed synthetic Issuer research only / dedicated signed S01 Docker and CI NOT RUN / 3 existing regressions GREEN / HOLD.**
 
 ## 目的・変更範囲
 
