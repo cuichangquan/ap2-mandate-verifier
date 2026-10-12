@@ -8,7 +8,7 @@
 
 ## 1. この判断が必要な理由
 
-AP2 Open Checkoutの**Issuer JWS署名が有効**であっても、Veriferがその鍵を「Merchant Hostが承認するIssuerの鍵」と独立に結び付けていなければ、誰の権限を検証したのか決まらない。署名済Root全域のcommitmentを解析できても、**どの発行文法・どの権限範囲を受け入れるか**は署名単独から導出できない。
+AP2 Open Checkoutの**Issuer JWS署名が有効**であっても、Verifierがその鍵を「Merchant Hostが承認するIssuerの鍵」と独立に結び付けていなければ、誰の権限を検証したのか決まらない。署名済Root全域のcommitmentを解析できても、**どの発行文法・どの権限範囲を受け入れるか**は署名単独から導出できない。
 
 ここでは[固定Issuer受理契約](PHASE2A_FIXED_ISSUER_TRUST_ACCEPTANCE_CONTRACT.md)の **T1（Root署名真正性）・T2（原signed-wire完全性）・T3（Hostの帯域外Issuer trust）**を別の証拠源として維持する。
 
