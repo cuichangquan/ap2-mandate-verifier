@@ -121,8 +121,15 @@ fake_resolver = Module.new do
     raise "should never be called"
   end
 end
-must_reject!(ctx.merge(root_research: fake_resolver), full, terminal,
-             expected: /unsupported Root research resolver/)
+fake_result = begin
+  AP2CheckoutBindingResearch.verify!(
+    **ctx, chain: [full, terminal], root_research: fake_resolver
+  )
+  raise "unsafe arbitrary Root resolver accepted: #{fake_result}"
+rescue AP2RootSDJWTResearch::Rejected => e
+  raise "wrong arbitrary Root resolver reason" unless e.message == "unsupported Root research resolver"
+  e.message
+end
 
 report = {
   case_id: "DC04",
