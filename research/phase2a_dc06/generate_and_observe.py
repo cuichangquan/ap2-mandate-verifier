@@ -241,8 +241,15 @@ def observe(f, schema_path, merchant_schema_path):
             continue
 
         resolved, graph = raw_commitment_graph(issuer_claims, disclosures)
-        require(len(graph) == 3 and {g["path"] for g in graph} == EXPECTED_PATHS,
-                "mutated case did not preserve known signed array graph")
+        graph_paths = {g["path"] for g in graph}
+        if name == "signed_nested_sd_full":
+            require(len(graph) == 4 and EXPECTED_PATHS <= graph_paths and
+                    any(g["kind"] == "object" and
+                        g["path"] == "$/delegate_payload/0/disclosed/constraints/1/_sd"
+                        for g in graph), "signed nested object SD commitment absent")
+        else:
+            require(len(graph) == 3 and graph_paths == EXPECTED_PATHS,
+                    "mutated case did not preserve known signed array graph")
         opened = resolved["delegate_payload"][0]
         errors = list(validator.iter_errors(opened))
         if name == "full":
