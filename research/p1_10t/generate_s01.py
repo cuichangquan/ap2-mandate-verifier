@@ -62,6 +62,24 @@ def schema_validator():
     imported_mandate = Path(sys.modules["ap2.sdk.mandate"].__file__).resolve(strict=True)
     expected_mandate = (upstream / "code/sdk/python/ap2/sdk/mandate.py").resolve(strict=True)
     assert imported_mandate == expected_mandate, "Installed AP2 SDK is not loaded from pinned checkout"
+
+    # Review P2 follow-up: a pinned HEAD does not prove tracked SDK sources
+    # were not edited in the worktree after checkout. Reject any staged or
+    # unstaged tracked changes, plus any untracked Python SDK source files.
+    sdk_tree = "code/sdk/python"
+    sdk_diff = subprocess.run(
+        ["git", "-C", str(upstream), "diff", "--quiet", "HEAD", "--", sdk_tree],
+        capture_output=True, text=True, check=False,
+    )
+    assert sdk_diff.returncode == 0, "AP2 Python SDK tracked sources differ from pinned commit"
+    sdk_untracked = subprocess.check_output(
+        ["git", "-C", str(upstream), "ls-files", "--others",
+         "--exclude-standard", "--", sdk_tree],
+        text=True,
+    ).splitlines()
+    assert not any(path.endswith(".py") for path in sdk_untracked), (
+        "AP2 Python SDK contains untracked Python source files"
+    )
     open_schema = json.loads(open_schema_path.read_text())
     merchant_schema = json.loads(merchant_schema_path.read_text())
     Draft202012Validator.check_schema(open_schema)
