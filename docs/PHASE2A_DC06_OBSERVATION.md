@@ -44,7 +44,7 @@ Do not merge without latest-HEAD Codex P1/P2 review. Issue #47 remains OPEN; Pha
 - **Outcome:** `LIMITED_DC06_PARTIAL_OBSERVED`. The signed duplicate/reused commitment case and the extra hidden authority delegate remain **NOT RUN**. Do not claim broad DC06 or Phase 2-A Gate PASS.
 - **Synthetic public-only evidence:** Actions artifact ID `11759486507`, archive SHA256 `e227452a4a1265bbfc8316d1ad29e64ecdb7219d2578f5616bcbd5d21515c976`, expires **2026-10-19T16:20:15Z**. Original signed JWS, disclosures, Terminals, Merchant JWT, Host public JWK snapshots and per-file SHA256/byte-length manifest available for **7 days only**, not permanent replay.
 
-**PR remains unmerged pending current-HEAD Codex security review.** Parent #47 OPEN, Phase 2-B/Gem/public API/production/Host nonce-CAS/HC06/payment HOLD.
+**PR merge gate:** merge only after the exact final HEAD's scoped CI SUCCESS and a clean latest-HEAD Codex security review; if P1/P2 exists, repair and repeat. Parent #47 OPEN, Phase 2-B/Gem/public API/production/Host nonce-CAS/HC06/payment HOLD.
 
 ### Strengthened signed-chain attribution (latest O1–O5 run)
 
@@ -55,4 +55,8 @@ On [CI #38276862250](https://github.com/cuichangquan/ap2-mandate-verifier/action
 - Existing five actual presented official Schemas remained VALID, FULL Ruby `LIMITED_POSITIVE`, and all four issuer-signed profile negatives were rejected with traced origins.
 - Public-only replay artifact ID `11759735483`, archive SHA256 `5bff3c6817a1db82062fa72096b17324a72935f4c2a6e71198a7c4bda12c3903`, expires **2026-10-19T16:22:08Z**. This is temporary rather than durable evidence.
 
-**Status remains `LIMITED_DC06_PARTIAL_OBSERVED`**, not a full DC06 completion. Genuine signed duplicate digest/placeholder and extra hidden delegated authority remain **NOT RUN**; Issue #58 remains OPEN until separately solved. Latest PR HEAD review still required.
+**Status remains `LIMITED_DC06_PARTIAL_OBSERVED`**, not a full DC06 completion. Genuine signed duplicate digest/placeholder and extra hidden delegated authority remain **NOT RUN**; Issue #58 remains OPEN until separately solved. Final PR HEAD review and matching CI evidence are mandatory before merge.
+
+### Codex P2 remediation: keep Schema independence a CI gate
+
+Codex latest-HEAD review of `3f504a7b44cf3aee4a30c6d7ab20b8c0cfca6d44` flagged that the scoped CI only asserted official Schema `VALID` for FULL even though the evidence required `VALID` for **all five signed presentations**. At that revision the Python oracle *reported* five VALID cases, but a regression could leave a negative Schema INVALID while the Ruby fixed-Issuer reject still produced false-positive success. The DC06 scoped CI now asserts `official_schema_presented == VALID` for every signed variant; any single INVALID must stop artifact gate publication. No verifier acceptance logic or policy was relaxed. Preserve explicit NOT RUN cases and parent HOLD.
