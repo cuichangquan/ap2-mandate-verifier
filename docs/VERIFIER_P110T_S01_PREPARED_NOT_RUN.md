@@ -14,7 +14,7 @@
 | 固定公式AP2 Open Checkout JSON Schema Draft 2020-12 | **INVALID** | `S01 SCHEMA INVALID: pinned anyOf/contains errors; nested id type:string violation (integer 123)`と出力。トップレベル`anyOf`/`contains`内のネストした`type:string`違反を検出 |
 | Ruby側Issuer Root検証 | **true** | Rubyレポートの`ruby_signed_root_verified: true` |
 | 既存の未修正`AP2CheckoutBindingResearch.verify!` | **ACCEPT** | `S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)` |
-| 専用Ruby Minitest 1件 | **1 run / 7 assertions / failures 0 / errors 0 / skips 0** | **危険なACCEPTの観測に成功**という意味。セキュリティPASSではない |
+| 専用Ruby Minitest 1件 | **最新修正observer（3978a852）1 run / 6 assertions / failures 0 / errors 0 / skips 0**（修正前は1/7） | **危険なACCEPTの観測に成功**という意味。セキュリティPASSではない。1/7は歴史的実測 |
 | Ruby `observed.security` | **RED_HOLD** | ローカル研究コードは型違反の署名済みConstraintを受理 |
 | GitHub Actions | **新規0件 / NOT RUN** | CI未実施。ローカル観測と混同しない |
 
@@ -209,7 +209,7 @@ S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)
 
 **現在地：**
 - 最終固定AP2公式 v0.2.0 commit `b4587ac1d055888a73b4b21750973cffba961793`。
-- P1-10t 1件の正署名S01（Requirement `id: 123`）は公式Schema **INVALID**だが、未修正Ruby研究Verifierで **ACCEPT / SECURITY RED-HOLD**。ユーザーのMac Docker（Ruby 3.4.11/jwt 3.3.0、Python 3.11.2/jsonschema 4.25.1、公式AP2 SDK）は**1 run/7 assertions/0 failures**。テスト緑は「危険なACCEPT観測を正確に記録」、安全性PASSではない。**GitHub Actions CIではない**。
+- P1-10t 1件の正署名S01（Requirement `id: 123`）は公式Schema **INVALID**だが、未修正Ruby研究Verifierで **ACCEPT / SECURITY RED-HOLD**。ユーザーのMac Docker（Ruby 3.4.11/jwt 3.3.0、Python 3.11.2/jsonschema 4.25.1、公式AP2 SDK）の**最新修正observer（3978a852）**は**1 run/6 assertions/0 failures**（旧1/7は修正前の歴史的結果）。テスト緑は「危険なACCEPT観測を正確に記録」、安全性PASSではない。**GitHub Actions CIではない**。
 - P1-10q歴史的GP01（未知ネストキーの正署名ACCEPT/RED）、P1-10r修正後GP01限定REJECT＋正常signed 2/10、P1-10o別CI 8/45（AN-N07は**HOST_BOUNDARY**）を別実行として維持。
 - Host canonical **9/34測定・25 NOT RUN**。Authority→Host C01–C12 OPEN/UNCONFIRMED、外部HC06、汎用Issuer/SD-JWTの隠れConstraint完全性、Host replay/最終business ALLOW、公開Gem/API、本番統合は**HOLD**。RubyGems/実決済/署名Receiptは**NO-GO**。
 - P1-10sのS02（署名済Merchant `allowed[0].name`型）や他のS03–S08は未検証。P1-10uに自動追加しない。
@@ -242,7 +242,7 @@ b4587ac1d055888a73b4b21750973cffba961793
 P1-10t：合成Issuer/Agent/Merchant署名・Disclosure VALID、
 公式Open Checkout Schema INVALID（line_items.items[0].id=123、
 String必須）、未修正Ruby研究VerifierがACCEPT / RED-HOLD。
-Mac Dockerで1 run/7 assertions/0 failures＝危険受理の観測成功。
+Mac Dockerの修正後observer（3978a852）で1 run/6 assertions/0 failures＝危険受理の観測成功。修正前の1/7は歴史的証拠（異なるREJECTを誤PASSにした可能性のある旧コード）。
 GitHub Actions CIではない。JWK公開鍵dictエラーを生成器のみ修正。
 Verifier本体の修正はまだ行っていない。
 
