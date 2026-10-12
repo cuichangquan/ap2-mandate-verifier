@@ -117,6 +117,20 @@ PR #41の`db732295`に対するCodex再レビューで**さらに2件のP2**が�
 
 **この追加修正についてDocker実行はNOT RUN。** 直近のユーザー提供Docker実測は前節の`db732295`：署名VALID / 公式Schema INVALID / Ruby研究Verifier **ACCEPT / SECURITY RED-HOLD**。CI 0件、外部Issuer/HC06/一般Gem/本番HOLD、公開/決済NO-GOは変わらない。最新コードで再実行してレビューを確認するまでPRマージ保留。
 
+### 3d. 最新Dockerブロック：SDK未追跡ファイルとstale fixtureの疑い（2026-10-12 JST）
+
+ユーザーがPR #41 head **`806d2517bb3b62c60da4ded887a65cc93d1793a1`**を`git pull --ff-only`でチェックアウトし、`AP2_P110T_UPSTREAM_ROOT=/work/AP2`で`generate_s01.py`を再実行したところ、pre-importで次の**安全側の拒否**が発生した：
+
+```text
+RuntimeError: AP2 Python SDK contains untracked or ignored importable/unknown artifacts (including bytecode, extensions or symlinks); use a clean pinned SDK tree
+```
+
+この時点で**新しいsigned fixtureは生成されず**、Issuer/Agent/Merchant署名VALIDと公式Schema INVALIDはこのコミット上では観測されていない。原因となった実際のuntrackedファイル名はまだ未調査で、`__pycache__`等と断定しない。
+
+ユーザーは生成器が失敗した後、前回の`AP2_P110T_FIXTURE=/work/s01.json`のままRuby観測を続行した。出力は`S01 OBSERVED: REJECT — limited fixture, not general conformance`、**1 run / 5 assertions / 0 failures, 0 errors, 0 skips**。ただし新たなfixture生成が失敗したため、これは**以前のfixtureを読み込んだ可能性があり、最新版S01の正しい型検査拒否やセキュリティ改善の証拠には使えない**。トークン失効など理由は未確認。Ruby研究Verifier本体に型検査の変更はない。
+
+**判定：新HEAD `806d251`はpre-import制御のため試験未完了 / HOLD。** 最後の一貫した「同じ実行の新規生成＋Ruby観測」は`db732295`での署名VALID、Schema INVALID、Ruby ACCEPT / **RED-HOLD**。GitHub Actions CIは0件/NOT RUN、PRはDraft維持。次のステップは`git ls-files --others -- code/sdk/python`（必要なhook無効化と共に）を**読み取り専用**で実行し、原因ファイル名を確認すること。**やみくもに削除・allowlist緩和・古いfixture再利用・実決済へ移行しない**。
+
 ## 4. 次の判断と境界
 
 **P1-10t観測はローカル実測でRED/HOLD。** 原因に対するVerifierの修正・正常署名回帰・別署名負例は**本PRの承認範囲外**。GP01とは別の**S01型検証の反例**として記録し、S02その他の未検証リスクにGOは出さない。
