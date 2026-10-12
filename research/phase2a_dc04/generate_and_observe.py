@@ -84,6 +84,8 @@ def generate():
         payloads=[mandate], issuer_key=issuer, sd=metadata,
     )
     original_jws, disclosures = segments(full)
+    print("DC04 official signed Root protected JOSE:", json.dumps(
+        strict_json(decode64(original_jws.split(".")[0])), sort_keys=True))
     require(3 <= len(disclosures) <= 16, "nested issuer SD fixture not generated")
     by_target = {}
     for disc in disclosures:
