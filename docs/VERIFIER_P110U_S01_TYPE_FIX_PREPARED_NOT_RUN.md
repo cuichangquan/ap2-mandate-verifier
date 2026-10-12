@@ -83,4 +83,4 @@ P1-10u known-good: signed Checkout evidence OK (no business ALLOW)
 - Host canonical **9/34実測・25 NOT RUN**、Authority→Host C01〜C12 UNKNOWN、HC06 **HOLD**。
 - PR #42で自動起動した**既存GitHub Actions 3件**は成功：[P1-10o（#38225024091）](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38225024091)、[P1-10q（#38225023906）](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38225023906)、[P1-10r（#38225023980）](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38225023980)。**今回新規のP1-10u signed S01 + signed positive 2件はこれらのCIで実行されていない／NOT RUN**。先行P1-10t workflow追加がplatform safety checkで拒否された経緯を迂回しない。既存CIの成功をS01対策の成功と混同しない。
 - Gem/API/本番統合 **HOLD**、RubyGems公開・実決済・Receipt **NO-GO**。
-- Docker実測は完了し、Codexによるコードレビュー（HEAD `b7aba6d`は重大指摘なし）も確認済み。**証拠反映後のHEADを再レビューし、CI・差分・未解決指摘を再確認してからPRマージ判断**。
+- Docker実測とCodexレビューが完了し、[PR #42](https://github.com/cuichangquan/ap2-mandate-verifier/pull/42) は **2026-10-12 にmainへSquashマージ済み**（merge SHA `09c71903d0ac5a36b88002f59402c0371b20c2ba`）。レビュー対象の最終PR HEAD `95538f5f224005c6c62e8ca422c87ae09ed04b3f` は重大指摘なし、P2解決、既存CI 3件成功を確認。**P1-10u専用CIは未実行**で、一般Gem/API/Host/Authority/本番へのGOではない。
