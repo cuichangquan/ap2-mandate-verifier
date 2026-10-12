@@ -116,10 +116,14 @@ rescue AP2RootSDJWTResearch::Rejected => e
     e.message == "unsupported array disclosure location"
   e.message
 end
-fake_resolver = Module.new do
-  def self.verify_full_root!(**)
-    raise "should never be called"
-  end
+# An attacker can override #equal? on a caller-provided resolver.
+# Compare on the trusted module receiver, never on this object.
+fake_resolver = Object.new
+def fake_resolver.equal?(_other)
+  true
+end
+def fake_resolver.verify_full_root!(**)
+  raise "injected root resolver executed before verifying issuer signature"
 end
 fake_result = begin
   AP2CheckoutBindingResearch.verify!(
