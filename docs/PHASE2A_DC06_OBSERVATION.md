@@ -45,3 +45,14 @@ Do not merge without latest-HEAD Codex P1/P2 review. Issue #47 remains OPEN; Pha
 - **Synthetic public-only evidence:** Actions artifact ID `11759486507`, archive SHA256 `e227452a4a1265bbfc8316d1ad29e64ecdb7219d2578f5616bcbd5d21515c976`, expires **2026-10-19T16:20:15Z**. Original signed JWS, disclosures, Terminals, Merchant JWT, Host public JWK snapshots and per-file SHA256/byte-length manifest available for **7 days only**, not permanent replay.
 
 **PR remains unmerged pending current-HEAD Codex security review.** Parent #47 OPEN, Phase 2-B/Gem/public API/production/Host nonce-CAS/HC06/payment HOLD.
+
+### Strengthened signed-chain attribution (latest O1–O5 run)
+
+On [CI #38276862250](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38276862250), research HEAD `a547453ef2189959c92e506bc4433ac92fea2a99`, **SUCCESS** after independent Python oracle strengthening:
+
+- For every one of the five genuine signed presentations, the unique disclosed Open item's raw base64url Disclosure is matched against the **Issuer JWS-signed** `delegate_payload[0]` digest; the disclosed `cnf.jwk` must then match the independently fixed Host Agent public key before counting the Agent Terminal signature as valid.
+- For the withheld nested unknown object field, the independent oracle now proves that the *particular* omitted `future_authority_policy` Disclosure digest is present in the signed `constraints[1]._sd` array; an unrelated missing digest is insufficient.
+- Existing five actual presented official Schemas remained VALID, FULL Ruby `LIMITED_POSITIVE`, and all four issuer-signed profile negatives were rejected with traced origins.
+- Public-only replay artifact ID `11759735483`, archive SHA256 `5bff3c6817a1db82062fa72096b17324a72935f4c2a6e71198a7c4bda12c3903`, expires **2026-10-19T16:22:08Z**. This is temporary rather than durable evidence.
+
+**Status remains `LIMITED_DC06_PARTIAL_OBSERVED`**, not a full DC06 completion. Genuine signed duplicate digest/placeholder and extra hidden delegated authority remain **NOT RUN**; Issue #58 remains OPEN until separately solved. Latest PR HEAD review still required.
