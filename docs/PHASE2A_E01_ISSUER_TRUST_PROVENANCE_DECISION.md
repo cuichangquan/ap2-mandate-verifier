@@ -38,10 +38,12 @@ AP2 Open Checkoutの**Issuer JWS署名が有効**であっても、Verifierが�
 | --- | --- | --- |
 | **R01 Issuerのidentityと発行権限** | Merchantが信用する帯域外の登録・契約・認証済み相手先記録で、そのIssuerが**どの用途のMandateを発行可能か**を特定する。署名claim内の表示名を根拠にしない | `untrusted_issuer` |
 | **R02 identity→鍵の結合** | 上記の審査済みIssuerからの認証済み鍵受渡し・署名付きkey assertion等を、Host承認記録に参照して鍵thumbprint/JWKパラメータ・alg・purposeを固定。自己申告JWKS URLだけを信頼起点にしない | `untrusted_issuer` / `invalid_signature` |
-| **R03 issuer→発行profileの結合** | IssuerとHostがレビュー可能な固定の発行文法・version/適用条件・disclosure位置・decoy方針を明示し、その相互対応を**独立した認証済み合意または信頼できる発行証跡**で拘束する。pinned AP2がsigned `profile_version` claimを自動提供すると仮定しない | `unsupported_profile` / `incomplete_context` |
+| **R03 issuer→発行profileの結合** | **Issuer本人とHostの間で認証された発行契約、またはIssuerの認証済み署名attestation**を根拠とし、**Issuer identity・許可署名鍵/鍵用途・対象Merchant/tenantと用途・不変profile version・全authority-bearing claimのclosed grammar・許容SD位置・decoy方針・適用開始/終了・変更時の再承認**を明示的に結び付ける。Hostはそのattestationの真正性・scope・現在性を独立に確認してpolicyへ登録する。**過去の正署名トークン/発行実例の一致だけではR03不成立**。pinned AP2がsigned `profile_version` claimを自動提供すると仮定しない | `unsupported_profile` / `incomplete_context` |
 | **R04 Host immutable policy** | Merchant/tenant scope、`profile_ref`、`policy_version`、`policy_digest`、承認者/時刻、鍵not_before/not_after、policy active statusを追跡可能に保全。**鍵とprofileの組合せを一意に絞り、downgrade候補は除外** | `incomplete_context` / `unsupported_profile` |
 | **R05 lifecycle** | Issuer/鍵/profile変更・rotation・撤回の情報源と判定時のfreshness、Host検証時と後段CAS時の再照合、未知ならSTOP。外部Authority HC06の失効保証は別系統 | `verification_unavailable` / HOLD |
 | **R06 独立のacceptance evidence** | Pinned公式SDKで発行されたFULL positiveと署名付きprofile/鍵ミスマッチを、Issuer T1、signed-wire T2、Host T3に分けたオラクルで確認 | **NOT RUN**（IP02/IP03/IP07は未実施） |
+
+**R03での証拠の区別:** 合法な過去のIssuer署名付きMandateやSDK発行トレースは、**その1件が特定の形式だったこと（T1/T2）**だけを示す。**同じIssuer/鍵が当該用途の後続発行を同じ閉じた文法/versionへ拘束すると合意・表明したこと（T3）**の代替にはしない。発行契約やattestationも将来の全トークンの自動適合を暗号的に保証するわけではないため、**受信する各Rootの署名済み原文を固定Host policyへ厳格照合し、不一致ならSTOP**する。合意/attestationの認証・scope・有効期間・撤回が検証不能なら `REAL_ISSUER_EVIDENCE_READY` に進めない。
 
 **本人確認の難度と範囲:** 公開鍵を手渡された証拠とIssuerが特定merchantの権限を発行してよいという**業務信頼**は別。Host審査の根拠を物理的に公開する必要はないが、**審査の実施・承認者・検証方法・immutabilityを後から監査可能**にする。機密の契約書や秘密鍵を公開リポジトリへcommitしない。必要に応じて機密Host recordへの非秘密な証拠参照のみ残す。
 
