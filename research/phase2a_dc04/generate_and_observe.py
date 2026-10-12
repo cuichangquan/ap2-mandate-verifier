@@ -287,8 +287,8 @@ def verify_and_observe(f, schema_path, merchant_schema_path):
     registry = Registry().with_resource(schema["$id"], Resource.from_contents(schema))
     registry = registry.with_resource(ms["$id"], Resource.from_contents(ms))
     validator = Draft202012Validator(schema, registry=registry)
-    for kind, opened in (("full", control_open), *partial_opens.items()):
-        errors = list(validator.iter_errors(opened))
+    for kind, presented_schema_open in (("full", control_open), *partial_opens.items()):
+        errors = list(validator.iter_errors(presented_schema_open))
         outcomes[kind]["official_open_schema"] = "INVALID" if errors else "VALID"
         outcomes[kind]["official_schema_error_validators"] = [e.validator for e in errors]
         outcomes[kind]["official_schema_error_paths"] = ["/".join(str(x) for x in e.path) for e in errors]
@@ -321,11 +321,8 @@ def verify_and_observe(f, schema_path, merchant_schema_path):
                     {(x["path"], x["kind"]) for x in extra_graph} != EXPECTED_ROOT_PATHS and
                     any(x["path"] == "$/delegate_payload/0/disclosed/constraints/1"
                         for x in extra_graph), "extra issuer-signed path not produced")
-            if extra_open["delegate_payload"][0] != opened:
-                print("DEBUG: expected signed Open", json.dumps(opened, sort_keys=True))
-                print("DEBUG: unexpected signed Open", json.dumps(
-                    extra_open["delegate_payload"][0], sort_keys=True))
-                raise ValueError("unexpected-path control changed Open semantics")
+            require(extra_open["delegate_payload"][0] == opened,
+                    "unexpected-path control changed Open semantics")
             extra_observations[kind] = {
                 "crypto": "VALID", "signed_path": "extra constraints/1",
                 "open_same_as_full": True,
