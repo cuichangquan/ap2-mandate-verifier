@@ -106,6 +106,17 @@ S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)
 
 **判定：`db732295`最新版の合成・正常なSDK環境でも署名VALID / 公式Schema INVALID / Ruby研究Verifier ACCEPT、よって依然 SECURITY RED/HOLD。** これはローカル実測された危険受理の再現であり、修正された型検査の成功ではない。異常なignored SDKを配置したnegative実行テストや総合的ソース完全性、GitHub Actions CIの成功は主張しない。**GitHub Actionsは本PRで0件 / NOT RUN**。Gem/API/本番/HC06は引き続きHOLD、決済・公開はNO-GO。
 
+### 3c. Codex 追加P2：Git fsmonitor実行とuntracked import artifacts（最新版未実行）
+
+PR #41の`db732295`に対するCodex再レビューで**さらに2件のP2**が追加された。
+
+1. `git ls-files`等は、checkoutの`.git/config`に設定された`core.fsmonitor`外部フックを起動する可能性がある。検証前のGit呼び出しを `-c core.fsmonitor=false -c core.hooksPath=/dev/null -c diff.external=` に固定し、`git diff --no-ext-diff --no-textconv` とした。
+2. すべてのuntracked`.py`を拒否するだけでは`.pyc`・拡張module・未追跡のディレクトリSymlink等が残る。SDKツリー内の**あらゆるuntracked/ignored成果物を拒否**し、通常の編集可能インストール由来のroot-level `*.egg-info` にある限定した非実行メタデータファイルのみ許容する。
+
+修正コードのcommit：**`f65ad6d40ce8a381daa35064e32ecac1473b6dd4`**。隔離した一時Gitリポジトリで`git ls-files --others -- code/sdk/python`がignored`.py`、ignored`.pyc`、未追跡Symlink、`*.egg-info/PKG-INFO`をいずれも列挙することを確認した。ただしこれは**Git列挙動作のみ**であり、AP2 SDKおよびDocker本試験の更新版PASSではない。
+
+**この追加修正についてDocker実行はNOT RUN。** 直近のユーザー提供Docker実測は前節の`db732295`：署名VALID / 公式Schema INVALID / Ruby研究Verifier **ACCEPT / SECURITY RED-HOLD**。CI 0件、外部Issuer/HC06/一般Gem/本番HOLD、公開/決済NO-GOは変わらない。最新コードで再実行してレビューを確認するまでPRマージ保留。
+
 ## 4. 次の判断と境界
 
 **P1-10t観測はローカル実測でRED/HOLD。** 原因に対するVerifierの修正・正常署名回帰・別署名負例は**本PRの承認範囲外**。GP01とは別の**S01型検証の反例**として記録し、S02その他の未検証リスクにGOは出さない。
