@@ -171,7 +171,26 @@ S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)
 
 `research/p1_10t/observe_s01.rb` の観測用判定を限定修正：**実際にACCEPTを観測した場合だけMinitest成功（引き続きSECURITY RED_HOLD）**。理由を独立認証できていない`REJECT`の場合はレポートに`REJECT / INCONCLUSIVE_HOLD`と理由を残し、`flunk`でテスト失敗にする。これは既存Ruby Verifierの型違反対策ではなく、P1-10uの「意図したID型理由でのREJECT」検証に代わるものでもない。
 
-**この変更後の新HEADについてDocker再実行・GitHub Actions CI成功の実測はまだない。** 上記の`12ad006`での1 run/7 assertionsは**変更前の歴史的ローカル証拠**として保持し、新しいコードのテスト結果と混同しない。改めてクリーンAP2環境で生成器→Ruby観測を一連実行し、最新Codexレビューを確認するまでPR #41はマージHOLD。
+**この修正直後（Docker再実行前）の時点では** 新HEADの実測は未実施だった。`12ad006`での1 run/7 assertionsは**変更前の歴史的ローカル証拠**として保持し、新しいコードのテスト結果と混同しない。下記3eで今回の更新後のDocker再実測を別に記録する。最新Codexレビューを確認するまでPR #41はマージHOLD。
+
+### 3e. observer P2修正後の最新HEADでDocker再実測（2026-10-12 JST）
+
+ユーザーがMac上のDockerで、PR #41 HEAD `3978a852d6cbf5f4afc4344fe78e87dedf905956`（`3661f25` observer偽PASS対策を含む）を確認。公式AP2 `b4587ac1d055888a73b4b21750973cffba961793`を**新規detached clean worktree**に展開し、Python生成器成功時に限り同一runの新規fixtureをRuby側へ渡して実行した。以下は受領した実際の出力（署名トークン・fixture・秘密鍵は非転載）：
+
+```text
+3978a852d6cbf5f4afc4344fe78e87dedf905956
+Preparing worktree (detached HEAD b4587ac)
+HEAD is now at b4587ac feat: Release Ap2 v0.2 (#233)
+S01 SIGNATURE VALID: issuer disclosure/commitment, agent PoP and merchant JWS
+S01 SCHEMA INVALID: pinned anyOf/contains errors; nested id type:string violation (integer 123)
+S01: synthetic ephemeral signing keys never written/uploaded
+S01 OBSERVED: ACCEPT — RED/HOLD (signed input, official JSON Schema INVALID)
+1 runs, 6 assertions, 0 failures, 0 errors, 0 skips
+```
+
+**結果：最新のRuby観測テストでも、正署名＋公式Schema INVALIDなS01を既存研究VerifierがACCEPTする危険動作が再現。P1-10t SECURITY RED/HOLD維持。** assertion数6（旧コード7）は`REJECT`を安全PASSと誤計上しないよう変更したことによる。今回の実測は**ACCEPT経路のみ**であり、別理由REJECT時に実際に`flunk`する異常系は未注入・NOT RUN。公式AP2の全範囲適合性を証明しない。
+
+**GitHub Actions CIは本PRで0件/NOT RUN**。これはユーザー実行Dockerの局所的な合成研究であり、ChatGPT独立再現・実決済悪用ではない。元の`research/p1_3/checkout_binding_research.rb`は未修正。最新HEADに対するCodex再レビューの指摘を確定・確認するまでPR #41はマージHOLD。S01型拒否の修正は次のP1-10uで別PR、S02その他・汎用Gem/API/本番/HC06/決済はHOLD/NO-GO。
 
 ## 4. 次の判断と境界
 
