@@ -2,7 +2,7 @@
 
 **2026-10-12 JST / [Issue #47](https://github.com/cuichangquan/ap2-mandate-verifier/issues/47) / RESEARCH ONLY / 合成公開鍵fixture / Phase 2-B HOLD**
 
-> **初期状態：NOT RUN / verdict未確定**。DC04の合格には**Issuerが署名した全開示の正常例をRuby研究Verifierが受け入れ**、かつ同じRoot JWSから**単一配列要素だけを隠した真正署名付き2ケースを `missing disclosure` の理由で拒否**することが必須。完全開示も拒否するなら、異常例を拒否していても **DC04 RED/HOLD** とする。
+> **実測結果：O1–O4 限定成功 / O5 Ruby制限でRED/HOLD（DC04未合格）**。DC04の合格には**Issuerが署名した全開示の正常例をRuby研究Verifierが受け入れ**、かつ同じRoot JWSから**単一配列要素だけを隠した真正署名付き2ケースを `missing disclosure` の理由で拒否**することが必須。完全開示も拒否するなら、異常例を拒否していても **DC04 RED/HOLD** とする。
 
 ## 検証対象と設計上の要点
 
@@ -32,4 +32,15 @@
 
 **制約:** 合成一時秘密鍵をgit/CI artifacts/ログへ絶対に置かない。実際の支払い・本物の認証/Checkout・GCP/有料Hostなし。公開JWKと真の合成署名原文だけをActions artifact（7日保持）に保存するため、恒久的な外部リプレイ証拠は別課題。公式SDK推移依存の全lock再現は未達。依存の実行時freezeを保存。DC05/追加の真正署名付き未知path負例/Host CAS/HC06未実行。
 
-**初回PR時点：** O1〜O5すべてNOT RUN。実測後はRUN URL、HEAD、成功・失敗とセキュリティGateを**別々に**明記する。Issue #47はOPEN、Phase 2-B/Gem/API/本番/決済はHOLD/NO-GO。
+## 実測結果（2026-10-12 JST）
+
+- **[専用GitHub Actions #38260583063](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38260583063)：研究ハーネスSUCCESS**、当初のPR HEAD `ca00138d65963747b8cf49bb275a6691898bbcd3`。これは**DC04のGate合格ではない**。
+- O1/O2：Issuer/Agent/Merchant真正署名、各Root提示に再署名したTerminalの`sd_hash`、aud/nonce、Merchant JWT/hash、公式AP2 `verify_chain`が**FULL・M0・S0の3提示すべてVALID**。Root JWSは3提示で**同一**。Issuer/Agent/Merchant鍵は生成時の一時秘密鍵で、artifactには公開JWKと合成署名原文だけが残る。
+- O3：Issuer署名済みRootの**最上位から**生wire commitmentを走査。FULLは期待したpath/kindの**3 commitmentを解決、残余0**。M0は `allowed/0`、S0は `acceptable_items/0` の**正確に1 digestだけ**非提示。両方独立walkが `incomplete_disclosure: signed commitment not disclosed` で拒否。
+- O4：公式pinned Open JSON Schemaの検査結果は **FULL VALID / M0 VALID / S0 VALID**。Schemaは両要素の非開示による空配列を必ずしも拒否しないため、これは完全性の証拠にならない。
+- O5：既存 `AP2CheckoutBindingResearch.verify!` を3提示へ実行すると **FULL / M0 / S0 すべて `unsupported array disclosure location` によるREJECT**。Ruby `TracePoint` による拒否起点もartifactに保存。**FULLの正常例まで拒否されたためDC04 Gate = `RED_HOLD`**。M0/S0の`missing disclosure`による適切な拒否は、このRuby実装に対してはまだ実証していない。
+- 合成の完全なsigned-wire原文・Disclosure順序・公開JWK・Host合成期待値・Python/Ruby観測JSON・上流/実行HEAD・依存freezeを含むSHA256/byte-length manifest生成・照合は成功。Actions artifact `phase2a-dc04-nested-element-signed-probe` ID `11752635062`（約28.6 KB）、**2026-10-19 14:07 UTCに期限切れ**。恒久リプレイ証拠は未達。
+
+**解消すべき課題:** `research/p1_1/root_sdjwt_research.rb` は署名済みRoot wrapperと`constraints`配列Disclosureだけを許し、`allowed[0]` / `acceptable_items[0]` の入れ子を非対応として拒否する。候補となる次の作業は**独立したresearch-only Ruby固定Issuerプロフィール用resolver**を別レビュー付きで設計・実装し、完全開示正常例のPASSとM0/S0の`missing disclosure`の区別を示すこと。ただし広いSD-JWT解釈へ安易に緩和しない。署名済み未知path・デコイ・別Issuer/multi-hop・公式Schemaとの順序・Host challenge CAS/失効/HC06も未実証。
+
+**判定と運用:** 専用CIのGREENは**研究観測の再現に成功しただけ**。DC04 RED/HOLD、Issue #47 OPEN、DC05 NOT RUN、Phase 2-B/Gem/API/production/payments HOLD/NO-GO。Codexの最新HEADレビュー完了と未解決指摘の解決前にPRをマージしない。
