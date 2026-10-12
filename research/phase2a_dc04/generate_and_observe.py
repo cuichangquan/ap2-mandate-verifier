@@ -156,9 +156,20 @@ def generate():
     decoy_root = sd_jwt.create(
         payload=mandate, issuer_key=issuer, sd=metadata, add_decoy_claims=True,
     ).sd_jwt_issuance
+    # Genuine fixed-Issuer signature with a wrong Root JOSE kind, using
+    # the same pinned SDK issuer primitive and fully disclosed profile.
+    # This is not a header edit on an existing signature.
+    wrong_typ_root = common.issue_sd_jwt(
+        claims=common.selectively_disclosable_claims(
+            common.delegate_claims_from_model(mandate), metadata),
+        issuer_key=issuer, header_params=common.header_parameters(
+            issuer, typ="kb+sd-jwt"),
+        add_decoy_claims=False, serialization_format="compact",
+    ).sd_jwt_issuance
     fixture["additional_signed_negatives"] = {}
     for kind, root in (("unexpected_nested_path", unexpected_root),
-                       ("issuer_decoy", decoy_root)):
+                       ("issuer_decoy", decoy_root),
+                       ("wrong_root_typ", wrong_typ_root)):
         terminal = kb_sd_jwt.create(
             prev_token=common.parse_token(root), holder_key=agent,
             payload=checkout, aud=AUD, nonce=NONCE,
@@ -327,6 +338,19 @@ def verify_and_observe(f, schema_path, merchant_schema_path):
                     "unexpected-path control changed Open semantics")
             extra_observations[kind] = {
                 "crypto": "VALID", "signed_path": "extra constraints/1",
+                "open_same_as_full": True,
+            }
+        elif kind == "wrong_root_typ":
+            extra_header = strict_json(decode64(segments(raw_root)[0].split(".")[0]))
+            require(extra_header.get("typ") == "kb+sd-jwt",
+                    "genuinely issuer-signed wrong Root typ not emitted")
+            opened_extra, graph_extra = raw_commitment_graph(
+                signed_extra, segments(raw_root)[1])
+            require(opened_extra["delegate_payload"][0] == opened and
+                    {(x["path"], x["kind"]) for x in graph_extra} == EXPECTED_ROOT_PATHS,
+                    "wrong-typ control also changed signed authority")
+            extra_observations[kind] = {
+                "crypto": "VALID", "signed_wrong_typ": extra_header["typ"],
                 "open_same_as_full": True,
             }
         else:
