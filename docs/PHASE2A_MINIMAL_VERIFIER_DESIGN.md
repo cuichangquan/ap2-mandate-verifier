@@ -20,7 +20,7 @@
 | 暗号・Disclosure | 検証済みIssuer JWS、完全なDisclosure digest、Root署名済み `cnf.jwk` → Terminal Agent署名/PoP、`sd_hash`。当初 ES256/P-256、`sha-256` のみ | 一部公式根拠 + **ローカル限定**。秘密鍵はHostから渡さない |
 | 制約 | 認証済みRootで**権限を緩め得る制約がすべて可視・評価可能と証明できる**固定Issuer layout。研究ケースは allowed_merchants 1、line_items 1、各配列1要素、Checkout 1件 | **本OSSの狭い形状制限**。署名が正しいだけで完全性は証明されない |
 | Claims | 検証済みOpenの固定claimをClosedに保持。Terminal `aud`/`nonce` はHost事前発行期待値と一致。Rootの `iat`/`exp`、Terminalの `iat` を有限時間方針で検証 | Claim保存は公式根拠、期待チャレンジ等は**本OSS Host方針** |
-| Checkout | Hostが保存した**現在のmerchant-signed Checkout JWTの原文**をHost登録Merchant公開鍵で検証。Presented Closedの `checkout_jwt` の原文一致と `checkout_hash` の独立計算照合 | 署名・Hash確認はMerchant側の重要な規格義務。Hostの注文状態判定は別 |
+| Checkout | Hostが保存した**現在のmerchant-signed Checkout JWTの原文**をHost登録Merchant公開鍵で検証。Presented Closedの `checkout_jwt` の原文一致と `checkout_hash` の独立計算照合。**署名検証済みCheckout JWT payloadの`id`＝Host現在`checkout_ref.checkout_id`**を必須比較し、既存研究の固定1行profileに限りMerchant ID・status・currency・SKU/数量・整数金額/小計/合計もHost期待正本と照合する | 署名・Hash確認はMerchant側の重要な規格義務。**Checkout内部属性の型/意味は本OSSの研究profileであり、一般AP2/UCPの必須Schemaと混同しない**。Hostの現行注文状態・最終ALLOWは別 |
 | 非対応 | Direct/Human Present、3hop以上、hidden/unknown権限、未知Issuer/鍵・暗号・Constraint/`vct`、別の `_sd_alg`、`issuer_jwt_hash` モード、複数注文、optional `merchant.website` を含む当該研究形状外入力 | **本OSSの unsupported / REJECT**。正規AP2データの一部も非対応であり仕様違反とは断定しない |
 
 ### Disclosure完全性の未解決条件（重大な設計ブロッカー）
@@ -38,7 +38,7 @@
 | `presentation_wire` | **UNTRUSTED** Agentから届いたcompact SD-JWT、Disclosure、委任chainの**元wire表現**。署名/hash基準として再直列化しない | `malformed_presentation` |
 | `issuer_trust_profile` | **TRUSTED Host policy**。許可Issuer ID、kid→公開鍵、用途、ES256/P-256、rotation/有効期間（**有限not_after**）、固定発行・Disclosure layout、**不変なpolicy_version**。検証時のactive/非失効をHost正本で確認 | `untrusted_issuer` / `unsupported_profile` / `incomplete_context` |
 | `merchant_trust_profile` | **TRUSTED Host policy**。対象Merchant ID・Tenant、Merchant JWT署名の許可鍵/alg/rotation、鍵の**有限not_after**、**不変なpolicy_version**、検証時のactive/非失効状態 | `incomplete_context` / `invalid_checkout_signature` |
-| `signed_checkout_jwt_wire`, `checkout_ref` | **同じTRUSTED Host current checkout record正本**から取得。`checkout_ref = (tenant_id, checkout_id, checkout_version)`は必須の不変なsnapshot識別子で、**このrecordに実際に保存された原文JWT**との結合をHostが保証する（単なるAgent/Callerの自己申告IDは不可）。Verifierは元JWTのSHA-256を計算し、challenge recordのtenant/checkout id/versionとの一致を必ず検査。AのJWTとBのchallengeは拒否 | `incomplete_context` / `checkout_context_mismatch` / `checkout_jwt_mismatch` |
+| `signed_checkout_jwt_wire`, `checkout_ref`, `expected_checkout_facts` | **同じTRUSTED Host current checkout record正本**から取得。`checkout_ref = (tenant_id, checkout_id, checkout_version)`は必須の不変snapshot IDで、**このrecordに実際に保存された原文JWT**との結合をHostが保証する（Agent/Caller自称IDは不可）。`expected_checkout_facts`はHost正本のMerchant ID、status、currency、SKU、quantity、total_minor等の期待値（研究用固定1行profile）。Verifierは元JWT SHA-256、challenge recordのtenant/checkout ID/version一致、**Merchant署名検証済みJWT payloadの`id`と`checkout_ref.checkout_id`の同値**および固定profileの重要な金額/状態/商品要素を照合する | `incomplete_context` / `checkout_context_mismatch` / `invalid_checkout_claim` / `checkout_jwt_mismatch` |
 | `merchant_id`, `expected_agent_key`, `buyer_account_ref` | **TRUSTED Host** の取引・Agent identity文脈。初期profileでは**全て必須**。`expected_agent_key` はHostが当該Checkoutで承認した公開鍵（または検証済み鍵thumbprint）、`buyer_account_ref`はHostが当該取引に結び付けた**非機密の不変・opaque account参照**。Agent名やpresentation中の自称鍵/Buyerを代用しない。HostのAgent受入policyについても不変`policy_version`、有限`not_after`、検証時active/非失効状態が必要。Buyer/Accountの権利・同意そのものの確認はHostの別責務 | `incomplete_context` / `expected_agent_mismatch` / `buyer_context_mismatch` |
 | `challenge_ref`, `challenge_checkout_ref`, `challenge_agent_key_thumbprint`, `challenge_buyer_account_ref`, `expected_audience`, `expected_nonce`, `challenge_expires_at` | **TRUSTED Host-issued immutable challenge正本**。すべて必須。`challenge_ref` は永続レコードに一意・不変に結び付き、**`challenge_checkout_ref = (tenant_id,checkout_id,checkout_version)`**、**発行時に承認したAgent鍵thumbprint**、Host Buyer/Account opaque ref、期待aud/nonce、有効期限を事前解決する。Verifierは**challenge Agent鍵＝Host current `expected_agent_key`＝Issuer署名済Root `cnf.jwk`（鍵同一性）**、challenge Buyer ref＝Host current `buyer_account_ref`＝Checkout正本Buyer ref、challenge Checkout ref＝Host JWT正本Checkout refを全て検査する。Agentの自己申告値は使わない | `incomplete_context` / `checkout_context_mismatch` / `expected_agent_mismatch` / `buyer_context_mismatch` / `invalid_nonce` / `invalid_audience` / `invalid_time` |
 | `now`, `ttl_policy`, `resource_limits` | **TRUSTED Host** 時計、有限のroot age/skew、最大wire長・hop・Disclosure数・ネスト深度等 | `incomplete_context` / `invalid_time` / `resource_limit_exceeded` |
@@ -64,13 +64,17 @@ VerifiedEvidence (only after ALL supported gates pass):
   verified_agent_key_ref Root cnf とTerminal署名に結び付いた鍵の参照
   checkout_binding:     { tenant_id, checkout_id, checkout_version,
                           buyer_account_ref, signed_checkout_jwt_sha256,
-                          host_challenge_ref }
+                          signed_checkout_payload_id, host_challenge_ref }
+                        signed_checkout_payload_idは厳格parse＋Merchant署名済JWTから取得し、
+                        checkout_idとの完全一致を必須とする
                         Host現在注文正本とHost challengeの同一取引対応、
                         実際に検証したHost正本JWT原文digestを束ねる（必須）
   trust_snapshot        { issuer_key_ref, issuer_policy_version,
                           merchant_key_ref, merchant_policy_version,
                           agent_key_ref, agent_policy_version }
                         Hostが登録・検証時点で承認した鍵と方針の不変参照（必須）
+  checkout_checked_facts Merchant署名検証済み固定1行Checkoutのstatus、
+                         merchant_id、currency、item ID/quantity、total_minorの要約
   constraints_checked   検証済み・評価済み制約の安全な要約
   verified_challenge:    { host_challenge_ref, verified_audience,
                            verified_nonce_sha256, verified_at,
@@ -89,7 +93,7 @@ Rejection:
   profile_ref           確定できるときのみ。機密payloadは返さない
 ```
 
-**不変条件:** `VerifiedEvidence` は署名・構造・制約を通過した**技術的証拠**であり、`approved`、`allow`、`authorized`、`payment_succeeded`、`nonce_consumed`、`not_revoked` を**含めない**。`verified_challenge` は**必須**であり、Hostの事前解決済み一意`challenge_ref`、署名検証済みTerminal `aud`、署名検証済みTerminal `nonce`のSHA-256 digest（公開ログにraw nonceを出さない）、信頼済み`now`由来の`verified_at`、**Host challengeに発行時から固定された承認Agent鍵thumbprintとopaque Buyer/Account参照**を含める。Buyerの同意/本人性をここで証明したことにはならない。**`valid_until`も必須**。Issuer検証済みRootの`exp`、検証済みClosed内部・Terminalの`exp`（存在する場合）、Host challenge期限・Host指定の有限TTL/最大経過時間、**Host承認Issuer・Merchant・Agent鍵/信頼ポリシーの有効終了時刻`not_after`**から算出される**最も早いdeadline**を表す。`trust_snapshot` は、実際に検証に使ったHost承認鍵参照と、issuer/merchant/agentそれぞれの不変なtrust policy versionを必須出力とする。**`checkout_binding`も必須**。同じHost正本由来の`checkout_ref`とchallenge recordの`challenge_checkout_ref`が一致していることを検証した上で、実際に署名検証したJWT原文のSHA-256 digestと`host_challenge_ref`を固定して出力する。Issuer/Agentの自己申告checkout IDをHost IDとして出力しない。期限claimが省略可能ならHostの有限policyで上界を定め、それも不可能なら`Rejection(invalid_time/incomplete_context)`。検証時だけ期限内でも、Host処理時の有効性は保証せず**HostはCASで再判定**する。未認証nonce/Issuer claimや単なる任意文字列のchallenge refをそのまま証拠化しない。裸の `true` や「例外がなければ成功」は使わない。未知・内部障害・可視性不明は `Rejection`（または呼び出し自体HOLD）にする。理由と監査IDはサニタイズし、raw tokens / JWK秘密情報をログ・返却に混ぜない。
+**不変条件:** `VerifiedEvidence` は署名・構造・制約を通過した**技術的証拠**であり、`approved`、`allow`、`authorized`、`payment_succeeded`、`nonce_consumed`、`not_revoked` を**含めない**。`verified_challenge` は**必須**であり、Hostの事前解決済み一意`challenge_ref`、署名検証済みTerminal `aud`、署名検証済みTerminal `nonce`のSHA-256 digest（公開ログにraw nonceを出さない）、信頼済み`now`由来の`verified_at`、**Host challengeに発行時から固定された承認Agent鍵thumbprintとopaque Buyer/Account参照**を含める。Buyerの同意/本人性をここで証明したことにはならない。**`valid_until`も必須**。Issuer検証済みRootの`exp`、検証済みClosed内部・Terminalの`exp`（存在する場合）、Host challenge期限・Host指定の有限TTL/最大経過時間、**Host承認Issuer・Merchant・Agent鍵/信頼ポリシーの有効終了時刻`not_after`**から算出される**最も早いdeadline**を表す。`trust_snapshot` は、実際に検証に使ったHost承認鍵参照と、issuer/merchant/agentそれぞれの不変なtrust policy versionを必須出力とする。**`checkout_binding`も必須**。同じHost正本由来の`checkout_ref`とchallenge recordの`challenge_checkout_ref`が一致していること、かつ**厳格parse・Merchant署名検証済みJWT payloadの`id`が`checkout_ref.checkout_id`と完全一致すること**を検証した上で、実際に署名検証したJWT原文のSHA-256 digestと`host_challenge_ref`、署名済payload IDを固定して出力する。固定1行profileのstatus/merchant/currency/SKU/quantity/totalもHost期待値と比較し、Evidenceに`checkout_checked_facts`要約を付ける。Issuer/Agentの自己申告checkout IDをHost IDとして出力しない。期限claimが省略可能ならHostの有限policyで上界を定め、それも不可能なら`Rejection(invalid_time/incomplete_context)`。検証時だけ期限内でも、Host処理時の有効性は保証せず**HostはCASで再判定**する。未認証nonce/Issuer claimや単なる任意文字列のchallenge refをそのまま証拠化しない。裸の `true` や「例外がなければ成功」は使わない。未知・内部障害・可視性不明は `Rejection`（または呼び出し自体HOLD）にする。理由と監査IDはサニタイズし、raw tokens / JWK秘密情報をログ・返却に混ぜない。
 
 ## 4. 検証順序とFail Closed decision table
 
@@ -98,7 +102,7 @@ Rejection:
 2. **Trust + crypto + Host Agent binding** Hostの許可Issuer鍵でRoot署名、Disclosures digest、Root署名済み`cnf.jwk` とTerminal署名/PoP、`sd_hash` を元wireに対して照合。**Issuer/Merchant/Agentの各Host信頼ポリシーが検証時active・非失効であること、各鍵/方針の有限`not_after`と不変`policy_version`が取得できることを必須**とし、実際に使用した許可鍵とpolicy versionを`trust_snapshot`に記録する。**検証済みRoot `cnf.jwk` とHostの`expected_agent_key`とHost challenge発行時固定`challenge_agent_key_thumbprint`の三者で暗号鍵同一性を必ず比較し、不一致なら `expected_agent_mismatch`で拒否。** Root→TerminalのPoPだけではHostが当該challengeのAgentを許可した証明にならない。root/terminal JWSどちらかだけで成功しない。
 3. **Claims + schema + challenge evidence** 認証済みOpen/Closedの `vct`、**Root・Closed内部・Terminal各層の署名済み時刻/有効期限**、Open→Closed保持、Host `aud`/`nonce` を確認。**必須のHost `challenge_ref` がそのCheckoutの永続正本に紐付くことをHost入力契約として要求し、実際に一致確認したTerminal `aud`/`nonce`に基づく`verified_challenge`だけを成功時のEvidenceへ載せる**。さらに認証済み期限、Hostが指定したchallenge/TTL期限、**検証に使ったIssuer/Merchant/Agent trust policyおよび鍵の`not_after`**の**最短値を必須`valid_until`として返す**。Issuer/Merchant/Agent鍵の方針が有効か、有限期限上界やversionが不明ならEvidence禁止。公式 pinned Open/Closed/Merchant JSON Schemaの対応する**全ての必要な型・必須・形状制約**と、より狭い本OSSの形状ポリシーを別々に適用する。
 4. **Completeness + constraints** 固定Issuer layoutで権限制約が完全に見えると証明し、全Constraintを意味評価。未知/非開示/型逸脱/数量・商品・Merchant不一致で拒否。
-5. **Checkout + Host challenge binding** Host正本JWTのMerchant署名を検証し、Closed内の `checkout_jwt` 原文と一致、`checkout_hash` をJWT**フィールド値**のハッシュとして独立再計算（当初sha-256のみ）。**Hostが正本として提供したJWT recordのtenant/checkout ID/versionと、独立のHost challenge recordが指すtenant/checkout ID/versionが一致しなければ`checkout_context_mismatch`で拒否**（誤って異なる注文の有効JWTを渡しても通さない）。**実際に検証したHost JWT原文SHA-256＋一致したcheckout_id/version＋challenge_refを`checkout_binding`として必須出力**する。Hostがrecord↔JWTの出所対応を示せず曖昧な場合、または**Host challengeのBuyer/Account refとCheckout正本Buyer/Account refが不一致/未確定ならSTOP**。署名確認とhash比較を混同しない。
+5. **Checkout + Host challenge binding** Host正本JWTのMerchant署名を検証し、Closed内の `checkout_jwt` 原文と一致、`checkout_hash` をJWT**フィールド値**のハッシュとして独立再計算（当初sha-256のみ）。**Hostが正本として提供したJWT recordのtenant/checkout ID/versionと、独立のHost challenge recordが指すtenant/checkout ID/versionが一致しなければ`checkout_context_mismatch`で拒否**（誤って異なる注文の有効JWTを渡しても通さない）。**さらに厳格JSON parse + Merchant署名検証済みCheckout JWT payloadの`id`は`checkout_ref.checkout_id`と完全一致しなければ`invalid_checkout_claim`で拒否**（たとえ有効なAのJWTを誤ってB recordに保存しても通さない）。固定研究profileでは許可キーshape、`ready_for_complete` status、merchant ID、Host期待currency、SKU/quantity、正の整数金額/小計/合計とHost期待合計を検査し、未知金額semanticはrejectする。これは**本OSSの固定1行プロファイル制限でありAP2一般のCheckout JWT payload schemaではない**。**実際に検証したHost JWT原文SHA-256＋署名済payload ID＋一致したcheckout_id/version＋challenge_refを`checkout_binding`として必須出力**する。Hostがrecord↔JWTの出所対応を示せず曖昧な場合、または**Host challengeのBuyer/Account refとCheckout正本Buyer/Account refが不一致/未確定ならSTOP**。署名確認とhash比較を混同しない。
 6. **全ゲート成功**でのみEvidence。これでも最終許可ではない。
 
 | ID | 観測/入力条件 | Verifier結果案 | 根拠・境界 |
@@ -117,6 +121,7 @@ Rejection:
 | D09 | `line_items` 条件を満たさない、Merchant不一致、未知Constraint、Quantity不正 | `Rejection(constraint_violation/unknown_constraint)` | 公式Constraint意味 + ローカル狭義shape |
 | D10 | Host正本Checkout JWT不在・Merchant署名偽・raw JWT差分・hash差分 | `Rejection(invalid_checkout_signature/checkout_jwt_mismatch/checkout_hash_mismatch)` | Host正本の独立検証 |
 | D10A | **署名VALID**でもHost JWT正本のtenant/checkout ID/versionとHost challenge正本のtenant/checkout ID/versionが違う、JWT record出所が曖昧、またはEvidenceのJWT digestがHost CASの最新注文正本から変わった | Verifier: `Rejection(checkout_context_mismatch/incomplete_context)`。遅延後なら**Host CAS STOP** | **注文とchallengeの独立cross-binding**。成功Evidenceにcheckout ref/version/署名済JWT digest/challenge refを必須化 |
+| D10B | **Merchant署名VALID**でもCheckout JWT payloadの`id`がHost `checkout_ref.checkout_id`と不一致、固定1行profileのstatus/merchant/currency/SKU/quantity/amount/totalsがHost期待正本やConstraintと不一致 | `Rejection(invalid_checkout_claim/constraint_violation)` | **署名済payload自身のID/意味との結合**。既存研究コードの`wrong Host checkout id`/金額ゲートを維持、一般UCP互換性は主張しない |
 | D11 | HostのTrust context・**issuer/merchant/agent policy_versionや有限not_after**・永続challenge_ref・resource/TTL上限欠落、内部依存障害、想定外例外 | `Rejection(incomplete_context/verification_unavailable)` | fail closed、鍵Trustの無制限fallbackなし |
 | D12 | 同一の正署名presentationを二度検証（N07相当） | Verifier単体では**再びEvidenceになり得る**。Hostは再利用を**STOP** | **HOST_BOUNDARY**。Verifierにanti-replayの偽保証を作らない |
 | D13 | 失効未知、Authority応答不能、nonce DB競合、注文内容の最新性不明 | **Host STOP/PENDING**（Verifier結果ではない） | HC06 FULL HOLD、Host正本34件中25件NOT RUN |
@@ -130,7 +135,7 @@ Rejection:
 | Host登録TrustでRoot/Agent/Merchant署名、Disclosureと鍵binding検証 | Trusted Issuer/Agent/Merchant鍵の登録、使用用途、rotation、失効時の入力方針 |
 | 公式Schemaと厳格Profile型・完全開示・制約評価、全ての署名付きJSONの重複key・JOSE header厳格拒否 | 認証済みBuyer/Account/Tenant、Agent資格とConsentの成立確認 |
 | Host提供aud/nonce/署名済みMandate各層の時刻・期限を評価し、**必須のverified_challengeと`valid_until`を返却** | Challengeの一意・不変な発行/永続管理。Evidenceの`host_challenge_ref`、`verified_audience`、`verified_nonce_sha256`、**`approved_agent_key_thumbprint`、`buyer_account_ref`**が**現行永続challenge正本/tenant/Checkout版/承認Agent鍵/Buyer account**と一致することをHostがCASと同じ安全境界で再確認する。Host current `expected_agent_key`・agent policy・checkout buyer/account refとも再照合し、発行時Agent/Buyerの差し替えならSTOPする。同時に**Hostの信頼時計でCAS現在時刻 `< valid_until`**と最新challenge期限を再判定し、**Issuer/Merchant/Agent全てのtrust_snapshot鍵参照・policy_versionをHost現在の信頼正本へ再解決してactive/非失効/期限内・版一致を確認**する（回転/失効/版変化/Authority不確実ならSTOP・再検証。古いpolicyを自動承認しない）。その上でnonceを**原子的に一度だけ消費**、Checkout状態CAS。古いEvidenceや期限切れEvidenceを使い回してはならない |
-| Host正本JWTの署名/原文/hashを照合し、**Host checkout_refとHost challenge_checkout_refの一致、および必須checkout_bindingの作成** | **最新注文正本**の版・在庫・価格・支払方法・リスク・注文実行の判断。Host CASでは**Evidence.checkout_bindingのtenant/checkout ID/version/buyer_account_refを現在の注文とchallengeの両正本に照合し、Evidence中の`signed_checkout_jwt_sha256`を現在保存している署名済JWT原文から再計算したdigestと原子的に比較**する。どれか違えばnonceを消費せずSTOP。JWT差し替え/古い版/別注文を許可しない |
+| Host正本JWTの署名/原文/hashを照合し、**JWT署名済payload `id`＝Host checkout_ref ID**、Host checkout_ref＝Host challenge_checkout_ref、固定profileのCheckout status/currency/amount/SKU整合、必須checkout_bindingを検証 | **最新注文正本**の版・在庫・価格・支払方法・リスク・注文実行の判断。Host CASでは**Evidence.checkout_bindingのtenant/checkout ID/version/buyer_account_refを現在の注文とchallengeの両正本に照合し、Evidence中の`signed_checkout_jwt_sha256`を現在保存している署名済JWT原文から再計算したdigestと原子的に比較**する。どれか違えばnonceを消費せずSTOP。JWT差し替え/古い版/別注文を許可しない |
 | `VerifiedEvidence` / `Rejection` のサニタイズ返却 | 外部失効Authorityとの別契約、UNKNOWNならSTOP、永続operation/idempotency/outbox/回復 |
 | DB/ネットワーク/Payment/Receipt処理は**しない** | Provider実行判断、Receiptの正しい署名/記録/送信、障害時に成功を偽装しない |
 
@@ -162,6 +167,8 @@ VerifierがEvidenceを返してもHost ALLOWは**必ず独立**しており、Ho
 | A18 | T0で正署名JWTとHost challengeが同一Checkout ID/versionでEvidenceを生成。T1のCAS直前にHostが同一CheckoutのJWT内容/版を更新、または別recordのJWTに差し替えた | **Host CASはSTOP**。`checkout_binding`のchallenge_ref、tenant/id/version、signed JWT digestをHost現行のchallenge/Checkout両正本と**原子的に比較**し、nonce消費前に不一致を拒否。署名自体がVALIDでも古い証拠は無効 |
 | A19 | **同じcheckoutにAgent A/B両方が登録**され、challengeは発行時Agent A鍵に固定。Hostの後続`expected_agent_key`がAgent Bへ変わり、IssuerはBの鍵でVALID Rootを再署名、BがClosedを署名。checkout/nonce/時刻/署名/hashは全て整合 | **`Rejection(expected_agent_mismatch)`**。challenge固定Agent Aの鍵thumbprintとHost B鍵/Root `cnf.jwk`が違うため、別Agentの有効署名では旧nonce使用不可。Host CASでもchallenge agent ref照合でSTOP |
 | A20 | 発行時challengeはHost Buyer/Account A、現在のHost checkout/実行AccountはBへ変更（別々に署名VALID、同じcheckout ID/versionなどその他は整合） | **`Rejection(buyer_context_mismatch)` またはHost CAS STOP**。challengeのopaque Buyer/Account IDをEvidenceに固定し、Host保存Checkout・現行Accountに一致しなければnonce消費不可。VerifierはBuyer同意の証明を返さない |
+| A21 | **Merchantが署名した有効なCheckout A JWT**をHostの**Bのcheckout recordに誤格納**。Host recordとchallenge refは共にB (tenant/id/version整合) だが、JWTの署名済payload `id` はA。ClosedはそのJWTを正しく含み、hash/署名/nonceなど全て整合 | **`Rejection(invalid_checkout_claim)`**。厳格parserで元JWTのpayload `id`を読み、署名を検証し、`checkout_ref.checkout_id`と完全一致を必須にする。両HostレコードのID一致だけでは不十分 |
+| A22 | 固定1行profileのHost期待Checkout Bと一致する署名済payload `id`だが、Issuer/Agent/Merchantで**正しく再署名した**payloadのstatus/currency/merchant ID/positive price/subtotal/total/quantityのいずれかをHost正本期待値から変更 | Profile限定`Rejection(invalid_checkout_claim/constraint_violation)`。署名VALID・公式AP2 checkout_hash VALIDでもHost期待業務要素違いを許可しない。属性ごとの独立オラクルを計画（**新規NOT RUN**） |
 
 必要な最低限の証拠: fixture生成時の**非本番の独立署名真正性**、pinned公式SchemaのVALID/INVALID、Rubyの正確なREJECT/Evidence、negativeの攻撃種別、出力が業務ALLOWでないこと、GitHub Actionsが実行された場合のみ具体的なrun URL。**観測した「危険ACCEPT」によるテストGREENを安全成功と呼ばない。** プライベート署名鍵はcommitしない。
 
@@ -173,7 +180,7 @@ VerifierがEvidenceを返してもHost ALLOWは**必ず独立**しており、Ho
 - [ ] Root/Terminal/Merchant/Disclosureの全JSONに対する重複キー拒否と、JOSE `alg`/`typ`/`crit`/許可鍵ポリシーのstrict parse/拒否（N01/N02回帰）を確認。
 - [ ] 公式JSON Schemaの型/必須とローカルstrictキー制限（S01/S02、GP01、optional `website`）を区別。
 - [ ] Host最終ALLOW/nonce CAS/注文・失効/Receiptとの責任境界、およびHC06 HOLDを確認。
-- [ ] A01–A20の各オラクル・今後の負例実行範囲、TTL/上限の未定事項を合意.
+- [ ] A01–A22の各オラクル・今後の負例実行範囲、TTL/上限の未定事項を合意.
 - [ ] 以上の未解決点を記録した上で、**別の明示的なPhase 2-B PoC GO/HOLD判断**を行う。**設計PRのマージだけでは実装開始しない**。
 
 **今回の判定:** `PROPOSED / DESIGN ONLY`。新たなテストは `NOT RUN`、Ruby Gem/API/本番は `HOLD`、実決済・外部HC06の強い安全保証は `NO-GO`。
