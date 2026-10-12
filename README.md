@@ -109,6 +109,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - [P1-10u signed S01 String type check + separate signed positive regression — PR #42, Mac Docker 2 runs / 12 assertions / 0 failures: signed S01 exact-type REJECT and known-good evidence-only ACCEPT; dedicated CI NOT RUN, general Gem/production HOLD](docs/VERIFIER_P110U_S01_TYPE_FIX_PREPARED_NOT_RUN.md)
 - [Research phases and release gates](docs/RESEARCH_PLAN.md)
 - [Phase 1研究総括とPhase 2-A設計GO/HOLD判断 — 現在の引き継ぎ先 / Current handoff](docs/PHASE1_RESEARCH_CLOSURE_PHASE2_GATE.md)
+- [Phase 2-A 最小Merchant Verifier設計パッケージ — Issue #45 / PROPOSED / DESIGN ONLY / 未実装・新規テストNOT RUN](docs/PHASE2A_MINIMAL_VERIFIER_DESIGN.md)
 - [Historical P1-10u signed S01 fixed-observer evidence and completed local Docker 2/12 (merged PR #42)](docs/VERIFIER_P110U_S01_TYPE_FIX_PREPARED_NOT_RUN.md)
 - [Historical P1-10t new-chat handoff — proposes P1-10u and is now superseded; do not rerun as current instructions](docs/VERIFIER_P110T_S01_PREPARED_NOT_RUN.md#5-新チャット引き継ぎ次の作業2026-10-12)
 - [Historical project-wide handoff — Japanese (P1-10r era; P1-10s next-task text not yet updated)](docs/HANDOFF.md)
