@@ -32,4 +32,16 @@ These are **earlier structural guards**, not evidence of a generic SD-JWT duplic
 
 ## Observations
 
-**NOT RUN / outcome unverified until real scoped CI.**
+### First independently authenticated synthetic signed run
+
+- [Dedicated CI #38314427428](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38314427428): **SUCCESS**, O1–O5 and replay SHA256/byte-size checks on PR HEAD `a2f4a19a29d616a7e12502336ef610c3bd8b6588`. [Existing DC06 regression #38314423907](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38314423907): **SUCCESS** on same HEAD.
+- O1 signed Root JWSs genuinely ES256-verified using independent trusted fixed Issuer key; the repeated-digest graph was **reissued and signed anew** with pinned `common.issue_sd_jwt`, then combined with original **unchanged** disclosed bytes only after signing. The full and hidden dual-open Roots reuse exactly the same genuine signed JWS. No JWS JSON edit was made after signature.
+- O2 newly signed Agent Terminals verify independently under the expected Open `cnf.jwk`; their signed `sd_hash` matches the exact Root SD-JWT *presentation*, with expected aud and nonce. Original synthetic Merchant JWT was independently signed/validated and Host Checkout hash checked.
+- O3 independent original Root/JWS/disclosure walk: same digest at signed `delegate_payload[0]` and `delegate_payload[1]` yields `repeated signed commitment`. The two-Open signed graph has different genuine Open digests; in the hidden presentation, the second Open's original signed digest remains in the Root but its Disclosure and recursively nested subtree are all absent, yielding `incomplete_disclosure: signed commitment not disclosed`.
+- O4 official pinned **first presented Open Schema VALID in all four cases**; the **second Open Schema VALID when fully disclosed**, but second hidden Open is **UNAVAILABLE_UNDISCLOSED**, not schema-valid by assertion.
+- O5 Ruby fixed-Issuer control `LIMITED_POSITIVE`; all 3 negative signed presentations `REJECT: invalid signed Root array`, attributed by TracePoint to `fixed_issuer_verifier.rb#verify_signed_payload!`. Ruby rejected on **array cardinality before verifying signature or traversing repeated digest**; independent Python proves genuine signature and binding. Neither issuer discovery nor a generic SD verifier is thereby validated.
+- **Result:** `LIMITED_DC06_FOLLOWUP_STRUCTURAL_REJECT`. These genuinely signed *shapes* were observed, resolving the earlier NOT RUN *construction/execution* question, but **do not prove generic repeated-commitment guard or hidden authority completeness**. Signed second Open has an **observable extra Root array slot**, although its contents remain undisclosed; this is a bounded cardinality gate rather than a stealth-hidden additional authority.
+- Ephemeral public-only replay: Actions artifact ID `11776745175`, archive digest `sha256:9689a96d203a9812ec0258b5225231c0bb24e13bd6d472fe4789027c503f4278`, expires **2026-10-19T22:03:57Z**. Seven-day evidence, not durable.
+
+**PR #60 still requires exact latest-HEAD CI and Codex review. Issue #47 stays OPEN, and Phase 2-B/Gem/production/payments/Host CAS HOLD.**
+
