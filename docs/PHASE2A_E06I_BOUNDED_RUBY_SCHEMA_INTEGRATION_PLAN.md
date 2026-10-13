@@ -48,6 +48,8 @@
 | `research/p1_2/two_hop_research.rb` / `research/p1_3/checkout_binding_research.rb` 等 | **必要なら別途審査** | G4暗号とG6意味評価を、安全に別入口へ抽出する最小差分。既存entrypointの結果/例外/受理範囲は変えない。単なる呼出し順変更で安全性が失われるならSTOP |
 | `.github/workflows/phase2a-e06i-bounded.yml` | **別の実行承認後だけ** | 当該研究のみの手動・有界runner。今回のdocs-only PRに追加しない |
 
+**Evidence有効期限の契約:** G7の `valid_until` は、署名済みRoot Open・Agent Terminal・Closedの全ての有効期限、challenge期限、Issuer/Agent/Merchant trustの有効期限、Host policy TTL等、**適用される有限の期限の最小値**以下に固定する。G4で一時的に有効だった署名を、後から期限切れでも再利用可能な証拠にしてはならない。どれかの期限が不明・矛盾・到達不能ならEvidenceを発行せずSTOP。最終時刻判定とnonce消費はHost側の別責務とし、署名済み期限の見落としをHostに丸投げしない。
+
 **実装可能性の出口:** 新入口から**同一Ruby invocationがG0–G6を実行した到達証拠**を出せなければ `E06_INTEGRATED_UNPROVEN`。まずオフラインSchema loaderの単体試験だけ成功した場合は `SCHEMA_FEASIBILITY_ONLY` と記録し、**E06-P統合PASSに昇格しない**。stage分割が想定以上の変更・仕様拡大を要する場合は、コードを増やす前にIssue #71でHOLDを宣言する。
 
 ## 4. 将来の最大6ケースと因果オラクル（全部 NOT RUN）
