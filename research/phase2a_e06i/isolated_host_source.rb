@@ -118,6 +118,9 @@ module AP2E06IHostSource
 
       anchors = source.fetch("trust")
       exact!(anchors, TRUST_NAMES, "invalid_source_trust_selectors")
+      # Never let unknown policy state for an earlier signer mask a known
+      # revoked or invalid signer later in the record.
+      unknown_revocation = false
       TRUST_NAMES.each do |signer|
         entry = anchors.fetch(signer)
         exact!(entry, AP2E06IHostSnapshot::TRUST_FIELDS,
@@ -127,11 +130,11 @@ module AP2E06IHostSource
         halt!("REJECT", "host_enrollment_trust_mismatch") unless
           entry == proposed.fetch(signer) &&
           entry["tenant_id"] == PINNED_TENANT
-        %w[key_revocation policy_revocation].each do |k|
-          halt!("REJECT", "host_enrollment_revoked") if entry[k] == "revoked"
-          halt!("HOLD", "host_enrollment_revocation_unknown") unless
-            entry[k] == "non_revoked"
-        end
+        states = %w[key_revocation policy_revocation].map { |k| entry[k] }
+        halt!("REJECT", "host_enrollment_revoked") if
+          states.include?("revoked")
+        unknown_revocation = true unless
+          states.all? { |state| state == "non_revoked" }
         halt!("REJECT", "host_enrollment_signer_inactive") unless
           entry["active"] == true && entry["policy_active"] == true
         %w[key_not_before policy_not_before].each do |k|
@@ -152,6 +155,7 @@ module AP2E06IHostSource
       halt!("REJECT", "merchant_enrollment_checkout_mismatch") unless
         anchors.fetch("merchant_trust")["subject_ref"] ==
         proposed.fetch("checkout").fetch("merchant_id")
+      halt!("HOLD", "host_enrollment_revocation_unknown") if unknown_revocation
 
       # Every assertion above may still be attacker-written in BOTH records.
       # Until a pinned actual independent Host root + key lifecycle evidence
