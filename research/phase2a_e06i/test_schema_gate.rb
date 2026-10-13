@@ -70,9 +70,23 @@ class E06ISchemaOnlyProposedTest < Minitest::Test
     assert_empty result.fetch("completed_stages")
   end
 
+  def test_07_escaped_duplicate_signed_root_key_rejects_at_g0
+    signature = Base64.urlsafe_encode64("\0" * 64, padding: false)
+    # Two identical "delegate_payload" names after JSON unescaping.
+    raw = %q({"delegate_payload":[],"\u0064elegate_payload":[]})
+    root = fake_sd_jwt("example+sd-jwt", signature, raw)
+    result = observe_g0(
+      root: root, terminal: fake_sd_jwt("kb+sd-jwt", signature)
+    )
+    assert_equal "REJECT", result.fetch("status")
+    assert_equal "G0_PREAUTH_BOUNDS", result.fetch("first_reject_stage")
+    assert_equal "ambiguous_signed_json", result.fetch("reason")
+    assert_empty result.fetch("completed_stages")
+  end
+
   # Only when an *independently pinned* AP2 source tree is supplied.
   # This is a Schema mechanism test, NOT an O1–O5 signed-root experiment.
-  def test_07_pinned_open_closed_merchant_schema_mechanism
+  def test_08_pinned_open_closed_merchant_schema_mechanism
     source = ENV["AP2_E06I_UPSTREAM_ROOT"]
     skip "No pinned upstream: Schema mechanism test NOT RUN" if source.nil? || source.empty?
     gate = AP2E06ISchemaGate::Gate.new(upstream_root: source)
@@ -118,9 +132,9 @@ class E06ISchemaOnlyProposedTest < Minitest::Test
 
   private
 
-  def observe_g0(terminal:)
+  def observe_g0(terminal:, root: nil)
     sig = Base64.urlsafe_encode64("\0" * 64, padding: false)
-    root = fake_sd_jwt("example+sd-jwt", sig)
+    root ||= fake_sd_jwt("example+sd-jwt", sig)
     checkout_jwt = fake_jws("JWT", sig, { "id" => "fake" })
     AP2E06IPartialProbe.observe(
       policy_json: JSON.generate({ "host_checkout_jwt" => checkout_jwt }),
@@ -143,7 +157,9 @@ class E06ISchemaOnlyProposedTest < Minitest::Test
     protected = Base64.urlsafe_encode64(
       JSON.generate({ "alg" => "ES256", "typ" => typ }), padding: false
     )
-    body = Base64.urlsafe_encode64(JSON.generate(payload), padding: false)
+    body = Base64.urlsafe_encode64(
+      payload.is_a?(String) ? payload : JSON.generate(payload), padding: false
+    )
     "#{protected}.#{body}.#{signature}"
   end
 end
