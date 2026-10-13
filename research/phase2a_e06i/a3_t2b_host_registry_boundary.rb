@@ -112,23 +112,30 @@ module AP2E06IA3T2bHostRegistryBoundary
           claimed_checkout.is_a?(String) && claimed_checkout == original
       end
 
-      unless verified_at.is_a?(Integer) &&
-          verified_at.between?(1, AP2E06IHostSnapshot::MAX_TIME) &&
-          candidate.verified_at == verified_at
-        return hold("host_clock_provenance_unavailable")
-      end
-
+      # The caller's clock may be missing or disagree with the already
+      # inspected frozen candidate. Inspect the independent enrollment CLAIM
+      # with that candidate's fixed diagnostic time first, so malformed
+      # JSON/digests, profile mismatches and revoked/invalid signer records
+      # still produce local REJECT instead of being masked by clock HOLD.
+      # Candidate time is itself UNAUTHENTICATED; this is NOT a trusted G1
+      # time lookup or a Host revocation/identity determination.
       result = AP2E06IHostSource.inspect_claims!(
         candidate: candidate,
         source_json: source_json,
         expected_source_sha256: expected_source_sha256,
-        verified_at: verified_at
+        verified_at: candidate.verified_at
       )
       # This must be an A3-H1 HOLD-only claim, never a claimed G1 capability.
       return hold("unexpected_host_claim_capability") unless
         result.is_a?(AP2E06IHostSource::SourceClaim) &&
         result.status == "HOLD" && !result.authoritative? &&
         !result.admissible? && result.evidence.nil?
+
+      unless verified_at.is_a?(Integer) &&
+          verified_at.between?(1, AP2E06IHostSnapshot::MAX_TIME) &&
+          candidate.verified_at == verified_at
+        return hold("host_clock_provenance_unavailable")
+      end
 
       return hold("original_checkout_wire_unavailable") if checkout_missing
 
