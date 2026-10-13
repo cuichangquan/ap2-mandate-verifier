@@ -42,9 +42,16 @@ module AP2E06IPartialProbe
       raise Halt, "resource_limit" unless [root, terminal].all? do |wire|
         wire.is_a?(String) && wire.ascii_only? && wire.bytesize.between?(1, 32_768)
       end
+      # Bound the untrusted presentation key before Host policy comparison.
+      # Key material is never used as a trust source; G1 chooses Host's key.
+      raise Halt, "resource_limit" unless candidate.is_a?(Hash) &&
+        candidate.size == 4 && candidate.keys.all? { |k| k.is_a?(String) } &&
+        candidate.keys.sort == %w[crv kty x y] &&
+        candidate.values.all? { |v| v.is_a?(String) && v.ascii_only? && v.bytesize.between?(1, 128) }
+      candidate_bytes = JSON.generate(candidate).bytesize
       raise Halt, "resource_limit" unless policy_json.is_a?(String) &&
         policy_json.ascii_only? && policy_json.bytesize.between?(1, 16_384) &&
-        root.bytesize + terminal.bytesize + policy_json.bytesize <= 131_072
+        root.bytesize + terminal.bytesize + policy_json.bytesize + candidate_bytes <= 131_072
 
       untrusted_policy = AP2StrictJSONResearch.parse!(policy_json)
       raise Halt, "invalid_host_context" unless untrusted_policy.is_a?(Hash)
