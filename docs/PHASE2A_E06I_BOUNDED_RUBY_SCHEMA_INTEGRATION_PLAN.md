@@ -70,7 +70,7 @@
 | **E06-I-N5M / N5 Merchant** | A Root/Agent真正・G3完全性VALID、Merchant Checkout JWT署名を破壊（正しいHost公開鍵に対しINVALID） | **G4 `invalid_checkout_signature`**。原JWT一致/hashとの因果差もO2で記録 |
 | **E06-I-N6B / N6 未登録Issuer** | 未登録Bによる**B公開鍵でVALIDな独立署名**、Host事前固定Aのみ | **G1 `untrusted_issuer`**。G1拒否時にG2成功を主張しない。E01-S IP02の過去結果で新候補の到達を代用しない |
 | **E06-I-N6T / N6 信頼期限** | A自身の署名は独立VALIDだがHost固定Issuer policyが期限切れ/disabled（発行物に選択権なし） | **G1 `incomplete_context/untrusted_issuer`**。Host policy失効をIssuer署名無効と誤称しない |
-| **E06-I-N7J / N7 G0構文** | **必須の統合シナリオは、Root compact JWSの署名対象payloadにescape復元後同一になるJSON key重複を含む未認証wire**。具体例は元raw JSON中の `"delegate_payload"` と `"\\u0064elegate_payload"`（JSON escapeを解釈すると両方 `delegate_payload`）で、署名済みpayloadの重複をG0の厳格parserが最初に検出することを確認する。非対応JOSE headerは別の**単体アサーションのみ**で、このケースの代用不可 | **G0 `ambiguous_signed_json`がfirst rejectで必須**。G2署名が無効でもよいが、G0の前に署名検証/緩いparseへ進んだ結果のrejectは不合格。original raw JSONでescape後の同名衝突を独立オラクルで示す。1代表例だけで全parser攻撃面は証明しない |
+| **E06-I-N7J / N7 G0構文** | **必須の統合シナリオは、Root compact JWSの署名対象payloadにescape復元後同一になるJSON key重複を含む未認証wire**。具体例は元raw JSON中の `"delegate_payload"` と `"\u0064elegate_payload"`（JSON escapeを解釈すると両方 `delegate_payload`）で、署名済みpayloadの重複をG0の厳格parserが最初に検出することを確認する。非対応JOSE headerは別の**単体アサーションのみ**で、このケースの代用不可 | **G0 `ambiguous_signed_json`がfirst rejectで必須**。G2署名が無効でもよいが、G0の前に署名検証/緩いparseへ進んだ結果のrejectは不合格。original raw JSONでescape後の同名衝突を独立オラクルで示す。1代表例だけで全parser攻撃面は証明しない |
 | **E06-I-N7R / N7 G0資源** | 事前に固定したraw wire / case総byte cap超過（失敗自体に真正署名は不要） | **G0 `resource_limit`**。メモリ確保後・署名処理後の拒否はG0限界実証としない |
 | **E06-I-N7S / N7 G5 Schema unavailable** | 正しいA FULL提示を使い回し、固定Closed/Merchant Schema原本またはallowlist `$ref`の読み込みを意図的に不可にする | **G5 `verification_unavailable`**。Network fallback禁止。原本loadがG0で失敗する実装なら到達stageをその通り記し、G5因果はHOLD |
 
