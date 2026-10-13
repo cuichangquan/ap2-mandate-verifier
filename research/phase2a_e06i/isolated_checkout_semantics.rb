@@ -138,8 +138,11 @@ module AP2E06ICheckoutSemantics
         same_present_string?(product["title"], host_checkout.fetch("sku_title"))
 
       quantity = line.fetch("quantity")
+      # No artificial 16-item quantity cap: the 16 limit applies to
+      # JSON ARRAY cardinality, not to a signed positive quantity. The
+      # MAX_AMOUNT ceiling is implied by price>=1 and the bounded total.
       reject!("invalid_or_unauthorized_quantity") unless
-        positive_int?(quantity, 16) && quantity == required_qty &&
+        positive_int?(quantity, MAX_AMOUNT) && quantity == required_qty &&
         quantity == host_checkout.fetch("quantity")
       unit_price = product.fetch("price")
       reject!("invalid_checkout_unit_price") unless
@@ -228,7 +231,7 @@ module AP2E06ICheckoutSemantics
       exact!(req, REQUIREMENT_KEYS, "unsupported_issuer_requirement")
       present_string!(req.fetch("id"))
       reject!("invalid_issuer_quantity") unless
-        positive_int?(req["quantity"], 16)
+        positive_int?(req["quantity"], MAX_AMOUNT)
 
       alternatives = req.fetch("acceptable_items")
       reject!("unsupported_sku_count") unless
