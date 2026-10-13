@@ -52,28 +52,41 @@
 
 **実装可能性の出口:** 新入口から**同一Ruby invocationがG0–G6を実行した到達証拠**を出せなければ `E06_INTEGRATED_UNPROVEN`。まずオフラインSchema loaderの単体試験だけ成功した場合は `SCHEMA_FEASIBILITY_ONLY` と記録し、**E06-P統合PASSに昇格しない**。stage分割が想定以上の変更・仕様拡大を要する場合は、コードを増やす前にIssue #71でHOLDを宣言する。
 
-## 4. 将来の最大6ケースと因果オラクル（全部 NOT RUN）
+## 4. 将来の最大13シナリオと因果オラクル（全件 NOT RUN）
 
-合成Issuer A・固定3 path・同一Host正本、original JWS/SD-JWT wire、Agent/Merchantの一時鍵を使う。O1 = 元署名独立検証、O2 = Agent/Merchant/Host binding、O3 = original Root全域commitment graph、O4 = pinned Python独立Schema+policy、O5 = **同一Ruby候補**の到達stage・理由。
+[E06順序契約§3](PHASE2A_E06_INTEGRATED_VERIFICATION_ORDER_CONTRACT.md)の**E06-PおよびN1–N7をすべて対応表に含める**。最大13回のシナリオ判定であり、**13件の新規署名を意味しない**（FULL原署名wireの安全な再利用、Host policy切替、上限超過・Schema読み込み不能の環境負例を含む）。合成Issuer Aの固定2hop・固定3 pathを肯定基準とし、N6だけ未登録Issuer Bを用いる。対象の増加は再承認が必要。
 
-| ID | 未来の対象 | 期待・証明の条件 |
+**共通オラクル:** O1 = 元JWSの独立署名検証（G0不正入力に署名VALIDを要請しない）、O2 = Agent/Merchant/Host binding、O3 = **Issuer署名済みoriginal Root全域**のSD commitment graph、O4 = pinned独立Open/Closed Schema＋Host固定policy、O5 = **同一Ruby invocation**のstage ledgerとfirst reject code。E06-I-Pの同一実行でG0–G6が通りG7 Evidence-onlyを返すことが、後続負例を安全性証拠として評価する前提。各負例は**先行条件の到達・独立証明があって初めて**そのstageの因果証明となる。
+
+| Scenario / 元E06 | 将来の合成条件 | 期待するfirst reject / 誤認禁止 |
 | --- | --- | --- |
-| **E06-I-P** | 本物の合成署名付き完全FULL・全3 disclosure・Host Checkout一致 | **G0–G6全到達・Open/Closed/Merchant refのRuby G5各VALID**、G7 `VerifiedEvidence`**候補のみ**。最初に成功しなければ全負例を安全性証明として採点しない |
-| **E06-I-N1** | Issuer署名原本に残る有効なMerchant/SKU権限slotの非開示、Terminalは提示wireに対応する真正署名 | G3 `incomplete_disclosure`。完全FULLが成功していること、original Root commitment/digestのO3を要する。早期件数拒否では代用不能 |
-| **E06-I-N3O** | Open schema-invalid候補（先行G0–G4を満たすか検証） | Ruby G5 `invalid_open_schema`に到達**できた場合だけ**統合負例。先に固定shapeが拒否する場合はそのstageをそのまま記録し、別の**単体Open Schema INVALID**の証拠と区別 |
-| **E06-I-N3C** | Closed schema-invalid候補（先行G0–G4を満たすか検証） | Ruby G5 `invalid_closed_schema`に到達**できた場合だけ**統合負例。署名/bindingやローカルshapeで先行拒否ならG5到達証明に数えない |
-| **E06-I-N4** | Open/Closed schema-valid・署名VALID、Host checkout id/total/merchant policyと不一致 | G6 `checkout_context_mismatch/constraint_violation`。署名やSchema VALIDがHost認可ではないことをO2/O4/O5で区別 |
-| **E06-I-N5** | issuer root署名・開示完全性はVALID、Agent Terminal `sd_hash`あるいはMerchant JWT署名不正 | G4 `invalid_chain_binding/invalid_checkout_signature`。G5/G6へ未到達と記録 |
+| **E06-I-P / E06-P** | 正しい合成A FULL、固定3 Disclosure・Root/Agent/Merchant真正署名・Host正本一致 | G0–G6全到達（Ruby G5でOpen/Closed/ネストMerchantの固定Schema判定）→G7 `VerifiedEvidence`候補のみ。本番ALLOWではない |
+| **E06-I-N1 / N1** | A真正署名Rootの許可Merchant/SKU権限slotを未開示にし、元提示wireに対応するAgent Terminalは真正に再署名 | **G3 `incomplete_disclosure`**。O1/O3原signed graphの有効digest未解決が必要。配列件数・Schemaでの先行拒否をG3証拠としない |
+| **E06-I-N2 / N2** | A真正署名・開示済みだがIssuer署名original Rootに**未知SD commitment path**を1箇所追加し、独立graphを監査 | **G3 `unsupported_signed_profile`**。既存E01-SのS3拒否とは別に、統合候補のG3到達と原署名全文走査を記録。decoy/未知object `_sd`の網羅は**別途残余** |
+| **E06-I-N3O / N3 Open** | G0–G4の肯定前提を満たすよう発行した署名済み公式Open Schema-invalid型/必須 | **G5 `invalid_open_schema`に実到達した場合のみ**原因を記録。早期固定shape拒否なら`G5_CAUSAL_NEGATIVE_NOT_PROVEN` |
+| **E06-I-N3C / N3 Closed** | G0–G4を通過可能な署名済み公式Closed Schema-invalid型/必須 | **G5 `invalid_closed_schema`に実到達した場合のみ**。G4が先にClosed型/時刻/hashを消費する場合はその事実を記録し、G5の負例PASSと誤称しない |
+| **E06-I-N4 / N4** | SchemaとRoot/Terminal/Merchant署名はVALID、Host期待Checkout id/total/merchantが不一致 | **G6 `checkout_context_mismatch`または`constraint_violation`**。G5 VALIDはHost認可の代用不可 |
+| **E06-I-N5A / N5 Agent** | A Root署名・G3完全性VALID、Agent Terminal `sd_hash`不一致（Terminal自体の署名は有効） | **G4 `invalid_chain_binding`**。G5/G6未到達を証明 |
+| **E06-I-N5M / N5 Merchant** | A Root/Agent真正・G3完全性VALID、Merchant Checkout JWT署名を破壊（正しいHost公開鍵に対しINVALID） | **G4 `invalid_checkout_signature`**。原JWT一致/hashとの因果差もO2で記録 |
+| **E06-I-N6B / N6 未登録Issuer** | 未登録Bによる**B公開鍵でVALIDな独立署名**、Host事前固定Aのみ | **G1 `untrusted_issuer`**。G1拒否時にG2成功を主張しない。E01-S IP02の過去結果で新候補の到達を代用しない |
+| **E06-I-N6T / N6 信頼期限** | A自身の署名は独立VALIDだがHost固定Issuer policyが期限切れ/disabled（発行物に選択権なし） | **G1 `incomplete_context/untrusted_issuer`**。Host policy失効をIssuer署名無効と誤称しない |
+| **E06-I-N7J / N7 G0構文** | 二重JSON key（escape復元後を含む）または非対応JOSEを持つ**未認証wire** | **G0 `ambiguous_signed_json/unsupported_jose_header`**。この1代表例では全G0 parser攻撃面を実証しない |
+| **E06-I-N7R / N7 G0資源** | 事前に固定したraw wire / case総byte cap超過（失敗自体に真正署名は不要） | **G0 `resource_limit`**。メモリ確保後・署名処理後の拒否はG0限界実証としない |
+| **E06-I-N7S / N7 G5 Schema unavailable** | 正しいA FULL提示を使い回し、固定Closed/Merchant Schema原本またはallowlist `$ref`の読み込みを意図的に不可にする | **G5 `verification_unavailable`**。Network fallback禁止。原本loadがG0で失敗する実装なら到達stageをその通り記し、G5因果はHOLD |
 
-**Schema gate単体の必須追加アサーション（6件の「署名付きシナリオ」を増やさない）:** 正常Open/Closed、必要型と必須欠落、Merchant `id/name`欠落、相対refを読めない状態、未知ref、未承認のネットワークref、固定原本blob/hash違い。これらは**G5機構テスト**であり、原署名真正性やG0–G7通しの実証ではない。
+**13ケースを予算内で管理:** 同じ元A FULL wire、同一固定Host snapshotのreadonly再利用が可能なものは使い回す。各caseの入力/fixture数・最大bytes・子プロセスhard timeoutを事前チェックし、**13ケース以内・1 run / 1 job / 10分**で実施できないなら自動増枠せず `STOP/REPLAN`。G0負例は未認証入力であるためO1署名成功を要求しない。N6BのB署名はB公開鍵で独立に検証してよいが、Host trust鍵として昇格しない。
 
-**難しい負例の扱い:** 現行の固定DC04/P1-2/P1-3は公式Schemaより狭いshapeを先行検査するため、signed-invalid Open/Closed がG5の「first reject」に届かない可能性がある。**本来rejectすべき不正入力を通すようにローカルshapeを緩めるのは禁止**。G5自身の検査実行をstage ledgerで検証し、負例が構造的に先行拒否された場合は `G5_CAUSAL_NEGATIVE_NOT_PROVEN` とHOLDし、次の改訂計画を審査する。
+**Schema gateの単体アサーション（上記13ケースと別の単体テスト・統合因果の代用不可）:** Open/Closedの正常と必須/型不正、Merchant `id/name`欠落、相対`$ref`未解決、未知ref、外部HTTP禁止、pinned原本blob/hash相違、strict parserの別JSON階層でのduplicate-key。単体テストを`E06-P/N1–N7`の証拠に流用しない。
+
+**検査順序と因果の留保:** 現行DC04/P1-2/P1-3の固定shapeが、公式Schema INVALIDより先に拒否する可能性がある。本来拒否すべき形状を通すよう緩めることは禁止。G4が必要とする暗号・hash・署名入力検査以外のsemantic/schema判定をG5/G6へ安全に分離できない場合、**N3O/N3Cの因果は未証明のままHOLD**。未知pathが合成Host S3で先行拒否されればN2の統合G3とは呼ばない。
+
+**未網羅を明示:** 13代表シナリオだけではN2の全decoy/unknown object `_sd`/重複digest/余剰Disclosure、N6のpolicy rollback/二重一致/rotation/revocation、N7の全JOSE・複数JSON階層/clock/CPU上限は証明しない。これらは**E03/E05/E07の残余GateとしてOPEN**。将来の `E06I_INTEGRATED_LIMITED_OBSERVED` は**13ケースのstage確認済み範囲のみ**に制限する。どれかの代表ケースがfirst rejecting stageに到達できない場合、未到達のG0/G1/G3/G5/G6に関する統合検査保証は `UNPROVEN` のまま。親E06 technical gate全体・Phase 2-A exit/Phase 2-BをPASSさせない。
 
 ## 5. 上限・実行権限（将来の別承認に必要な提案値）
 
 | 境界 | 提案する研究限定cap / 違反時 |
 | --- | --- |
-| profile / samples | synthetic A・2hop・Root Open 1・3 SD array slot、**署名付き最大6ケース**、追加variantを無断生成しない |
+| profile / samples | synthetic A・2hop・Root Open 1・3 SD array slot、**最大13シナリオ判定**（原署名の再利用・未認証G0・Schema不可環境を含む）、未承認variantを追加しない |
 | 元wire/Host材料 | Root SD-JWT ≤32,768B、Terminal ≤32,768B、Merchant Checkout JWT ≤16,384B、1 case総入力 ≤128KiB。超過・型不明 `resource_limit` |
 | 解析木 | Disclosure 1–16、深度 ≤24、各object ≤32 fields、各array ≤16 elements。重複key/不正base64url・未知JOSE・未知 `$ref` はFail Closed |
 | Ruby/Python実行 | Ruby 3.3、`jwt=3.3.0`、`json_schemer=2.5.0`、依存版ログ固定。**外部独立プロセス単位10秒のOSレベルhard timeout**、timeout/例外時STOP。Ruby `Timeout.timeout`単体をOS hard killと誤記しない |
@@ -86,9 +99,9 @@
 ## 6. 実施前Gate・停止・Exit
 
 1. **Before code:** Issue #71に、stage責務の差分・今あるG4/G6混在コードの安全な切り出し方法・正確な参照URI/digest・暫定cap・独立O1–O5と署名付きpositiveの生成方法を追記する。古いRubyの検証経路を緩める必要があれば **STOP**。
-2. **Before run:** 研究用コードPRの**最新HEADに対するCodexレビュー**と指摘解決、workflowのtrigger/path scopeと手動実行権限の検証、合成鍵・公開証拠の扱い、1run/1job/10分/10秒上限を確認する。その後、**別途明示的なオーナーの実装・実行承認が存在するときだけ**fixture生成・CIを行う。計画PR mergeとIssue closeを承認に代用しない。
+2. **Before run:** 研究用コードPRの**最新HEADに対するCodexレビュー**と指摘解決、workflowのtrigger/path scopeと手動実行権限の検証、合成鍵・公開証拠の扱い、13シナリオ以内/1run/1job/10分/10秒上限を確認する。その後、**別途明示的なオーナーの実装・実行承認が存在するときだけ**fixture生成・CIを行う。計画PR mergeとIssue closeを承認に代用しない。
 3. **During/after run:** 本物の合成署名・独立O1–O4が欠けた入力、official Open/Closed loaderがfallbackする状態、Ruby FULLがG5を通過しない状態、G5より先にG6意味検証する経路、Host原本・Issuer profile未確定の状態は **RED/HOLD**。実到達stageと失敗理由を報告し、`REJECT`やCI greenだけを合格としない。
-4. **Scope-only Exit:** `E06I_SCHEMA_FEASIBILITY_OBSERVED`はRuby Schema単体の有限な観測、`E06I_INTEGRATED_LIMITED_OBSERVED`は本物の署名付きFULLがG0–G7（Evidence-only）を一貫して通った**研究限定実測**のみを示す。N3O/N3Cなどが先行拒否なら該当因果は `UNPROVEN` と併記。どちらも**E01実Issuer provenance、E03/E05/E07/E08/E09全域、親#47、Phase 2-BへのGOではない**。
+4. **Scope-only Exit:** `E06I_SCHEMA_FEASIBILITY_OBSERVED`はRuby Schema単体の有限な観測、`E06I_INTEGRATED_LIMITED_OBSERVED`は本物の署名付きFULLがG0–G7（Evidence-only）を通過し、**E06-P/N1–N7の13代表シナリオが同じRuby候補で期待する到達stage・先行条件を満たす**研究限定実測だけに使用する。N2/N6/N7を省略、またはN3O/N3C等が別stageで先行拒否なら統合範囲全体は `E06I_INTEGRATED_PARTIAL / CAUSAL_NEGATIVE_UNPROVEN` と記録し、対象GateをPASSにしない。どちらも**E01実Issuer provenance、E03/E05/E07/E08/E09全域、親#47、Phase 2-BへのGOではない**。
 5. **事業責務は不変:** Ruby Verifierは支払許可、Host nonce CAS、リアルタイム失効/Issuer rotation、Buyer認可、Host注文現在性、実決済、Receipt、External Authority HC06を保証しない。
 
 **現時点の最終判断：`E06I_PLAN_PROPOSED / CODE_NOT_CHANGED / NO_NEW_CI / PHASE2A_GATE_HOLD / PHASE2B_HOLD`。**
