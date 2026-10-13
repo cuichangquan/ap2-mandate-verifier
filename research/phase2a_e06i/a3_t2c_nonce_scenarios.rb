@@ -7,6 +7,7 @@
 #
 # A separate Owner approval B, disposable single-primary PG16, permissions,
 # limits, independent observation and cleanup must precede ANY invocation.
+require "thread"
 require_relative "a3_t2c_nonce_issuance_worker"
 require_relative "a3_t2c_nonce_ledger_oracle"
 
@@ -84,7 +85,7 @@ module AP2E06IA3T2cNonceScenarios
     # distinct sessions on exactly the same independently checked primary.
     # Both tenants use one shared synthetic nonce; the collision probe never
     # exposes a raw nonce as a committed challenge. The result is merely
-    # an untrusted worker report until the separate reader/catal og verifies.
+    # an untrusted worker report until the separate reader/catalog verifies.
     def pg02_worker_collision_only!(left_connection:, right_connection:,
                                     left_context:, right_context:,
                                     checkout_wire:, probe_nonce:)
@@ -100,16 +101,39 @@ module AP2E06IA3T2cNonceScenarios
       # safely stopped the whole lab. A pending HOLD is NOT cleanup approval.
       connections = [left_connection, right_connection]
       tasks = []
+      ready = Queue.new
+      start_gate = Queue.new
+      gate_released = false
       [
         [left_connection, left_context], [right_connection, right_context]
       ].each do |conn, context|
         tasks << Thread.new do
+          # Both workers must reach the gate before EITHER can issue SQL.
+          # Merely allocating two threads does not establish concurrency.
+          ready << true
+          ticket = start_gate.pop
+          next nil unless ticket == :go
+
           AP2E06IA3T2cNonceIssuanceWorker.collision_probe_only!(
             connection: conn, context: context, checkout_wire: checkout_wire,
             nonce: probe_nonce
           )
         end
       end
+
+      # Bound readiness without assuming Thread scheduling is synchronous.
+      # A failed/late worker receives CANCEL, not GO. The caller retains
+      # all worker handles and connection references for supervised cleanup.
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 2
+      while ready.size < MAX_WORKERS &&
+            Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+        Thread.pass
+      end
+      both_ready = tasks.length == MAX_WORKERS && ready.size == MAX_WORKERS
+      tasks.length.times { start_gate << (both_ready ? :go : :cancel) }
+      gate_released = true
+      return pending_workers("collision_start_barrier_not_ready_stop",
+                             tasks, connections) unless both_ready
 
       # Join BOTH workers even if the first times out. all? would
       # short-circuit and leave the second completely unobserved.
@@ -133,8 +157,14 @@ module AP2E06IA3T2cNonceScenarios
         outcomes: { "acknowledged_commits" => commits, "attempts" => 2 }
       )
     rescue StandardError
-      # Thread creation, join, and result retrieval can each fail after
-      # another worker starts. Never discard a started thread/connection.
+      # Thread creation, barrier readiness and join can fail after another
+      # worker starts. Unblock any already-waiting workers with CANCEL,
+      # never GO, and return every handle/connection to the supervisor.
+      if defined?(gate_released) && !gate_released &&
+          defined?(start_gate) && start_gate &&
+          defined?(tasks) && tasks
+        tasks.length.times { start_gate << :cancel }
+      end
       pending_workers("collision_observation_unavailable_stop",
                       tasks || [], connections || [])
     end
