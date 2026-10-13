@@ -2,6 +2,27 @@
 
 Status: **CODE WRITTEN / NOT RUN / G4–G7 HOLD / NO CI APPROVAL / PHASE2-B HOLD**.
 
+## A3-H1 approved research scope: claimed synthetic Host enrollment source
+
+`isolated_host_source.rb` compares a **separately submitted, strict/bounded
+synthetic enrollment-source JSON claim** (Issuer A, Agent, Merchant individual
+key/policy records, fixed tenant) with the existing A2 G1 Host snapshot
+candidate. It rejects unsupported identities, policy mismatches, inactive or
+known-revoked trust records and source/snapshot inconsistency; indeterminate
+revocation state does not override a definitive reject. Source and claimed
+digest are both caller-controlled, so **matching SHA and enrollment data are
+NOT independent provenance**. The return value is a `SourceClaim` with
+`status=HOLD`, `authoritative?=false`, `admissible?=false`,
+`evidence=nil`, even when all submitted fields match. No real pinned Host
+registry is available, no key thumbprint was independently enrolled, and
+no source material comes from a signed JWT as accepted Host authority.
+
+A3-H1 is **source creation + static code review only**, separately approved
+under [Issue #83](https://github.com/cuichangquan/ap2-mandate-verifier/issues/83).
+It is not A3-T and does not grant approval B for Ruby/Python, testing, signed
+fixtures or CI. The original `integrated_probe.rb` is unchanged; no
+new successful G1→G7 stage is wired. This source interface is **NOT RUN**.
+
 ## A3-H1 nonce issuance source — globally scoped requirement, NOT a ledger
 
 `isolated_nonce_issuance_source.rb` inspects a **separately supplied
