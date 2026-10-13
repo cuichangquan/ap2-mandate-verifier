@@ -341,6 +341,7 @@ module AP2E06IA3T2cNonceLedgerOracle
            pg_catalog.has_table_privilege(r.oid, t.oid, 'TRIGGER') AS can_trigger,
            pg_catalog.has_table_privilege(r.oid, t.oid, 'REFERENCES') AS can_reference,
            pg_catalog.has_schema_privilege(r.oid, n.oid, 'CREATE') AS schema_create,
+           pg_catalog.has_schema_privilege(r.oid, n.oid, 'USAGE') AS schema_usage,
            (SELECT COUNT(*)::integer FROM assumable a
              WHERE a.role_oid <> r.oid) AS settable_other_roles,
            -- Includes admin_option even when set_option and inherit_option
@@ -498,6 +499,7 @@ module AP2E06IA3T2cNonceLedgerOracle
         next hold("writer_privilege_escape_or_append_only_not_proven") unless
           row["writer_name"] == WRITER_ROLE &&
           yes.call("rolcanlogin") && yes.call("can_insert") &&
+          yes.call("schema_usage") &&
           row["settable_other_roles"] == "0" &&
           row["direct_memberships"] == "0" &&
           row["admin_memberships"] == "0" &&
@@ -764,6 +766,7 @@ module AP2E06IA3T2cNonceLedgerOracle
         acl = roles[0]
         acl["writer_name"] == READER_ROLE &&
           acl["rolcanlogin"] == "t" && acl["can_select"] == "t" &&
+          acl["schema_usage"] == "t" &&
           acl["settable_other_roles"] == "0" &&
           acl["direct_memberships"] == "0" &&
           acl["admin_memberships"] == "0" &&
