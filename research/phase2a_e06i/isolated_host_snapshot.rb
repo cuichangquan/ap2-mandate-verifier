@@ -102,11 +102,15 @@ module AP2E06IHostSnapshot
         expected_sha256.match?(/\A[0-9a-f]{64}\z/) &&
         epoch?(verified_at)
 
-      actual_sha256 = Digest::SHA256.hexdigest(host_json.b)
+      # Detach the caller-owned byte buffer ONCE. The caller may otherwise
+      # mutate host_json between the digest and parse, creating a false
+      # digest-to-snapshot link. Never parse or hash that original again.
+      immutable_wire = host_json.dup.freeze
+      actual_sha256 = Digest::SHA256.hexdigest(immutable_wire.b)
       halt!("HOLD", "untrusted_host_snapshot_digest") unless
         fixed_equal?(actual_sha256, expected_sha256)
 
-      parsed = AP2StrictJSONResearch.parse!(host_json)
+      parsed = AP2StrictJSONResearch.parse!(immutable_wire)
       check_bounds!(parsed)
       exact!(parsed, FIELDS, "invalid_host_fields")
       halt!("REJECT", "unsupported_profile") unless
