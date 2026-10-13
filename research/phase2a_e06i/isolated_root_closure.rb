@@ -76,6 +76,11 @@ module AP2E06IRootClosure
     end
 
     def verify_signed_payload!(wire, trusted_jwk:)
+      # This isolated verifier must not make success claims under other jwt
+      # versions, including when called directly without the G0–G3 observer.
+      jwt_spec = Gem.loaded_specs["jwt"]
+      raise Rejected, "verification_unavailable:jwt_version" unless
+        jwt_spec && jwt_spec.version.to_s == "3.3.0"
       raise Rejected, "trusted issuer public key required" unless trusted_jwk.is_a?(Hash)
       raise Rejected, "oversized/non-ASCII SD-JWT" unless
         wire.is_a?(String) && wire.bytesize.between?(1, 32_768) && wire.ascii_only? && wire.end_with?("~")
