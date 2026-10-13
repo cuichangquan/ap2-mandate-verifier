@@ -148,7 +148,8 @@ BEGIN
        WHERE a.oid <> (SELECT oid FROM pg_catalog.pg_roles
                         WHERE rolname = lab_role)
           OR role.rolsuper OR role.rolcreaterole OR role.rolcreatedb
-          OR role.rolbypassrls OR NOT role.rolcanlogin AND a.oid =
+          OR role.rolbypassrls OR role.rolreplication
+          OR NOT role.rolcanlogin AND a.oid =
             (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = lab_role)
           OR pg_catalog.pg_has_role(a.oid, t.relowner, 'MEMBER')
           OR pg_catalog.has_schema_privilege(a.oid, ns.oid, 'CREATE')
