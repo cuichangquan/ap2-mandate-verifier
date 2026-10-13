@@ -33,6 +33,15 @@ module AP2E06ICheckoutSemantics
     amount_minor buyer_account_ref currency expected_status merchant_id
     original_jwt quantity ref sku_id sku_title
   ].sort.freeze
+  HOST_CHALLENGE_KEYS = %w[
+    agent_thumbprint aud buyer_account_ref checkout_ref expires_at
+    issued_at nonce ref
+  ].sort.freeze
+  HOST_TRUST_KEYS = %w[
+    active key_jwk key_not_after key_not_before key_revocation
+    policy_active policy_not_after policy_not_before policy_ref
+    policy_revocation policy_version subject_ref tenant_id
+  ].sort.freeze
 
   class Rejected < StandardError
     attr_reader :code
@@ -81,7 +90,12 @@ module AP2E06ICheckoutSemantics
       host_checkout = snapshot.fetch("checkout")
       host_challenge = snapshot.fetch("challenge")
       host_merchant = snapshot.fetch("merchant_trust")
+      # Validate the closed-world nested Host record shapes BEFORE fetch.
+      # A scalar challenge/merchant record is a controlled Rejected result,
+      # never an uncaught NoMethodError from Hash#fetch.
       exact!(host_checkout, HOST_CHECKOUT_KEYS, "unsupported_host_checkout")
+      exact!(host_challenge, HOST_CHALLENGE_KEYS, "unsupported_host_challenge")
+      exact!(host_merchant, HOST_TRUST_KEYS, "unsupported_host_merchant_trust")
       exact_ref!(host_checkout.fetch("ref"))
       exact_ref!(host_challenge.fetch("checkout_ref"))
       reject!("challenge_checkout_tuple_mismatch") unless
