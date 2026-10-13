@@ -97,13 +97,34 @@ module AP2E06IA3T2cNonceScenarios
         left_connection.equal?(right_connection) ||
         observer_reader.equal?(left_connection) ||
         observer_reader.equal?(right_connection)
-      unless left_context.is_a?(Hash) && right_context.is_a?(Hash) &&
-          left_context["tenant_id"] != right_context["tenant_id"]
-        return hold("cross_tenant_probe_required")
-      end
+      return hold("synthetic_probe_contexts_required") unless
+        left_context.is_a?(Hash) && right_context.is_a?(Hash)
+
+      # Copy all caller-owned strings BEFORE checking uniqueness or giving
+      # contexts to threads, avoiding a different issuance_ref/challenge_ref
+      # appearing between this check and the actual SQL bindings.
+      left_context = detached_probe_context(left_context)
+      right_context = detached_probe_context(right_context)
+      return hold("cross_tenant_probe_required") unless
+        left_context["tenant_id"].is_a?(String) &&
+        right_context["tenant_id"].is_a?(String) &&
+        left_context["tenant_id"] != right_context["tenant_id"]
+
+      # PG02 must conflict ONLY on UNIQUE(nonce_sha256). Both other unique
+      # keys (issuance_ref PRIMARY KEY, challenge_ref UNIQUE) must differ,
+      # otherwise a witnessed PostgreSQL transaction wait could arise from
+      # the wrong index and be falsely credited to nonce uniqueness.
+      return hold("pg02_non_nonce_unique_keys_not_distinct") unless
+        %w[issuance_ref challenge_ref].all? { |field|
+          a = left_context[field]
+          z = right_context[field]
+          a.is_a?(String) && z.is_a?(String) &&
+            !a.empty? && !z.empty? && a != z
+        }
 
       connections = [left_connection, right_connection, observer_reader]
       tasks = []
+      observer_thread = nil
       prepared = Queue.new
       inserted = Queue.new
       begin_gates = [Queue.new, Queue.new]
@@ -178,19 +199,34 @@ module AP2E06IA3T2cNonceScenarios
       # Require independently observed PostgreSQL transaction-id or
       # speculative unique-index lock wait by the loser on the winner.
       # Merely logging 'about to insert' is NOT sufficient.
-      witnessed = false
-      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 0.75
-      while Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
-        witnessed = AP2E06IA3T2cNonceLedgerOracle.pg02_lock_wait_observed_only?(
-          reader: observer_reader, waiting_pid: pids[loser],
-          holding_pid: pids[winner]
-        )
-        break if witnessed
+      #
+      # IMPORTANT: pg connection queries are synchronous and can hang on
+      # the wire before the Ruby deadline can be checked again. The entire
+      # reader_session?/catalog/lock-query path therefore runs inside an
+      # owned OBSERVER THREAD with a bounded parent join. Any timed-out
+      # reader thread is returned with the workers and ALL DB connections;
+      # never close/reuse its connection until the approved B supervisor
+      # establishes quiescence. B may additionally set libpq network timeout.
+      observer_thread = Thread.new do
+        observed = false
+        deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 0.75
+        while Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+          observed = AP2E06IA3T2cNonceLedgerOracle.pg02_lock_wait_observed_only?(
+            reader: observer_reader, waiting_pid: pids[loser],
+            holding_pid: pids[winner]
+          )
+          break if observed
 
-        Thread.pass
+          Thread.pass
+        end
+        observed
       end
+      return pending_workers("pg02_observer_query_timeout_stop",
+                             tasks + [observer_thread], connections) unless
+        observer_thread.join(1.5)
       return pending_workers("pg02_unique_conflict_lock_unobserved_stop",
-                             tasks, connections) unless witnessed
+                             tasks + [observer_thread], connections) unless
+        observer_thread.value == true
 
       # Only the transaction holding the witnessed lock is allowed to
       # COMMIT; any unexpected second successful INSERT is cancelled.
@@ -223,8 +259,12 @@ module AP2E06IA3T2cNonceScenarios
         }
       )
     rescue StandardError
+      # Even an exception while inspecting observer_thread.value must not
+      # drop a live SQL observer or one of the two pending INSERT workers.
+      handles = (tasks || []).dup
+      handles << observer_thread if defined?(observer_thread) && observer_thread
       pending_workers("pg02_concurrent_observation_uncertain_stop",
-                      tasks || [], connections || [])
+                      handles, connections || [])
     ensure
       # Never leave a probe inside BEGIN/INSERT waiting on our Ruby gate.
       # Any worker not explicitly allowed to proceed must ROLLBACK/HOLD.
@@ -326,6 +366,14 @@ module AP2E06IA3T2cNonceScenarios
     end
 
     private
+
+    def detached_probe_context(context)
+      context.each_with_object({}) do |(key, value), result|
+        frozen_key = key.is_a?(String) ? key.dup.freeze : key
+        frozen_value = value.is_a?(String) ? value.dup.freeze : value
+        result[frozen_key] = frozen_value
+      end.freeze
+    end
 
     def idle_connection?(connection)
       defined?(PG::PQTRANS_IDLE) &&
