@@ -17,6 +17,7 @@ module AP2E06IRootClosure
   class Rejected < StandardError; end
   PINNED_AP2 = "b4587ac1d055888a73b4b21750973cffba961793"
   PROFILE = "dc04-v1-exact-three-array-commitments"
+  MAX_VERIFIED_AT = 4_102_444_800 # same capped research epoch as A2 Host snapshot
   ALLOWED_PATHS = [
     ["delegate_payload", 0],
     ["delegate_payload", 0, "disclosed", "constraints", 1, "allowed", 0],
@@ -52,6 +53,65 @@ module AP2E06IRootClosure
       iat, exp = mandate.values_at("iat", "exp")
       raise Rejected, "invalid Open validity" unless iat.is_a?(Integer) &&
         exp.is_a?(Integer) && iat <= now && now < exp && exp - iat <= 7200
+
+      constraints = mandate.fetch("constraints")
+      raise Rejected, "unsupported constraint order/cardinality" unless
+        constraints.is_a?(Array) && constraints.size == 2
+      required, allowed = constraints
+      exact_keys!(required, %w[items type])
+      exact_keys!(allowed, %w[allowed type])
+      raise Rejected, "unsupported constraint ordering" unless
+        required["type"] == "checkout.line_items" &&
+        allowed["type"] == "checkout.allowed_merchants"
+
+      items = required.fetch("items")
+      raise Rejected, "unsupported requirement cardinality" unless items.is_a?(Array) && items.size == 1
+      requirement = items.fetch(0)
+      exact_keys!(requirement, %w[acceptable_items id quantity])
+      raise Rejected, "unsupported requirement fields" unless
+        requirement["id"].is_a?(String) && !requirement["id"].empty? &&
+        requirement["quantity"].is_a?(Integer) && requirement["quantity"].positive?
+
+      sku = requirement.fetch("acceptable_items")
+      merchant = allowed.fetch("allowed")
+      raise Rejected, "incomplete fixed SKU/Merchant profile" unless
+        sku.is_a?(Array) && sku.size == 1 &&
+        merchant.is_a?(Array) && merchant.size == 1
+      exact_keys!(sku.fetch(0), %w[id title])
+      exact_keys!(merchant.fetch(0), %w[id name])
+      raise Rejected, "invalid SKU/Merchant values" unless
+        [sku[0]["id"], sku[0]["title"], merchant[0]["id"], merchant[0]["name"]].all? do |value|
+          value.is_a?(String) && !value.empty?
+        end
+      mandate
+    end
+
+    # A3-T1 new diagnostic path only: validates original signed Root using
+    # one externally supplied bounded instant. The historic method above
+    # deliberately preserves its legacy wall-clock behavior.
+    def verify_full_root_at!(wire, trusted_jwk:, verified_at:)
+      signed = verify_signed_payload!(wire, trusted_jwk: trusted_jwk)
+      mandate = signed.fetch("delegate_payload").fetch(0)
+      exact_keys!(mandate, %w[cnf constraints exp iat vct])
+      raise Rejected, "unsupported Open mandate type" unless mandate["vct"] == "mandate.checkout.open.1"
+
+      cnf = mandate.fetch("cnf")
+      exact_keys!(cnf, %w[jwk])
+      agent = cnf.fetch("jwk")
+      exact_keys!(agent, %w[crv kty x y])
+      raise Rejected, "unsupported Agent public key" unless agent["kty"] == "EC" &&
+        agent["crv"] == "P-256" && %w[x y].all? { |k| agent[k].is_a?(String) && !agent[k].empty? }
+
+      # Bounded caller-supplied instant is only a candidate, never Host proof.
+      # No local clock fallback exists in this research diagnostic method.
+      raise Rejected, "verification_clock_unavailable" unless
+        verified_at.is_a?(Integer) && verified_at.between?(1, MAX_VERIFIED_AT)
+      now = verified_at
+      iat, exp = mandate.values_at("iat", "exp")
+      raise Rejected, "invalid Open validity" unless iat.is_a?(Integer) &&
+        exp.is_a?(Integer) && iat.between?(1, MAX_VERIFIED_AT) &&
+        exp.between?(1, MAX_VERIFIED_AT) && iat <= now && now < exp &&
+        exp - iat <= 7200
 
       constraints = mandate.fetch("constraints")
       raise Rejected, "unsupported constraint order/cardinality" unless
