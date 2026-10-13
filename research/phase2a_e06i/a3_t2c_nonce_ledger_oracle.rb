@@ -56,15 +56,19 @@ module AP2E06IA3T2cNonceLedgerOracle
                AND i.indnkeyatts = 1 AND i.indnatts = 1
            )::integer AS matching_indexes,
            COUNT(*) FILTER (
-             WHERE a.attname IN (
-               'issuance_ref', 'challenge_ref', 'nonce_sha256'
-             )
-               AND a.attnotnull
-               AND NOT a.attisdropped
+             WHERE a.attname = 'issuance_ref'
+               AND a.attnotnull AND NOT a.attisdropped
                AND i.indisvalid AND i.indisready
                AND i.indpred IS NULL AND i.indexprs IS NULL
                AND i.indnkeyatts = 1 AND i.indnatts = 1
-           )::integer AS expected_unique_indexes
+           )::integer AS issuance_unique_indexes,
+           COUNT(*) FILTER (
+             WHERE a.attname = 'challenge_ref'
+               AND a.attnotnull AND NOT a.attisdropped
+               AND i.indisvalid AND i.indisready
+               AND i.indpred IS NULL AND i.indexprs IS NULL
+               AND i.indnkeyatts = 1 AND i.indnatts = 1
+           )::integer AS challenge_unique_indexes
       FROM pg_catalog.pg_index i
       LEFT JOIN pg_catalog.pg_attribute a
         ON a.attrelid = i.indrelid AND a.attnum = i.indkey[0]
@@ -261,7 +265,8 @@ module AP2E06IA3T2cNonceLedgerOracle
       singleton_row(res) &&
         res[0]["total_unique_indexes"] == "3" &&
         res[0]["matching_indexes"] == "1" &&
-        res[0]["expected_unique_indexes"] == "3"
+        res[0]["issuance_unique_indexes"] == "1" &&
+        res[0]["challenge_unique_indexes"] == "1"
     rescue StandardError
       false
     end
