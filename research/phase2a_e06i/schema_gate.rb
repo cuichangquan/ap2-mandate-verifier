@@ -6,7 +6,6 @@
 #
 # Approval A only: declaring this class is not a signed-fixture experiment or CI.
 require "json"
-require "json_schemer"
 require "digest"
 require "uri"
 
@@ -49,8 +48,19 @@ module AP2E06ISchemaGate
 
     def initialize(upstream_root:)
       raise Rejected, "verification_unavailable" unless
-        upstream_root.is_a?(String) && !upstream_root.empty? &&
-        Gem.loaded_specs.fetch("json_schemer").version.to_s == "2.5.0"
+        upstream_root.is_a?(String) && !upstream_root.empty?
+      # Load only the review-pinned library at the verification boundary.
+      # Missing/other-version gems are reported as unavailable, not as a
+      # startup exception or a schema-invalid signed Mandate verdict.
+      begin
+        gem "json_schemer", "= 2.5.0"
+        require "json_schemer"
+      rescue LoadError, Gem::LoadError
+        raise Rejected, "verification_unavailable"
+      end
+      spec = Gem.loaded_specs["json_schemer"]
+      raise Rejected, "verification_unavailable" unless
+        spec && spec.version.to_s == "2.5.0"
 
       root = File.realpath(upstream_root)
       directory = File.join(root, "code/sdk/schemas/ap2")
