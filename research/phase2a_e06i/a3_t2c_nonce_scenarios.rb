@@ -286,12 +286,25 @@ module AP2E06IA3T2cNonceScenarios
         issuance_ref.is_a?(String) && issuance_ref.ascii_only? &&
         issuance_ref.bytesize.between?(1, 256)
 
-      catalog = AP2E06IA3T2cNonceLedgerOracle.inspect_catalog_only(reader: reader)
+      # PG03 catalog and row reads can stall on libpq network I/O.
+      # Run EACH read in a retained observer Thread and bound parent join;
+      # never silently discard a live reader or close its connection.
+      catalog = bounded_pg03_read_only(
+        reader: reader, writer: writer, phase: "catalog"
+      ) do
+        AP2E06IA3T2cNonceLedgerOracle.inspect_catalog_only(reader: reader)
+      end
+      return catalog if catalog.is_a?(LabObservation)
       return hold("catalog_acl_not_proven") unless catalog.catalog_checked
 
-      before = AP2E06IA3T2cNonceLedgerOracle.inspect_issuance_only(
-        reader: reader, issuance_ref: issuance_ref
-      )
+      before = bounded_pg03_read_only(
+        reader: reader, writer: writer, phase: "before_snapshot"
+      ) do
+        AP2E06IA3T2cNonceLedgerOracle.inspect_issuance_only(
+          reader: reader, issuance_ref: issuance_ref
+        )
+      end
+      return before if before.is_a?(LabObservation)
       return hold("pre_mutation_snapshot_unavailable") unless before.event
       return hold("actual_writer_credentials_missing") unless
         writer_session?(writer) && idle_connection?(writer)
@@ -333,9 +346,14 @@ module AP2E06IA3T2cNonceScenarios
         end
       end
 
-      after = AP2E06IA3T2cNonceLedgerOracle.inspect_issuance_only(
-        reader: reader, issuance_ref: issuance_ref
-      )
+      after = bounded_pg03_read_only(
+        reader: reader, writer: writer, phase: "after_snapshot"
+      ) do
+        AP2E06IA3T2cNonceLedgerOracle.inspect_issuance_only(
+          reader: reader, issuance_ref: issuance_ref
+        )
+      end
+      return after if after.is_a?(LabObservation)
       return hold("post_mutation_snapshot_unavailable") unless after.event
       return hold("history_mutated_stop") unless before.event == after.event
       return hold("writer_mutation_not_all_denied_stop") unless
@@ -366,6 +384,24 @@ module AP2E06IA3T2cNonceScenarios
     end
 
     private
+
+    # Every synchronous catalog/ACL/row query is offloaded to its own
+    # retained observer thread. A stalled reader cannot prevent the parent
+    # from returning HOLD with both connection handles for supervised
+    # quiescence/cleanup. No Thread.kill, no reconnect, no retry; results
+    # are synthetic observations and never authoritative G1/G7 evidence.
+    def bounded_pg03_read_only(reader:, writer:, phase:)
+      observer_thread = Thread.new { yield }
+      unless observer_thread.join(1.5)
+        return pending_workers("pg03_#{phase}_observer_timeout_stop",
+                               [observer_thread], [writer, reader])
+      end
+
+      observer_thread.value
+    rescue StandardError
+      pending_workers("pg03_#{phase}_observer_unavailable_stop",
+                      [observer_thread].compact, [writer, reader])
+    end
 
     def detached_probe_context(context)
       context.each_with_object({}) do |(key, value), result|
