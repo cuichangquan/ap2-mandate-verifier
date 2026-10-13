@@ -147,17 +147,43 @@ module AP2E06IHostSnapshot
       # inspectors depend on this Host snapshot class.
       require_relative "isolated_host_source"
       require_relative "isolated_nonce_issuance_source"
-      source = AP2E06IHostSource.inspect_claims!(
-        candidate: candidate, source_json: host_source_json,
-        expected_source_sha256: expected_host_source_sha256,
-        verified_at: candidate.verified_at
-      )
-      nonce = AP2E06INonceIssuanceSource.inspect_claims!(
-        candidate: candidate, ledger_json: nonce_source_json,
-        expected_ledger_sha256: expected_nonce_source_sha256,
-        verified_at: candidate.verified_at
-      )
+      # A HOLD on an incomplete Host enrollment source must not hide a
+      # definitive REJECT from the independently supplied nonce record
+      # (or vice versa). Inspect both source claims before propagating HOLD.
+      # A known REJECT may stop immediately; nothing here grants G1 success.
+      deferred_hold = nil
+      source = nil
+      nonce = nil
+      begin
+        source = AP2E06IHostSource.inspect_claims!(
+          candidate: candidate, source_json: host_source_json,
+          expected_source_sha256: expected_host_source_sha256,
+          verified_at: candidate.verified_at
+        )
+      rescue AP2E06IHostSource::Halt => error
+        raise if error.status == "REJECT"
+        deferred_hold ||= error
+      rescue StandardError
+        deferred_hold ||= Halt.new("HOLD", "host_enrollment_verification_unavailable")
+      end
+
+      begin
+        nonce = AP2E06INonceIssuanceSource.inspect_claims!(
+          candidate: candidate, ledger_json: nonce_source_json,
+          expected_ledger_sha256: expected_nonce_source_sha256,
+          verified_at: candidate.verified_at
+        )
+      rescue AP2E06INonceIssuanceSource::Halt => error
+        raise if error.status == "REJECT"
+        deferred_hold ||= error
+      rescue StandardError
+        deferred_hold ||= Halt.new("HOLD", "nonce_source_verification_unavailable")
+      end
+      raise deferred_hold if deferred_hold
+
       halt!("HOLD", "source_provenance_not_authenticated") unless
+        source.is_a?(AP2E06IHostSource::SourceClaim) &&
+        nonce.is_a?(AP2E06INonceIssuanceSource::LedgerClaim) &&
         source.status == "HOLD" && !source.authoritative? &&
         !source.admissible? &&
         nonce.status == "HOLD" && !nonce.authoritative? &&
