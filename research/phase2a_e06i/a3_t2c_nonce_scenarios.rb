@@ -81,92 +81,160 @@ module AP2E06IA3T2cNonceScenarios
   end
 
   class << self
-    # PG02 helper for separately-approved B. Two DB connections must be
-    # distinct sessions on exactly the same independently checked primary.
-    # Both tenants use one shared synthetic nonce; the collision probe never
-    # exposes a raw nonce as a committed challenge. The result is merely
-    # an untrusted worker report until the separate reader/catalog verifies.
+    # PG02: verify a genuinely overlapping DB unique constraint conflict.
+    # All three connections must be independent sessions to the same
+    # pre-approved, isolated PG16 primary. An independent restricted reader
+    # witnesses the SECOND INSERT blocked on the FIRST worker's transaction
+    # lock BEFORE the winner is allowed to COMMIT.
+    #
+    # Ruby start synchronisation alone is NOT a database collision oracle.
+    # A missing backend pid, failing lock witness or timeout => CANCEL/HOLD.
     def pg02_worker_collision_only!(left_connection:, right_connection:,
-                                    left_context:, right_context:,
-                                    checkout_wire:, probe_nonce:)
+                                    observer_reader:, left_context:,
+                                    right_context:, checkout_wire:,
+                                    probe_nonce:)
       return hold("connections_not_independent") if
-        left_connection.equal?(right_connection)
+        left_connection.equal?(right_connection) ||
+        observer_reader.equal?(left_connection) ||
+        observer_reader.equal?(right_connection)
       unless left_context.is_a?(Hash) && right_context.is_a?(Hash) &&
           left_context["tenant_id"] != right_context["tenant_id"]
         return hold("cross_tenant_probe_required")
       end
 
-      # The future caller MUST retain every connection until all worker
-      # handles are fully joined or an isolated external supervisor has
-      # safely stopped the whole lab. A pending HOLD is NOT cleanup approval.
-      connections = [left_connection, right_connection]
+      connections = [left_connection, right_connection, observer_reader]
       tasks = []
-      ready = Queue.new
-      start_gate = Queue.new
-      gate_released = false
+      prepared = Queue.new
+      inserted = Queue.new
+      begin_gates = [Queue.new, Queue.new]
+      commit_gates = [Queue.new, Queue.new]
+
+      # Actual libpq session identities are read before any threads start;
+      # the independent reader will witness blockers by these exact pids.
+      pids = [left_connection, right_connection].map(&:backend_pid)
+      unless pids.all? { |pid|
+        pid.is_a?(Integer) && pid.between?(1, 2_147_483_647)
+      } && pids.uniq.length == 2
+        return hold("writer_backend_pids_unverified")
+      end
+
       [
         [left_connection, left_context], [right_connection, right_context]
-      ].each do |conn, context|
-        tasks << Thread.new do
-          # Both workers must reach the gate before EITHER can issue SQL.
-          # Merely allocating two threads does not establish concurrency.
-          ready << true
-          ticket = start_gate.pop
-          next nil unless ticket == :go
+      ].each_with_index do |(conn, context), i|
+        hook = lambda do |stage|
+          case stage
+          when :before_insert
+            # Called with BEGIN and bounded SET LOCAL already in effect.
+            prepared << i
+            raise "pg02_insert_gate_cancelled" unless begin_gates[i].pop == :go
+          when :after_insert_before_commit
+            # The successful INSERT still holds its unique constraint lock;
+            # COMMIT is forbidden until independent observer witnessed the
+            # competing writer blocked on that transaction.
+            inserted << i
+            raise "pg02_commit_gate_cancelled" unless commit_gates[i].pop == :go
+          else
+            raise "pg02_unknown_probe_stage"
+          end
+        end
 
+        tasks << Thread.new do
           AP2E06IA3T2cNonceIssuanceWorker.collision_probe_only!(
             connection: conn, context: context, checkout_wire: checkout_wire,
-            nonce: probe_nonce
+            nonce: probe_nonce, lab_probe_hook: hook
           )
         end
       end
 
-      # Bound readiness without assuming Thread scheduling is synchronous.
-      # A failed/late worker receives CANCEL, not GO. The caller retains
-      # all worker handles and connection references for supervised cleanup.
-      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 2
-      while ready.size < MAX_WORKERS &&
+      # Both transactions MUST reach the hook just before SQL INSERT.
+      # If either fails during BEGIN/setup, no INSERT is permitted.
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 1.0
+      while prepared.size < MAX_WORKERS &&
             Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
         Thread.pass
       end
-      both_ready = tasks.length == MAX_WORKERS && ready.size == MAX_WORKERS
-      tasks.length.times { start_gate << (both_ready ? :go : :cancel) }
-      gate_released = true
-      return pending_workers("collision_start_barrier_not_ready_stop",
-                             tasks, connections) unless both_ready
+      both_inside_tx = tasks.length == MAX_WORKERS &&
+                       prepared.size == MAX_WORKERS
+      unless both_inside_tx
+        return pending_workers("pg02_transaction_barrier_unverified_stop",
+                               tasks, connections)
+      end
+      begin_gates.each { |gate| gate << :go }
 
-      # Join BOTH workers even if the first times out. all? would
-      # short-circuit and leave the second completely unobserved.
-      # No Thread.kill and no optimistic COMMIT/ROLLBACK assumptions.
+      # Exactly one INSERT should succeed while the other waits on the
+      # globally unique nonce digest. The winner remains uncommitted.
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 0.75
+      while inserted.empty? &&
+            Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+        Thread.pass
+      end
+      return pending_workers("pg02_first_insert_not_observed_stop",
+                             tasks, connections) if inserted.empty?
+      winner = inserted.pop
+      return pending_workers("pg02_invalid_insert_winner_stop",
+                             tasks, connections) unless [0, 1].include?(winner)
+      loser = 1 - winner
+
+      # Require independently observed PostgreSQL transaction-id or
+      # speculative unique-index lock wait by the loser on the winner.
+      # Merely logging 'about to insert' is NOT sufficient.
+      witnessed = false
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 0.75
+      while Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+        witnessed = AP2E06IA3T2cNonceLedgerOracle.pg02_lock_wait_observed_only?(
+          reader: observer_reader, waiting_pid: pids[loser],
+          holding_pid: pids[winner]
+        )
+        break if witnessed
+
+        Thread.pass
+      end
+      return pending_workers("pg02_unique_conflict_lock_unobserved_stop",
+                             tasks, connections) unless witnessed
+
+      # Only the transaction holding the witnessed lock is allowed to
+      # COMMIT; any unexpected second successful INSERT is cancelled.
+      commit_gates[winner] << :go
+      commit_gates[loser] << :cancel
+
+      # Join BOTH workers; timeout does not abandon any connection or imply
+      # rollback. Owner/supervisor retains every handle on uncertain outcomes.
       joins = tasks.map { |thread| thread.join(7) }
-      return pending_workers("worker_join_or_commit_uncertain_stop",
+      return pending_workers("pg02_worker_join_or_commit_uncertain_stop",
                              tasks, connections) if
         joins.any?(&:nil?) || tasks.any?(&:alive?)
 
       results = tasks.map(&:value)
-      return hold("unverified_worker_result") unless results.all? { |x|
+      return hold("pg02_worker_results_unverified") unless results.all? { |x|
         x.is_a?(AP2E06IA3T2cNonceIssuanceWorker::LabObservation)
       }
       commits = results.count(&:commit_acknowledged?)
-      return hold("unsafe_multiple_commit_acks_stop") if commits > 1
+      return hold("pg02_unexpected_commit_count_stop") unless commits == 1 &&
+        results[winner].commit_acknowledged?
 
-      # Even 1/2 acknowledged commits does not prove global uniqueness,
-      # that the same nonce was committed, or that no Challenge leaked.
+      # Still non-authoritative. B-time independent catalog + row snapshots
+      # must show the winner's issuance and no loser Challenge distribution.
       LabObservation.new(
-        reason: "worker_outcomes_only_independent_db_oracle_required",
-        outcomes: { "acknowledged_commits" => commits, "attempts" => 2 }
+        reason: "synthetic_pg02_lock_witness_only_independent_row_oracle_pending",
+        outcomes: {
+          "db_unique_lock_witness" => true,
+          "acknowledged_commits" => commits,
+          "attempts" => MAX_WORKERS
+        }
       )
     rescue StandardError
-      # Thread creation, barrier readiness and join can fail after another
-      # worker starts. Unblock any already-waiting workers with CANCEL,
-      # never GO, and return every handle/connection to the supervisor.
-      if defined?(gate_released) && !gate_released &&
-          defined?(start_gate) && start_gate &&
-          defined?(tasks) && tasks
-        tasks.length.times { start_gate << :cancel }
-      end
-      pending_workers("collision_observation_unavailable_stop",
+      pending_workers("pg02_concurrent_observation_uncertain_stop",
                       tasks || [], connections || [])
+    ensure
+      # Never leave a probe inside BEGIN/INSERT waiting on our Ruby gate.
+      # Any worker not explicitly allowed to proceed must ROLLBACK/HOLD.
+      # Additional CANCEL tickets after a consumed GO are harmless.
+      if defined?(begin_gates) && begin_gates
+        begin_gates.each { |gate| gate << :cancel }
+      end
+      if defined?(commit_gates) && commit_gates
+        commit_gates.each { |gate| gate << :cancel }
+      end
     end
 
     # PG03: prove (only within disposable lab) that the ACTUAL issuance
