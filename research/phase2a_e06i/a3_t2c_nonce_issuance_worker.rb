@@ -25,16 +25,21 @@ module AP2E06IA3T2cNonceIssuanceWorker
   # Same DB row contains issuance and immutable Challenge/Checkout binding.
   # No untrusted string interpolation enters SQL. Original JWT is hashed as
   # *received bytes*, NEVER parsed/re-serialized or logged.
+  # Supply ALL 16 approved columns: do not execute owner-replaceable
+  # omitted-column DEFAULT expressions or future generated columns in PG02.
+  # The independent oracle rejects additions/changed column shapes.
   INSERT_SQL = <<~SQL.freeze
     INSERT INTO a3_t2c.nonce_issuance_history (
       issuance_ref, nonce_sha256, challenge_ref, host_verifier_domain,
       aud, agent_thumbprint, buyer_account_ref, tenant_id, checkout_id,
       checkout_version, merchant_checkout_sha256, checkout_jwt_source_ref,
-      issued_at, expires_at
+      issued_at, expires_at, issuance_xid, recorded_at
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8, $9,
       $10, $11, $12, to_timestamp($13::double precision),
-      to_timestamp($14::double precision)
+      to_timestamp($14::double precision),
+      pg_catalog.pg_current_xact_id()::text,
+      pg_catalog.transaction_timestamp()
     )
   SQL
 
