@@ -2,6 +2,28 @@
 
 Status: **CODE WRITTEN / NOT RUN / G4–G7 HOLD / NO CI APPROVAL / PHASE2-B HOLD**.
 
+## A3-H1 nonce issuance source — globally scoped requirement, NOT a ledger
+
+`isolated_nonce_issuance_source.rb` inspects a **separately supplied
+synthetic ledger JSON claim** against the previously checked A2 Host
+snapshot candidate. It binds claimed issuance to challenge reference,
+signed Terminal audience/nonce digest and frozen Agent thumbprint,
+Checkout tenant/id/version, opaque Buyer/Account, issuance time and
+expiry. It **rejects a known narrower scope** than Host-verifier-wide:
+the Terminal signs `aud` and `nonce` but not tenant, session or
+`challenge_ref`. It requires the claimed source to describe a CSPRNG
+origin of at least 128 entropy bits, durable atomic uniqueness and
+complete cross-tenant/session/issued/consumed/expired/reissued history.
+
+**Claims are not proof.** No durable issuance registry, random generator,
+atomic uniqueness index or consumption CAS exists in this module.
+Even a consistent claim is `LedgerClaim(status=HOLD,
+replay_safe?=false,authoritative?=false,admissible?=false,evidence=nil)`.
+The ledger JSON and its matching SHA remain caller controlled; a single
+event cannot establish global history or prevent challenge re-labelling.
+This new source is deliberately **NOT** an integrated G1→G7 success path.
+It is A3-H1 source-only, NOT RUN, with A3-T and execution approval B HOLD.
+
 ## A2-5 preflight wiring: trusted G1 entrypoint STILL BLOCKED
 
 `integrated_probe.rb` now also exposes an internal
