@@ -73,6 +73,31 @@ CREATE TABLE a3_t2c.nonce_issuance_history (
 -- the fail-closed catalog assertion below must reject those configurations.
 REVOKE ALL ON TABLE a3_t2c.nonce_issuance_history
   FROM PUBLIC, a3_t2c_writer, a3_t2c_reader;
+
+-- PostgreSQL column ACLs survive a table-level REVOKE. Explicitly drop
+-- all column-level SELECT/INSERT/UPDATE/REFERENCES grants from PUBLIC and
+-- both lab identities. Inherited column grants must fail the catalog
+-- assertions below; an owner/superuser must not be a lab identity.
+DO $a3_t2c_columns$
+DECLARE
+  col record;
+BEGIN
+  FOR col IN
+    SELECT attname
+      FROM pg_catalog.pg_attribute
+     WHERE attrelid = 'a3_t2c.nonce_issuance_history'::regclass
+       AND attnum > 0 AND NOT attisdropped
+  LOOP
+    EXECUTE format(
+      'REVOKE SELECT (%1$I), INSERT (%1$I), UPDATE (%1$I), REFERENCES (%1$I) ' ||
+      'ON TABLE a3_t2c.nonce_issuance_history ' ||
+      'FROM PUBLIC, a3_t2c_writer, a3_t2c_reader',
+      col.attname
+    );
+  END LOOP;
+END;
+$a3_t2c_columns$;
+
 REVOKE ALL ON SCHEMA a3_t2c FROM a3_t2c_writer, a3_t2c_reader;
 GRANT USAGE ON SCHEMA a3_t2c TO a3_t2c_writer, a3_t2c_reader;
 GRANT INSERT ON TABLE a3_t2c.nonce_issuance_history TO a3_t2c_writer;
@@ -94,6 +119,18 @@ BEGIN
   LOOP
     should_insert := lab_role = 'a3_t2c_writer';
     should_select := lab_role = 'a3_t2c_reader';
+
+    -- PG16 ADMIN OPTION allows delegation even with SET FALSE and
+    -- INHERIT FALSE. The tiny lab has NO legitimate membership requirement:
+    -- prohibit ANY membership for either lab role, regardless of option.
+    IF EXISTS (
+      SELECT 1 FROM pg_catalog.pg_auth_members m
+       WHERE m.member = (SELECT oid FROM pg_catalog.pg_roles
+                          WHERE rolname = lab_role)
+    ) THEN
+      RAISE EXCEPTION 'A3-T2c lab role has membership/admin-option escape: %',
+        lab_role;
+    END IF;
 
     IF EXISTS (
       WITH RECURSIVE assumable(oid) AS (
@@ -122,6 +159,29 @@ BEGIN
           OR pg_catalog.has_table_privilege(a.oid, t.oid, 'REFERENCES')
     ) THEN
       RAISE EXCEPTION 'A3-T2c unsafe effective/assumable % role', lab_role;
+    END IF;
+
+    -- Per-column ACLs are independent of has_table_privilege. Verify
+    -- actual *effective* privileges for every immutable binding column,
+    -- including inherited grants. Writer must never SELECT/UPDATE/
+    -- REFERENCES any column; reader must never INSERT/UPDATE/REFERENCES.
+    IF EXISTS (
+      SELECT 1
+        FROM pg_catalog.pg_attribute a
+       WHERE a.attrelid = 'a3_t2c.nonce_issuance_history'::regclass
+         AND a.attnum > 0 AND NOT a.attisdropped
+         AND (
+           pg_catalog.has_column_privilege(lab_role,
+             'a3_t2c.nonce_issuance_history', a.attname, 'UPDATE')
+           OR pg_catalog.has_column_privilege(lab_role,
+             'a3_t2c.nonce_issuance_history', a.attname, 'REFERENCES')
+           OR (should_insert AND pg_catalog.has_column_privilege(lab_role,
+             'a3_t2c.nonce_issuance_history', a.attname, 'SELECT'))
+           OR (should_select AND pg_catalog.has_column_privilege(lab_role,
+             'a3_t2c.nonce_issuance_history', a.attname, 'INSERT'))
+         )
+    ) THEN
+      RAISE EXCEPTION 'A3-T2c unsafe column privileges for %', lab_role;
     END IF;
 
     IF pg_catalog.has_table_privilege(lab_role,
