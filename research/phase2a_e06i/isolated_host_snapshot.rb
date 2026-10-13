@@ -43,7 +43,8 @@ module AP2E06IHostSnapshot
   ].sort.freeze
   CHECKOUT_REF_FIELDS = %w[checkout_id checkout_version tenant_id].sort.freeze
   NONCE_FIELDS = %w[
-    atomic_uniqueness domain entropy_bits issuance_ref registry_ref unique
+    atomic_uniqueness challenge_ref domain entropy_bits issuance_ref
+    nonce_sha256 registry_ref unique
   ].sort.freeze
   JWK_FIELDS = %w[crv kty x y].sort.freeze
   # NIST P-256 field prime / b coefficient, for validating supplied PUBLIC
@@ -150,7 +151,7 @@ module AP2E06IHostSnapshot
         parsed.fetch("challenge"), parsed.fetch("checkout"),
         parsed.fetch("agent_trust"), verified_at: verified_at
       )
-      validate_nonce_claims!(parsed.fetch("nonce_issuance"))
+      validate_nonce_claims!(parsed.fetch("nonce_issuance"), parsed.fetch("challenge"))
 
       # Even a structurally valid record can falsely CLAIM a unique nonce,
       # non-revoked keys or an authentic Host source. This slice cannot confirm
@@ -307,7 +308,7 @@ module AP2E06IHostSnapshot
       halt!("REJECT", "invalid_challenge_nonce")
     end
 
-    def validate_nonce_claims!(nonce_issuance)
+    def validate_nonce_claims!(nonce_issuance, challenge)
       exact!(nonce_issuance, NONCE_FIELDS, "invalid_nonce_issuance_fields")
       halt!("HOLD", "nonce_issuance_unavailable") unless
         nonce_issuance["domain"] == "host-verifier-wide" &&
@@ -317,8 +318,19 @@ module AP2E06IHostSnapshot
         nonce_issuance["entropy_bits"] >= 128 &&
         string?(nonce_issuance["registry_ref"]) &&
         string?(nonce_issuance["issuance_ref"])
-      # These are Host CLAIMS only. This research slice has no authoritative
-      # durable nonce registry; even a true claim yields Candidate/HOLD.
+
+      # A claim about another challenge/nonce cannot be attached to this
+      # candidate even if the registry says it is uniquely issued.
+      # Requiring issuance_ref==challenge.ref is a deliberately fixed lab
+      # profile (one issuance per challenge). An independent Host adapter
+      # must still authenticate this claimed binding and registry source.
+      expected_nonce_sha256 = Digest::SHA256.hexdigest(challenge.fetch("nonce").b)
+      halt!("REJECT", "nonce_issuance_challenge_mismatch") unless
+        fixed_equal?(nonce_issuance["challenge_ref"], challenge.fetch("ref")) &&
+        fixed_equal?(nonce_issuance["issuance_ref"], challenge.fetch("ref")) &&
+        fixed_equal?(nonce_issuance["nonce_sha256"], expected_nonce_sha256)
+      # These are STILL untrusted Host CLAIMS, not a validated nonce issuance
+      # event or genuine Host registry proof. Always Candidate(HOLD).
     end
 
     def fixed_equal?(a, b)
