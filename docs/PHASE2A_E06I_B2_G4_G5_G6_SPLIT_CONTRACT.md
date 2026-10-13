@@ -40,6 +40,8 @@ raw case_data + independent Host material
                        └─ G7 Evidence-only or HOLD (B1 earliest finite TTL)
 ```
 
+**The G5 success artifact has TWO mandatory producers**: pinned `AP2E06ISchemaGate::Gate#check!(open:,closed:)` for official Open/Closed/nested Merchant Schema **AND** a separately defined **research-only** `AP2E06ILocalCheckoutShape::Gate#check!(verified_checkout_payload:)` for the already Merchant-authenticated Checkout JWT payload. The latter is a **proposed internal API, not an implemented class**. Both must return their own validated results on the SAME immutable G4 artifact and Host snapshot before `G5Result` can exist. An unchecked payload, absent shape checker, or a caller-created `local_profile=VALID` => `HOLD/verification_unavailable` or `REJECT/unsupported_profile`, never G5 success.
+
 **No stage may consume partially authenticated tokens and claim later-stage success.** A failure at G0/G1/G3 must leave downstream stages uncompleted. Never mark `G5_SUCCESS` merely because an unrelated Python oracle validated the visible JSON or `json_schemer` accepted unauthenticated data.
 
 ### Inputs and outputs: conceptual internal contract
@@ -47,7 +49,7 @@ raw case_data + independent Host material
 | Stage | Mandatory input/provenance | Success artifact and excluded responsibilities |
 | --- | --- | --- |
 | G4 | G0 original Root/Terminal/Checkout signed bytes, G1 deep immutable snapshot and allowed JWKs, G2 signed Root, G3 fully disclosed `Open`, verified `cnf.jwk` | `AuthenticatedCheckoutChain{snapshot_id, root_wire_sha256, terminal_wire_sha256, merchant_jwt_wire_sha256, verified_open, signed_terminal, verified_closed, verified_checkout_payload, authenticated_key_fingerprints, signed_expiries}`. **No cart/Merchant ID/amount Host business judgment** |
-| G5 | **G4 successful artifact** plus pinned Open+Closed+nested Merchant schema originals, SHA/blob and strict local profile rules | `ValidatedOpenClosedAndLocalProfile{same_snapshot_id, same_authenticated_artifact_id, open_schema=VALID, closed_schema=VALID, merchant_ref=LOCAL_PINNED, local_profile=VALID}`. **Not checkout authorization** |
+| G5 | **G4 successful artifact** plus pinned Open+Closed+nested Merchant schema originals, SHA/blob and mandatory isolated Checkout JWT payload shape checker (see §4) | `ValidatedOpenClosedAndLocalProfile{same_snapshot_id, same_authenticated_artifact_id, open_schema=VALID, closed_schema=VALID, merchant_ref=LOCAL_PINNED, local_profile=VALID}`. **Not checkout authorization** |
 | G6 | **G5 success** + G4 signed Checkout payload + G3 full constraints + **same** G1 Host checkout/challenge/trust snapshot | `BoundCheckoutFacts{same_snapshot_id, verified_checkout_id, tenant, checkout_version, merchant_id, allowed_sku, required_quantity, checked_total, checkout_jwt_raw_sha256, verified_challenge_ref}`. **No Host nonce consumption or payment** |
 | G7 | G0–G6 checked ledger, same context/digests and B1 finite deadlines | Bounded `VerifiedEvidence` **only if all B1 required fields are present**; otherwise `HOLD/incomplete_context`, `evidence=nil` |
 
@@ -70,7 +72,22 @@ A conceptual G4 implementation MUST preserve JWS original bytes, fail on signed 
 ## 4. G5 official schema and local shape — precise ordering
 
 - Mandatory **same-invocation** use of `AP2E06ISchemaGate::Gate#check!(open:,closed:)` on G3/G4 authenticated complete Open and Agent-signed Closed. Loader must verify the fixed 3 official schema blob digests, IDs and draft-2020-12; only the allowlisted preloaded Merchant URI can resolve, no HTTP.
-- Open's nested `types/merchant.json` governs Merchant **objects inside Open**, **not** the external Merchant-signed Checkout JWT payload. The latter receives a separate strict lab-only one-line Checkout shape check. Do not claim the official `checkout_mandate.json` validates merchant UCP cart internals.
+- Open's nested `types/merchant.json` governs Merchant **objects inside Open**, **not** the external Merchant-signed Checkout JWT payload. The latter MUST be passed from G4 to the separate G5 lab-only shape checker `AP2E06ILocalCheckoutShape::Gate#check!(verified_checkout_payload:)` (conceptual, unimplemented), then combined with the official checker in the internal orchestrator. Do not claim the official `checkout_mandate.json` validates merchant UCP cart internals.
+### Mandatory separate G5 Checkout JWT shape checker — explicit P1-3 predicate inventory
+
+**Contract only; the entrypoint does not exist yet.** After G4 has verified the Merchant signature against the original compact Host JWT, the orchestrator calls an isolated, internal `AP2E06ILocalCheckoutShape::Gate#check!(verified_checkout_payload:)`. Only G4's authenticated, deeply immutable Checkout payload is accepted. It **MUST run in the same invocation before G5 is complete**; `SchemaGate#check!` by itself has no claim to `local_profile=VALID`. The local gate must fail closed on unknown keys/unsupported structure and return a typed immutable `LocalCheckoutShapeValidated` result, tied to the same G4 artifact fingerprint. Missing/checker unavailable => `HOLD/verification_unavailable`.
+
+| Old P1-3 shape predicate | Mandatory G5 local checker | Deferred to G6 (not G5) |
+| --- | --- | --- |
+| `require_exact_keys!(checkout, %w[id merchant line_items status currency totals links])` | Checkout JSON **Hash** with exactly these 7 keys; reject additional/missing fields; preserve the original `links` member without granting authority to links or silently widening its permitted meaning | Checkout `id` equals Host checkout ID, `status == ready_for_complete`, and currency equals Host |
+| `require_exact_keys!(merchant, %w[id name])`; merchant `name` present | Merchant Hash, exactly `id`/`name`; `name` a nonempty String, with ID present; no unrecognized merchant authority fields | Merchant `id` equals Host expected and Issuer allowed Merchant ID |
+| `lines.is_a?(Array) && lines.size == 1`, `require_exact_keys!(line, %w[id item quantity totals])` | Exactly one `line_items` entry; line Hash with exactly 4 specified keys | Line quantity equals required issuer quantity; Host cart association |
+| `require_exact_keys!(product, %w[id title price])` | Product Hash exactly `id`/`title`/`price` | Product `id/title` match Issuer permitted SKU, `price` is positive integer, and amount calculation |
+| `validate_totals!` on line AND Checkout: arrays of two Hashes, each exact `%w[type amount]`, names `subtotal` and `total`, integer amount values | **Both** totals arrays must have exactly two objects, each keys exactly `type`/`amount`, a unique `subtotal` and a unique `total`, with Integer amount types (reject duplicate labels, unknown types, noninteger) | Each subtotal and total must equal computed `price * quantity` and Host expected amount |
+| P1-3 requires strict additional Issuer constraint shape/Requirement `id` type | Retain original signed fixed-authority constraints in G3 and any independent local Open checks, without weakening signed structure to reach G5 | Full authorized Merchant/Requirement/SKU/quantity comparisons against Host record |
+
+**Predicate conservation rule:** G5 must preserve all previous *structural* predicates, G6 all previous *equality, monetary and constraint-meaning* predicates. The split may add reviewed stricter field-type checks but must not silently widen acceptance or misrepresent new checks as old-P1-3 parity. P1-3 did **not** assign independent semantics to `links` or some `line.id` values; any newly meaningful use requires its own review/STOP rather than pretending these are validated authorities. G5 local-INVALID is `unsupported_checkout_profile`; any prior G3/G4 shape failure is recorded there, not as a G5 causal observation. `G5Result.local_profile=VALID` is **impossible** without independently completing the shape checker and recording its exact result.
+
 - Preserve stricter fixed Issuer authority grammar/unknown keys, Agent Terminal/Closed minimum contract and local Checkout payload shape **as independent predicates**. Record `official_open`, `official_closed`, `local_shape` separately. Reject invalid official schemas regardless of local profile decisions; where an earlier mandatory safety condition has already rejected, record the actual earlier stage rather than fabricating a G5 failure.
 - `verification_unavailable` for missing/mismatched `json_schemer=2.5.0`, damaged original schema, unknown `$ref` or no pinned upstream directory is **HOLD**, not `invalid_open_schema` or a signature rejection.
 - G5 output binds the same Host snapshot and G4 authenticated artifact fingerprint. Mutating authenticated `Open/Closed` objects between G4 and G5 must invalidate results/STOP.
@@ -81,13 +98,13 @@ A conceptual G4 implementation MUST preserve JWS original bytes, fail on signed 
 
 | Old P1-3 logic | Target G6 check | Required Host source |
 | --- | --- | --- |
-| `checkout[\"id\"] == expected_checkout_id` | Signed Checkout payload ID equals Host `checkout_ref.checkout_id`; tuple `(tenant,id,version)` equals challenge Checkout ref | Same immutable Checkout + challenge records (B1) |
+| `checkout["id"] == expected_checkout_id` | Signed Checkout payload ID equals Host `checkout_ref.checkout_id`; tuple `(tenant,id,version)` equals challenge Checkout ref | Same immutable Checkout + challenge records (B1) |
 | `status == ready_for_complete` | Fixed profile status with reviewed Host current status policy | Host current Checkout snapshot |
 | `currency == expected_currency` | Compare signed Checkout currency to Host expected currency | Host Checkout snapshot |
 | `merchant.id == expected_merchant_id` | Compare signed Merchant ID to Host Merchant allowlist and issuer-allowed resolved Merchant | Host Merchant trust/profile + G3 Open |
 | Exact 2 constraint types; one Merchant/Requirement/SKU | Enforce **entire** resolved issuer authority, no unknown signed constraint or relaxation; fixed allowed Merchant/SKU and required quantity | G3 closure artifact and Host fixed profile |
-| Checkout one line, product `id/title`, unit price, line quantity | Match allowed SKU/quantity and Host expected facts | G3 fully resolved authority + Host checkout record |
-| `line_amount == expected_total_minor`, two totals entries | Enforce positive integer price, checked safe amount arithmetic, required subtotal/total and Host expected total; overflow/non-integer unsupported | Signed checkout + Host expected amount |
+| Checkout one line, product `id/title`, unit price, line quantity | **After G5 has checked exact Checkout/line/item shape**, match allowed SKU/quantity, verify positive integer price and Host expected facts | G3 fully resolved authority + Host checkout record |
+| `line_amount == expected_total_minor`, two totals entries | **After G5 totals shape/type validation**, perform checked safe amount arithmetic and compare both subtotal/total values to computed amount and Host expected total; overflow/non-integer unsupported | Signed checkout + Host expected amount |
 | Host checkout JWT raw equality/hash | **Already proved at G4**; G6 checks same authenticated artifact/snapshot digest, never selects new Host JWT | G4 immutable result |
 
 Current synthetic Host policy lacks durable `checkout_version`, challenge binding/Buyer ref and separate signer trust timestamps. **Until B1 is solved, G6/ G7 full success cannot be claimed**. Never quietly replace missing information with IDs from the signed payload itself.
@@ -111,9 +128,10 @@ Record for each invocation: `status` (REJECT/HOLD or evidence-only success), `fi
 ## 7. Proposed future small diff (not authorized by this document)
 
 1. **New** `research/phase2a_e06i/isolated_agent_merchant_crypto.rb` — standalone explicit crypto-and-binding G4; no legacy import; namespaced, audited equivalence to intended P1-2/3 predicates.
-2. **New** `research/phase2a_e06i/isolated_checkout_semantics.rb` — standalone G6, accepts ONLY immutable G5 success and G1 Host snapshot. Preserve all fixed P1-3 accept/reject invariants.
-3. **Existing research-only** `research/phase2a_e06i/integrated_probe.rb` — wire G4→G5→G6, ensure no success/evidence from missing B1; immutable typed outputs and first-reject ledger.
-4. **Separate review/approval before implementation** for Host synthetic fixture enrichment, new tests/generators/CI, change to `schema_gate.rb`, or legacy source changes. Paths are **proposals** only, not scope grants. No Gem/public API, GCP, payment/receipt, or real Issuer enrollment.
+2. **New** `research/phase2a_e06i/isolated_checkout_shape.rb` — dedicated G5 local-only shape checker with the explicit strict Checkout JWT payload schema in §4; requires authenticated immutable G4 Checkout payload and returns a verifiable typed result.
+3. **New** `research/phase2a_e06i/isolated_checkout_semantics.rb` — standalone G6, accepts ONLY immutable G5 success and G1 Host snapshot. Preserve all fixed P1-3 accept/reject invariants.
+4. **Existing research-only** `research/phase2a_e06i/integrated_probe.rb` — wire G4→G5 official pinned gate + local Checkout shape gate→G6, ensure no success/evidence from missing B1; immutable typed outputs and first-reject ledger.
+5. **Separate review/approval before implementation** for Host synthetic fixture enrichment, new tests/generators/CI, change to `schema_gate.rb`, or legacy source changes. Paths are **proposals** only, not scope grants. No Gem/public API, GCP, payment/receipt, or real Issuer enrollment.
 
 ### Required review checklist before any code authorization
 
@@ -122,7 +140,7 @@ Record for each invocation: `status` (REJECT/HOLD or evidence-only success), `fi
 - [ ] Complete mapping of every old P1-2/P1-3 security predicate into G4/G5/G6; gaps result in STOP, not silent removal.
 - [ ] G4 `sd_hash` binds exact Root wire; Merchant `checkout_hash` binds Host original Checkout JWT bytes, and Merchant JWT signature verifies independently.
 - [ ] Same Host context and single `verified_at` carried by opaque immutable artifacts; signature, schema, Host semantics remain separate.
-- [ ] G5 loads pinned Open/Closed/nested Merchant Schema offline and is **mandatory** on FULL positive before G6. G5 causal negative unproven if prior stages reject.
+- [ ] G5 loads pinned Open/Closed/nested Merchant Schema offline **and independently runs the §4 dedicated strict Checkout payload shape checker**; both results are mandatory before G5 success/G6. G5 causal negative unproven if prior stages reject.
 - [ ] No new automatic CI; any signed-fixture / Ruby/Python execution and one-run manually dispatched CI require distinct **explicit approval B under #73**.
 - [ ] Current #47/Phase 2-A exit/Phase 2-B remain HOLD even if this design PR is merged.
 
