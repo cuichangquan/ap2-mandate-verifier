@@ -105,6 +105,55 @@ module AP2E06IA3T2cNonceLedgerOracle
          WHERE co.conrelid = t.oid
            AND co.contype NOT IN ('p', 'u', 'c')
       )
+      -- The schema defines exactly FIVE CHECK constraints. Extra CHECKs
+      -- can invoke user-defined SECURITY DEFINER functions and cause
+      -- transaction-ID locks in auxiliary tables. Names are necessary
+      -- but not sufficient: reject all non-catalog function/operator
+      -- dependencies of ANY CHECK constraint, too.
+      AND (
+        SELECT COUNT(*)
+          FROM pg_catalog.pg_constraint co
+         WHERE co.conrelid = t.oid AND co.contype = 'c'
+      ) = 5
+      AND NOT EXISTS (
+        SELECT 1 FROM pg_catalog.pg_constraint co
+         WHERE co.conrelid = t.oid AND co.contype = 'c'
+           AND co.conname NOT IN (
+             'a3_t2c_nonce_digest_canonical',
+             'a3_t2c_checkout_digest_canonical',
+             'a3_t2c_valid_checkout_version',
+             'a3_t2c_valid_issuance_window',
+             'a3_t2c_bounded_refs'
+           )
+      )
+      AND NOT EXISTS (
+        SELECT 1
+          FROM pg_catalog.pg_constraint co
+          JOIN pg_catalog.pg_depend dep
+            ON dep.classid = 'pg_catalog.pg_constraint'::regclass
+           AND dep.objid = co.oid
+          JOIN pg_catalog.pg_proc proc
+            ON dep.refclassid = 'pg_catalog.pg_proc'::regclass
+           AND dep.refobjid = proc.oid
+          JOIN pg_catalog.pg_namespace ns
+            ON ns.oid = proc.pronamespace
+         WHERE co.conrelid = t.oid AND co.contype = 'c'
+           AND ns.nspname <> 'pg_catalog'
+      )
+      AND NOT EXISTS (
+        SELECT 1
+          FROM pg_catalog.pg_constraint co
+          JOIN pg_catalog.pg_depend dep
+            ON dep.classid = 'pg_catalog.pg_constraint'::regclass
+           AND dep.objid = co.oid
+          JOIN pg_catalog.pg_operator op
+            ON dep.refclassid = 'pg_catalog.pg_operator'::regclass
+           AND dep.refobjid = op.oid
+          JOIN pg_catalog.pg_namespace ns
+            ON ns.oid = op.oprnamespace
+         WHERE co.conrelid = t.oid AND co.contype = 'c'
+           AND ns.nspname <> 'pg_catalog'
+      )
       AND NOT EXISTS (
         SELECT 1 FROM pg_catalog.pg_inherits inh
          WHERE inh.inhparent = t.oid OR inh.inhrelid = t.oid
