@@ -563,15 +563,32 @@ module AP2E06IA3T2cNonceLedgerOracle
       false
     end
 
-    # Canonical text normalization never strips characters inside quoted
-    # literals or identifiers: rewriting a regex literal must stay visible.
-    # Only syntactic parentheses and SQL pretty-printer whitespace outside
-    # quotes are ignored. Any different token, implicit function/cast name
-    # or side-effecting call fails the allowlist.
+    # PG16's pg_get_expr deparser qualifies *built-in* function/operator
+    # names when the reader search_path shadows them. Only remove explicit
+    # pg_catalog qualification for the EXACT safe built-ins used in the
+    # approved five CHECKs. Never strip arbitrary schema qualifiers:
+    # custom functions, volatile built-ins (e.g. lo_create) and rewritten
+    # constraints must remain visible and FAIL CLOSED.
+    def canonical_approved_catalog_tokens(unquoted)
+      unquoted
+        .gsub(/(?<![A-Za-z0-9_])pg_catalog\.char_length(?![A-Za-z0-9_])/,
+              "char_length")
+        .gsub(/(?<![A-Za-z0-9_])pg_catalog\.text(?![A-Za-z0-9_])/,
+              "text")
+        .gsub(/OPERATORpg_catalog\.(>=|<=|<>|~|=|<|>)(?![=<>~])/) {
+          Regexp.last_match(1)
+        }
+    end
+
+    # Preserve EVERYTHING inside quoted literals and quoted identifiers.
+    # Outside quotes ignore only grouping parentheses/format whitespace;
+    # canonicalize a tiny explicit allowlist of pg_catalog spellings above.
+    # A user-schema shadow (e.g. evil.char_length) never normalizes.
     def check_expression_tokens(expression)
       return nil unless expression.is_a?(String) &&
         expression.ascii_only? && expression.bytesize.between?(1, 8192)
       output = +""
+      unquoted = +""
       quote = nil
       index = 0
       while index < expression.length
@@ -587,16 +604,21 @@ module AP2E06IA3T2cNonceLedgerOracle
             end
           end
         elsif char == "'" || char == '"'
+          output << canonical_approved_catalog_tokens(unquoted)
+          unquoted.clear
           quote = char
           output << char
         elsif char == "(" || char == ")" || char.match?(/[[:space:]]/)
-          # Only deparser formatting; not part of the token fingerprint.
+          # Deparser grouping and whitespace only, outside quotes.
         else
-          output << char
+          unquoted << char
         end
         index += 1
       end
-      quote.nil? ? output : nil
+      return nil unless quote.nil?
+
+      output << canonical_approved_catalog_tokens(unquoted)
+      output
     rescue StandardError
       nil
     end
