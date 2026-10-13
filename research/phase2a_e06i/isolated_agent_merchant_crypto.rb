@@ -250,6 +250,13 @@ module AP2E06IAgentMerchantCrypto
     end
 
     def strict_jws!(compact, typ)
+      # G0 is the normative pre-auth parser in a later integrated run.
+      # This isolated crypto helper independently demands canonical ES256
+      # signature encoding instead of relying on JWT.decode leniency.
+      _header_seg, _payload_seg, signature_seg =
+        AP2StrictJSONResearch.jwt_parts!(compact)
+      reject!("invalid_es256_signature_encoding") unless
+        decode64!(signature_seg).bytesize == 64
       header, payload = AP2StrictJSONResearch.validate_signed_jws_json!(compact)
       reject!("unsupported_signed_header") unless
         header.is_a?(Hash) && header["alg"] == "ES256" &&
