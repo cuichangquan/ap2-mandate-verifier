@@ -8,6 +8,7 @@ require "json"
 require "digest"
 require "base64"
 require_relative "isolated_host_policy"
+require_relative "isolated_host_snapshot"
 require_relative "isolated_root_closure"
 
 module AP2E06IPartialProbe
@@ -29,6 +30,54 @@ module AP2E06IPartialProbe
   end
 
   class << self
+    # A2-5 Host candidate-only preflight. This is NOT the G0→G1 pipeline:
+    # there is no presentation/G0, no authenticated Host source, and no
+    # acceptable G1Context. Never count this outcome as G1 completion.
+    #
+    # The separate A2-1 candidate inspector checks only alleged Host facts.
+    # Even an internally consistent snapshot MUST stop before G2/G3/G4/G7,
+    # since no provenance, live trust enrollment or nonce issuance registry
+    # is authenticated. This path cannot emit VerifiedEvidence or Host ALLOW.
+    #
+    # It intentionally DOES NOT change the original observe() implementation
+    # or wire untrusted candidates to standalone G4/G5/G6 observers.
+    def inspect_a2_host_candidate(host_json:, expected_host_sha256:, verified_at:)
+      candidate = AP2E06IHostSnapshot.inspect_candidate!(
+        host_json: host_json,
+        expected_sha256: expected_host_sha256,
+        verified_at: verified_at
+      )
+      {
+        "status" => "HOLD",
+        "checked_component" => "G1_HOST_CANDIDATE_ONLY",
+        "reason" => candidate.reason,
+        "g1_admissible" => false,
+        "first_reject_stage" => nil,
+        "completed_stages" => [].freeze,
+        "evidence" => nil
+      }
+    rescue AP2E06IHostSnapshot::Halt => error
+      {
+        "status" => error.status,
+        "checked_component" => "G1_HOST_CANDIDATE_ONLY",
+        "reason" => error.code,
+        "g1_admissible" => false,
+        "first_reject_stage" => nil,
+        "completed_stages" => [].freeze,
+        "evidence" => nil
+      }
+    rescue StandardError
+      {
+        "status" => "HOLD",
+        "checked_component" => "G1_HOST_CANDIDATE_ONLY",
+        "reason" => "host_candidate_verification_unavailable",
+        "g1_admissible" => false,
+        "first_reject_stage" => nil,
+        "completed_stages" => [].freeze,
+        "evidence" => nil
+      }
+    end
+
     # Synthetic fixture inputs are NOT a Host authorization decision.
     # policy_json MUST come from the independent Host fixture, not a token.
     def observe(policy_json:, case_data:, policy_digest:)
