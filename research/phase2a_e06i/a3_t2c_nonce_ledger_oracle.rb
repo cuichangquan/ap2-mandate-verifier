@@ -90,7 +90,30 @@ module AP2E06IA3T2cNonceLedgerOracle
            pg_catalog.has_table_privilege(r.oid, t.oid, 'REFERENCES') AS can_reference,
            pg_catalog.has_schema_privilege(r.oid, n.oid, 'CREATE') AS schema_create,
            (SELECT COUNT(*)::integer FROM assumable a
-             WHERE a.role_oid <> r.oid) AS settable_other_roles
+             WHERE a.role_oid <> r.oid) AS settable_other_roles,
+           -- Includes admin_option even when set_option and inherit_option
+           -- are FALSE. A lab role must have NO memberships whatsoever.
+           (SELECT COUNT(*)::integer FROM pg_catalog.pg_auth_members m
+             WHERE m.member = r.oid) AS direct_memberships,
+           (SELECT COUNT(*)::integer FROM pg_catalog.pg_auth_members m
+             WHERE m.member = r.oid AND m.admin_option) AS admin_memberships,
+           (SELECT COUNT(*)::integer
+              FROM pg_catalog.pg_attribute a
+             WHERE a.attrelid = t.oid
+               AND a.attnum > 0 AND NOT a.attisdropped
+               AND (
+                 pg_catalog.has_column_privilege(r.oid, t.oid,
+                   a.attnum, 'UPDATE')
+                 OR pg_catalog.has_column_privilege(r.oid, t.oid,
+                   a.attnum, 'REFERENCES')
+                 OR (r.rolname = 'a3_t2c_writer' AND
+                     pg_catalog.has_column_privilege(r.oid, t.oid,
+                       a.attnum, 'SELECT'))
+                 OR (r.rolname = 'a3_t2c_reader' AND
+                     pg_catalog.has_column_privilege(r.oid, t.oid,
+                       a.attnum, 'INSERT'))
+               )
+           ) AS forbidden_column_privileges
       FROM pg_catalog.pg_roles r
       CROSS JOIN pg_catalog.pg_class t
       JOIN pg_catalog.pg_namespace n ON t.relnamespace = n.oid
@@ -134,6 +157,9 @@ module AP2E06IA3T2cNonceLedgerOracle
         row["writer_name"] == WRITER_ROLE &&
         yes.call("rolcanlogin") && yes.call("can_insert") &&
         row["settable_other_roles"] == "0" &&
+        row["direct_memberships"] == "0" &&
+        row["admin_memberships"] == "0" &&
+        row["forbidden_column_privileges"] == "0" &&
         %w[
           rolsuper rolcreaterole rolcreatedb rolbypassrls owner_member
           can_select can_update can_delete can_truncate can_trigger
@@ -214,6 +240,9 @@ module AP2E06IA3T2cNonceLedgerOracle
       acl["writer_name"] == READER_ROLE &&
         acl["rolcanlogin"] == "t" && acl["can_select"] == "t" &&
         acl["settable_other_roles"] == "0" &&
+        acl["direct_memberships"] == "0" &&
+        acl["admin_memberships"] == "0" &&
+        acl["forbidden_column_privileges"] == "0" &&
         %w[
           rolsuper rolcreaterole rolcreatedb rolbypassrls owner_member
           can_insert can_update can_delete can_truncate can_trigger
