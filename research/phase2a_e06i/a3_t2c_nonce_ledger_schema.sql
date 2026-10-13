@@ -82,7 +82,7 @@ GRANT SELECT ON TABLE a3_t2c.nonce_issuance_history TO a3_t2c_reader;
 -- owns the table via membership, or can SET ROLE to a dangerous role.
 -- PG16 pg_auth_members.set_option is traversed transitively. Inherited
 -- grants are caught by has_table_privilege on the effective role, even when
--- SET ROLE is not available. A subsequent role grant/privilege change
+-- SET ROLE is not available. All SET ROLE paths are prohibited. A subsequent role grant/privilege change
 -- requires an independent B-time recheck under actual credentials.
 DO $a3_t2c_acl$
 DECLARE
@@ -108,7 +108,9 @@ BEGIN
         JOIN pg_catalog.pg_class t
           ON t.oid = 'a3_t2c.nonce_issuance_history'::regclass
         JOIN pg_catalog.pg_namespace ns ON ns.oid = t.relnamespace
-       WHERE role.rolsuper OR role.rolcreaterole OR role.rolcreatedb
+       WHERE a.oid <> (SELECT oid FROM pg_catalog.pg_roles
+                        WHERE rolname = lab_role)
+          OR role.rolsuper OR role.rolcreaterole OR role.rolcreatedb
           OR role.rolbypassrls OR NOT role.rolcanlogin AND a.oid =
             (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = lab_role)
           OR pg_catalog.pg_has_role(a.oid, t.relowner, 'MEMBER')
