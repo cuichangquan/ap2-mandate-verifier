@@ -64,7 +64,10 @@ module AP2E06IA3T2cNonceScenarios
     end
 
     def pending_worker_cleanup?
-      @worker_handles.any?(&:alive?)
+      # Even completed threads may leave an unknown PostgreSQL transaction:
+      # quarantined connection handles are a cleanup obligation until the
+      # separately authorized supervisor proves the DB session quiescent.
+      @worker_handles.any?(&:alive?) || !@connections.empty?
     end
 
     def authoritative?
