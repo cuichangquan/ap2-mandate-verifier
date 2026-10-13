@@ -582,7 +582,7 @@ module AP2E06IA3T2cNonceLedgerOracle
           Regexp.last_match(1)
         }
       # Drop only formatting/grouping AFTER exact catalog token matching.
-      normalized.gsub(/[()[[:space:]]]/, "")
+      normalized.gsub(/[()]|[[:space:]]/, "")
     end
 
     # Preserve EVERYTHING inside quoted literals and quoted identifiers.
