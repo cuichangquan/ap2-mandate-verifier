@@ -84,9 +84,30 @@ class E06ISchemaOnlyProposedTest < Minitest::Test
     assert_empty result.fetch("completed_stages")
   end
 
+  # This uses only an in-process fake loaded-spec entry and restores it.
+  # It is NOT a signed Root experiment and does not execute CI.
+  def test_08_unpinned_jwt_gem_stops_before_g0
+    original = Gem.loaded_specs.fetch("jwt")
+    fake = original.dup
+    fake.version = Gem::Version.new("99.0.0")
+    begin
+      Gem.loaded_specs["jwt"] = fake
+      result = AP2E06IPartialProbe.observe(
+        policy_json: "{}", policy_digest: "ignored", case_data: {}
+      )
+      assert_equal "HOLD", result.fetch("status")
+      assert_equal "G0_PREAUTH_BOUNDS", result.fetch("first_reject_stage")
+      assert_equal "verification_unavailable:jwt_version", result.fetch("reason")
+      assert_empty result.fetch("completed_stages")
+      assert_nil result.fetch("evidence")
+    ensure
+      Gem.loaded_specs["jwt"] = original
+    end
+  end
+
   # Only when an *independently pinned* AP2 source tree is supplied.
   # This is a Schema mechanism test, NOT an O1–O5 signed-root experiment.
-  def test_08_pinned_open_closed_merchant_schema_mechanism
+  def test_09_pinned_open_closed_merchant_schema_mechanism
     source = ENV["AP2_E06I_UPSTREAM_ROOT"]
     skip "No pinned upstream: Schema mechanism test NOT RUN" if source.nil? || source.empty?
     gate = AP2E06ISchemaGate::Gate.new(upstream_root: source)
