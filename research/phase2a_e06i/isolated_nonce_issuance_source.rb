@@ -99,7 +99,10 @@ module AP2E06INonceIssuanceSource
         expected_digest.match?(/\A[0-9a-f]{64}\z/)
       halt!("HOLD", "nonce_ledger_digest_mismatch") unless
         constant_hex_equal?(Digest::SHA256.hexdigest(wire.b), expected_digest)
-      halt!("HOLD", "nonce_ledger_clock_unavailable") unless
+      # Defer the untrusted/unknown verification clock until AFTER every
+      # clock-independent profile/binding/type check. An unknown clock must
+      # not mask a known-mismatched challenge, digest, Checkout or scope.
+      clock_available =
         verified_at.is_a?(Integer) && verified_at.between?(1, MAX_TIME) &&
         verified_at == candidate.verified_at
 
@@ -145,20 +148,38 @@ module AP2E06INonceIssuanceSource
                             Digest::SHA256.hexdigest(challenge.fetch("nonce").b)) &&
         event["issued_at"] == challenge["issued_at"] &&
         event["expires_at"] == challenge["expires_at"]
-      halt!("REJECT", "nonce_event_expired_or_future") unless
+      halt!("REJECT", "invalid_nonce_event_interval") unless
         epoch?(event["issued_at"]) && epoch?(event["expires_at"]) &&
-        event["issued_at"] <= verified_at && verified_at < event["expires_at"]
+        event["issued_at"] < event["expires_at"]
 
       ledger = record.fetch("ledger_claim")
       exact!(ledger, LEDGER_KEYS, "unsupported_nonce_ledger_claim")
+      # Malformed PRESENT claims are definitive invalid input, not missing
+      # evidence. Missing genuine registry authority remains a HOLD.
+      halt!("REJECT", "malformed_nonce_ledger_assertions") unless
+        ledger["origin"].is_a?(String) &&
+        ledger["entropy_bits"].is_a?(Integer) &&
+        ledger["entropy_bits"].between?(0, 65_536) &&
+        ledger["registry_ref"].is_a?(String) &&
+        ledger["registry_ref"].ascii_only? &&
+        ledger["registry_ref"].bytesize.between?(1, 256) &&
+        %w[durable atomic_uniqueness all_history].all? do |name|
+          ledger[name] == true || ledger[name] == false
+        end
       # A known narrower domain is REJECT, even if "unique" is true.
       halt!("REJECT", "unsafe_nonce_uniqueness_domain") unless
         ledger["domain"] == DOMAIN &&
         original["domain"] == DOMAIN
       halt!("REJECT", "nonce_registry_identity_mismatch") unless
         equal_string?(ledger["registry_ref"], original["registry_ref"])
-      # An incomplete, absent or false source assertion is only a HOLD: there
-      # is no actual durable globally coordinated issuance registry to read.
+      # Definitive event temporal invalidity is checked only when the input
+      # clock is well-formed; earlier independent mismatches take precedence.
+      halt!("HOLD", "nonce_ledger_clock_unavailable") unless clock_available
+      halt!("REJECT", "nonce_event_expired_or_future") unless
+        event["issued_at"] <= verified_at && verified_at < event["expires_at"]
+
+      # A syntactically valid but insufficient registry claim is not proof.
+      # A durable global registry is not implemented in this research slice.
       halt!("HOLD", "nonce_source_entropy_or_atomicity_unverified") unless
         ledger["origin"] == "csprng" &&
         ledger["entropy_bits"].is_a?(Integer) &&
