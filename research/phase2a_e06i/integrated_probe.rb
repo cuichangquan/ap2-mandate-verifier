@@ -10,6 +10,7 @@ require "base64"
 require_relative "isolated_host_policy"
 require_relative "isolated_host_snapshot"
 require_relative "isolated_root_closure"
+require_relative "isolated_stage_context"
 
 module AP2E06IPartialProbe
   HOST = AP2E06IHostPolicy
@@ -76,6 +77,111 @@ module AP2E06IPartialProbe
         "completed_stages" => [].freeze,
         "evidence" => nil
       }
+    end
+
+
+    # A3-T1 independent diagnostic ONLY; not observe(), not the actual G0→G7
+    # verifier. Only comparison of untrusted Host source claims with the same
+    # injected bounded instant used for signed Root iat/exp. In particular,
+    # a signature valid under a caller-claimed JWK is NOT G2 authenticity.
+    # This path never reports completed G0/G1/G2/G3, a trusted context or G7.
+    def inspect_a3_t1_clock_claim_only(
+      root_wire:, terminal_wire:, checkout_wire:, verified_at:,
+      host_json:, expected_host_sha256:, host_source_json:,
+      expected_host_source_sha256:, nonce_source_json:,
+      expected_nonce_source_sha256:
+    )
+      checked = []
+      # The diagnostic does not share an invocation with the historic
+      # observe(); first_reject_stage is always nil, even on bad inputs.
+      raise Halt, "invalid_original_wire_type" unless
+        [root_wire, terminal_wire, checkout_wire, host_json].all? { |v|
+          v.is_a?(String)
+        }
+      root = root_wire.dup.freeze
+      terminal = terminal_wire.dup.freeze
+      checkout = checkout_wire.dup.freeze
+      host = host_json.dup.freeze
+      raise Halt, "resource_limit" unless
+        [root, terminal].all? { |v|
+          v.ascii_only? && v.bytesize.between?(1, 32_768)
+        } && checkout.ascii_only? && checkout.bytesize.between?(1, 16_384) &&
+        host.ascii_only? && host.bytesize.between?(1, 16_384) &&
+        root.bytesize + terminal.bytesize + checkout.bytesize +
+          host.bytesize <= 131_072
+
+      # Standalone G0-like wire syntax screening, NOT recorded as completion
+      # of integrated G0: no Host provenance or verified stage predecessor.
+      inspect_sd_wire!(root, typ: "example+sd-jwt")
+      inspect_sd_wire!(terminal, typ: "kb+sd-jwt")
+      check_jws!(checkout, typ: "JWT")
+      checked << "original_wire_syntax_only"
+
+      # Host clock must be independent of signed claim timestamps; currently
+      # it is supplied by the caller, so it remains UNAUTHENTICATED.
+      unless verified_at.is_a?(Integer) &&
+          verified_at.between?(1, AP2E06IHostSnapshot::MAX_TIME)
+        return a3_t1_diagnostic_result("HOLD", "host_clock_provenance_unavailable", checked)
+      end
+
+      # Existing A3-H1 composite rejects any known-invalid source over an
+      # unrelated source HOLD; no claim can prove Host enrollment or CAS.
+      # The exact frozen Host wire is reused for both inspections.
+      combined = AP2E06IHostSnapshot.inspect_untrusted_sources_only!(
+        host_json: host, expected_sha256: expected_host_sha256,
+        verified_at: verified_at, host_source_json: host_source_json,
+        expected_host_source_sha256: expected_host_source_sha256,
+        nonce_source_json: nonce_source_json,
+        expected_nonce_source_sha256: expected_nonce_source_sha256
+      )
+      checked << "untrusted_host_and_nonce_source_claims_only"
+      candidate = AP2E06IHostSnapshot.inspect_candidate!(
+        host_json: host, expected_sha256: expected_host_sha256,
+        verified_at: verified_at
+      )
+      context = AP2E06IStageContext.build_claim_only!(
+        candidate: candidate, combined_claim: combined, root_wire: root,
+        terminal_wire: terminal, checkout_wire: checkout, verified_at: verified_at
+      )
+      checked << "immutable_original_wire_identity_only"
+
+      unless ROOT.jwt_supported?
+        return a3_t1_diagnostic_result("HOLD", "verification_unavailable:jwt_version", checked)
+      end
+      # This key and verified_at are only from an inspected but UNTRUSTED
+      # Host candidate. This is a signed-Root clock/closure diagnostic, never
+      # an authenticated Issuer/G3 stage or permission to run G4 onwards.
+      root_claim = ROOT.verify_full_root_at!(
+        root, trusted_jwk: candidate.snapshot.fetch("issuer_trust").fetch("key_jwk"),
+        verified_at: context.verified_at
+      )
+      checked << "signed_root_claimed_key_clock_only"
+      unless root_claim.fetch("cnf").fetch("jwk") ==
+          candidate.snapshot.fetch("agent_trust").fetch("key_jwk")
+        return a3_t1_diagnostic_result(
+          "REJECT", "root_agent_host_claim_mismatch", checked
+        )
+      end
+
+      # Even fully matching signed Root time/profile, Host-source labels and
+      # nonce assertions do not authenticate G1 or ensure replay safety.
+      a3_t1_diagnostic_result(
+        "HOLD", "host_provenance_and_durable_nonce_ledger_unproven", checked,
+        context: context
+      )
+    rescue Halt => error
+      a3_t1_diagnostic_result("REJECT", error.code, checked)
+    rescue AP2E06IHostSnapshot::Halt, AP2E06IStageContext::Halt => error
+      a3_t1_diagnostic_result(error.status, error.code, checked)
+    rescue ROOT::Rejected => error
+      reason = error.message
+      status = reason.start_with?("verification_unavailable:") ||
+        reason == "verification_clock_unavailable" ? "HOLD" : "REJECT"
+      a3_t1_diagnostic_result(status, reason, checked)
+    rescue JSON::ParserError, ArgumentError, TypeError, KeyError
+      a3_t1_diagnostic_result("REJECT", "invalid_diagnostic_input", checked)
+    rescue StandardError
+      a3_t1_diagnostic_result("HOLD", "diagnostic_verification_unavailable", checked)
     end
 
     # Synthetic fixture inputs are NOT a Host authorization decision.
@@ -207,6 +313,28 @@ module AP2E06IPartialProbe
     end
 
     private
+
+
+    # All outputs are diagnostics, NOT source-authenticated stage records.
+    # A REJECT here is local negative evidence only; the integrated G0–G7
+    # state machine was never invoked, so first_reject_stage stays nil.
+    def a3_t1_diagnostic_result(status, reason, checked, context: nil)
+      {
+        "status" => status,
+        "reason" => reason,
+        "checked_components" => checked.freeze,
+        "completed_stages" => [].freeze,
+        "first_reject_stage" => nil,
+        "g1_admissible" => false,
+        "g3_authenticated" => false,
+        "evidence" => nil,
+        "original_wire_sha256" => context && {
+          "root" => context.root_wire_sha256,
+          "terminal" => context.terminal_wire_sha256,
+          "checkout" => context.checkout_wire_sha256
+        }.freeze
+      }.freeze
+    end
 
     # G0 structural/strict parse ONLY; the returned original JWS is untrusted.
     def inspect_sd_wire!(wire, typ:)
