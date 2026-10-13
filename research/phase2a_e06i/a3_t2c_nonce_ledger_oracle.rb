@@ -416,6 +416,9 @@ module AP2E06IA3T2cNonceLedgerOracle
         began = reader.exec("BEGIN ISOLATION LEVEL READ COMMITTED READ ONLY")
         return false unless began.respond_to?(:cmd_status) &&
           began.cmd_status == "BEGIN"
+        path_ack = reader.exec("SET LOCAL search_path = pg_catalog, pg_temp")
+        return false unless path_ack.respond_to?(:cmd_status) &&
+          path_ack.cmd_status == "SET"
 
         # Even a real transactionid wait can come from a different index
         # or executable column expression. All shapes must match.
@@ -462,38 +465,41 @@ module AP2E06IA3T2cNonceLedgerOracle
     def inspect_catalog_only(reader:)
       return hold("reader_role_unverified") unless reader_session?(reader)
 
-      return hold("exact_unique_index_set_unverified") unless
-        unique_index_shape?(reader)
-      return hold("pg02_write_side_effects_unverified") unless
-        pg02_write_shape?(reader)
-      return hold("approved_check_expressions_unverified") unless
-        pg02_check_expressions_shape?(reader)
-      return hold("approved_insert_column_shape_unverified") unless
-        pg02_insert_columns_shape?(reader)
+      scoped = with_safe_reader_transaction(reader) do
+        return hold("exact_unique_index_set_unverified") unless
+          unique_index_shape?(reader)
+        return hold("pg02_write_side_effects_unverified") unless
+          pg02_write_shape?(reader)
+        return hold("approved_check_expressions_unverified") unless
+          pg02_check_expressions_shape?(reader)
+        return hold("approved_insert_column_shape_unverified") unless
+          pg02_insert_columns_shape?(reader)
 
-      role_result = reader.exec_params(ROLE_SQL, [WRITER_ROLE])
-      return hold("writer_acl_unverified") unless singleton_row(role_result)
+        role_result = reader.exec_params(ROLE_SQL, [WRITER_ROLE])
+        return hold("writer_acl_unverified") unless singleton_row(role_result)
 
-      row = role_result[0]
-      yes = ->(name) { row[name] == "t" }
-      no = ->(name) { row[name] == "f" }
-      return hold("writer_privilege_escape_or_append_only_not_proven") unless
-        row["writer_name"] == WRITER_ROLE &&
-        yes.call("rolcanlogin") && yes.call("can_insert") &&
-        row["settable_other_roles"] == "0" &&
-        row["direct_memberships"] == "0" &&
-        row["admin_memberships"] == "0" &&
-        row["forbidden_column_privileges"] == "0" &&
-        %w[
-          rolsuper rolcreaterole rolcreatedb rolbypassrls rolreplication owner_member
-          can_select can_update can_delete can_truncate can_trigger
-          can_reference schema_create
-        ].all? { |k| no.call(k) }
+        row = role_result[0]
+        yes = ->(name) { row[name] == "t" }
+        no = ->(name) { row[name] == "f" }
+        return hold("writer_privilege_escape_or_append_only_not_proven") unless
+          row["writer_name"] == WRITER_ROLE &&
+          yes.call("rolcanlogin") && yes.call("can_insert") &&
+          row["settable_other_roles"] == "0" &&
+          row["direct_memberships"] == "0" &&
+          row["admin_memberships"] == "0" &&
+          row["forbidden_column_privileges"] == "0" &&
+          %w[
+            rolsuper rolcreaterole rolcreatedb rolbypassrls rolreplication owner_member
+            can_select can_update can_delete can_truncate can_trigger
+            can_reference schema_create
+          ].all? { |k| no.call(k) }
 
-      Observation.new(
-        reason: "catalog_acl_shape_observed_but_writer_mutation_test_not_run",
-        catalog_checked: true
-      )
+        Observation.new(
+          reason: "catalog_acl_shape_observed_but_writer_mutation_test_not_run",
+          catalog_checked: true
+        )
+      end
+      scoped || hold("reader_catalog_safe_scope_or_commit_unverified")
     rescue StandardError
       hold("catalog_or_reader_unavailable")
     end
@@ -503,24 +509,27 @@ module AP2E06IA3T2cNonceLedgerOracle
     # after denied mutations, and fail if either snapshot was unavailable.
     def inspect_issuance_only(reader:, issuance_ref:)
       return hold("reader_role_unverified") unless reader_session?(reader)
-      return hold("invalid_synthetic_issuance_ref") unless
-        issuance_ref.is_a?(String) && issuance_ref.ascii_only? &&
-        issuance_ref.bytesize.between?(1, 256)
+      scoped = with_safe_reader_transaction(reader) do
+        return hold("invalid_synthetic_issuance_ref") unless
+          issuance_ref.is_a?(String) && issuance_ref.ascii_only? &&
+          issuance_ref.bytesize.between?(1, 256)
 
-      result = reader.exec_params(EVENT_SQL, [issuance_ref.dup.freeze])
-      return hold("issuance_not_uniquely_readable") unless singleton_row(result)
-      row = result[0]
-      return hold("event_not_bounded") unless row.is_a?(Hash) &&
-        row.keys.sort == %w[
-          issuance_ref nonce_sha256 challenge_ref host_verifier_domain
-          aud agent_thumbprint buyer_account_ref tenant_id checkout_id
-          checkout_version merchant_checkout_sha256 checkout_jwt_source_ref
-          issued_at expires_at issuance_xid
-        ].sort &&
-        row.values.all? { |v| v.is_a?(String) && v.bytesize.between?(1, 256) }
+        result = reader.exec_params(EVENT_SQL, [issuance_ref.dup.freeze])
+        return hold("issuance_not_uniquely_readable") unless singleton_row(result)
+        row = result[0]
+        return hold("event_not_bounded") unless row.is_a?(Hash) &&
+          row.keys.sort == %w[
+            issuance_ref nonce_sha256 challenge_ref host_verifier_domain
+            aud agent_thumbprint buyer_account_ref tenant_id checkout_id
+            checkout_version merchant_checkout_sha256 checkout_jwt_source_ref
+            issued_at expires_at issuance_xid
+          ].sort &&
+          row.values.all? { |v| v.is_a?(String) && v.bytesize.between?(1, 256) }
 
-      Observation.new(reason: "lab_issuance_row_only_not_host_provenance",
-                      event: row)
+        Observation.new(reason: "lab_issuance_row_only_not_host_provenance",
+                        event: row)
+      end
+      scoped || hold("reader_issuance_safe_scope_or_commit_unverified")
     rescue StandardError
       hold("reader_issuance_lookup_unavailable")
     end
@@ -655,52 +664,95 @@ module AP2E06IA3T2cNonceLedgerOracle
       false
     end
 
+    # Each independent reader observation owns a fresh READ COMMITTED,
+    # READ ONLY transaction. SET LOCAL pins ALL catalog function, operator
+    # and type resolution to PG16 built-ins before any unqualified query is
+    # parsed; pg_temp comes LAST (it must not shadow catalog type names).
+    # Refuse caller-owned transactions and unknown BEGIN/SET/COMMIT ACKs.
+    # On uncertainty return nil, never a positive catalog/nonce witness.
+    # The supervisor owns quarantining any reader connection with a lost ACK.
+    def with_safe_reader_transaction(reader)
+      return nil unless idle_reader_connection?(reader)
+
+      begun = false
+      committed = false
+      begin
+        begun = true
+        ack = reader.exec("BEGIN ISOLATION LEVEL READ COMMITTED READ ONLY")
+        return nil unless ack.respond_to?(:cmd_status) && ack.cmd_status == "BEGIN"
+
+        safe_path = reader.exec("SET LOCAL search_path = pg_catalog, pg_temp")
+        return nil unless safe_path.respond_to?(:cmd_status) &&
+          safe_path.cmd_status == "SET"
+
+        value = yield
+        finish = reader.exec("COMMIT")
+        committed = finish.respond_to?(:cmd_status) &&
+                    finish.cmd_status == "COMMIT" &&
+                    idle_reader_connection?(reader)
+        committed ? value : nil
+      ensure
+        if begun && !committed
+          begin
+            reader.exec("ROLLBACK")
+          rescue StandardError
+            nil
+          end
+        end
+      end
+    rescue StandardError
+      nil
+    end
+
     def reader_session?(reader)
       # Outside an oracle-owned transaction only. An existing transaction
       # can retain a stale snapshot even when the apparent catalog is safe.
       return false unless idle_reader_connection?(reader)
-      res = reader.exec(<<~SQL)
-        SELECT current_user AS role_name, session_user AS login_role,
-               pg_catalog.pg_is_in_recovery() AS replica,
-               pg_catalog.has_table_privilege(current_user,
-                 'a3_t2c.nonce_issuance_history', 'SELECT') AS may_read,
-               pg_catalog.has_table_privilege(current_user,
-                 'a3_t2c.nonce_issuance_history', 'INSERT') AS may_insert,
-               pg_catalog.has_table_privilege(current_user,
-                 'a3_t2c.nonce_issuance_history', 'UPDATE') AS may_update,
-               pg_catalog.has_table_privilege(current_user,
-                 'a3_t2c.nonce_issuance_history', 'DELETE') AS may_delete,
-               pg_catalog.has_table_privilege(current_user,
-                 'a3_t2c.nonce_issuance_history', 'TRUNCATE') AS may_truncate
-      SQL
-      return false unless singleton_row(res) &&
-        res[0]["role_name"] == READER_ROLE &&
-        res[0]["login_role"] == READER_ROLE &&
-        authenticated_connection_user?(reader, READER_ROLE) &&
-        res[0]["replica"] == "f" &&
-        res[0]["may_read"] == "t" &&
-        %w[may_insert may_update may_delete may_truncate].all? {
-          |k| res[0][k] == "f"
-        }
+      with_safe_reader_transaction(reader) do
+        res = reader.exec(<<~SQL)
+          SELECT current_user AS role_name, session_user AS login_role,
+                 pg_catalog.pg_is_in_recovery() AS replica,
+                 pg_catalog.has_table_privilege(current_user,
+                   'a3_t2c.nonce_issuance_history', 'SELECT') AS may_read,
+                 pg_catalog.has_table_privilege(current_user,
+                   'a3_t2c.nonce_issuance_history', 'INSERT') AS may_insert,
+                 pg_catalog.has_table_privilege(current_user,
+                   'a3_t2c.nonce_issuance_history', 'UPDATE') AS may_update,
+                 pg_catalog.has_table_privilege(current_user,
+                   'a3_t2c.nonce_issuance_history', 'DELETE') AS may_delete,
+                 pg_catalog.has_table_privilege(current_user,
+                   'a3_t2c.nonce_issuance_history', 'TRUNCATE') AS may_truncate
+        SQL
+        return false unless singleton_row(res) &&
+          res[0]["role_name"] == READER_ROLE &&
+          res[0]["login_role"] == READER_ROLE &&
+          authenticated_connection_user?(reader, READER_ROLE) &&
+          res[0]["replica"] == "f" &&
+          res[0]["may_read"] == "t" &&
+          %w[may_insert may_update may_delete may_truncate].all? {
+            |k| res[0][k] == "f"
+          }
 
-      # This independent catalog interrogation also checks owner membership,
-      # inherited rights and transitive PG16 SET ROLE membership, including
-      # a reader that can assume an entirely different privileged identity.
-      roles = reader.exec_params(ROLE_SQL, [READER_ROLE])
-      return false unless singleton_row(roles)
-      acl = roles[0]
-      acl["writer_name"] == READER_ROLE &&
-        acl["rolcanlogin"] == "t" && acl["can_select"] == "t" &&
-        acl["settable_other_roles"] == "0" &&
-        acl["direct_memberships"] == "0" &&
-        acl["admin_memberships"] == "0" &&
-        acl["forbidden_column_privileges"] == "0" &&
-        %w[
-          rolsuper rolcreaterole rolcreatedb rolbypassrls rolreplication owner_member
-          can_insert can_update can_delete can_truncate can_trigger
-          can_reference schema_create
-        ].all? { |key| acl[key] == "f" } &&
-        idle_reader_connection?(reader)
+        # This independent catalog interrogation also checks owner membership,
+        # inherited rights and transitive PG16 SET ROLE membership, including
+        # a reader that can assume an entirely different privileged identity.
+        roles = reader.exec_params(ROLE_SQL, [READER_ROLE])
+        return false unless singleton_row(roles)
+        acl = roles[0]
+        acl["writer_name"] == READER_ROLE &&
+          acl["rolcanlogin"] == "t" && acl["can_select"] == "t" &&
+          acl["settable_other_roles"] == "0" &&
+          acl["direct_memberships"] == "0" &&
+          acl["admin_memberships"] == "0" &&
+          acl["forbidden_column_privileges"] == "0" &&
+          %w[
+            rolsuper rolcreaterole rolcreatedb rolbypassrls rolreplication owner_member
+            can_insert can_update can_delete can_truncate can_trigger
+            can_reference schema_create
+          ].all? { |key| acl[key] == "f" } &&
+          defined?(PG::PQTRANS_INTRANS) &&
+          reader.transaction_status == PG::PQTRANS_INTRANS
+      end == true
     rescue StandardError
       false
     end
