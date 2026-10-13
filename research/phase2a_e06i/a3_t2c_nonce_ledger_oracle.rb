@@ -134,7 +134,42 @@ module AP2E06IA3T2cNonceLedgerOracle
      WHERE issuance_ref = $1
   SQL
 
+  # PG02 requires an independently observed PostgreSQL unique-conflict
+  # wait, not merely two Ruby threads or two BEGINs. pg_blocking_pids proves
+  # who blocks the loser; pg_locks' ungranted transactionid/spectoken lock
+  # witnesses the pending index conflict. This is a LOCAL synthetic lab
+  # witness only. Not G1/G7, not a proof of multi-primary uniqueness.
+  PG02_LOCK_WITNESS_SQL = <<~SQL.freeze
+    SELECT (
+      $2::integer = ANY(pg_catalog.pg_blocking_pids($1::integer))
+      AND EXISTS (
+        SELECT 1
+          FROM pg_catalog.pg_locks l
+         WHERE l.pid = $1::integer
+           AND NOT l.granted
+           AND l.locktype IN ('transactionid', 'spectoken')
+      )
+    ) AS unique_lock_wait_observed
+  SQL
+
   class << self
+    # Approval B only. The independent read-only session must be a third
+    # connection, separate from both writer sessions. This bool is NOT an
+    # authoritative Host evidence record and cannot be promoted to G1/G7.
+    def pg02_lock_wait_observed_only?(reader:, waiting_pid:, holding_pid:)
+      return false unless reader_session?(reader)
+      return false unless [waiting_pid, holding_pid].all? { |pid|
+        pid.is_a?(Integer) && pid.between?(1, 2_147_483_647)
+      } && waiting_pid != holding_pid
+
+      result = reader.exec_params(PG02_LOCK_WITNESS_SQL,
+                                  [waiting_pid, holding_pid])
+      singleton_row(result) &&
+        result[0]["unique_lock_wait_observed"] == "t"
+    rescue StandardError
+      false
+    end
+
     # Future approval B only: separately supplied, actual reader credential.
     # Positive-looking catalog observations still deliberately status=HOLD.
     # Note: a catalog check alone cannot prove denied mutation under writer
