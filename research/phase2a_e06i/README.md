@@ -14,9 +14,17 @@ passing the E00–E10 exit checklist.
   and `json_schemer 2.5.0`. `Gate#check!` is **Schema-only** and must NOT be
   called on unauthenticated/fractionally disclosed claims to infer authority.
   It does not verify signatures or decide Host ALLOW.
+- `isolated_host_policy.rb`: research-only source snapshot of the E01-S
+  synthetic Host policy with a direct import of only strict JSON code. No
+  `minitest/autorun`, legacy verifier, or external service is loaded.
+- `isolated_root_closure.rb`: research-only source snapshot of DC04's
+  fixed-3-commitment Root validator with direct strict JSON/JWT imports.
+  Duplicated security code is intentional **temporary review debt**, not a
+  general SDK; original DC04 is unchanged. G3 mixes Root closure with local
+  fixed shape/time and therefore is NOT independent proof of every E03 case.
 - `integrated_probe.rb`: isolated G0 parsing/bounds, G1 synthetic Host policy,
   G2 Issuer signature **without JWT claim expiry/iat/issuer/audience policy**
-  and G3 DC04 signed Root closure/local fixed shape.
+  and G3 **isolated DC04 snapshot** signed Root closure/local fixed shape.
   **It always returns HOLD at G4 even on a G0–G3 positive** because existing
   P1-2/P1-3 code mixes Agent/Merchant crypto and Host checkout semantics.
   It NEVER runs G5, G6, or G7 and NEVER emits VerifiedEvidence or payment ALLOW.
@@ -39,10 +47,12 @@ workflow change, or external infrastructure is authorized by this PR.**
    strict parser separately from G2 signature proof; negative early reject
    never proves G3. The root fixed profile intentionally excludes some
    official schema-valid shapes.
-2. Note that the existing P1-1 dependency includes a `minitest/autorun`
-   require at module-load time. Running the probe through a future isolated
-   CLI must explicitly review this legacy load-time side effect; do not
-   mislabel it an E06 test run.
+2. **No legacy Minitest dependency remains in the non-test probe**:
+   it imports the above two namespaced, direct-dependency snapshots instead
+   of importing original E01-S/DC04 and their transitive P1-1 autorun hook.
+   New snapshots are **NOT RUN** and require exact parity/diff review against
+   the original pinned repository source before any stronger claim. Copying
+   validation code does not automatically transfer DC04/E01-S test evidence.
 3. Obtain a separate review of a **safe crypto-only G4 extraction**. Never
    call the existing `AP2CheckoutBindingResearch.verify!` before G5, since it
    also performs G6 Host total/cart/merchant semantic comparisons.
