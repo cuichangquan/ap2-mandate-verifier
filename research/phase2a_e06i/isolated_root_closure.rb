@@ -95,7 +95,18 @@ module AP2E06IRootClosure
         signed_payload["delegate_payload"].is_a?(Array) && signed_payload["delegate_payload"].size == 1
 
       public_key = JWT::JWK.import(trusted_jwk).public_key
-      verified, = JWT.decode(parts.first, public_key, true, { algorithms: ["ES256"] })
+      # G3 must preserve the already proven G2 signature/claim separation.
+      # The fixed Mandate's own iat/exp and signed grammar are enforced by
+      # verify_full_root!, not by ruby-jwt's unrelated top-level JWT claims.
+      verified, = JWT.decode(
+        parts.first, public_key, true,
+        {
+          algorithms: ["ES256"],
+          verify_expiration: false, verify_not_before: false,
+          verify_iat: false, verify_iss: false,
+          verify_aud: false, verify_jti: false
+        }
+      )
       raise Rejected, "signed payload mismatch" unless verified == signed_payload
 
       mapping = {}
