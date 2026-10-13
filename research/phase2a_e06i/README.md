@@ -6,7 +6,9 @@ Status: **CODE WRITTEN / NOT RUN / G4–G7 HOLD / NO CI APPROVAL / PHASE2-B HOLD
 
 `isolated_host_snapshot.rb` is a **new isolated research candidate** that
 requires a separate Issuer/Agent/Merchant key+policy trust entry (active,
-explicitly non-revoked, each finitely valid at one Host `verified_at`), a
+explicitly non-revoked, each finitely valid at one Host `verified_at`), P-256
+**on-curve** public-key coordinates, each trust tenant equal to Checkout tenant,
+Merchant signer subject equal to the Checkout Merchant ID, a
 Host Challenge/Checkout tuple and Buyer reference, Host-verifier-wide
 nonce uniqueness/entropy *claims*, exact Host JWT wire, and deep detached
 immutability. It checks bounded strict JSON and out-of-band expected raw
