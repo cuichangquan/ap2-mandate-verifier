@@ -93,18 +93,24 @@ module AP2E06IA3T2bNonceIssuanceBoundary
         return hold("untrusted_host_candidate_unavailable")
       end
 
-      return hold("original_checkout_wire_unavailable") if checkout_wire.nil?
-      return reject("claim_only_invalid_checkout_wire_type") unless
-        checkout_wire.is_a?(String)
+      # Missing original Checkout bytes imply HOLD but must not mask a
+      # definite, independent contradiction in the nonce issuance claim.
+      # Compare bounded immutable original bytes when present, then inspect
+      # the alleged ledger event before returning any deferred wire HOLD.
+      checkout_missing = checkout_wire.nil?
+      unless checkout_missing
+        return reject("claim_only_invalid_checkout_wire_type") unless
+          checkout_wire.is_a?(String)
 
-      original = checkout_wire.dup.freeze
-      return reject("claim_only_checkout_wire_resource_limit") unless
-        original.ascii_only? &&
-        original.bytesize.between?(1, MAX_CHECKOUT_BYTES)
+        original = checkout_wire.dup.freeze
+        return reject("claim_only_checkout_wire_resource_limit") unless
+          original.ascii_only? &&
+          original.bytesize.between?(1, MAX_CHECKOUT_BYTES)
 
-      claimed_checkout = candidate.snapshot.fetch("checkout").fetch("original_jwt")
-      return reject("claim_only_original_checkout_wire_mismatch") unless
-        claimed_checkout.is_a?(String) && claimed_checkout == original
+        claimed_checkout = candidate.snapshot.fetch("checkout").fetch("original_jwt")
+        return reject("claim_only_original_checkout_wire_mismatch") unless
+          claimed_checkout.is_a?(String) && claimed_checkout == original
+      end
 
       # Let the A3-H1 nonce inspector find clock-independent contradictions
       # first; a malformed or absent clock must never be elevated to a
@@ -120,6 +126,8 @@ module AP2E06IA3T2bNonceIssuanceBoundary
         result.status == "HOLD" && !result.authoritative? &&
         !result.admissible? && !result.replay_safe? &&
         result.evidence.nil?
+
+      return hold("original_checkout_wire_unavailable") if checkout_missing
 
       hold("host_wide_issuance_and_commit_proof_unavailable")
     rescue AP2E06INonceIssuanceSource::Halt => error
