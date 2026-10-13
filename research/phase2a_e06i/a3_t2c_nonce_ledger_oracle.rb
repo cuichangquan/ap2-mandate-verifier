@@ -65,6 +65,7 @@ module AP2E06IA3T2cNonceLedgerOracle
                AND oc.opcmethod = ci.relam
                AND ons.nspname = 'pg_catalog'
                AND cl.collname = 'default'
+               AND cl.collisdeterministic
                AND cns.nspname = 'pg_catalog'
                AND i.indcollation[0] = a.attcollation
                AND co.condeferrable = false AND co.condeferred = false
