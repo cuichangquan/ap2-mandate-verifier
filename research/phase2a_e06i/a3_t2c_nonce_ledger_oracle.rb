@@ -570,14 +570,19 @@ module AP2E06IA3T2cNonceLedgerOracle
     # custom functions, volatile built-ins (e.g. lo_create) and rewritten
     # constraints must remain visible and FAIL CLOSED.
     def canonical_approved_catalog_tokens(unquoted)
-      unquoted
-        .gsub(/(?<![A-Za-z0-9_])pg_catalog\.char_length(?![A-Za-z0-9_])/,
+      # Normalize with syntax boundaries still present. Removing "("
+      # prematurely joins char_length and its first argument, causing a
+      # correct pg_catalog.char_length(arg) to be rejected as a new name.
+      normalized = unquoted
+        .gsub(/(?<![A-Za-z0-9_])pg_catalog\.char_length(?=[[:space:]]*\()/,
               "char_length")
         .gsub(/(?<![A-Za-z0-9_])pg_catalog\.text(?![A-Za-z0-9_])/,
               "text")
-        .gsub(/OPERATORpg_catalog\.(>=|<=|<>|~|=|<|>)(?![=<>~])/) {
+        .gsub(/(?<![A-Za-z0-9_])OPERATOR[[:space:]]*\([[:space:]]*pg_catalog\.[[:space:]]*(>=|<=|<>|~|=|<|>)[[:space:]]*\)/) {
           Regexp.last_match(1)
         }
+      # Drop only formatting/grouping AFTER exact catalog token matching.
+      normalized.gsub(/[()[[:space:]]]/, "")
     end
 
     # Preserve EVERYTHING inside quoted literals and quoted identifiers.
@@ -608,9 +613,9 @@ module AP2E06IA3T2cNonceLedgerOracle
           unquoted.clear
           quote = char
           output << char
-        elsif char == "(" || char == ")" || char.match?(/[[:space:]]/)
-          # Deparser grouping and whitespace only, outside quotes.
         else
+          # Keep delimiters until canonical_approved_catalog_tokens has
+          # matched the function-call/operator boundary.
           unquoted << char
         end
         index += 1
@@ -656,16 +661,16 @@ module AP2E06IA3T2cNonceLedgerOracle
       return false unless idle_reader_connection?(reader)
       res = reader.exec(<<~SQL)
         SELECT current_user AS role_name, session_user AS login_role,
-               pg_is_in_recovery() AS replica,
-               has_table_privilege(current_user,
+               pg_catalog.pg_is_in_recovery() AS replica,
+               pg_catalog.has_table_privilege(current_user,
                  'a3_t2c.nonce_issuance_history', 'SELECT') AS may_read,
-               has_table_privilege(current_user,
+               pg_catalog.has_table_privilege(current_user,
                  'a3_t2c.nonce_issuance_history', 'INSERT') AS may_insert,
-               has_table_privilege(current_user,
+               pg_catalog.has_table_privilege(current_user,
                  'a3_t2c.nonce_issuance_history', 'UPDATE') AS may_update,
-               has_table_privilege(current_user,
+               pg_catalog.has_table_privilege(current_user,
                  'a3_t2c.nonce_issuance_history', 'DELETE') AS may_delete,
-               has_table_privilege(current_user,
+               pg_catalog.has_table_privilege(current_user,
                  'a3_t2c.nonce_issuance_history', 'TRUNCATE') AS may_truncate
       SQL
       return false unless singleton_row(res) &&
