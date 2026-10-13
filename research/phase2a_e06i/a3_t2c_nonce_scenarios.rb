@@ -423,6 +423,12 @@ module AP2E06IA3T2cNonceScenarios
         begin_acknowledged = begin_result.respond_to?(:cmd_status) &&
                              begin_result.cmd_status == "BEGIN"
         raise "pg03_begin_acknowledgment_unknown" unless begin_acknowledged
+        # All six denied-mutation probes must parse under catalog-native
+        # functions, operators and types. Otherwise search_path shadows
+        # can forge SQLSTATE 42501 while the writer has mutation privileges.
+        path_ack = writer.exec("SET LOCAL search_path = pg_catalog, pg_temp")
+        raise "pg03_safe_search_path_ack_unknown" unless
+          path_ack.respond_to?(:cmd_status) && path_ack.cmd_status == "SET"
         writer.exec("SET LOCAL statement_timeout = '3000ms'")
         writer.exec("SET LOCAL lock_timeout = '2000ms'")
         PG03_FORBIDDEN_MUTATIONS.each do |name, sql|
@@ -477,7 +483,18 @@ module AP2E06IA3T2cNonceScenarios
                                [observer_thread], [writer, reader])
       end
 
-      observer_thread.value
+      observation = observer_thread.value
+      # An oracle may finish its Ruby Thread but still have a live DB
+      # transaction after lost BEGIN/SET/COMMIT/ROLLBACK acknowledgements.
+      # Never treat this as a completed ordinary negative Observation.
+      if observation.respond_to?(:pending_worker_cleanup?) &&
+         observation.pending_worker_cleanup?
+        retained = observation.respond_to?(:connections) ?
+                   observation.connections : []
+        return pending_workers("pg03_#{phase}_reader_quarantine_stop",
+                               [observer_thread], ([writer, reader] + retained).uniq)
+      end
+      observation
     rescue StandardError
       pending_workers("pg03_#{phase}_observer_unavailable_stop",
                       [observer_thread].compact, [writer, reader])
