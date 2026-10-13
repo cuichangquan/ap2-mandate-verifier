@@ -356,8 +356,26 @@ module AP2E06IA3T2cNonceScenarios
         denied.length == PG03_FORBIDDEN_MUTATIONS.length &&
         denied.values.all?
 
+      # An administrator may change schema USAGE, table grants or
+      # unprobed column grants AFTER the initial catalog snapshot.
+      # A real SQLSTATE 42501 might then mean schema lookup was denied,
+      # not that UPDATE/DELETE on the ledger itself was prohibited.
+      # Recheck the COMPLETE effective role/column/schema + catalog shape
+      # using a fresh independent reader transaction AFTER the writer phase
+      # and AFTER the row snapshot, before crediting this synthetic negative.
+      # A timeout, unknown ACK or ACL mismatch remains HOLD; the bounded
+      # observer retains live reader/writer connections on uncertainty.
+      post_acl = bounded_pg03_read_only(
+        reader: reader, writer: writer, phase: "post_mutation_acl"
+      ) do
+        AP2E06IA3T2cNonceLedgerOracle.inspect_catalog_only(reader: reader)
+      end
+      return post_acl if post_acl.is_a?(LabObservation)
+      return hold("post_mutation_complete_acl_or_schema_unverified_stop") unless
+        post_acl.respond_to?(:catalog_checked) && post_acl.catalog_checked
+
       LabObservation.new(
-        reason: "synthetic_writer_permission_negatives_only_no_restore_proof",
+        reason: "synthetic_writer_permission_negatives_with_post_acl_only_no_restore_proof",
         outcomes: denied
       )
     rescue StandardError
