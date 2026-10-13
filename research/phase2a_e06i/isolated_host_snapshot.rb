@@ -140,6 +140,11 @@ module AP2E06IHostSnapshot
       # and Agent trust scopes in this deliberately closed-world lab.
       checkout = parsed.fetch("checkout")
       tenant_id = checkout.fetch("ref").fetch("tenant_id")
+      # The fixed Issuer-A synthetic lab profile has ONE pinned Host scope.
+      # Equal-but-arbitrary tenant strings must not be accepted as this
+      # profile; multi-tenant flexibility is explicitly out of scope.
+      halt!("REJECT", "issuer_profile_tenant_mismatch") unless
+        tenant_id == "synthetic-e01s"
       %w[issuer_trust agent_trust merchant_trust].each do |signer|
         halt!("REJECT", "host_trust_tenant_mismatch") unless
           parsed.fetch(signer).fetch("tenant_id") == tenant_id
