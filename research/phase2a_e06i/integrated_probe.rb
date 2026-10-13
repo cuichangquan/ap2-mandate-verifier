@@ -7,7 +7,6 @@
 require "json"
 require "digest"
 require "base64"
-require "jwt"
 require_relative "isolated_host_policy"
 require_relative "isolated_root_closure"
 
@@ -37,8 +36,7 @@ module AP2E06IPartialProbe
       reached = []
       # Dependency semantics are part of the bounded E06-I research profile.
       # Never emit successful G0/G1/G2/G3 stages under unreviewed jwt versions.
-      jwt_spec = Gem.loaded_specs["jwt"]
-      unless jwt_spec && jwt_spec.version.to_s == "3.3.0"
+      unless ROOT.jwt_supported?
         return {
           "status" => "HOLD", "first_reject_stage" => current,
           "reason" => "verification_unavailable:jwt_version",
