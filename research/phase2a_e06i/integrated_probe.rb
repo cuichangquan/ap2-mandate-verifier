@@ -10,7 +10,6 @@ require "base64"
 require "jwt"
 require_relative "../phase2a_e01s/synthetic_host_policy"
 require_relative "../phase2a_dc04/fixed_issuer_verifier"
-require_relative "schema_gate"
 
 module AP2E06IPartialProbe
   HOST = AP2E01SHostPolicy
@@ -54,6 +53,7 @@ module AP2E06IPartialProbe
         root.bytesize + terminal.bytesize + policy_json.bytesize + candidate_bytes <= 131_072
 
       untrusted_policy = AP2StrictJSONResearch.parse!(policy_json)
+      check_tree_bounds!(untrusted_policy)
       raise Halt, "invalid_host_context" unless untrusted_policy.is_a?(Hash)
       checkout_jwt = untrusted_policy["host_checkout_jwt"]
       raise Halt, "resource_limit" unless checkout_jwt.is_a?(String) &&
@@ -75,7 +75,17 @@ module AP2E06IPartialProbe
       _header, signed_root = AP2StrictJSONResearch.validate_signed_jws_json!(root_jws)
       decoded, = JWT.decode(
         root_jws, JWT::JWK.import(trusted).public_key, true,
-        { algorithms: ["ES256"] }
+        {
+          algorithms: ["ES256"],
+          # A valid G2 signature cannot be downgraded by JWT claim checks.
+          # Claims/profile semantics are evaluated in the following stages.
+          verify_expiration: false,
+          verify_not_before: false,
+          verify_iat: false,
+          verify_iss: false,
+          verify_aud: false,
+          verify_jti: false
+        }
       )
       raise Halt, "invalid_issuer_signature" unless signed_root == decoded
       reached << current
@@ -147,18 +157,51 @@ module AP2E06IPartialProbe
         parts.last == "" && parts[1...-1].length.between?(1, 16)
       check_jws!(parts.first, typ: typ)
       parts[1...-1].each do |part|
-        AP2StrictJSONResearch.decode_part!(part)
+        parsed = AP2StrictJSONResearch.decode_part!(part)
+        check_tree_bounds!(parsed)
       end
       parts.first
     end
 
     def check_jws!(compact, typ:)
-      header, = AP2StrictJSONResearch.validate_signed_jws_json!(compact)
+      header_part, payload_part, signature_part =
+        AP2StrictJSONResearch.jwt_parts!(compact)
+      # The shared strict parser checks header/payload; G0 also verifies
+      # the third segment is nonempty, canonical base64url and ES256 length.
+      raise Halt, "invalid_jws_signature_encoding" unless
+        signature_part.match?(/\A[A-Za-z0-9_-]+\z/)
+      signature = Base64.urlsafe_decode64(
+        signature_part + ("=" * (-signature_part.bytesize % 4))
+      )
+      raise Halt, "invalid_jws_signature_encoding" unless
+        signature.bytesize == 64 &&
+        Base64.urlsafe_encode64(signature, padding: false) == signature_part
+
+      header = AP2StrictJSONResearch.decode_part!(header_part)
+      payload = AP2StrictJSONResearch.decode_part!(payload_part)
+      check_tree_bounds!(header)
+      check_tree_bounds!(payload)
       raise Halt, "unsupported_jose_header" unless header.is_a?(Hash) &&
         header["alg"] == "ES256" && header["typ"] == typ &&
         (header.keys - %w[alg kid typ]).empty? &&
         (header["kid"].nil? || header["kid"].is_a?(String))
       compact
+    end
+
+    # Recursive capped research shape; no authorization semantics.
+    # The untrusted Host policy, all signed JWS JSON, and each disclosure
+    # are checked BEFORE G0 can be recorded as completed.
+    def check_tree_bounds!(value, depth = 0)
+      raise Halt, "resource_limit" if depth > 24
+      case value
+      when Hash
+        raise Halt, "resource_limit" if value.size > 32
+        value.each_value { |child| check_tree_bounds!(child, depth + 1) }
+      when Array
+        raise Halt, "resource_limit" if value.size > 16
+        value.each { |child| check_tree_bounds!(child, depth + 1) }
+      end
+      value
     end
   end
 end
