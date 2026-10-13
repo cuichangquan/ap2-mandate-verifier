@@ -186,6 +186,11 @@ module AP2E06IPartialProbe
         (header.keys - %w[alg kid typ]).empty? &&
         (header["kid"].nil? || header["kid"].is_a?(String))
       compact
+    rescue JSON::ParserError => error
+      # Signature/body JSON ambiguity belongs to G0, not a generic failure
+      # and certainly not proof of G2 signature verification.
+      raise Halt, error.message.include?("duplicate JSON object key") ?
+        "ambiguous_signed_json" : "invalid_signed_json"
     end
 
     # Recursive capped research shape; no authorization semantics.
