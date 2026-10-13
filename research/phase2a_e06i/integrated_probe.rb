@@ -189,8 +189,12 @@ module AP2E06IPartialProbe
     rescue JSON::ParserError => error
       # Signature/body JSON ambiguity belongs to G0, not a generic failure
       # and certainly not proof of G2 signature verification.
-      raise Halt, error.message.include?("duplicate JSON object key") ?
-        "ambiguous_signed_json" : "invalid_signed_json"
+      code = if error.message.include?("duplicate JSON object key")
+        "ambiguous_signed_json"
+      else
+        "invalid_signed_json"
+      end
+      raise Halt, code
     end
 
     # Recursive capped research shape; no authorization semantics.
