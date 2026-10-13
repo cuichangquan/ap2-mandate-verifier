@@ -326,14 +326,14 @@ module AP2E06IA3T2cNonceIssuanceWorker
     def restricted_lab_writer?(connection)
       rows = connection.exec(<<~SQL)
         SELECT current_user AS role_name, session_user AS login_role,
-               pg_is_in_recovery() AS replica,
-               has_table_privilege(current_user,
+               pg_catalog.pg_is_in_recovery() AS replica,
+               pg_catalog.has_table_privilege(current_user,
                  'a3_t2c.nonce_issuance_history', 'INSERT') AS may_insert,
-               has_table_privilege(current_user,
+               pg_catalog.has_table_privilege(current_user,
                  'a3_t2c.nonce_issuance_history', 'UPDATE') AS may_update,
-               has_table_privilege(current_user,
+               pg_catalog.has_table_privilege(current_user,
                  'a3_t2c.nonce_issuance_history', 'DELETE') AS may_delete,
-               has_table_privilege(current_user,
+               pg_catalog.has_table_privilege(current_user,
                  'a3_t2c.nonce_issuance_history', 'TRUNCATE') AS may_truncate
       SQL
       return false unless rows.respond_to?(:ntuples) && rows.ntuples == 1
