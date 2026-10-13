@@ -207,7 +207,7 @@ module AP2E06IHostSnapshot
         part = jwk[key]
         halt!("REJECT", "invalid_public_jwk_coordinate") unless
           string?(part, max: 43) && part.bytesize == 43 &&
-          part.match?(/\\A[A-Za-z0-9_-]{43}\\z/)
+          part.match?(/\A[A-Za-z0-9_-]{43}\z/)
         bytes = Base64.urlsafe_decode64(part + "=")
         halt!("REJECT", "invalid_public_jwk_coordinate") unless
           bytes.bytesize == 32 &&
