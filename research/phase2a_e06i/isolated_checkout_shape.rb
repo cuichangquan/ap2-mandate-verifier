@@ -8,6 +8,8 @@
 # cannot prove a Merchant signature, G5 official Open/Closed Schema validity,
 # Issuer authorization, Host business semantics or payment authorization.
 # Never pass this ShapeOnly result directly to G6/G7 as a "G5 success".
+require "json"
+
 module AP2E06ILocalCheckoutShape
   ROOT_KEYS = %w[currency id line_items links merchant status totals].freeze
   MERCHANT_KEYS = %w[id name].freeze
@@ -91,7 +93,6 @@ module AP2E06ILocalCheckoutShape
 
       # Cap the complete payload as well; G0 also enforces independent wire
       # and nested resource limits before any authenticity claims.
-      require "json"
       reject!("checkout_shape_resource_limit") unless
         JSON.generate(payload).bytesize.between?(1, MAX_CHECKOUT_BYTES)
 
