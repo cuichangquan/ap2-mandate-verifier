@@ -45,6 +45,23 @@ event cannot establish global history or prevent challenge re-labelling.
 This new source is deliberately **NOT** an integrated G1→G7 success path.
 It is A3-H1 source-only, NOT RUN, with A3-T and execution approval B HOLD.
 
+## A3-H1 source/nonce claim composition (still never trusted G1)
+
+The existing `isolated_host_snapshot.rb` now also provides
+`inspect_untrusted_sources_only!(...)` as a **separate diagnostic**.
+It checks the A2 Host snapshot candidate once, then feeds **the same frozen
+candidate and Host `verified_at`** to both A3-H1 Host enrollment and nonce
+issuance source claim inspectors. Source/ledger mismatches are rejected (or
+unavailable records held) by the respective narrow inspector; there is
+**no authenticated Host root, durable Host-wide issuance history or CAS**.
+When every *self-reported* record agrees, the result is still
+`CombinedClaim(status=HOLD,g1_admissible?=false,
+authoritative?=false,evidence=nil)` with only wire SHA digests.
+Neither this method nor its input claims are trusted/G1 result types;
+the existing `integrated_probe.rb` is **unchanged** and never consumes it.
+It does not run G0/G2–G7, sign/verify a JWT, perform an atomic nonce check,
+assert actual CSPRNG entropy or allow a payment. It is **NOT RUN**.
+
 ## A2-5 preflight wiring: trusted G1 entrypoint STILL BLOCKED
 
 `integrated_probe.rb` now also exposes an internal
