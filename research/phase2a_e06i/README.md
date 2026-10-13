@@ -2,6 +2,14 @@
 
 Status: **CODE WRITTEN / NOT RUN / G4–G7 HOLD / NO CI APPROVAL / PHASE2-B HOLD**.
 
+**Dependency runtime guard:** `integrated_probe.rb` returns `HOLD` before
+G0 when the loaded Ruby `jwt` gem is not exactly `3.3.0`. The isolated
+Root closure also rejects direct calls under unsupported `jwt` versions.
+The Schema-only gate independently pins `json_schemer` to `2.5.0`.
+Missing/mismatched libraries are **verification unavailable**, not a signed
+wire or signature-invalid verdict. These behaviors are **NOT RUN**.
+
+
 This directory is the first **approval A only** implementation slice for
 [Issue #73](https://github.com/cuichangquan/ap2-mandate-verifier/issues/73).
 It is NOT a usable AP2 verifier, Gem, merchant checkout gate or evidence of
