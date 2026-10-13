@@ -374,7 +374,13 @@ module AP2E06IA3T2cNonceScenarios
                              [writer_thread], [writer, reader]) unless
         writer_thread.join(4.0)
 
-      writer_thread.value
+      observation = writer_thread.value
+      # Any writer-side uncertain BEGIN, failed ROLLBACK or unexpected
+      # HOLD keeps the socket quarantined even after its Ruby Thread exits.
+      return pending_workers("pg03_writer_uncertain_result_quarantine_stop",
+                             [writer_thread], [writer, reader]) if
+        observation.is_a?(LabObservation)
+      observation
     rescue StandardError
       pending_workers("pg03_writer_phase_unavailable_stop",
                       [writer_thread].compact, [writer, reader])
@@ -385,12 +391,19 @@ module AP2E06IA3T2cNonceScenarios
         writer_session?(writer) && idle_connection?(writer)
 
       denied = {}
-      began = false
+      # BEGIN can reach PostgreSQL while its acknowledgment is lost. Set
+      # attempted BEFORE the wire call, and never interpret a missing
+      # acknowledgment as a known rollback/no active transaction.
+      begin_attempted = false
+      begin_acknowledged = false
       uncertain = false
       rollback_verified = false
       begin
-        writer.exec("BEGIN")
-        began = true
+        begin_attempted = true
+        begin_result = writer.exec("BEGIN")
+        begin_acknowledged = begin_result.respond_to?(:cmd_status) &&
+                             begin_result.cmd_status == "BEGIN"
+        raise "pg03_begin_acknowledgment_unknown" unless begin_acknowledged
         writer.exec("SET LOCAL statement_timeout = '3000ms'")
         writer.exec("SET LOCAL lock_timeout = '2000ms'")
         PG03_FORBIDDEN_MUTATIONS.each do |name, sql|
@@ -413,18 +426,23 @@ module AP2E06IA3T2cNonceScenarios
       rescue StandardError
         uncertain = true
       ensure
-        if began
+        if begin_attempted
           begin
-            writer.exec("ROLLBACK")
-            rollback_verified = true
+            rollback_result = writer.exec("ROLLBACK")
+            rollback_verified = rollback_result.respond_to?(:cmd_status) &&
+                                rollback_result.cmd_status == "ROLLBACK"
+            uncertain = true unless rollback_verified
           rescue StandardError
             uncertain = true
           end
         end
       end
 
+      # If BEGIN acknowledgment was ever unknown, even a later ROLLBACK
+      # response does NOT prove the complete history of the socket.
+      # The wrapper retains both DB connections for B-time quarantine.
       return hold("pg03_writer_transaction_or_rollback_uncertain_stop") if
-        uncertain || !rollback_verified
+        uncertain || !begin_acknowledged || !rollback_verified
       return hold("writer_mutation_not_all_denied_stop") unless
         denied.length == PG03_FORBIDDEN_MUTATIONS.length && denied.values.all?
 
@@ -468,7 +486,20 @@ module AP2E06IA3T2cNonceScenarios
       )
       rowset.respond_to?(:ntuples) && rowset.ntuples == 1 &&
         rowset[0]["role_name"] == "a3_t2c_writer" &&
-        rowset[0]["login_role"] == "a3_t2c_writer"
+        rowset[0]["login_role"] == "a3_t2c_writer" &&
+        authenticated_connection_user?(writer, "a3_t2c_writer")
+    rescue StandardError
+      false
+    end
+
+    def authenticated_connection_user?(connection, expected)
+      return false unless defined?(PG::Connection) &&
+        connection.instance_of?(PG::Connection) &&
+        connection.respond_to?(:conninfo_hash)
+
+      info = connection.conninfo_hash
+      info.is_a?(Hash) && info[:user].is_a?(String) &&
+        info[:user] == expected
     rescue StandardError
       false
     end
