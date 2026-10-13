@@ -92,25 +92,31 @@ module AP2E06IA3T2bHostRegistryBoundary
         return hold("untrusted_host_candidate_unavailable")
       end
 
+      # Missing Checkout bytes are uncertain, but do not mask a known
+      # contradiction in the separately supplied enrollment source below.
+      # Likewise an absent/mismatched caller clock must not mask a definite
+      # exact-wire mismatch. Neither source is an authenticated Host record.
+      checkout_missing = checkout_wire.nil?
+      unless checkout_missing
+        return reject("claim_only_invalid_checkout_wire_type") unless
+          checkout_wire.is_a?(String)
+
+        # Detach before checking size/identity; never reserialize the JWT.
+        original = checkout_wire.dup.freeze
+        return reject("claim_only_checkout_wire_resource_limit") unless
+          original.ascii_only? &&
+          original.bytesize.between?(1, MAX_CHECKOUT_BYTES)
+
+        claimed_checkout = candidate.snapshot.fetch("checkout").fetch("original_jwt")
+        return reject("claim_only_original_checkout_wire_mismatch") unless
+          claimed_checkout.is_a?(String) && claimed_checkout == original
+      end
+
       unless verified_at.is_a?(Integer) &&
           verified_at.between?(1, AP2E06IHostSnapshot::MAX_TIME) &&
           candidate.verified_at == verified_at
         return hold("host_clock_provenance_unavailable")
       end
-
-      return hold("original_checkout_wire_unavailable") if checkout_wire.nil?
-      return reject("claim_only_invalid_checkout_wire_type") unless
-        checkout_wire.is_a?(String)
-
-      # Detach first, then validate and compare one immutable copy. No I/O.
-      original = checkout_wire.dup.freeze
-      return reject("claim_only_checkout_wire_resource_limit") unless
-        original.ascii_only? &&
-        original.bytesize.between?(1, MAX_CHECKOUT_BYTES)
-
-      claimed_checkout = candidate.snapshot.fetch("checkout").fetch("original_jwt")
-      return reject("claim_only_original_checkout_wire_mismatch") unless
-        claimed_checkout.is_a?(String) && claimed_checkout == original
 
       result = AP2E06IHostSource.inspect_claims!(
         candidate: candidate,
@@ -123,6 +129,8 @@ module AP2E06IA3T2bHostRegistryBoundary
         result.is_a?(AP2E06IHostSource::SourceClaim) &&
         result.status == "HOLD" && !result.authoritative? &&
         !result.admissible? && result.evidence.nil?
+
+      return hold("original_checkout_wire_unavailable") if checkout_missing
 
       hold("independent_host_registry_and_reader_proof_unavailable")
     rescue AP2E06IHostSource::Halt => error
