@@ -39,16 +39,26 @@ module AP2E06IA3T2cNonceIssuanceWorker
   SQL
 
   class LabObservation
-    attr_reader :status, :reason, :outcome, :nonce
+    attr_reader :status, :reason, :outcome, :nonce, :worker_handles, :connections
 
-    def initialize(reason:, outcome:, nonce: nil)
+    def initialize(reason:, outcome:, nonce: nil, worker_handles: [],
+                   connections: [])
       @status = "HOLD".freeze
       @reason = reason.freeze
       @outcome = outcome
       # Expose the lab-only nonce exclusively after a positively observed
       # local COMMIT acknowledgement. This is NOT authenticated Host issuance.
       @nonce = nonce&.dup&.freeze
+      # Uncertain/blocked libpq calls must return live handles to the
+      # separately approved B supervisor. Never close/reuse these sockets
+      # until their actual SQL transaction state is established.
+      @worker_handles = worker_handles.dup.freeze
+      @connections = connections.dup.freeze
       freeze
+    end
+
+    def pending_worker_cleanup?
+      @worker_handles.any?(&:alive?) || !@connections.empty?
     end
 
     def commit_acknowledged?
@@ -78,14 +88,30 @@ module AP2E06IA3T2cNonceIssuanceWorker
     # challenge nonce. Never send nonce to a Terminal before this returns.
     # Code review alone cannot prove the runtime's entropy source.
     def issue!(connection:, context:, checkout_wire:)
-      raw = SecureRandom.random_bytes(32)
-      nonce = Base64.urlsafe_encode64(raw, padding: false).freeze
-      insert_synthetic_lab!(
-        connection: connection, context: context, checkout_wire: checkout_wire,
-        nonce: nonce, disclose_after_commit: true
-      )
+      # Public synthetic issuance can also stall on ANY libpq call, including
+      # pre-BEGIN role inspection and COMMIT. The entire lifecycle runs in a
+      # retained worker thread, never on an unbounded caller stack.
+      # This never sends a nonce to the Terminal; an uncertain completion
+      # returns HOLD with worker+connection handles for quarantine.
+      runner = Thread.new do
+        raw = SecureRandom.random_bytes(32)
+        nonce = Base64.urlsafe_encode64(raw, padding: false).freeze
+        insert_synthetic_lab!(
+          connection: connection, context: context, checkout_wire: checkout_wire,
+          nonce: nonce, disclose_after_commit: true
+        )
+      end
+      return hold("issuance_socket_timeout_quarantine_stop",
+                  worker_handles: [runner], connections: [connection]) unless
+        runner.join(6)
+
+      observation = runner.value
+      return hold("issuance_result_unverified", connections: [connection]) unless
+        observation.is_a?(LabObservation)
+      observation
     rescue StandardError
-      hold("csprng_or_issuance_unavailable")
+      hold("csprng_or_issuance_unavailable_quarantine",
+           worker_handles: [runner].compact, connections: [connection])
     end
 
     # PG02/PG03 negative-only input: duplicate a deliberately fixed synthetic
@@ -246,6 +272,7 @@ module AP2E06IA3T2cNonceIssuanceWorker
       row = rows[0]
       row["role_name"] == LAB_WRITER_ROLE &&
         row["login_role"] == LAB_WRITER_ROLE &&
+        authenticated_connection_user?(connection, LAB_WRITER_ROLE) &&
         row["replica"] == "f" &&
         row["may_insert"] == "t" &&
         %w[may_update may_delete may_truncate].all? { |k| row[k] == "f" }
@@ -253,8 +280,22 @@ module AP2E06IA3T2cNonceIssuanceWorker
       false
     end
 
-    def hold(reason)
-      LabObservation.new(reason: reason, outcome: :unverified)
+    def authenticated_connection_user?(connection, expected)
+      return false unless defined?(PG::Connection) &&
+        connection.instance_of?(PG::Connection) &&
+        connection.respond_to?(:conninfo_hash)
+
+      info = connection.conninfo_hash
+      info.is_a?(Hash) && info[:user].is_a?(String) &&
+        info[:user] == expected
+    rescue StandardError
+      false
+    end
+
+    def hold(reason, worker_handles: [], connections: [])
+      LabObservation.new(reason: reason, outcome: :unverified,
+                         worker_handles: worker_handles,
+                         connections: connections)
     end
 
     def hold_with_rollback(connection, reason)
