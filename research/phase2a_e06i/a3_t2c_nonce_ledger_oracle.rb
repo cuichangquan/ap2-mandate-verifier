@@ -727,7 +727,7 @@ module AP2E06IA3T2cNonceLedgerOracle
       # Outside an oracle-owned transaction only. An existing transaction
       # can retain a stale snapshot even when the apparent catalog is safe.
       return false unless idle_reader_connection?(reader)
-      with_safe_reader_transaction(reader) do
+      observed = with_safe_reader_transaction(reader) do
         res = reader.exec(<<~SQL)
           SELECT current_user AS role_name, session_user AS login_role,
                  pg_catalog.pg_is_in_recovery() AS replica,
@@ -771,7 +771,10 @@ module AP2E06IA3T2cNonceLedgerOracle
           ].all? { |key| acl[key] == "f" } &&
           defined?(PG::PQTRANS_INTRANS) &&
           reader.transaction_status == PG::PQTRANS_INTRANS
-      end == true
+      end
+      # Propagate *quarantined* sessions to public read-only entrypoints,
+      # rather than erasing the reader handle via Observation == true.
+      observed.is_a?(Observation) ? observed : observed == true
     rescue StandardError
       false
     end
