@@ -726,7 +726,11 @@ module AP2E06IA3T2cNonceLedgerOracle
     def reader_session?(reader)
       # Outside an oracle-owned transaction only. An existing transaction
       # can retain a stale snapshot even when the apparent catalog is safe.
-      return false unless idle_reader_connection?(reader)
+      # Even before BEGIN, a non-idle/unqueryable reader may own an
+      # externally started transaction. Do not lose its cleanup obligation
+      # by reducing this state to a plain negative boolean.
+      return quarantine_reader(reader, "reader_preexisting_or_unverified_transaction_stop") unless
+        idle_reader_connection?(reader)
       observed = with_safe_reader_transaction(reader) do
         res = reader.exec(<<~SQL)
           SELECT current_user AS role_name, session_user AS login_role,
@@ -776,7 +780,9 @@ module AP2E06IA3T2cNonceLedgerOracle
       # rather than erasing the reader handle via Observation == true.
       observed.is_a?(Observation) ? observed : observed == true
     rescue StandardError
-      false
+      # A failure of transaction-state/reader inspection can be an
+      # unacknowledged command, not a proven completed negative result.
+      quarantine_reader(reader, "reader_session_observation_uncertain_stop")
     end
 
     # libpq startup user is stored in connection options before SQL. Unlike
