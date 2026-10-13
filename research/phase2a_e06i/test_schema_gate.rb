@@ -34,9 +34,45 @@ class E06ISchemaOnlyProposedTest < Minitest::Test
     assert_nil result.fetch("evidence")
   end
 
+  # G0-only *unsigned* format negatives: these cannot prove G2/G3,
+  # nor can they stand in for approval B's authentic signed O1–O5 cases.
+  def test_04_bad_terminal_signature_encoding_is_g0_only
+    result = observe_g0(
+      terminal: fake_sd_jwt("kb+sd-jwt", "!")
+    )
+    assert_equal "REJECT", result.fetch("status")
+    assert_equal "G0_PREAUTH_BOUNDS", result.fetch("first_reject_stage")
+    assert_equal "invalid_jws_signature_encoding", result.fetch("reason")
+    assert_empty result.fetch("completed_stages")
+  end
+
+  def test_05_nested_terminal_array_exceeds_g0_limit
+    terminal = fake_sd_jwt(
+      "kb+sd-jwt", Base64.urlsafe_encode64("\0" * 64, padding: false),
+      { "delegation" => { "many" => Array.new(17, 0) } }
+    )
+    result = observe_g0(terminal: terminal)
+    assert_equal "REJECT", result.fetch("status")
+    assert_equal "G0_PREAUTH_BOUNDS", result.fetch("first_reject_stage")
+    assert_equal "resource_limit", result.fetch("reason")
+    assert_empty result.fetch("completed_stages")
+  end
+
+  def test_06_nested_terminal_object_exceeds_g0_limit
+    terminal = fake_sd_jwt(
+      "kb+sd-jwt", Base64.urlsafe_encode64("\0" * 64, padding: false),
+      { "delegation" => (0...33).to_h { |i| ["field-#{i}", i] } }
+    )
+    result = observe_g0(terminal: terminal)
+    assert_equal "REJECT", result.fetch("status")
+    assert_equal "G0_PREAUTH_BOUNDS", result.fetch("first_reject_stage")
+    assert_equal "resource_limit", result.fetch("reason")
+    assert_empty result.fetch("completed_stages")
+  end
+
   # Only when an *independently pinned* AP2 source tree is supplied.
   # This is a Schema mechanism test, NOT an O1–O5 signed-root experiment.
-  def test_04_pinned_open_closed_merchant_schema_mechanism
+  def test_07_pinned_open_closed_merchant_schema_mechanism
     source = ENV["AP2_E06I_UPSTREAM_ROOT"]
     skip "No pinned upstream: Schema mechanism test NOT RUN" if source.nil? || source.empty?
     gate = AP2E06ISchemaGate::Gate.new(upstream_root: source)
@@ -78,5 +114,36 @@ class E06ISchemaOnlyProposedTest < Minitest::Test
     assert_equal "invalid_closed_schema", assert_raises(AP2E06ISchemaGate::Rejected) {
       gate.check!(open: good_open, closed: invalid_closed)
     }.code
+  end
+
+  private
+
+  def observe_g0(terminal:)
+    sig = Base64.urlsafe_encode64("\0" * 64, padding: false)
+    root = fake_sd_jwt("example+sd-jwt", sig)
+    checkout_jwt = fake_jws("JWT", sig, { "id" => "fake" })
+    AP2E06IPartialProbe.observe(
+      policy_json: JSON.generate({ "host_checkout_jwt" => checkout_jwt }),
+      policy_digest: "unsigned-unit-only",
+      case_data: {
+        "candidate" => { "kty" => "EC", "crv" => "P-256", "x" => "a", "y" => "b" },
+        "root" => root, "terminal" => terminal
+      }
+    )
+  end
+
+  def fake_sd_jwt(typ, signature, payload = { "delegate_payload" => [] })
+    disclosure = Base64.urlsafe_encode64(
+      JSON.generate(["saltsaltsalt", { "synthetic" => 1 }]), padding: false
+    )
+    "#{fake_jws(typ, signature, payload)}~#{disclosure}~"
+  end
+
+  def fake_jws(typ, signature, payload)
+    protected = Base64.urlsafe_encode64(
+      JSON.generate({ "alg" => "ES256", "typ" => typ }), padding: false
+    )
+    body = Base64.urlsafe_encode64(JSON.generate(payload), padding: false)
+    "#{protected}.#{body}.#{signature}"
   end
 end
