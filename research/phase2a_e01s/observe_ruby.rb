@@ -3,6 +3,7 @@
 # No production Host issuer registration, Gem API, payment or Phase 2-B GO.
 require "json"
 require "timeout"
+require "time"
 require "digest"
 require_relative "trust_probe"
 
