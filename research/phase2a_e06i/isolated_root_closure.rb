@@ -7,7 +7,6 @@
 # Phase 2-A E06-I/A isolated copy of DC04 fixed-Issuer signed-wire research ONLY.
 # Not a general SD-JWT parser, Gem API, checkout authorization, or payment gate.
 # Does not change P1-1's deliberately unsupported nested positions.
-require "jwt"
 require "set"
 require "json"
 require "base64"
@@ -25,6 +24,17 @@ module AP2E06IRootClosure
   ].freeze
 
   class << self
+    # Lazy, bounded dependency activation: loading this module never executes
+    # test runners or fails because jwt is missing. Direct calls are gated too.
+    def jwt_supported?
+      gem "jwt", "= 3.3.0"
+      require "jwt"
+      spec = Gem.loaded_specs["jwt"]
+      spec && spec.version.to_s == "3.3.0"
+    rescue LoadError, Gem::LoadError
+      false
+    end
+
     def verify_full_root!(wire, trusted_jwk:)
       signed = verify_signed_payload!(wire, trusted_jwk: trusted_jwk)
       mandate = signed.fetch("delegate_payload").fetch(0)
@@ -78,9 +88,7 @@ module AP2E06IRootClosure
     def verify_signed_payload!(wire, trusted_jwk:)
       # This isolated verifier must not make success claims under other jwt
       # versions, including when called directly without the G0–G3 observer.
-      jwt_spec = Gem.loaded_specs["jwt"]
-      raise Rejected, "verification_unavailable:jwt_version" unless
-        jwt_spec && jwt_spec.version.to_s == "3.3.0"
+      raise Rejected, "verification_unavailable:jwt_version" unless jwt_supported?
       raise Rejected, "trusted issuer public key required" unless trusted_jwk.is_a?(Hash)
       raise Rejected, "oversized/non-ASCII SD-JWT" unless
         wire.is_a?(String) && wire.bytesize.between?(1, 32_768) && wire.ascii_only? && wire.end_with?("~")
@@ -132,8 +140,11 @@ module AP2E06IRootClosure
         observed.size == 3 && observed.sort_by(&:to_s) == ALLOWED_PATHS.sort_by(&:to_s)
       raise Rejected, "unused/decoy disclosure" unless used.size == mapping.size
       root
-    rescue JWT::DecodeError, JWT::JWKError, JSON::ParserError, ArgumentError,
-           KeyError, TypeError => e
+    rescue Rejected
+      raise
+    rescue StandardError => e
+      # No JWT constant is needed to classify an unavailable dependency.
+      # Failed signed inputs cannot be promoted to evidence.
       raise Rejected, "invalid signed fixture (#{e.class})"
     end
 
