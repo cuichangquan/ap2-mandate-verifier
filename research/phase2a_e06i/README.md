@@ -2,6 +2,28 @@
 
 Status: **CODE WRITTEN / NOT RUN / G4–G7 HOLD / NO CI APPROVAL / PHASE2-B HOLD**.
 
+## A2-1 scoped new Host-context candidate (approval recorded in Issue #75)
+
+`isolated_host_snapshot.rb` is a **new isolated research candidate** that
+requires a separate Issuer/Agent/Merchant key+policy trust entry (active,
+explicitly non-revoked, each finitely valid at one Host `verified_at`), P-256
+**on-curve** public-key coordinates, each trust tenant equal to Checkout tenant,
+Merchant signer subject equal to the Checkout Merchant ID, a
+Host Challenge/Checkout tuple and Buyer reference, Host-verifier-wide
+nonce uniqueness/entropy *claims*, exact Host JWT wire, and deep detached
+immutability. It checks bounded strict JSON and out-of-band expected raw
+SHA-256 but **never treats claims or a matching digest as Host provenance**.
+Every successful call returns `Candidate(status=HOLD, admissible?=false,
+evidence=nil)`. An independent Host registry/provenance adapter and
+atomic nonce issuance/consumption are **NOT implemented or inferred**. This
+candidate is **NOT wired into `integrated_probe.rb`**; the earlier G0–G3
+research remains unchanged. No usable G1/G4/G5/G6/G7 success can be claimed.
+
+A2 grants only **file creation and static PR review**; no Ruby/Python/test
+execution, fixture generation, CI, workflow or legacy files may be changed.
+Any attempt to promote the candidate directly to G1 success is a STOP gate.
+
+
 **Dependency runtime guard:** `integrated_probe.rb` returns `HOLD` before
 G0 if pinned Ruby `jwt 3.3.0` is missing or a different version is already
 activated. The isolated Root closure lazily activates exactly `jwt 3.3.0`;
@@ -25,6 +47,9 @@ passing the E00–E10 exit checklist.
   and `json_schemer 2.5.0`. `Gate#check!` is **Schema-only** and must NOT be
   called on unauthenticated/fractionally disclosed claims to infer authority.
   It does not verify signatures or decide Host ALLOW.
+- `isolated_host_snapshot.rb`: A2-1 new, standalone Host context CANDIDATE
+  inspector. It always produces HOLD-only candidate records even on structurally
+  well-formed Host assertions; no provenance/nonce registry/real enrollment.
 - `isolated_host_policy.rb`: research-only source snapshot of the E01-S
   synthetic Host policy with a direct import of only strict JSON code. No
   `minitest/autorun`, legacy verifier, or external service is loaded.
