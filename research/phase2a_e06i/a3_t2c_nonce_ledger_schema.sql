@@ -16,6 +16,10 @@
 -- cross-primary uniqueness proof, not final nonce consumption / payment approval.
 
 BEGIN;
+-- Transaction-local trusted function/operator/type resolution for ALL DDL,
+-- PL/pgSQL format(), dynamic REVOKE and ACL predicates. pg_temp is
+-- explicitly LAST so temporary objects cannot shadow catalog types.
+SET LOCAL search_path = pg_catalog, pg_temp;
 
 CREATE SCHEMA a3_t2c;
 REVOKE ALL ON SCHEMA a3_t2c FROM PUBLIC;
@@ -37,8 +41,8 @@ CREATE TABLE a3_t2c.nonce_issuance_history (
   expires_at                timestamptz NOT NULL,
   -- Transaction ID is a diagnostic correlation handle, NOT a durable
   -- commit acknowledgment or an authenticated Host audit root.
-  issuance_xid              text NOT NULL DEFAULT pg_current_xact_id()::text,
-  recorded_at               timestamptz NOT NULL DEFAULT transaction_timestamp(),
+  issuance_xid              text NOT NULL DEFAULT pg_catalog.pg_current_xact_id()::pg_catalog.text,
+  recorded_at               timestamptz NOT NULL DEFAULT pg_catalog.transaction_timestamp(),
 
   -- Critically, this uniqueness is GLOBAL to the entire table, not
   -- tenant/session/challenge/expiry scoped and not a partial index.
@@ -88,7 +92,7 @@ BEGIN
      WHERE attrelid = 'a3_t2c.nonce_issuance_history'::regclass
        AND attnum > 0 AND NOT attisdropped
   LOOP
-    EXECUTE format(
+    EXECUTE pg_catalog.format(
       'REVOKE SELECT (%1$I), INSERT (%1$I), UPDATE (%1$I), REFERENCES (%1$I) ' ||
       'ON TABLE a3_t2c.nonce_issuance_history ' ||
       'FROM PUBLIC, a3_t2c_writer, a3_t2c_reader',
