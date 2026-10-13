@@ -39,27 +39,37 @@ module AP2E06IA3T2cNonceLedgerOracle
     end
   end
 
-  # This query sees the *real catalog*, not declarations from the worker or
-  # an untrusted fixture. Verifies a unique full-table index on exactly one
-  # non-null nonce_sha256 column, with no WHERE predicate or expressions.
+  # PG02's transaction wait is NOT uniquely attributable to nonce if
+  # *any* fourth UNIQUE index is present (e.g. on aud). Verify the COMPLETE
+  # unique-index set against the three immutable schema declarations:
+  # issuance_ref PK, challenge_ref UNIQUE and nonce_sha256 UNIQUE.
+  # Reject added, partial, expression, invalid, included-column or swapped
+  # indexes, even if nonce's own constraint still exists.
   INDEX_SQL = <<~SQL.freeze
-    SELECT COUNT(*)::integer AS matching_indexes
+    SELECT COUNT(*)::integer AS total_unique_indexes,
+           COUNT(*) FILTER (
+             WHERE a.attname = 'nonce_sha256'
+               AND a.attnotnull
+               AND NOT a.attisdropped
+               AND i.indisvalid AND i.indisready
+               AND i.indpred IS NULL AND i.indexprs IS NULL
+               AND i.indnkeyatts = 1 AND i.indnatts = 1
+           )::integer AS matching_indexes,
+           COUNT(*) FILTER (
+             WHERE a.attname IN (
+               'issuance_ref', 'challenge_ref', 'nonce_sha256'
+             )
+               AND a.attnotnull
+               AND NOT a.attisdropped
+               AND i.indisvalid AND i.indisready
+               AND i.indpred IS NULL AND i.indexprs IS NULL
+               AND i.indnkeyatts = 1 AND i.indnatts = 1
+           )::integer AS expected_unique_indexes
       FROM pg_catalog.pg_index i
-      JOIN pg_catalog.pg_class t ON t.oid = i.indrelid
-      JOIN pg_catalog.pg_namespace n ON n.oid = t.relnamespace
-      JOIN pg_catalog.pg_attribute a ON a.attrelid = t.oid
-     WHERE n.nspname = 'a3_t2c'
-       AND t.relname = 'nonce_issuance_history'
-       AND a.attname = 'nonce_sha256'
-       AND a.attnotnull
-       AND NOT a.attisdropped
+      LEFT JOIN pg_catalog.pg_attribute a
+        ON a.attrelid = i.indrelid AND a.attnum = i.indkey[0]
+     WHERE i.indrelid = 'a3_t2c.nonce_issuance_history'::regclass
        AND i.indisunique
-       AND i.indisvalid
-       AND i.indisready
-       AND i.indpred IS NULL
-       AND i.indexprs IS NULL
-       AND i.indnkeyatts = 1
-       AND i.indkey[0] = a.attnum
   SQL
 
   # An independent reader checks the actual WRITER role's effective
@@ -79,7 +89,7 @@ module AP2E06IA3T2cNonceLedgerOracle
        WHERE m.set_option
     )
     SELECT r.rolname AS writer_name, r.rolsuper, r.rolcreaterole,
-           r.rolcreatedb, r.rolbypassrls, r.rolcanlogin,
+           r.rolcreatedb, r.rolbypassrls, r.rolreplication, r.rolcanlogin,
            pg_catalog.pg_has_role(r.oid, t.relowner, 'MEMBER') AS owner_member,
            pg_catalog.has_table_privilege(r.oid, t.oid, 'INSERT') AS can_insert,
            pg_catalog.has_table_privilege(r.oid, t.oid, 'SELECT') AS can_select,
@@ -158,6 +168,10 @@ module AP2E06IA3T2cNonceLedgerOracle
     # authoritative Host evidence record and cannot be promoted to G1/G7.
     def pg02_lock_wait_observed_only?(reader:, waiting_pid:, holding_pid:)
       return false unless reader_session?(reader)
+      # Even a real transactionid lock wait can be caused by an unrelated
+      # UNIQUE index. Only the exact three-key schema makes this a nonce
+      # collision witness. No extra index may be present.
+      return false unless unique_index_shape?(reader)
       return false unless [waiting_pid, holding_pid].all? { |pid|
         pid.is_a?(Integer) && pid.between?(1, 2_147_483_647)
       } && waiting_pid != holding_pid
@@ -177,10 +191,8 @@ module AP2E06IA3T2cNonceLedgerOracle
     def inspect_catalog_only(reader:)
       return hold("reader_role_unverified") unless reader_session?(reader)
 
-      index_result = reader.exec(INDEX_SQL)
-      return hold("global_unique_index_unverified") unless
-        singleton_row(index_result) &&
-        index_result[0]["matching_indexes"].to_i == 1
+      return hold("exact_unique_index_set_unverified") unless
+        unique_index_shape?(reader)
 
       role_result = reader.exec_params(ROLE_SQL, [WRITER_ROLE])
       return hold("writer_acl_unverified") unless singleton_row(role_result)
@@ -196,7 +208,7 @@ module AP2E06IA3T2cNonceLedgerOracle
         row["admin_memberships"] == "0" &&
         row["forbidden_column_privileges"] == "0" &&
         %w[
-          rolsuper rolcreaterole rolcreatedb rolbypassrls owner_member
+          rolsuper rolcreaterole rolcreatedb rolbypassrls rolreplication owner_member
           can_select can_update can_delete can_truncate can_trigger
           can_reference schema_create
         ].all? { |k| no.call(k) }
@@ -244,6 +256,16 @@ module AP2E06IA3T2cNonceLedgerOracle
 
     private
 
+    def unique_index_shape?(reader)
+      res = reader.exec(INDEX_SQL)
+      singleton_row(res) &&
+        res[0]["total_unique_indexes"] == "3" &&
+        res[0]["matching_indexes"] == "1" &&
+        res[0]["expected_unique_indexes"] == "3"
+    rescue StandardError
+      false
+    end
+
     def reader_session?(reader)
       res = reader.exec(<<~SQL)
         SELECT current_user AS role_name, pg_is_in_recovery() AS replica,
@@ -279,7 +301,7 @@ module AP2E06IA3T2cNonceLedgerOracle
         acl["admin_memberships"] == "0" &&
         acl["forbidden_column_privileges"] == "0" &&
         %w[
-          rolsuper rolcreaterole rolcreatedb rolbypassrls owner_member
+          rolsuper rolcreaterole rolcreatedb rolbypassrls rolreplication owner_member
           can_insert can_update can_delete can_truncate can_trigger
           can_reference schema_create
         ].all? { |key| acl[key] == "f" }
