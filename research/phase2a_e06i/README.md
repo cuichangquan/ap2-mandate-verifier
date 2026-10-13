@@ -15,11 +15,17 @@ passing the E00–E10 exit checklist.
   called on unauthenticated/fractionally disclosed claims to infer authority.
   It does not verify signatures or decide Host ALLOW.
 - `integrated_probe.rb`: isolated G0 parsing/bounds, G1 synthetic Host policy,
-  G2 Issuer signature **without JWT claim expiry/iat/issuer/audience policy**\n  and G3 DC04 signed Root closure/local fixed shape.
+  G2 Issuer signature **without JWT claim expiry/iat/issuer/audience policy**
+  and G3 DC04 signed Root closure/local fixed shape.
   **It always returns HOLD at G4 even on a G0–G3 positive** because existing
   P1-2/P1-3 code mixes Agent/Merchant crypto and Host checkout semantics.
-  It NEVER runs G5, G6, or G7 and NEVER emits VerifiedEvidence or payment ALLOW.\n  G0 checks all JWS signature segments for canonical ES256 encoding and\n  recursively caps every JWS JSON, Disclosure, and untrusted Host policy at\n  depth 24, object 32 fields, array 16 entries. These checks remain **unrun**.
-- `test_schema_gate.rb`: proposed **unexecuted** unit assertions, including\n  unsigned/malformed G0-only JWS signature and over-limit nested JSON cases.\n  These cases prove neither Issuer signature nor SD closure. The tests using
+  It NEVER runs G5, G6, or G7 and NEVER emits VerifiedEvidence or payment ALLOW.
+  G0 checks all JWS signature segments for canonical ES256 encoding and
+  recursively caps every JWS JSON, Disclosure, and untrusted Host policy at
+  depth 24, object 32 fields, array 16 entries. These checks remain **unrun**.
+- `test_schema_gate.rb`: proposed **unexecuted** unit assertions, including
+  unsigned/malformed G0-only JWS signature and over-limit nested JSON cases.
+  These cases prove neither Issuer signature nor SD closure. The tests using
   `AP2_E06I_UPSTREAM_ROOT` require an independently pinned official AP2
   checkout and must not be mislabeled E06 signed tests. No fixtures or CI
   were produced by adding tests.
@@ -33,7 +39,11 @@ workflow change, or external infrastructure is authorized by this PR.**
    strict parser separately from G2 signature proof; negative early reject
    never proves G3. The root fixed profile intentionally excludes some
    official schema-valid shapes.
-2. Note that the existing P1-1 dependency includes a `minitest/autorun`\n   require at module-load time. Running the probe through a future isolated\n   CLI must explicitly review this legacy load-time side effect; do not\n   mislabel it an E06 test run.\n3. Obtain a separate review of a **safe crypto-only G4 extraction**. Never
+2. Note that the existing P1-1 dependency includes a `minitest/autorun`
+   require at module-load time. Running the probe through a future isolated
+   CLI must explicitly review this legacy load-time side effect; do not
+   mislabel it an E06 test run.
+3. Obtain a separate review of a **safe crypto-only G4 extraction**. Never
    call the existing `AP2CheckoutBindingResearch.verify!` before G5, since it
    also performs G6 Host total/cart/merchant semantic comparisons.
 4. After reviewed G4, make the pinned `schema_gate.rb` mandatory for the
