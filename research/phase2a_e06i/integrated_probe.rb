@@ -11,6 +11,10 @@ require_relative "isolated_host_policy"
 require_relative "isolated_host_snapshot"
 require_relative "isolated_root_closure"
 require_relative "isolated_stage_context"
+# A3-T1 diagnostic needs these distinct Halt classes to preserve REJECT.
+# Modules define contracts only; no fixtures, tests or runner are loaded.
+require_relative "isolated_host_source"
+require_relative "isolated_nonce_issuance_source"
 
 module AP2E06IPartialProbe
   HOST = AP2E06IHostPolicy
@@ -171,7 +175,10 @@ module AP2E06IPartialProbe
       )
     rescue Halt => error
       a3_t1_diagnostic_result("REJECT", error.code, checked)
-    rescue AP2E06IHostSnapshot::Halt, AP2E06IStageContext::Halt => error
+    # The A3-H1 composite may propagate the ORIGINAL source-specific Halt.
+    # Do not turn definitive Host enrollment/nonce REJECT into generic HOLD.
+    rescue AP2E06IHostSnapshot::Halt, AP2E06IStageContext::Halt,
+           AP2E06IHostSource::Halt, AP2E06INonceIssuanceSource::Halt => error
       a3_t1_diagnostic_result(error.status, error.code, checked)
     rescue ROOT::Rejected => error
       reason = error.message
