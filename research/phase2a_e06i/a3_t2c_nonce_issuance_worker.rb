@@ -126,8 +126,16 @@ module AP2E06IA3T2cNonceIssuanceWorker
       return hold("original_checkout_wire_bounds") unless
         wire.ascii_only? && wire.bytesize.between?(1, MAX_CHECKOUT_WIRE) &&
         wire.count(".") == 2
+      # PG treats BEGIN inside a caller transaction as a warning/no-op.
+      # Refuse an externally owned transaction instead of COMMITting any
+      # unrelated caller work. The injected connection must be exclusively
+      # owned by this invocation; shared/simultaneous use is out of scope.
+      return hold("transaction_not_idle_or_unverifiable") unless
+        idle_connection?(connection)
       return hold("synthetic_writer_role_or_primary_unverified") unless
         restricted_lab_writer?(connection)
+      return hold("transaction_not_idle_or_unverifiable") unless
+        idle_connection?(connection)
 
       digest = Digest::SHA256.hexdigest(nonce.b)
       jwt_digest = Digest::SHA256.hexdigest(wire.b)
@@ -199,6 +207,16 @@ module AP2E06IA3T2cNonceIssuanceWorker
     # A reader must still independently inspect actual role memberships,
     # owner inheritance and ACLs. Checking this *connection* is a defensive
     # local guard, not an authorization provenance proof.
+    # Requires the actual libpq transaction status constant, never a
+    # caller-supplied :idle flag or a BEGIN warning interpreted as success.
+    def idle_connection?(connection)
+      defined?(PG::PQTRANS_IDLE) &&
+        connection.respond_to?(:transaction_status) &&
+        connection.transaction_status == PG::PQTRANS_IDLE
+    rescue StandardError
+      false
+    end
+
     def restricted_lab_writer?(connection)
       rows = connection.exec(<<~SQL)
         SELECT current_user AS role_name,
