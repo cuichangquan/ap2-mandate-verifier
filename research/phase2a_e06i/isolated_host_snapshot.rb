@@ -95,17 +95,19 @@ module AP2E06IHostSnapshot
     # Comparing a matching digest does not authenticate the source or registry.
     # This method inspects bounded JSON and returns only a HOLD-only Candidate.
     def inspect_candidate!(host_json:, expected_sha256:, verified_at:)
+      # First check only the type; then detach the bytes ONCE. Every length,
+      # ASCII, digest and JSON parser check MUST use the same frozen copy.
+      # Validating the caller-owned String before dup creates a TOCTOU
+      # resource bypass if another thread replaces the bytes in between.
+      halt!("REJECT", "invalid_host_input") unless host_json.is_a?(String)
+      immutable_wire = host_json.dup.freeze
       halt!("REJECT", "invalid_host_input") unless
-        host_json.is_a?(String) && host_json.ascii_only? &&
-        host_json.bytesize.between?(1, MAX_CONTEXT_BYTES) &&
+        immutable_wire.ascii_only? &&
+        immutable_wire.bytesize.between?(1, MAX_CONTEXT_BYTES) &&
         expected_sha256.is_a?(String) &&
         expected_sha256.match?(/\A[0-9a-f]{64}\z/) &&
         epoch?(verified_at)
 
-      # Detach the caller-owned byte buffer ONCE. The caller may otherwise
-      # mutate host_json between the digest and parse, creating a false
-      # digest-to-snapshot link. Never parse or hash that original again.
-      immutable_wire = host_json.dup.freeze
       actual_sha256 = Digest::SHA256.hexdigest(immutable_wire.b)
       halt!("HOLD", "untrusted_host_snapshot_digest") unless
         fixed_equal?(actual_sha256, expected_sha256)
@@ -115,6 +117,15 @@ module AP2E06IHostSnapshot
       exact!(parsed, FIELDS, "invalid_host_fields")
       halt!("REJECT", "unsupported_profile") unless
         parsed.fetch("profile_ref") == "e06i-fixed-issuer-a-v1"
+      # The issuer profile has ONE locally pinned synthetic identity/policy.
+      # Names and policy versions alone do NOT authenticate a Host signing key;
+      # that provenance remains missing, and successful input stays HOLD.
+      issuer = parsed.fetch("issuer_trust")
+      halt!("REJECT", "issuer_profile_identity_mismatch") unless
+        issuer.is_a?(Hash) &&
+        issuer["subject_ref"] == "synthetic-e01s-issuer-A" &&
+        issuer["policy_ref"] == "e06i-issuer-a-host-policy-v1" &&
+        issuer["policy_version"] == 1
 
       %w[issuer_trust agent_trust merchant_trust].each do |name|
         validate_trust!(parsed.fetch(name), verified_at: verified_at)
