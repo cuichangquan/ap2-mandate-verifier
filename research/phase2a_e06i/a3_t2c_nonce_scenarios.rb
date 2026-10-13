@@ -48,13 +48,22 @@ module AP2E06IA3T2cNonceScenarios
   ].map { |name, sql| [name.freeze, sql.freeze].freeze }.freeze
 
   class LabObservation
-    attr_reader :status, :reason, :outcomes
+    attr_reader :status, :reason, :outcomes, :worker_handles, :connections
 
-    def initialize(reason:, outcomes: {})
+    def initialize(reason:, outcomes: {}, worker_handles: [], connections: [])
       @status = "HOLD".freeze
       @reason = reason.freeze
       @outcomes = outcomes.transform_values { |v| v }.freeze
+      # If any thread is still alive/unknown at a timeout or an exception,
+      # return owned handles AND connections to the B-time supervisor instead
+      # of discarding live workers and racing connection teardown.
+      @worker_handles = worker_handles.dup.freeze
+      @connections = connections.dup.freeze
       freeze
+    end
+
+    def pending_worker_cleanup?
+      @worker_handles.any?(&:alive?)
     end
 
     def authoritative?
@@ -86,10 +95,15 @@ module AP2E06IA3T2cNonceScenarios
         return hold("cross_tenant_probe_required")
       end
 
-      tasks = [
+      # The future caller MUST retain every connection until all worker
+      # handles are fully joined or an isolated external supervisor has
+      # safely stopped the whole lab. A pending HOLD is NOT cleanup approval.
+      connections = [left_connection, right_connection]
+      tasks = []
+      [
         [left_connection, left_context], [right_connection, right_context]
-      ].map do |conn, context|
-        Thread.new do
+      ].each do |conn, context|
+        tasks << Thread.new do
           AP2E06IA3T2cNonceIssuanceWorker.collision_probe_only!(
             connection: conn, context: context, checkout_wire: checkout_wire,
             nonce: probe_nonce
@@ -97,10 +111,13 @@ module AP2E06IA3T2cNonceScenarios
         end
       end
 
-      # Never kill/retry a thread with an uncertain COMMIT. On timeout
-      # supervisor must STOP and independently clean up all DB sessions.
-      return hold("worker_join_or_commit_uncertain_stop") unless
-        tasks.all? { |thread| thread.join(7) }
+      # Join BOTH workers even if the first times out. all? would
+      # short-circuit and leave the second completely unobserved.
+      # No Thread.kill and no optimistic COMMIT/ROLLBACK assumptions.
+      joins = tasks.map { |thread| thread.join(7) }
+      return pending_workers("worker_join_or_commit_uncertain_stop",
+                             tasks, connections) if
+        joins.any?(&:nil?) || tasks.any?(&:alive?)
 
       results = tasks.map(&:value)
       return hold("unverified_worker_result") unless results.all? { |x|
@@ -116,7 +133,10 @@ module AP2E06IA3T2cNonceScenarios
         outcomes: { "acknowledged_commits" => commits, "attempts" => 2 }
       )
     rescue StandardError
-      hold("collision_observation_unavailable")
+      # Thread creation, join, and result retrieval can each fail after
+      # another worker starts. Never discard a started thread/connection.
+      pending_workers("collision_observation_unavailable_stop",
+                      tasks || [], connections || [])
     end
 
     # PG03: prove (only within disposable lab) that the ACTUAL issuance
@@ -136,7 +156,7 @@ module AP2E06IA3T2cNonceScenarios
       )
       return hold("pre_mutation_snapshot_unavailable") unless before.event
       return hold("actual_writer_credentials_missing") unless
-        writer_session?(writer)
+        writer_session?(writer) && idle_connection?(writer)
 
       # Every negative mutation is rolled back to a SAVEPOINT, and the
       # outer transaction is ROLLED BACK no matter what happened.
@@ -199,7 +219,23 @@ module AP2E06IA3T2cNonceScenarios
       LabObservation.new(reason: reason)
     end
 
+    def pending_workers(reason, threads, connections)
+      # The B-time caller receives responsibility for all worker handles,
+      # including completed ones. No cleanup/PG close until all are known
+      # quiescent; uncertain COMMIT stays HOLD even after a late join.
+      LabObservation.new(reason: reason, worker_handles: threads,
+                         connections: connections)
+    end
+
     private
+
+    def idle_connection?(connection)
+      defined?(PG::PQTRANS_IDLE) &&
+        connection.respond_to?(:transaction_status) &&
+        connection.transaction_status == PG::PQTRANS_IDLE
+    rescue StandardError
+      false
+    end
 
     def writer_session?(writer)
       rowset = writer.exec("SELECT current_user AS role_name")
