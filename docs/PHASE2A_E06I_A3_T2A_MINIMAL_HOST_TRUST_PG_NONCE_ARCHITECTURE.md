@@ -55,6 +55,8 @@
 
 ## 3. 将来の発行・読出し・検証の境界（すべて未実装）
 
+**Verifierにwireが届いた後の実行順序は必ず G0 → G1 → G2 → G3 → G4 → G5 → G6 → G7。** G0で元wireのサイズ・strict JSON/JOSE・上限を検査してPASSした後にのみ、G1のHost trust/nonce正本参照へ進む。G0失敗時に正本照会やG1の到達成功を記録しない。以下の登録・Checkout確定・Challenge発行は**検証前のHost内部準備**であり、G0より先にVerifierがG1を実行する意味ではない。
+
 1. **管理者による登録（別経路）:** 鍵thumbprint、署名アルゴリズム、使用tenantと用途、profile、別々のkey/policy失効状態、有限な期限を承認・版管理する。古いrevoked版へrollbackして受理しない。独立根拠がなければHOLD。
 2. **Checkout確定:** Hostが元のMerchant署名JWT**全バイト列**とCheckout三つ組、Buyer/Agent、revisionの結合を記録。JWT内部idからversionを推定しない。元バイトdigestの一致は**Hostが記録した元データの由来が認証されて初めて有用**。
 3. **Challenge発行:** Host管理のCSPRNGで生成→全域UNIQUE制約付き発行event/Challenge/Checkout関連を**同一原子的commit**として固定→commit確定後にChallengeを配布する、を候補とする。UNIQUE衝突時はその候補を発行せず新規乱数を検討。commit ACK不明では**未発行と推定せず**、回復確定まで停止する。発行済みnonceを後から別Checkoutへ再紐付けしない。
