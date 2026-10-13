@@ -93,10 +93,11 @@ module AP2E06IA3T2cNonceIssuanceWorker
     # for ordinary issuance or treat it as evidence of CSPRNG quality.
     # Even when INSERT commits, NO nonce is exposed through this method.
     def collision_probe_only!(connection:, context:, checkout_wire:, nonce:)
-      return hold("invalid_collision_probe_nonce") unless
-        nonce.is_a?(String) && nonce.ascii_only? &&
-        nonce.match?(/\A[A-Za-z0-9_-]{43}\z/)
+      return hold("invalid_collision_probe_nonce") unless nonce.is_a?(String)
       frozen_nonce = nonce.dup.freeze
+      return hold("invalid_collision_probe_nonce") unless
+        frozen_nonce.ascii_only? &&
+        frozen_nonce.match?(/\A[A-Za-z0-9_-]{43}\z/)
       insert_synthetic_lab!(
         connection: connection, context: context, checkout_wire: checkout_wire,
         nonce: frozen_nonce, disclose_after_commit: false
@@ -109,14 +110,22 @@ module AP2E06IA3T2cNonceIssuanceWorker
 
     def insert_synthetic_lab!(connection:, context:, checkout_wire:,
                               nonce:, disclose_after_commit:)
-      return hold("synthetic_context_invalid") unless valid_context?(context)
+      return hold("synthetic_context_invalid") unless context.is_a?(Hash)
+      # Detach the whole caller-owned mapping and every nested String before
+      # reading/checking it. Passing a Hash#dup with shared mutable values
+      # creates a time-of-check/time-of-use window across the DB transaction.
+      claimed = context.each_with_object({}) do |(key, value), detached|
+        k = key.is_a?(String) ? key.dup.freeze : key
+        v = value.is_a?(String) ? value.dup.freeze : value
+        detached[k] = v
+      end.freeze
+      return hold("synthetic_context_invalid") unless valid_context?(claimed)
       return hold("original_checkout_wire_invalid") unless checkout_wire.is_a?(String)
 
       wire = checkout_wire.dup.freeze
       return hold("original_checkout_wire_bounds") unless
         wire.ascii_only? && wire.bytesize.between?(1, MAX_CHECKOUT_WIRE) &&
         wire.count(".") == 2
-      claimed = context.dup.freeze
       return hold("synthetic_writer_role_or_primary_unverified") unless
         restricted_lab_writer?(connection)
 
