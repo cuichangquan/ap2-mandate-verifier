@@ -36,8 +36,8 @@ module AP2E06IA3T2cNonceIssuanceWorker
       issued_at, expires_at, issuance_xid, recorded_at
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8, $9,
-      $10, $11, $12, to_timestamp($13::double precision),
-      to_timestamp($14::double precision),
+      $10, $11, $12, pg_catalog.to_timestamp($13::double precision),
+      pg_catalog.to_timestamp($14::double precision),
       pg_catalog.pg_current_xact_id()::text,
       pg_catalog.transaction_timestamp()
     )
@@ -68,6 +68,10 @@ module AP2E06IA3T2cNonceIssuanceWorker
 
     def commit_acknowledged?
       @outcome == :local_commit_acknowledged
+    end
+
+    def nonce_conflict_rolled_back?
+      @outcome == :local_nonce_unique_conflict_rolled_back
     end
 
     def authoritative?
@@ -210,7 +214,18 @@ module AP2E06IA3T2cNonceIssuanceWorker
         # the other worker attempts its conflicting INSERT. A hook
         # failure or CANCEL must raise -> ROLLBACK/HOLD, never commit.
         lab_probe_hook.call(:before_insert) if lab_probe_hook && !disclose_after_commit
-        insert = connection.exec_params(INSERT_SQL, args)
+        insert = begin
+          connection.exec_params(INSERT_SQL, args)
+        rescue StandardError => error
+          # Only PG02's expected nonce constraint SQLSTATE 23505, followed
+          # by an acknowledged ROLLBACK and an IDLE libpq session, is a
+          # known collision. Any other 23505/transport/rollback ambiguity
+          # remains a quarantined HOLD.
+          if !disclose_after_commit && expected_nonce_collision?(error)
+            return known_nonce_collision_rollback_only(connection)
+          end
+          raise
+        end
         return hold_with_rollback(connection, "insert_rowcount_unknown") unless
           insert.cmd_tuples == 1
 
@@ -244,6 +259,36 @@ module AP2E06IA3T2cNonceIssuanceWorker
         hold("transaction_or_commit_outcome_uncertain_quarantine_stop",
              connections: [connection])
       end
+    end
+
+    # Must be an actual PG constraint violation from the *nonce* unique
+    # constraint, not another index, auxiliary table, or user exception.
+    def expected_nonce_collision?(error)
+      return false unless defined?(PG::Result::PG_DIAG_SQLSTATE) &&
+        defined?(PG::Result::PG_DIAG_CONSTRAINT_NAME) &&
+        error.respond_to?(:result) && error.result
+      diagnostics = error.result
+      diagnostics.error_field(PG::Result::PG_DIAG_SQLSTATE) == "23505" &&
+        diagnostics.error_field(PG::Result::PG_DIAG_CONSTRAINT_NAME) ==
+          "a3_t2c_global_nonce_unique"
+    rescue StandardError
+      false
+    end
+
+    def known_nonce_collision_rollback_only(connection)
+      result = connection.exec("ROLLBACK")
+      unless result.respond_to?(:cmd_status) &&
+             result.cmd_status == "ROLLBACK" && idle_connection?(connection)
+        return hold("nonce_collision_rollback_not_proven_quarantine_stop",
+                    connections: [connection])
+      end
+      LabObservation.new(
+        reason: "synthetic_nonce_unique_conflict_rollback_ack_only",
+        outcome: :local_nonce_unique_conflict_rolled_back
+      )
+    rescue StandardError
+      hold("nonce_collision_rollback_unknown_quarantine_stop",
+           connections: [connection])
     end
 
     def valid_context?(context)
