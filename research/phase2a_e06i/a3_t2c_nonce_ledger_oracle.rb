@@ -16,14 +16,20 @@ module AP2E06IA3T2cNonceLedgerOracle
   # Data is never authoritative evidence. A nonmatching ACL/index means
   # HOLD/STOP. No positive G1 capability is representable.
   class Observation
-    attr_reader :status, :reason, :catalog_checked, :event
+    attr_reader :status, :reason, :catalog_checked, :event, :connections
 
-    def initialize(reason:, catalog_checked: false, event: nil)
+    def initialize(reason:, catalog_checked: false, event: nil, connections: [])
       @status = "HOLD".freeze
       @reason = reason.dup.freeze
       @catalog_checked = catalog_checked
       @event = event&.transform_values { |v| v.is_a?(String) ? v.dup.freeze : v }&.freeze
+      # Preserve a physical session on any uncertain SQL transaction ACK.
+      @connections = connections.dup.freeze
       freeze
+    end
+
+    def pending_worker_cleanup?
+      !@connections.empty?
     end
 
     def authoritative?
@@ -130,6 +136,12 @@ module AP2E06IA3T2cNonceLedgerOracle
   PG02_WRITE_SHAPE_SQL = <<~SQL.freeze
     SELECT (
       t.relkind = 'r'
+      AND t.relam = (
+        SELECT am.oid FROM pg_catalog.pg_am am
+         WHERE am.amname = 'heap' AND am.amtype = 't'
+           AND am.amhandler =
+             'pg_catalog.heap_tableam_handler'::regproc
+      )
       AND t.relpersistence = 'p'
       AND NOT t.relispartition
       AND NOT t.relrowsecurity
@@ -400,7 +412,7 @@ module AP2E06IA3T2cNonceLedgerOracle
       # Never inherit a REPEATABLE READ snapshot established by a caller:
       # stale catalogs can falsely credit a current unrelated lock wait.
       return false unless idle_reader_connection?(reader)
-      return false unless reader_session?(reader)
+      return false unless reader_session?(reader) == true
       return false unless idle_reader_connection?(reader)
       return false unless [waiting_pid, holding_pid].all? { |pid|
         pid.is_a?(Integer) && pid.between?(1, 2_147_483_647)
@@ -463,25 +475,27 @@ module AP2E06IA3T2cNonceLedgerOracle
     # Note: a catalog check alone cannot prove denied mutation under writer
     # credentials; PG03 must *also* attempt it and inspect SQLSTATE 42501.
     def inspect_catalog_only(reader:)
-      return hold("reader_role_unverified") unless reader_session?(reader)
+      session = reader_session?(reader)
+      return session if session.is_a?(Observation)
+      return hold("reader_role_unverified") unless session == true
 
       scoped = with_safe_reader_transaction(reader) do
-        return hold("exact_unique_index_set_unverified") unless
+        next hold("exact_unique_index_set_unverified") unless
           unique_index_shape?(reader)
-        return hold("pg02_write_side_effects_unverified") unless
+        next hold("pg02_write_side_effects_unverified") unless
           pg02_write_shape?(reader)
-        return hold("approved_check_expressions_unverified") unless
+        next hold("approved_check_expressions_unverified") unless
           pg02_check_expressions_shape?(reader)
-        return hold("approved_insert_column_shape_unverified") unless
+        next hold("approved_insert_column_shape_unverified") unless
           pg02_insert_columns_shape?(reader)
 
         role_result = reader.exec_params(ROLE_SQL, [WRITER_ROLE])
-        return hold("writer_acl_unverified") unless singleton_row(role_result)
+        next hold("writer_acl_unverified") unless singleton_row(role_result)
 
         row = role_result[0]
         yes = ->(name) { row[name] == "t" }
         no = ->(name) { row[name] == "f" }
-        return hold("writer_privilege_escape_or_append_only_not_proven") unless
+        next hold("writer_privilege_escape_or_append_only_not_proven") unless
           row["writer_name"] == WRITER_ROLE &&
           yes.call("rolcanlogin") && yes.call("can_insert") &&
           row["settable_other_roles"] == "0" &&
@@ -508,16 +522,18 @@ module AP2E06IA3T2cNonceLedgerOracle
     # snapshots from this read-only role, compare the FULL immutable bindings
     # after denied mutations, and fail if either snapshot was unavailable.
     def inspect_issuance_only(reader:, issuance_ref:)
-      return hold("reader_role_unverified") unless reader_session?(reader)
+      session = reader_session?(reader)
+      return session if session.is_a?(Observation)
+      return hold("reader_role_unverified") unless session == true
       scoped = with_safe_reader_transaction(reader) do
-        return hold("invalid_synthetic_issuance_ref") unless
+        next hold("invalid_synthetic_issuance_ref") unless
           issuance_ref.is_a?(String) && issuance_ref.ascii_only? &&
           issuance_ref.bytesize.between?(1, 256)
 
         result = reader.exec_params(EVENT_SQL, [issuance_ref.dup.freeze])
-        return hold("issuance_not_uniquely_readable") unless singleton_row(result)
+        next hold("issuance_not_uniquely_readable") unless singleton_row(result)
         row = result[0]
-        return hold("event_not_bounded") unless row.is_a?(Hash) &&
+        next hold("event_not_bounded") unless row.is_a?(Hash) &&
           row.keys.sort == %w[
             issuance_ref nonce_sha256 challenge_ref host_verifier_domain
             aud agent_thumbprint buyer_account_ref tenant_id checkout_id
@@ -664,33 +680,33 @@ module AP2E06IA3T2cNonceLedgerOracle
       false
     end
 
-    # Each independent reader observation owns a fresh READ COMMITTED,
-    # READ ONLY transaction. SET LOCAL pins ALL catalog function, operator
-    # and type resolution to PG16 built-ins before any unqualified query is
-    # parsed; pg_temp comes LAST (it must not shadow catalog type names).
-    # Refuse caller-owned transactions and unknown BEGIN/SET/COMMIT ACKs.
-    # On uncertainty return nil, never a positive catalog/nonce witness.
-    # The supervisor owns quarantining any reader connection with a lost ACK.
+    # An independent reader observation owns a fresh, trusted-path READ
+    # ONLY transaction. An uncertain BEGIN/SET/COMMIT (including failed or
+    # unacknowledged cleanup ROLLBACK) *retains the actual reader socket*.
+    # Ordinary negative observations and quarantined sockets are distinct.
     def with_safe_reader_transaction(reader)
-      return nil unless idle_reader_connection?(reader)
+      return quarantine_reader(reader, "reader_prior_transaction_unverified_stop") unless
+        idle_reader_connection?(reader)
 
       begun = false
       committed = false
       begin
         begun = true
         ack = reader.exec("BEGIN ISOLATION LEVEL READ COMMITTED READ ONLY")
-        return nil unless ack.respond_to?(:cmd_status) && ack.cmd_status == "BEGIN"
-
-        safe_path = reader.exec("SET LOCAL search_path = pg_catalog, pg_temp")
-        return nil unless safe_path.respond_to?(:cmd_status) &&
-          safe_path.cmd_status == "SET"
-
-        value = yield
-        finish = reader.exec("COMMIT")
-        committed = finish.respond_to?(:cmd_status) &&
-                    finish.cmd_status == "COMMIT" &&
-                    idle_reader_connection?(reader)
-        committed ? value : nil
+        if ack.respond_to?(:cmd_status) && ack.cmd_status == "BEGIN"
+          safe_path = reader.exec("SET LOCAL search_path = pg_catalog, pg_temp")
+          if safe_path.respond_to?(:cmd_status) && safe_path.cmd_status == "SET"
+            value = yield
+            finish = reader.exec("COMMIT")
+            committed = finish.respond_to?(:cmd_status) &&
+                        finish.cmd_status == "COMMIT" &&
+                        idle_reader_connection?(reader)
+            return value if committed
+          end
+        end
+      rescue StandardError
+        # Never mask an unfinished connection as an ordinary negative.
+        nil
       ensure
         if begun && !committed
           begin
@@ -700,8 +716,11 @@ module AP2E06IA3T2cNonceLedgerOracle
           end
         end
       end
-    rescue StandardError
-      nil
+      quarantine_reader(reader, "reader_transaction_or_commit_ack_unverified_stop")
+    end
+
+    def quarantine_reader(reader, reason)
+      Observation.new(reason: reason, connections: [reader])
     end
 
     def reader_session?(reader)
@@ -723,7 +742,7 @@ module AP2E06IA3T2cNonceLedgerOracle
                  pg_catalog.has_table_privilege(current_user,
                    'a3_t2c.nonce_issuance_history', 'TRUNCATE') AS may_truncate
         SQL
-        return false unless singleton_row(res) &&
+        next false unless singleton_row(res) &&
           res[0]["role_name"] == READER_ROLE &&
           res[0]["login_role"] == READER_ROLE &&
           authenticated_connection_user?(reader, READER_ROLE) &&
@@ -737,7 +756,7 @@ module AP2E06IA3T2cNonceLedgerOracle
         # inherited rights and transitive PG16 SET ROLE membership, including
         # a reader that can assume an entirely different privileged identity.
         roles = reader.exec_params(ROLE_SQL, [READER_ROLE])
-        return false unless singleton_row(roles)
+        next false unless singleton_row(roles)
         acl = roles[0]
         acl["writer_name"] == READER_ROLE &&
           acl["rolcanlogin"] == "t" && acl["can_select"] == "t" &&
