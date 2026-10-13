@@ -333,6 +333,8 @@ module AP2E06IA3T2cNonceIssuanceWorker
       rows = connection.exec(<<~SQL)
         SELECT current_user AS role_name, session_user AS login_role,
                pg_catalog.pg_is_in_recovery() AS replica,
+               pg_catalog.has_schema_privilege(current_user, 'a3_t2c',
+                 'USAGE') AS may_use_schema,
                pg_catalog.has_table_privilege(current_user,
                  'a3_t2c.nonce_issuance_history', 'INSERT') AS may_insert,
                pg_catalog.has_table_privilege(current_user,
@@ -348,6 +350,7 @@ module AP2E06IA3T2cNonceIssuanceWorker
         row["login_role"] == LAB_WRITER_ROLE &&
         authenticated_connection_user?(connection, LAB_WRITER_ROLE) &&
         row["replica"] == "f" &&
+        row["may_use_schema"] == "t" &&
         row["may_insert"] == "t" &&
         %w[may_update may_delete may_truncate].all? { |k| row[k] == "f" }
     rescue StandardError
