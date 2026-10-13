@@ -29,22 +29,27 @@ module AP2E06IA3T2cNonceScenarios
 
   TABLE = "a3_t2c.nonce_issuance_history"
 
-  # Every mutation attempt is within a separate SAVEPOINT and rolled back;
-  # a successful mutation attempt is a RED/STOP finding even if the outer
-  # transaction is later rolled back. It must NEVER be tested on real data.
+  # PG03 checks mutation PRIVILEGES without ever reading a protected row:
+  # all UPDATE/DELETE probes use a literal FALSE predicate and a *synthetic*
+  # bound parameter, so a writer deliberately lacking SELECT cannot produce
+  # a misleading SQLSTATE 42501 for the WHERE issuance_ref column. PostgreSQL
+  # checks UPDATE/DELETE privileges even when the statement touches zero rows.
+  # Each attempt is still wrapped in a SAVEPOINT and rollback; any statement
+  # unexpectedly allowed to execute is RED/STOP regardless of affected rows.
+  # These checks must NEVER be tested on real data.
   # Source cannot change whether running DB is actually an approved lab.
   # Caller supplied credentials must belong to the actual issuance writer.
   PG03_FORBIDDEN_MUTATIONS = [
     ["update_nonce_digest",
-     "UPDATE #{TABLE} SET nonce_sha256 = repeat('0', 64) WHERE issuance_ref = $1"],
+     "UPDATE #{TABLE} SET nonce_sha256 = repeat('0', 64) WHERE FALSE AND $1::pg_catalog.text IS NOT NULL"],
     ["update_challenge",
-     "UPDATE #{TABLE} SET challenge_ref = 'a3_t2c_changed_ref' WHERE issuance_ref = $1"],
+     "UPDATE #{TABLE} SET challenge_ref = 'a3_t2c_changed_ref' WHERE FALSE AND $1::pg_catalog.text IS NOT NULL"],
     ["update_checkout",
-     "UPDATE #{TABLE} SET checkout_id = 'a3_t2c_changed_checkout' WHERE issuance_ref = $1"],
+     "UPDATE #{TABLE} SET checkout_id = 'a3_t2c_changed_checkout' WHERE FALSE AND $1::pg_catalog.text IS NOT NULL"],
     ["update_checkout_jwt_digest",
-     "UPDATE #{TABLE} SET merchant_checkout_sha256 = repeat('0', 64) WHERE issuance_ref = $1"],
+     "UPDATE #{TABLE} SET merchant_checkout_sha256 = repeat('0', 64) WHERE FALSE AND $1::pg_catalog.text IS NOT NULL"],
     ["delete_issuance",
-     "DELETE FROM #{TABLE} WHERE issuance_ref = $1"],
+     "DELETE FROM #{TABLE} WHERE FALSE AND $1::pg_catalog.text IS NOT NULL"],
     ["truncate_history", "TRUNCATE TABLE #{TABLE}"]
   ].map { |name, sql| [name.freeze, sql.freeze].freeze }.freeze
 
