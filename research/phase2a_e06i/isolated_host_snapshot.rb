@@ -99,18 +99,21 @@ module AP2E06IHostSnapshot
       # ASCII, digest and JSON parser check MUST use the same frozen copy.
       # Validating the caller-owned String before dup creates a TOCTOU
       # resource bypass if another thread replaces the bytes in between.
-      halt!("REJECT", "invalid_host_input") unless host_json.is_a?(String)
+      halt!("REJECT", "invalid_host_input") unless
+        host_json.is_a?(String) && expected_sha256.is_a?(String)
       immutable_wire = host_json.dup.freeze
+      # Detach the expected digest as well. Otherwise a caller thread can
+      # mutate it between format validation and the equality comparison.
+      immutable_expected_sha256 = expected_sha256.dup.freeze
       halt!("REJECT", "invalid_host_input") unless
         immutable_wire.ascii_only? &&
         immutable_wire.bytesize.between?(1, MAX_CONTEXT_BYTES) &&
-        expected_sha256.is_a?(String) &&
-        expected_sha256.match?(/\A[0-9a-f]{64}\z/) &&
+        immutable_expected_sha256.match?(/\A[0-9a-f]{64}\z/) &&
         epoch?(verified_at)
 
       actual_sha256 = Digest::SHA256.hexdigest(immutable_wire.b)
       halt!("HOLD", "untrusted_host_snapshot_digest") unless
-        fixed_equal?(actual_sha256, expected_sha256)
+        fixed_equal?(actual_sha256, immutable_expected_sha256)
 
       parsed = AP2StrictJSONResearch.parse!(immutable_wire)
       check_bounds!(parsed)
