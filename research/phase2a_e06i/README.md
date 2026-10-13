@@ -3,11 +3,14 @@
 Status: **CODE WRITTEN / NOT RUN / G4–G7 HOLD / NO CI APPROVAL / PHASE2-B HOLD**.
 
 **Dependency runtime guard:** `integrated_probe.rb` returns `HOLD` before
-G0 when the loaded Ruby `jwt` gem is not exactly `3.3.0`. The isolated
-Root closure also rejects direct calls under unsupported `jwt` versions.
-The Schema-only gate independently pins `json_schemer` to `2.5.0`.
-Missing/mismatched libraries are **verification unavailable**, not a signed
-wire or signature-invalid verdict. These behaviors are **NOT RUN**.
+G0 if pinned Ruby `jwt 3.3.0` is missing or a different version is already
+activated. The isolated Root closure lazily activates exactly `jwt 3.3.0`;
+its direct entrypoint also rejects absent/unsupported versions. The Schema-only
+gate loads exactly `json_schemer 2.5.0` **in its constructor** and returns
+`verification_unavailable` if missing or a mismatched version is activated.
+Neither implementation loads optional gems at module-import time. Thus
+missing/mismatched libraries are **verification unavailable**, not a
+signed-wire signature-invalid verdict. These behaviors are **NOT RUN**.
 
 
 This directory is the first **approval A only** implementation slice for
