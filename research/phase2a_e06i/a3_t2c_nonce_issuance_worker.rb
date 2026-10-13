@@ -231,7 +231,7 @@ module AP2E06IA3T2cNonceIssuanceWorker
 
     def restricted_lab_writer?(connection)
       rows = connection.exec(<<~SQL)
-        SELECT current_user AS role_name,
+        SELECT current_user AS role_name, session_user AS login_role,
                pg_is_in_recovery() AS replica,
                has_table_privilege(current_user,
                  'a3_t2c.nonce_issuance_history', 'INSERT') AS may_insert,
@@ -244,7 +244,9 @@ module AP2E06IA3T2cNonceIssuanceWorker
       SQL
       return false unless rows.respond_to?(:ntuples) && rows.ntuples == 1
       row = rows[0]
-      row["role_name"] == LAB_WRITER_ROLE && row["replica"] == "f" &&
+      row["role_name"] == LAB_WRITER_ROLE &&
+        row["login_role"] == LAB_WRITER_ROLE &&
+        row["replica"] == "f" &&
         row["may_insert"] == "t" &&
         %w[may_update may_delete may_truncate].all? { |k| row[k] == "f" }
     rescue StandardError
