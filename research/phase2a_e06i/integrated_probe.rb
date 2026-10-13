@@ -35,6 +35,16 @@ module AP2E06IPartialProbe
     def observe(policy_json:, case_data:, policy_digest:)
       current = STAGES.fetch(0)
       reached = []
+      # Dependency semantics are part of the bounded E06-I research profile.
+      # Never emit successful G0/G1/G2/G3 stages under unreviewed jwt versions.
+      jwt_spec = Gem.loaded_specs["jwt"]
+      unless jwt_spec && jwt_spec.version.to_s == "3.3.0"
+        return {
+          "status" => "HOLD", "first_reject_stage" => current,
+          "reason" => "verification_unavailable:jwt_version",
+          "completed_stages" => reached.freeze, "evidence" => nil
+        }
+      end
       raise Halt, "invalid_input" unless case_data.is_a?(Hash) &&
         case_data.keys.sort == %w[candidate root terminal]
       root, terminal, candidate = case_data.values_at("root", "terminal", "candidate")
