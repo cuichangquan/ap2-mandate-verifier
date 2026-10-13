@@ -62,7 +62,7 @@
 | --- | --- | --- |
 | **E06-I-P / E06-P** | 正しい合成A FULL、固定3 Disclosure・Root/Agent/Merchant真正署名・Host正本一致 | G0–G6全到達（Ruby G5でOpen/Closed/ネストMerchantの固定Schema判定）→G7 `VerifiedEvidence`候補のみ。本番ALLOWではない |
 | **E06-I-N1 / N1** | A真正署名Rootの許可Merchant/SKU権限slotを未開示にし、元提示wireに対応するAgent Terminalは真正に再署名 | **G3 `incomplete_disclosure`**。O1/O3原signed graphの有効digest未解決が必要。配列件数・Schemaでの先行拒否をG3証拠としない |
-| **E06-I-N2 / N2** | A真正署名・開示済みだがIssuer署名original Rootに**未知SD commitment path**を1箇所追加し、独立graphを監査 | **G3 `unsupported_signed_profile`**。既存E01-SのS3拒否とは別に、統合候補のG3到達と原署名全文走査を記録。decoy/未知object `_sd`の網羅は**別途残余** |
+| **E06-I-N2 / N2** | A本人の真正Issuer署名と対応する本物のTerminal/Merchant署名で、**original signed Rootだけに未承認SD commitment pathを1箇所追加**。許可済みDisclosureをすべて解決後の**Openは独立O4でpinned公式Open Schema VALID**、Merchant nested refもVALID、Closedもpinned公式Schema VALID。Openの権限・制約値は正常Pと同一であることを独立比較する | **G3 `unsupported_signed_profile`**。O1署名VALID＋O3原Root graphに未知commitment存在＋**O4 resolved Open Schema VALIDが必須**（schema-invalidならN2不成立・`N2_ORACLE_INVALID`/HOLD）。**「可視OpenはSchema-validだがoriginal signed graphは未承認」**という差を証明し、同一Ruby経路のG3到達とfirst rejectを記録。既存E01-S S3だけの拒否は代用不可。decoy/unknown object `_sd`全網羅は別Gate |
 | **E06-I-N3O / N3 Open** | G0–G4の肯定前提を満たすよう発行した署名済み公式Open Schema-invalid型/必須 | **G5 `invalid_open_schema`に実到達した場合のみ**原因を記録。早期固定shape拒否なら`G5_CAUSAL_NEGATIVE_NOT_PROVEN` |
 | **E06-I-N3C / N3 Closed** | G0–G4を通過可能な署名済み公式Closed Schema-invalid型/必須 | **G5 `invalid_closed_schema`に実到達した場合のみ**。G4が先にClosed型/時刻/hashを消費する場合はその事実を記録し、G5の負例PASSと誤称しない |
 | **E06-I-N4 / N4** | SchemaとRoot/Terminal/Merchant署名はVALID、Host期待Checkout id/total/merchantが不一致 | **G6 `checkout_context_mismatch`または`constraint_violation`**。G5 VALIDはHost認可の代用不可 |
@@ -70,17 +70,17 @@
 | **E06-I-N5M / N5 Merchant** | A Root/Agent真正・G3完全性VALID、Merchant Checkout JWT署名を破壊（正しいHost公開鍵に対しINVALID） | **G4 `invalid_checkout_signature`**。原JWT一致/hashとの因果差もO2で記録 |
 | **E06-I-N6B / N6 未登録Issuer** | 未登録Bによる**B公開鍵でVALIDな独立署名**、Host事前固定Aのみ | **G1 `untrusted_issuer`**。G1拒否時にG2成功を主張しない。E01-S IP02の過去結果で新候補の到達を代用しない |
 | **E06-I-N6T / N6 信頼期限** | A自身の署名は独立VALIDだがHost固定Issuer policyが期限切れ/disabled（発行物に選択権なし） | **G1 `incomplete_context/untrusted_issuer`**。Host policy失効をIssuer署名無効と誤称しない |
-| **E06-I-N7J / N7 G0構文** | 二重JSON key（escape復元後を含む）または非対応JOSEを持つ**未認証wire** | **G0 `ambiguous_signed_json/unsupported_jose_header`**。この1代表例では全G0 parser攻撃面を実証しない |
+| **E06-I-N7J / N7 G0構文** | **必須・唯一の統合シナリオは、Root compact JWSの署名対象payloadにescape復元後同一になるJSON key重複を含む未認証wire**（例：`"alg"`と`"\\u0061lg"`のような等価keyならJOSE protected headerでも可）。内容を既存の正しいRootに置き換えるのではなく、厳格parserで重複を検出させる。非対応JOSEは**別の単体テストのみ**でこのケースの代用不可 | **G0 `ambiguous_signed_json`がfirst rejectで必須**。G2署名が無効でもよいが、G0の前に署名検証/緩いparseへ進んだ結果のrejectは不合格。original raw JSONでescape後の同名衝突を独立オラクルで示す。1代表例だけで全parser攻撃面は証明しない |
 | **E06-I-N7R / N7 G0資源** | 事前に固定したraw wire / case総byte cap超過（失敗自体に真正署名は不要） | **G0 `resource_limit`**。メモリ確保後・署名処理後の拒否はG0限界実証としない |
 | **E06-I-N7S / N7 G5 Schema unavailable** | 正しいA FULL提示を使い回し、固定Closed/Merchant Schema原本またはallowlist `$ref`の読み込みを意図的に不可にする | **G5 `verification_unavailable`**。Network fallback禁止。原本loadがG0で失敗する実装なら到達stageをその通り記し、G5因果はHOLD |
 
 **13ケースを予算内で管理:** 同じ元A FULL wire、同一固定Host snapshotのreadonly再利用が可能なものは使い回す。各caseの入力/fixture数・最大bytes・子プロセスhard timeoutを事前チェックし、**13ケース以内・1 run / 1 job / 10分**で実施できないなら自動増枠せず `STOP/REPLAN`。G0負例は未認証入力であるためO1署名成功を要求しない。N6BのB署名はB公開鍵で独立に検証してよいが、Host trust鍵として昇格しない。
 
-**Schema gateの単体アサーション（上記13ケースと別の単体テスト・統合因果の代用不可）:** Open/Closedの正常と必須/型不正、Merchant `id/name`欠落、相対`$ref`未解決、未知ref、外部HTTP禁止、pinned原本blob/hash相違、strict parserの別JSON階層でのduplicate-key。単体テストを`E06-P/N1–N7`の証拠に流用しない。
+**Schema gateの単体アサーション（上記13ケースと別の単体テスト・統合因果の代用不可）:** Open/Closedの正常と必須/型不正、Merchant `id/name`欠落、相対`$ref`未解決、未知ref、外部HTTP禁止、pinned原本blob/hash相違、strict parserの別JSON階層でのduplicate-key、および非対応JOSE header。単体テストを`E06-P/N1–N7`の証拠に流用しない。**統合N7Jでは厳格な重複key検査が必須で、JOSE拒否のみでは代用不可。**
 
 **検査順序と因果の留保:** 現行DC04/P1-2/P1-3の固定shapeが、公式Schema INVALIDより先に拒否する可能性がある。本来拒否すべき形状を通すよう緩めることは禁止。G4が必要とする暗号・hash・署名入力検査以外のsemantic/schema判定をG5/G6へ安全に分離できない場合、**N3O/N3Cの因果は未証明のままHOLD**。未知pathが合成Host S3で先行拒否されればN2の統合G3とは呼ばない。
 
-**未網羅を明示:** 13代表シナリオだけではN2の全decoy/unknown object `_sd`/重複digest/余剰Disclosure、N6のpolicy rollback/二重一致/rotation/revocation、N7の全JOSE・複数JSON階層/clock/CPU上限は証明しない。これらは**E03/E05/E07の残余GateとしてOPEN**。将来の `E06I_INTEGRATED_LIMITED_OBSERVED` は**13ケースのstage確認済み範囲のみ**に制限する。どれかの代表ケースがfirst rejecting stageに到達できない場合、未到達のG0/G1/G3/G5/G6に関する統合検査保証は `UNPROVEN` のまま。親E06 technical gate全体・Phase 2-A exit/Phase 2-BをPASSさせない。
+**未網羅を明示:** N2のO4による**公式Open Schema VALID**を独立証明できない場合、またはN7Jで**escape後重複JSON keyのG0到達**を観測できない場合は、該当代表シナリオ自体が未達である。13代表シナリオだけではN2の全decoy/unknown object `_sd`/重複digest/余剰Disclosure、N6のpolicy rollback/二重一致/rotation/revocation、N7の全JOSE・複数JSON階層/clock/CPU上限は証明しない。これらは**E03/E05/E07の残余GateとしてOPEN**。将来の `E06I_INTEGRATED_LIMITED_OBSERVED` は**13ケースのstage確認済み範囲のみ**に制限する。どれかの代表ケースがfirst rejecting stageに到達できない場合、未到達のG0/G1/G3/G5/G6に関する統合検査保証は `UNPROVEN` のまま。親E06 technical gate全体・Phase 2-A exit/Phase 2-BをPASSさせない。
 
 ## 5. 上限・実行権限（将来の別承認に必要な提案値）
 
