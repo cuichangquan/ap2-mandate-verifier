@@ -51,8 +51,10 @@ The existing `isolated_host_snapshot.rb` now also provides
 `inspect_untrusted_sources_only!(...)` as a **separate diagnostic**.
 It checks the A2 Host snapshot candidate once, then feeds **the same frozen
 candidate and Host `verified_at`** to both A3-H1 Host enrollment and nonce
-issuance source claim inspectors. Source/ledger mismatches are rejected (or
-unavailable records held) by the respective narrow inspector; there is
+issuance source claim inspectors. A HOLD from one inspector is deferred
+until the other has been checked; a definitive REJECT from either takes
+precedence over unknown or missing context. Source/ledger mismatches are
+rejected (or unavailable records held) by the respective inspector; there is
 **no authenticated Host root, durable Host-wide issuance history or CAS**.
 When every *self-reported* record agrees, the result is still
 `CombinedClaim(status=HOLD,g1_admissible?=false,
