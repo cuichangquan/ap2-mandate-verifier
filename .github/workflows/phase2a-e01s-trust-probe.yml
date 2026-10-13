@@ -1,23 +1,26 @@
-name: Phase 2-A E01-S Synthetic Host Issuer Trust (3 cases research ONLY)
+name: Phase 2-A E01-S Archived One-Time Synthetic Host Probe (DISABLED)
 
+# E01-S's two authorized executions are already completed:
+# https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38327291069
+# https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/38328627077
+#
+# ARCHIVED / INERT. Manual dispatch exists for viewing the setup only.
+# The job condition below is unconditionally FALSE. New experiment runs
+# require separately approved workflow changes, independent review and caps.
+# Historical GitHub workflow revisions can be manually rerun; this revision
+# cannot retroactively forbid that. Owner must not rerun historical runs.
 on:
-  pull_request:
-    # Single explicit owner-approved follow-up is triggered by moving PR #68
-    # from Draft to Ready exactly once; no opened/synchronize/push dispatch.
-    types: [ready_for_review]
-    paths:
-      - "research/phase2a_e01s/**"
-      - ".github/workflows/phase2a-e01s-trust-probe.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   e01s-one-authorized-run:
-    # Only authorized PR #68 on this repo, with a first attempt.
-    # Old workflow runs are immutable and can still be manually rerun using
-    # their old unpatched YAML: prohibit that by project-owner procedure.
-    if: github.run_attempt == 1 && github.event.pull_request.number == 68 && github.event.action == 'ready_for_review' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'research/e01s-three-case-issuer-trust'
+    # No automated or manually dispatched execution at this HEAD.
+    # Preserve the exact old investigation commands solely for provenance.
+    # Explicit separate future approval + code review required to re-enable.
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
