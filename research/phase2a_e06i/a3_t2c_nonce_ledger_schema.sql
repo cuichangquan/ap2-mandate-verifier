@@ -194,6 +194,7 @@ BEGIN
        OR pg_catalog.has_table_privilege(lab_role,
          'a3_t2c.nonce_issuance_history', 'SELECT') IS DISTINCT FROM should_select
        OR pg_catalog.has_schema_privilege(lab_role, 'a3_t2c', 'CREATE')
+       OR NOT pg_catalog.has_schema_privilege(lab_role, 'a3_t2c', 'USAGE')
        OR NOT (SELECT rolcanlogin FROM pg_catalog.pg_roles WHERE rolname = lab_role)
     THEN
       RAISE EXCEPTION 'A3-T2c role ACL shape invalid: %', lab_role;
