@@ -163,6 +163,55 @@ module AP2E06IA3T2cNonceLedgerOracle
      WHERE t.oid = 'a3_t2c.nonce_issuance_history'::regclass
   SQL
 
+  # PG02 must not credit transaction-ID waits created by arbitrary
+  # omitted-column defaults or generated expressions. The worker supplies
+  # every approved column explicitly; reject ANY extra/reordered/dropped
+  # column, changed type, identity/generated column, or default on a field
+  # that the approved source declared without one. Existing approved defaults
+  # for fields 15/16 are never evaluated by the explicit worker INSERT.
+  PG02_INSERT_COLUMNS_SQL = <<~SQL.freeze
+    WITH expected(attnum, attname, formatted_type) AS (
+      VALUES
+        (1, 'issuance_ref', 'text'),
+        (2, 'nonce_sha256', 'character(64)'),
+        (3, 'challenge_ref', 'text'),
+        (4, 'host_verifier_domain', 'text'),
+        (5, 'aud', 'text'),
+        (6, 'agent_thumbprint', 'text'),
+        (7, 'buyer_account_ref', 'text'),
+        (8, 'tenant_id', 'text'),
+        (9, 'checkout_id', 'text'),
+        (10, 'checkout_version', 'integer'),
+        (11, 'merchant_checkout_sha256', 'character(64)'),
+        (12, 'checkout_jwt_source_ref', 'text'),
+        (13, 'issued_at', 'timestamp with time zone'),
+        (14, 'expires_at', 'timestamp with time zone'),
+        (15, 'issuance_xid', 'text'),
+        (16, 'recorded_at', 'timestamp with time zone')
+    )
+    SELECT (
+      (SELECT COUNT(*)
+         FROM pg_catalog.pg_attribute a
+        WHERE a.attrelid = 'a3_t2c.nonce_issuance_history'::regclass
+          AND a.attnum > 0
+      ) = 16
+      AND NOT EXISTS (
+        SELECT 1 FROM expected e
+        LEFT JOIN pg_catalog.pg_attribute a
+          ON a.attrelid = 'a3_t2c.nonce_issuance_history'::regclass
+         AND a.attnum = e.attnum
+        WHERE a.attname IS DISTINCT FROM e.attname
+           OR pg_catalog.format_type(a.atttypid, a.atttypmod)
+                IS DISTINCT FROM e.formatted_type
+           OR a.attnotnull IS DISTINCT FROM true
+           OR a.attisdropped IS DISTINCT FROM false
+           OR a.attgenerated IS DISTINCT FROM ''
+           OR a.attidentity IS DISTINCT FROM ''
+           OR a.atthasdef IS DISTINCT FROM (e.attnum IN (15, 16))
+      )
+    ) AS exact_explicit_insert_columns
+  SQL
+
   # An independent reader checks the actual WRITER role's effective
   # privileges, including membership in table owner and privilege inheritance.
   # The writer session separately asserts current_user == WRITER_ROLE.
@@ -258,20 +307,58 @@ module AP2E06IA3T2cNonceLedgerOracle
     # connection, separate from both writer sessions. This bool is NOT an
     # authoritative Host evidence record and cannot be promoted to G1/G7.
     def pg02_lock_wait_observed_only?(reader:, waiting_pid:, holding_pid:)
+      # Never inherit a REPEATABLE READ snapshot established by a caller:
+      # stale catalogs can falsely credit a current unrelated lock wait.
+      return false unless idle_reader_connection?(reader)
       return false unless reader_session?(reader)
-      # Even a real transactionid lock wait can be caused by an unrelated
-      # UNIQUE index. Only the exact three-key schema makes this a nonce
-      # collision witness. No extra index may be present.
-      return false unless unique_index_shape?(reader)
-      return false unless pg02_write_shape?(reader)
+      return false unless idle_reader_connection?(reader)
       return false unless [waiting_pid, holding_pid].all? { |pid|
         pid.is_a?(Integer) && pid.between?(1, 2_147_483_647)
       } && waiting_pid != holding_pid
 
-      result = reader.exec_params(PG02_LOCK_WITNESS_SQL,
-                                  [waiting_pid, holding_pid])
-      singleton_row(result) &&
-        result[0]["unique_lock_wait_observed"] == "t"
+      # Own a fresh READ COMMITTED, READ ONLY scope. Every failed or
+      # uncertain BEGIN/COMMIT returns false; PG02 supervisor preserves
+      # the observer connection for quarantine when proof is unavailable.
+      begin_attempted = false
+      commit_acknowledged = false
+      begin
+        begin_attempted = true
+        began = reader.exec("BEGIN ISOLATION LEVEL READ COMMITTED READ ONLY")
+        return false unless began.respond_to?(:cmd_status) &&
+          began.cmd_status == "BEGIN"
+
+        # Even a real transactionid wait can come from a different index
+        # or executable column expression. All shapes must match.
+        shape_ok = unique_index_shape?(reader) &&
+                   pg02_write_shape?(reader) &&
+                   pg02_insert_columns_shape?(reader)
+        observed = false
+        if shape_ok
+          result = reader.exec_params(PG02_LOCK_WITNESS_SQL,
+                                      [waiting_pid, holding_pid])
+          observed = singleton_row(result) &&
+                     result[0]["unique_lock_wait_observed"] == "t"
+          # READ COMMITTED observes fresh snapshots per statement; reject
+          # a schema that changed while the lock was being witnessed.
+          observed &&= unique_index_shape?(reader) &&
+                      pg02_write_shape?(reader) &&
+                      pg02_insert_columns_shape?(reader)
+        end
+        ack = reader.exec("COMMIT")
+        commit_acknowledged = ack.respond_to?(:cmd_status) &&
+                              ack.cmd_status == "COMMIT"
+        observed && commit_acknowledged && idle_reader_connection?(reader)
+      ensure
+        # No Thread.kill, connection.close or blind reuse on unknown ACK.
+        # The caller's retained connection is a B-time cleanup obligation.
+        if begin_attempted && !commit_acknowledged
+          begin
+            reader.exec("ROLLBACK")
+          rescue StandardError
+            nil
+          end
+        end
+      end
     rescue StandardError
       false
     end
@@ -287,6 +374,8 @@ module AP2E06IA3T2cNonceLedgerOracle
         unique_index_shape?(reader)
       return hold("pg02_write_side_effects_unverified") unless
         pg02_write_shape?(reader)
+      return hold("approved_insert_column_shape_unverified") unless
+        pg02_insert_columns_shape?(reader)
 
       role_result = reader.exec_params(ROLE_SQL, [WRITER_ROLE])
       return hold("writer_acl_unverified") unless singleton_row(role_result)
@@ -358,6 +447,14 @@ module AP2E06IA3T2cNonceLedgerOracle
       false
     end
 
+    def pg02_insert_columns_shape?(reader)
+      res = reader.exec(PG02_INSERT_COLUMNS_SQL)
+      singleton_row(res) &&
+        res[0]["exact_explicit_insert_columns"] == "t"
+    rescue StandardError
+      false
+    end
+
     def unique_index_shape?(reader)
       res = reader.exec(INDEX_SQL)
       singleton_row(res) &&
@@ -370,7 +467,18 @@ module AP2E06IA3T2cNonceLedgerOracle
       false
     end
 
+    def idle_reader_connection?(reader)
+      defined?(PG::PQTRANS_IDLE) &&
+        reader.respond_to?(:transaction_status) &&
+        reader.transaction_status == PG::PQTRANS_IDLE
+    rescue StandardError
+      false
+    end
+
     def reader_session?(reader)
+      # Outside an oracle-owned transaction only. An existing transaction
+      # can retain a stale snapshot even when the apparent catalog is safe.
+      return false unless idle_reader_connection?(reader)
       res = reader.exec(<<~SQL)
         SELECT current_user AS role_name, session_user AS login_role,
                pg_is_in_recovery() AS replica,
@@ -411,7 +519,8 @@ module AP2E06IA3T2cNonceLedgerOracle
           rolsuper rolcreaterole rolcreatedb rolbypassrls rolreplication owner_member
           can_insert can_update can_delete can_truncate can_trigger
           can_reference schema_create
-        ].all? { |key| acl[key] == "f" }
+        ].all? { |key| acl[key] == "f" } &&
+        idle_reader_connection?(reader)
     rescue StandardError
       false
     end
