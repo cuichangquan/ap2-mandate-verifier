@@ -14,10 +14,10 @@ A3-T2cの将来の**承認A（研究資材の新規作成・静的レビュー�
 
 | 提案パス | 最大責務（将来の実装候補） | 禁止・未証明 |
 | --- | --- | --- |
-| `a3_t2c_nonce_ledger_schema.sql` | PostgreSQL 16**単一primary**の隔離研究スキーマ。Host-verifier domain全員・全tenant/sessionに共通の発行履歴、**全域 `UNIQUE(nonce_sha256)`**、全発行履歴の削除禁止、Challenge/Checkout versionと元Merchant署名JWT**原文バイトdigest**の同一transaction結合、必要な制約・索引/ACLの提案 | `UNIQUE(tenant_id, nonce_sha256)`・部分unique・期限付きpurge・複数primary全域保証・Host本番DB・実適用 |
+| `a3_t2c_nonce_ledger_schema.sql` | PostgreSQL 16**単一primary**の隔離研究スキーマ。Host-verifier domain全員・全tenant/sessionに共通の発行履歴、**全域 `UNIQUE(nonce_sha256)`**、全発行履歴の**UPDATE/DELETE/TRUNCATE拒否**（発行writerは履歴表のowner/特権roleでない）、Challenge/Checkout versionと元Merchant署名JWT**原文バイトdigest**の同一transaction結合、必要な制約・索引/ACLの提案 | `UNIQUE(tenant_id, nonce_sha256)`・部分unique・期限付きpurge・複数primary全域保証・Host本番DB・実適用 |
 | `a3_t2c_nonce_issuance_worker.rb` | **将来だけ**Host側のCSPRNG（OS乱数、最低128bitの推測困難性）発行候補→SQL transaction発行記録/Challenge結合→**commit確認後のみ外部配布可**というオフライン研究経路。衝突・unknown ACK・DB断絶時はHOLD/STOP | 固定文字列やSHAからnonce生成、commit前配布、衝突時既発行nonceを返す、G1 PASS、nonce消費CAS、本番配送/ネットワーク |
-| `a3_t2c_nonce_ledger_oracle.rb` | workerの自己申告から独立した**別DB接続・読取権限**で、実catalog/indexと非部分 `UNIQUE(nonce_sha256)`、commit後履歴・Challenge紐付け・件数、同じnonceの再発行拒否、未確定結果は未知と判定するオフライン観測 | workerの `unique=true`/stdout/fixture自己報告を唯一の正本とみなす。PG実測なしでPASS |
-| `a3_t2c_nonce_scenarios.rb` | **将来の実測Bにのみ**使う合成PG01–PG05ケースの構成・2独立workerの並行開始・最大実行数/timeout/cleanup要求を静的に定義する研究シナリオ。観測結果はoracleと対照 | A段階で実行/DB起動、承認B以前のCI自動起動、任意環境へ接続、PG06 restore/障害注入の自動実行 |
+| `a3_t2c_nonce_ledger_oracle.rb` | workerの自己申告から独立した**別DB接続・読取権限**で、実catalog/indexと非部分 `UNIQUE(nonce_sha256)`、**実際に使用するwriterのrole/ACLとUPDATE・DELETE・TRUNCATE拒否結果**、commit後履歴・Challenge紐付け・件数と不変性、同じnonceの再発行拒否、未確定結果は未知と判定するオフライン観測 | workerの `unique=true`/stdout/fixture自己報告を唯一の正本とみなす。PG実測なしでPASS |
+| `a3_t2c_nonce_scenarios.rb` | **将来の実測Bにのみ**使う合成PG01–PG05ケースの構成・2独立workerの並行開始・**PG03で実writer権限の安全な否定的UPDATE/DELETE/TRUNCATE試行**・最大実行数/timeout/cleanup要求を静的に定義する研究シナリオ。観測結果はoracleと対照 | A段階で実行/DB起動、承認B以前のCI自動起動、任意環境へ接続、PG06 restore/障害注入の自動実行 |
 
 すべて**新規のみ**。対象コード作成時に既存ファイル編集、Dockerfile/Compose、`.github/workflows/**`、Gemfile/依存追加、`research/shared/**`変更などが必要なら**事前STOP・別承認**。既存 `a3_t2b_*_boundary.rb`・`isolated_*`・`integrated_probe.rb` への統合配線はこの段階の対象外。
 
@@ -26,10 +26,10 @@ A3-T2cの将来の**承認A（研究資材の新規作成・静的レビュー�
 ## 3. 各レコードと誤った「証明」を避ける設計上の条件
 
 - **Nonce issuance history**：`issuance_ref`、`nonce_sha256`（**全域唯一、not null、保持期限で消さない**）、発行元domain、`challenge_ref`、`aud`、発行時Agent公開鍵thumbprint、opaque Buyer/Account、`tenant_id/checkout_id/checkout_version`、元Merchant署名Checkout JWTの**受領時全バイトSHA256と独立した出所ID**、`issued_at/expires_at`、commit同一性を束縛。元nonce/JWT・PIIは証拠へ出さない。
-- **DB authority**：2 workerは**同一primary・同一制約・全tenantの共通履歴**を利用することを別証拠で確認。専用ロールの最小権限、書込と監査読取の分離、他テナントが権威正本を自称/書換えできない条件をA静的レビューで審査。DB rootの存在だけでは独立Host登録権限は証明できない。
+- **DB authority / append-only**：2 workerは**同一primary・同一制約・全tenantの共通履歴**を利用することを別証拠で確認。実際の発行writerを履歴テーブル所有者・superuser・特権継承可能roleから分離し、最小権限のINSERTのみ（必要なら限定SELECT）を許す。**UPDATE/DELETE/TRUNCATE、所有権変更・GRANT・role切替での回避を許さない**。発行eventの `nonce_sha256` やChallenge/Checkout/JWT digestをUPDATEで再結合できるならUNIQUEだけでは不十分。期限切れ/消費状態は不変な発行eventを書き換えず、必要なら**別の状態レコード**で扱う。実writerの有効role/権限と監査read-only主体を別々にA静的レビュー/B独立観測で確認する。DB rootの存在だけでは独立Host登録権限は証明できない。
 - **Challengeの配布**：発行eventとChallengeは原子的commitで固定。DB unique衝突側は公開0件。commit outcome不明で「未発行」扱いや同nonce再配布は禁止。後から新Checkoutに付替えない。
 - **全域とは**：固定Terminalの署名対象は `aud/nonce`、tenant/session/challengeは含まない。tenant/checkout/時間ごとのpartial uniqueは不可。**単一primary**内の全域に限定し、複数primary/shard、バックアップ巻戻り時のグローバルな保証は別証拠がない限り**HOLD**。
-- **独立の実測証拠**：DB catalogでのconstraint/index定義、隔離トランザクションのcommit outcome、別connectionのrowcount、Challenge-issuance一体性、重複時の未配布。worker return codeやログだけで成功としない。
+- **独立の実測証拠**：DB catalogでのconstraint/index定義・実writer/reader ACLとrole membership、隔離トランザクションのcommit outcome、別connectionのrowcount、Challenge-issuance一体性、重複時の未配布。PG03では**実際に発行するwriterと同じ資格/有効role**で既存eventの `nonce_sha256`・Challenge/Checkout/元JWT digestのUPDATE、DELETE、TRUNCATEを否定的に試み、**いずれも拒否され、別接続から元rowと紐付けが残る**ことをオラクルで確認する。破壊的に成功する恐れがある環境では本番や未隔離DBで試さずSTOP、隔離された使い捨て研究DBでのみB承認後に行う。権限・拒否・行の不変性のいずれかが未確認ならPG03をPASSにしない。特権DBA/restoreによる改ざん耐性はこの実験では未証明/HOLD。worker return codeやログだけで成功としない。
 - **NI01 CSPRNG**：少なくとも128-bitの暗号学的予測困難性を満たすOS乱数sourceと停止経路を確認する。統計的「見た目」/nonce長/`entropy_bits`自称で実証済みと書かない。静的レビューはCSPRNGの本番保証ではない。
 - **Fail Closed**：独立に確定できる衝突・改変・既知の不正はREJECT。ただし独立の真正なHost trust/clock/issuer rootのないA3-T2cでも、G1/G7成功や`VerifiedEvidence`を返さずHOLDを維持する。
 
@@ -39,7 +39,7 @@ A3-T2cの将来の**承認A（研究資材の新規作成・静的レビュー�
 | --- | --- | --- |
 | PG01 | 1件発行 | commit後だけ発行、Challenge-Checkout-原JWTバイトdigestの同一transaction、正本別接続で1件 |
 | PG02 | **同一nonce**を別tenantから2独立DB workerで同時発行 | commit成功最大1、片方のuniqueness衝突。衝突側のChallenge配布なし、DBの実索引を照合 |
-| PG03 | 有効期限後・消費相当・別Checkoutで同nonce再発行 | 過去履歴の物理保持と全域constraintによる再発行拒否。purgeや行削除で回避禁止 |
+| PG03 | 有効期限後・消費相当・別Checkoutで同nonce再発行。加えて**実writer資格で旧履歴のUPDATE/DELETE/TRUNCATEを試行**（隔離済み使い捨てDB、承認B後のみ） | 同nonce再発行拒否に加え、実roleのcatalog権限検査、UPDATE（nonce digest/Challenge/Checkout/JWT digest）・DELETE・TRUNCATEの**全拒否**と独立別接続の元行/紐付け不変性を確認。片方だけなら**RED/HOLD**、履歴を変更できればSTOP。特権DBA/復元は別証拠 |
 | PG04 | rollback、接続断／commit ACK不明を模した安全な合成ケース | commit確定できない限り**HOLD**。無承認の実DB強制クラッシュ、kill/restore/fault injectionは禁止 |
 | PG05 | Challenge、Agent thumbprint、Buyer/Checkout version、原Merchant JWT bytes digest差替え | DB側確定発行eventとの突合で既知不一致のみREJECT、出所不明ならHOLD |
 | PG06 | Backup restore/primary切替で履歴巻戻り | **今回の承認A候補とB候補から除外**。別環境・予算・Owner許可が揃うまで NOT RUN/HOLD |
