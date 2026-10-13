@@ -2,6 +2,70 @@
 
 Status: **CODE WRITTEN / NOT RUN / G4–G7 HOLD / NO CI APPROVAL / PHASE2-B HOLD**.
 
+## A3-T1: one injected clock for signed Root diagnostics (SOURCE ONLY)
+
+**Owner-approved source writing + latest-HEAD static review ONLY** under
+[Issue #87](https://github.com/cuichangquan/ap2-mandate-verifier/issues/87).
+**NOT RUN.** Approval **B** (Ruby/Python, fixture generation, tests, CI) and
+**A3-T2** (genuinely authenticated G1→G7 handoff) both remain **HOLD**.
+
+- `isolated_root_closure.rb#verify_full_root_at!` is a **new and separate**
+  signed original Root/SD-JWT closure check. It receives exactly one
+  externally supplied integer `verified_at` in `[1, 4102444800]`, compares
+  signed Open `iat <= verified_at < exp`, bounds both timestamps to that
+  range and the existing 7200-second maximum lifetime, and **never calls
+  `Time.now` or defaults to a token timestamp**. It keeps the pinned public
+  Issuer key input, complete original SD-JWT wire, three exact signed
+  array-disclosure commitment positions, no extra/unused disclosures, and
+  fixed profile. The original `verify_full_root!` method still calls its
+  own `Time.now.to_i`, with historical behavior unchanged.
+- `isolated_stage_context.rb` holds a **private/internal, deeply detached
+  frozen, non-authoritative candidate**: single `verified_at`, SHA-256 of
+  **entire exact original** Root, Terminal and Checkout wire (never
+  reconstructed JSON), inspected Host snapshot SHA, Challenge,
+  Checkout tenant/id/version and claimed Issuer/Agent/Merchant source labels
+  plus Host enrollment/nonce source digest labels. It refuses checkout wire
+  mismatch and inconsistent candidate/source clock. `ContextCandidate` is
+  private to the module. There are **no positive G1/G3 result capabilities**:
+  `status=HOLD`, `g1_admissible?=false`, `g3_authenticated?=false` and
+  `evidence=nil` regardless of structure.
+- `integrated_probe.rb#inspect_a3_t1_clock_claim_only` is an **independent
+  diagnostic entrypoint**. It screens bounded original Root/Terminal/Checkout
+  G0-like JOSE/SD wires, checks claimed Host registration and Host-wide nonce
+  source using the existing A3-H1 composite (a definitive REJECT outranks
+  an unrelated source HOLD), compares the *same* Host-candidate `verified_at`
+  and original wire identities, then checks original signed Root time/closure
+  under the **claimed** Issuer public key and checks the signed Agent key
+  against the Host snapshot. A structurally matching claim is still HOLD.
+  Since Host ownership, Issuer enrollment, genuine nonce randomness,
+  durable global replay history and consumption CAS are **unproven**, even
+  a cryptographically valid signature under an attacker-supplied key is
+  **not** authenticated G2/G3 success.
+- The diagnostic never invokes `observe`, any G4/G5/G6/G7 positive, a
+  payment, or an external Host. It never reports integrated stage completion:
+  `completed_stages=[]`, `first_reject_stage=nil`, `g1_admissible=false`,
+  `g3_authenticated=false`, `evidence=nil`. Its `checked_components` are
+  local diagnostics only. Malformed known-bad original wires, Host/nonce
+  source mismatches, checkout wire mismatch, invalid signed Root and
+  incompatible Agent keys can **REJECT**. Missing/unverifiable Host source,
+  incomplete nonce ledger proof, invalid/unproven clock and unavailable
+  dependencies **HOLD**. For any A3-H1 claim composite run, a definitive
+  Host/nonce mismatch wins over an unrelated unknown/HOLD; a missing
+  Host candidate or invalid clock can preclude subsequent checks. A REJECT
+  from this diagnostic is **not** an integrated `first_reject_stage`.
+- **Clock origin:** `verified_at` is provided by the caller and compared
+  with the Host source/snapshot claims. There is no authenticated Host clock
+  or ledger in this research directory. Digest matches, frozen types and
+  independent entrypoints do not make a caller-controlled claim trustworthy.
+  Terminal and Checkout cryptographic binding remains unverified; G4–G7
+  never run. No positive Host ALLOW, VerifiedEvidence, A3-T2 or Phase 2-B.
+
+This addition does not change `observe(policy_json:, case_data:,
+policy_digest:)`, existing G0–G3 observer semantics, legacy DC04/E01
+fixtures/tests, any Schema gate, or G4/G5/G6 implementation. The A3-T1
+source is **not tested**. Static review and a separate explicit B approval
+remain prerequisites for making runtime claims.
+
 ## A3-H1 approved research scope: claimed synthetic Host enrollment source
 
 `isolated_host_source.rb` compares a **separately submitted, strict/bounded
