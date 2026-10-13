@@ -38,7 +38,7 @@ module AP2E06IA3T2cNonceIssuanceWorker
       $1, $2, $3, $4, $5, $6, $7, $8, $9,
       $10, $11, $12, pg_catalog.to_timestamp($13::double precision),
       pg_catalog.to_timestamp($14::double precision),
-      pg_catalog.pg_current_xact_id()::text,
+      pg_catalog.pg_current_xact_id()::pg_catalog.text,
       pg_catalog.transaction_timestamp()
     )
   SQL
@@ -205,6 +205,12 @@ module AP2E06IA3T2cNonceIssuanceWorker
         begin_acknowledged = begin_result.respond_to?(:cmd_status) &&
                              begin_result.cmd_status == "BEGIN"
         raise "issuance_begin_ack_unknown" unless begin_acknowledged
+        # Explicit built-in schema first and temp schema LAST: neither
+        # owner-controlled search_path entries nor temporary type names
+        # may shadow INSERT casts, operators, functions or constraints.
+        path_ack = connection.exec("SET LOCAL search_path = pg_catalog, pg_temp")
+        raise "issuance_search_path_ack_unknown" unless
+          path_ack.respond_to?(:cmd_status) && path_ack.cmd_status == "SET"
         connection.exec("SET LOCAL statement_timeout = '3000ms'")
         connection.exec("SET LOCAL lock_timeout = '2000ms'")
 
