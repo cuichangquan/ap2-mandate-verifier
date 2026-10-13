@@ -260,8 +260,12 @@ module AP2E06IA3T2cNonceScenarios
                                (connections + quarantined).uniq)
       end
       commits = results.count(&:commit_acknowledged?)
-      return hold("pg02_unexpected_commit_count_stop") unless commits == 1 &&
-        results[winner].commit_acknowledged?
+      # A real PG02 winner/loser pair must include the independently
+      # verified nonce constraint SQLSTATE 23505 and acknowledged loser
+      # ROLLBACK. An unexpected (even non-quarantined) result is HOLD.
+      return hold("pg02_expected_nonce_collision_not_proven_stop") unless
+        commits == 1 && results[winner].commit_acknowledged? &&
+        results[loser].nonce_conflict_rolled_back?
 
       # Still non-authoritative. B-time independent catalog + row snapshots
       # must show the winner's issuance and no loser Challenge distribution.
