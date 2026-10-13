@@ -522,12 +522,15 @@ module AP2E06IA3T2cNonceScenarios
     end
 
     def writer_session?(writer)
-      rowset = writer.exec(
-        "SELECT current_user AS role_name, session_user AS login_role"
-      )
+      rowset = writer.exec(<<~SQL)
+        SELECT current_user AS role_name, session_user AS login_role,
+               pg_catalog.has_schema_privilege(current_user, 'a3_t2c',
+                 'USAGE') AS may_use_schema
+      SQL
       rowset.respond_to?(:ntuples) && rowset.ntuples == 1 &&
         rowset[0]["role_name"] == "a3_t2c_writer" &&
         rowset[0]["login_role"] == "a3_t2c_writer" &&
+        rowset[0]["may_use_schema"] == "t" &&
         authenticated_connection_user?(writer, "a3_t2c_writer")
     rescue StandardError
       false
