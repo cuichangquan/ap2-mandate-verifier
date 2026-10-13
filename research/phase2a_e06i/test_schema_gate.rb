@@ -87,6 +87,10 @@ class E06ISchemaOnlyProposedTest < Minitest::Test
   # This uses only an in-process fake loaded-spec entry and restores it.
   # It is NOT a signed Root experiment and does not execute CI.
   def test_08_unpinned_jwt_gem_stops_before_g0
+    # Explicit setup: the production module lazily activates jwt. This test
+    # must not depend on which Minitest example happened to run first.
+    skip "Pinned jwt 3.3.0 unavailable: test NOT RUN" unless
+      AP2E06IRootClosure.jwt_supported?
     original = Gem.loaded_specs.fetch("jwt")
     fake = original.dup
     fake.version = Gem::Version.new("99.0.0")
