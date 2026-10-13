@@ -15,6 +15,13 @@ Host assertions may produce `REJECT`. Its `first_reject_stage=nil` states
 that the integrated G0–G7 ledger has **not** been executed, rather than
 mislabeling an independent Host input check as an integrated stage proof.
 
+The shared `isolated_host_snapshot.rb` inspector also now defers unknown
+revocation-state HOLD until every selected Issuer/Agent/Merchant **key and
+policy** was checked for an explicit known `revoked` state, and evaluates
+known nonce↔Challenge binding mismatches before incomplete registry HOLD.
+Thus definitive known-invalid Host claims cause REJECT even when a different
+claim is unknown. This is a conservative static code fix, **not executed**.
+
 **No successful Host provenance/trust/nonce registry adapter exists.** The
 original `observe(policy_json:,case_data:,policy_digest:)` behavior is
 unchanged and still stops at G4. Independent isolated G4/G5/G6 modules do
