@@ -131,8 +131,15 @@ module AP2E06IHostSnapshot
         issuer["policy_ref"] == "e06i-issuer-a-host-policy-v1" &&
         issuer["policy_version"] == 1
 
+      # A known-revoked key/policy always outranks an indeterminate one,
+      # including across different signers. Inspect ALL trust records first
+      # before returning any revocation-state HOLD.
+      unknown_revocation = false
       %w[issuer_trust agent_trust merchant_trust].each do |name|
-        validate_trust!(parsed.fetch(name), verified_at: verified_at)
+        observed = validate_trust!(
+          parsed.fetch(name), verified_at: verified_at
+        )
+        unknown_revocation = true if observed == :unknown
       end
       validate_checkout!(parsed.fetch("checkout"))
       # This fixed one-tenant profile MUST NOT select a Merchant key for
@@ -157,6 +164,7 @@ module AP2E06IHostSnapshot
         parsed.fetch("agent_trust"), verified_at: verified_at
       )
       validate_nonce_claims!(parsed.fetch("nonce_issuance"), parsed.fetch("challenge"))
+      halt!("HOLD", "unknown_host_revocation_state") if unknown_revocation
 
       # Even a structurally valid record can falsely CLAIM a unique nonce,
       # non-revoked keys or an authentic Host source. This slice cannot confirm
@@ -207,20 +215,19 @@ module AP2E06IHostSnapshot
         entry["policy_version"].is_a?(Integer) &&
         entry["policy_version"].between?(1, 1_000_000)
       validate_key!(entry.fetch("key_jwk"))
-      %w[key_revocation policy_revocation].each do |name|
-        case entry.fetch(name)
-        when "revoked"
-          halt!("REJECT", "revoked_host_signer")
-        when "non_revoked"
-          # Claim of non-revocation is structurally consistent, NOT proved.
-        else
-          halt!("HOLD", "unknown_host_revocation_state")
-        end
+      revocation_values = %w[key_revocation policy_revocation].map do |name|
+        entry.fetch(name)
       end
+      halt!("REJECT", "revoked_host_signer") if
+        revocation_values.include?("revoked")
+      unknown = !revocation_values.all? { |state| state == "non_revoked" }
       halt!("REJECT", "inactive_host_signer") unless
         entry["active"] == true && entry["policy_active"] == true
       window!(entry["key_not_before"], entry["key_not_after"], at: verified_at)
       window!(entry["policy_not_before"], entry["policy_not_after"], at: verified_at)
+      # Defer missing/unknown status until every selected signer has been
+      # inspected, so a later known-revoked Agent/Merchant cannot be masked.
+      unknown ? :unknown : :non_revoked
     end
 
     def validate_key!(jwk)
@@ -315,15 +322,8 @@ module AP2E06IHostSnapshot
 
     def validate_nonce_claims!(nonce_issuance, challenge)
       exact!(nonce_issuance, NONCE_FIELDS, "invalid_nonce_issuance_fields")
-      halt!("HOLD", "nonce_issuance_unavailable") unless
-        nonce_issuance["domain"] == "host-verifier-wide" &&
-        nonce_issuance["unique"] == true &&
-        nonce_issuance["atomic_uniqueness"] == true &&
-        nonce_issuance["entropy_bits"].is_a?(Integer) &&
-        nonce_issuance["entropy_bits"] >= 128 &&
-        string?(nonce_issuance["registry_ref"]) &&
-        string?(nonce_issuance["issuance_ref"])
-
+      # Determine the definitive challenge-to-issuance binding first.
+      # HOLD on incomplete registry metadata may not mask a known mismatch.
       # A claim about another challenge/nonce cannot be attached to this
       # candidate even if the registry says it is uniquely issued.
       # Requiring issuance_ref==challenge.ref is a deliberately fixed lab
@@ -334,6 +334,14 @@ module AP2E06IHostSnapshot
         fixed_equal?(nonce_issuance["challenge_ref"], challenge.fetch("ref")) &&
         fixed_equal?(nonce_issuance["issuance_ref"], challenge.fetch("ref")) &&
         fixed_equal?(nonce_issuance["nonce_sha256"], expected_nonce_sha256)
+      halt!("HOLD", "nonce_issuance_unavailable") unless
+        nonce_issuance["domain"] == "host-verifier-wide" &&
+        nonce_issuance["unique"] == true &&
+        nonce_issuance["atomic_uniqueness"] == true &&
+        nonce_issuance["entropy_bits"].is_a?(Integer) &&
+        nonce_issuance["entropy_bits"] >= 128 &&
+        string?(nonce_issuance["registry_ref"]) &&
+        string?(nonce_issuance["issuance_ref"])
       # These are STILL untrusted Host CLAIMS, not a validated nonce issuance
       # event or genuine Host registry proof. Always Candidate(HOLD).
     end

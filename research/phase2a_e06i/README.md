@@ -2,6 +2,32 @@
 
 Status: **CODE WRITTEN / NOT RUN / G4–G7 HOLD / NO CI APPROVAL / PHASE2-B HOLD**.
 
+## A2-5 preflight wiring: trusted G1 entrypoint STILL BLOCKED
+
+`integrated_probe.rb` now also exposes an internal
+`inspect_a2_host_candidate(host_json:, expected_host_sha256:, verified_at:)`
+for the already merged A2-1 Host snapshot candidate. This is a **Host-only
+preflight**, not an integrated G0→G1 verifier: it performs no G0 signed-wire
+checks, does not claim any completed G0–G7 stages and never calls G2/G3/G4/G5/
+G6/G7. The result always has `g1_admissible=false`, `evidence=nil`; a
+structurally consistent candidate produces `HOLD`, while malformed/revoked
+Host assertions may produce `REJECT`. Its `first_reject_stage=nil` states
+that the integrated G0–G7 ledger has **not** been executed, rather than
+mislabeling an independent Host input check as an integrated stage proof.
+
+The shared `isolated_host_snapshot.rb` inspector also now defers unknown
+revocation-state HOLD until every selected Issuer/Agent/Merchant **key and
+policy** was checked for an explicit known `revoked` state, and evaluates
+known nonce↔Challenge binding mismatches before incomplete registry HOLD.
+Thus definitive known-invalid Host claims cause REJECT even when a different
+claim is unknown. This is a conservative static code fix, **not executed**.
+
+**No successful Host provenance/trust/nonce registry adapter exists.** The
+original `observe(policy_json:,case_data:,policy_digest:)` behavior is
+unchanged and still stops at G4. Independent isolated G4/G5/G6 modules do
+not accept this preflight as a trusted G1 success. No execution/CI approval B
+has been granted; do not infer G1/G4/G5/G6/G7 success from this new method.
+
 ## A2-1 scoped new Host-context candidate (approval recorded in Issue #75)
 
 `isolated_host_snapshot.rb` is a **new isolated research candidate** that
