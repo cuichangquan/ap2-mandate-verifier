@@ -31,7 +31,7 @@ module AP2E06IHostSnapshot
   TRUST_FIELDS = %w[
     active key_jwk key_not_after key_not_before key_revocation
     policy_active policy_not_after policy_not_before policy_ref
-    policy_revocation policy_version subject_ref
+    policy_revocation policy_version subject_ref tenant_id
   ].sort.freeze
   CHALLENGE_FIELDS = %w[
     agent_thumbprint aud buyer_account_ref checkout_ref expires_at
@@ -46,6 +46,10 @@ module AP2E06IHostSnapshot
     atomic_uniqueness domain entropy_bits issuance_ref registry_ref unique
   ].sort.freeze
   JWK_FIELDS = %w[crv kty x y].sort.freeze
+  # NIST P-256 field prime / b coefficient, for validating supplied PUBLIC
+  # coordinates. No private key operations or arbitrary curve selection.
+  P256_P = 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff
+  P256_B = 0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b
 
   class Halt < StandardError
     attr_reader :status, :code
@@ -112,6 +116,18 @@ module AP2E06IHostSnapshot
         validate_trust!(parsed.fetch(name), verified_at: verified_at)
       end
       validate_checkout!(parsed.fetch("checkout"))
+      # This fixed one-tenant profile MUST NOT select a Merchant key for
+      # another Merchant or tenant. The same tenant also bounds the Issuer
+      # and Agent trust scopes in this deliberately closed-world lab.
+      checkout = parsed.fetch("checkout")
+      tenant_id = checkout.fetch("ref").fetch("tenant_id")
+      %w[issuer_trust agent_trust merchant_trust].each do |signer|
+        halt!("REJECT", "host_trust_tenant_mismatch") unless
+          parsed.fetch(signer).fetch("tenant_id") == tenant_id
+      end
+      halt!("REJECT", "host_merchant_identity_mismatch") unless
+        parsed.fetch("merchant_trust").fetch("subject_ref") ==
+        checkout.fetch("merchant_id")
       validate_challenge!(
         parsed.fetch("challenge"), parsed.fetch("checkout"),
         parsed.fetch("agent_trust"), verified_at: verified_at
@@ -160,7 +176,7 @@ module AP2E06IHostSnapshot
 
     def validate_trust!(entry, verified_at:)
       exact!(entry, TRUST_FIELDS, "invalid_trust_fields")
-      %w[subject_ref policy_ref].each do |name|
+      %w[subject_ref policy_ref tenant_id].each do |name|
         halt!("REJECT", "invalid_trust_identity") unless string?(entry[name])
       end
       halt!("REJECT", "invalid_policy_version") unless
@@ -187,16 +203,24 @@ module AP2E06IHostSnapshot
       exact!(jwk, JWK_FIELDS, "invalid_public_jwk")
       halt!("REJECT", "unsupported_public_jwk") unless
         jwk["kty"] == "EC" && jwk["crv"] == "P-256"
-      %w[x y].each do |key|
+      coordinates = %w[x y].map do |key|
         part = jwk[key]
         halt!("REJECT", "invalid_public_jwk_coordinate") unless
           string?(part, max: 43) && part.bytesize == 43 &&
-          part.match?(/\A[A-Za-z0-9_-]{43}\z/)
+          part.match?(/\\A[A-Za-z0-9_-]{43}\\z/)
         bytes = Base64.urlsafe_decode64(part + "=")
         halt!("REJECT", "invalid_public_jwk_coordinate") unless
           bytes.bytesize == 32 &&
           Base64.urlsafe_encode64(bytes, padding: false) == part
+        bytes.unpack1("H*").to_i(16)
       end
+      x, y = coordinates
+      # Check the canonical affine public point lies on secp256r1:
+      # y^2 = x^3 - 3x + b (mod p), 0 <= x,y < p. P-256 has cofactor 1.
+      # Affine coordinates cannot represent the point at infinity.
+      halt!("REJECT", "invalid_public_jwk_point") unless
+        x < P256_P && y < P256_P &&
+        ((y * y - (x * x * x - 3 * x + P256_B)) % P256_P).zero?
     rescue ArgumentError
       halt!("REJECT", "invalid_public_jwk_coordinate")
     end
