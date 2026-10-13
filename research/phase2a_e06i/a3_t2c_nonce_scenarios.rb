@@ -244,9 +244,21 @@ module AP2E06IA3T2cNonceScenarios
         joins.any?(&:nil?) || tasks.any?(&:alive?)
 
       results = tasks.map(&:value)
-      return hold("pg02_worker_results_unverified") unless results.all? { |x|
-        x.is_a?(AP2E06IA3T2cNonceIssuanceWorker::LabObservation)
-      }
+      return pending_workers("pg02_worker_results_unverified_quarantine_stop",
+                             tasks + [observer_thread], connections) unless
+        results.all? { |x|
+          x.is_a?(AP2E06IA3T2cNonceIssuanceWorker::LabObservation)
+        }
+      # The loser can finish its Ruby Thread with an unacknowledged
+      # ROLLBACK, leaving its SQL transaction/socket unsafe. Never replace
+      # worker observations with an empty-handles scenario observation.
+      # Even a completed worker's retained connection forces HOLD.
+      if results.any?(&:pending_worker_cleanup?)
+        quarantined = results.flat_map(&:connections)
+        return pending_workers("pg02_worker_connection_quarantine_stop",
+                               tasks + [observer_thread],
+                               (connections + quarantined).uniq)
+      end
       commits = results.count(&:commit_acknowledged?)
       return hold("pg02_unexpected_commit_count_stop") unless commits == 1 &&
         results[winner].commit_acknowledged?
