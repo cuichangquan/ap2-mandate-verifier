@@ -79,6 +79,41 @@ module AP2E06IA3T2cNonceLedgerOracle
        AND (i.indisunique OR i.indisexclusion)
   SQL
 
+  # A broad transactionid lock witness is unsafe if an owner installs
+  # INSERT triggers, rules, foreign keys, RLS or partitioning. Any added
+  # write side effect can create an unrelated transaction wait. The approved
+  # lab only accepts a plain single-primary physical heap with no triggers,
+  # rewrite rules, foreign keys, RLS or inheritance/partition children.
+  PG02_WRITE_SHAPE_SQL = <<~SQL.freeze
+    SELECT (
+      t.relkind = 'r'
+      AND t.relpersistence = 'p'
+      AND NOT t.relispartition
+      AND NOT t.relrowsecurity
+      AND NOT t.relforcerowsecurity
+      AND NOT t.relhassubclass
+      AND NOT EXISTS (
+        SELECT 1 FROM pg_catalog.pg_trigger tr
+         WHERE tr.tgrelid = t.oid
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM pg_catalog.pg_rewrite rw
+         WHERE rw.ev_class = t.oid
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM pg_catalog.pg_constraint co
+         WHERE co.conrelid = t.oid
+           AND co.contype NOT IN ('p', 'u', 'c')
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM pg_catalog.pg_inherits inh
+         WHERE inh.inhparent = t.oid OR inh.inhrelid = t.oid
+      )
+    ) AS no_conflicting_side_effects
+      FROM pg_catalog.pg_class t
+     WHERE t.oid = 'a3_t2c.nonce_issuance_history'::regclass
+  SQL
+
   # An independent reader checks the actual WRITER role's effective
   # privileges, including membership in table owner and privilege inheritance.
   # The writer session separately asserts current_user == WRITER_ROLE.
@@ -179,6 +214,7 @@ module AP2E06IA3T2cNonceLedgerOracle
       # UNIQUE index. Only the exact three-key schema makes this a nonce
       # collision witness. No extra index may be present.
       return false unless unique_index_shape?(reader)
+      return false unless pg02_write_shape?(reader)
       return false unless [waiting_pid, holding_pid].all? { |pid|
         pid.is_a?(Integer) && pid.between?(1, 2_147_483_647)
       } && waiting_pid != holding_pid
@@ -200,6 +236,8 @@ module AP2E06IA3T2cNonceLedgerOracle
 
       return hold("exact_unique_index_set_unverified") unless
         unique_index_shape?(reader)
+      return hold("pg02_write_side_effects_unverified") unless
+        pg02_write_shape?(reader)
 
       role_result = reader.exec_params(ROLE_SQL, [WRITER_ROLE])
       return hold("writer_acl_unverified") unless singleton_row(role_result)
@@ -263,6 +301,14 @@ module AP2E06IA3T2cNonceLedgerOracle
 
     private
 
+    def pg02_write_shape?(reader)
+      result = reader.exec(PG02_WRITE_SHAPE_SQL)
+      singleton_row(result) &&
+        result[0]["no_conflicting_side_effects"] == "t"
+    rescue StandardError
+      false
+    end
+
     def unique_index_shape?(reader)
       res = reader.exec(INDEX_SQL)
       singleton_row(res) &&
@@ -293,6 +339,7 @@ module AP2E06IA3T2cNonceLedgerOracle
       return false unless singleton_row(res) &&
         res[0]["role_name"] == READER_ROLE &&
         res[0]["login_role"] == READER_ROLE &&
+        authenticated_connection_user?(reader, READER_ROLE) &&
         res[0]["replica"] == "f" &&
         res[0]["may_read"] == "t" &&
         %w[may_insert may_update may_delete may_truncate].all? {
@@ -316,6 +363,23 @@ module AP2E06IA3T2cNonceLedgerOracle
           can_insert can_update can_delete can_truncate can_trigger
           can_reference schema_create
         ].all? { |key| acl[key] == "f" }
+    rescue StandardError
+      false
+    end
+
+    # libpq startup user is stored in connection options before SQL. Unlike
+    # current_user and session_user this is not replaced by the SQL command
+    # SET SESSION AUTHORIZATION. Require a real PG::Connection and exact
+    # startup user; missing/ambiguous values are HOLD, never trusted.
+    def authenticated_connection_user?(connection, expected)
+      return false unless defined?(PG::Connection) &&
+        connection.instance_of?(PG::Connection) &&
+        connection.respond_to?(:conninfo_hash)
+
+      info = connection.conninfo_hash
+      return false unless info.is_a?(Hash)
+      user = info[:user]
+      user.is_a?(String) && user == expected
     rescue StandardError
       false
     end
