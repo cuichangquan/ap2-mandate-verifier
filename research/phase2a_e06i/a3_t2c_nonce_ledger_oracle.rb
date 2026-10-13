@@ -65,15 +65,32 @@ module AP2E06IA3T2cNonceLedgerOracle
   # An independent reader checks the actual WRITER role's effective
   # privileges, including membership in table owner and privilege inheritance.
   # The writer session separately asserts current_user == WRITER_ROLE.
+  # PG16 has per-membership SET privilege. Reject the *entire reachable*
+  # SET ROLE closure, even when one reachable role currently looks harmless:
+  # this synthetic lab requires unambiguous fixed, non-escalating roles.
+  # Effective/inherited privileges are checked on the base role by catalog.
   ROLE_SQL = <<~SQL.freeze
+    WITH RECURSIVE assumable(role_oid) AS (
+      SELECT oid FROM pg_catalog.pg_roles WHERE rolname = $1
+      UNION
+      SELECT m.roleid
+        FROM pg_catalog.pg_auth_members m
+        JOIN assumable a ON m.member = a.role_oid
+       WHERE m.set_option
+    )
     SELECT r.rolname AS writer_name, r.rolsuper, r.rolcreaterole,
            r.rolcreatedb, r.rolbypassrls, r.rolcanlogin,
            pg_catalog.pg_has_role(r.oid, t.relowner, 'MEMBER') AS owner_member,
            pg_catalog.has_table_privilege(r.oid, t.oid, 'INSERT') AS can_insert,
+           pg_catalog.has_table_privilege(r.oid, t.oid, 'SELECT') AS can_select,
            pg_catalog.has_table_privilege(r.oid, t.oid, 'UPDATE') AS can_update,
            pg_catalog.has_table_privilege(r.oid, t.oid, 'DELETE') AS can_delete,
            pg_catalog.has_table_privilege(r.oid, t.oid, 'TRUNCATE') AS can_truncate,
-           pg_catalog.has_schema_privilege(r.oid, n.oid, 'CREATE') AS schema_create
+           pg_catalog.has_table_privilege(r.oid, t.oid, 'TRIGGER') AS can_trigger,
+           pg_catalog.has_table_privilege(r.oid, t.oid, 'REFERENCES') AS can_reference,
+           pg_catalog.has_schema_privilege(r.oid, n.oid, 'CREATE') AS schema_create,
+           (SELECT COUNT(*)::integer FROM assumable a
+             WHERE a.role_oid <> r.oid) AS settable_other_roles
       FROM pg_catalog.pg_roles r
       CROSS JOIN pg_catalog.pg_class t
       JOIN pg_catalog.pg_namespace n ON t.relnamespace = n.oid
@@ -116,9 +133,11 @@ module AP2E06IA3T2cNonceLedgerOracle
       return hold("writer_privilege_escape_or_append_only_not_proven") unless
         row["writer_name"] == WRITER_ROLE &&
         yes.call("rolcanlogin") && yes.call("can_insert") &&
+        row["settable_other_roles"] == "0" &&
         %w[
           rolsuper rolcreaterole rolcreatedb rolbypassrls owner_member
-          can_update can_delete can_truncate schema_create
+          can_select can_update can_delete can_truncate can_trigger
+          can_reference schema_create
         ].all? { |k| no.call(k) }
 
       Observation.new(
@@ -174,13 +193,32 @@ module AP2E06IA3T2cNonceLedgerOracle
                has_table_privilege(current_user,
                  'a3_t2c.nonce_issuance_history', 'UPDATE') AS may_update,
                has_table_privilege(current_user,
-                 'a3_t2c.nonce_issuance_history', 'DELETE') AS may_delete
+                 'a3_t2c.nonce_issuance_history', 'DELETE') AS may_delete,
+               has_table_privilege(current_user,
+                 'a3_t2c.nonce_issuance_history', 'TRUNCATE') AS may_truncate
       SQL
-      singleton_row(res) &&
+      return false unless singleton_row(res) &&
         res[0]["role_name"] == READER_ROLE &&
         res[0]["replica"] == "f" &&
         res[0]["may_read"] == "t" &&
-        %w[may_insert may_update may_delete].all? { |k| res[0][k] == "f" }
+        %w[may_insert may_update may_delete may_truncate].all? {
+          |k| res[0][k] == "f"
+        }
+
+      # This independent catalog interrogation also checks owner membership,
+      # inherited rights and transitive PG16 SET ROLE membership, including
+      # a reader that can assume an entirely different privileged identity.
+      roles = reader.exec_params(ROLE_SQL, [READER_ROLE])
+      return false unless singleton_row(roles)
+      acl = roles[0]
+      acl["writer_name"] == READER_ROLE &&
+        acl["rolcanlogin"] == "t" && acl["can_select"] == "t" &&
+        acl["settable_other_roles"] == "0" &&
+        %w[
+          rolsuper rolcreaterole rolcreatedb rolbypassrls owner_member
+          can_insert can_update can_delete can_truncate can_trigger
+          can_reference schema_create
+        ].all? { |key| acl[key] == "f" }
     rescue StandardError
       false
     end
