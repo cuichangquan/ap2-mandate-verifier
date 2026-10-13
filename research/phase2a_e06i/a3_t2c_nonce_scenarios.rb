@@ -306,45 +306,17 @@ module AP2E06IA3T2cNonceScenarios
       end
       return before if before.is_a?(LabObservation)
       return hold("pre_mutation_snapshot_unavailable") unless before.event
-      return hold("actual_writer_credentials_missing") unless
-        writer_session?(writer) && idle_connection?(writer)
-
-      # Every negative mutation is rolled back to a SAVEPOINT, and the
-      # outer transaction is ROLLED BACK no matter what happened.
-      denied = {}
-      began = false
-      begin
-        writer.exec("BEGIN")
-        began = true
-        writer.exec("SET LOCAL statement_timeout = '3000ms'")
-        writer.exec("SET LOCAL lock_timeout = '2000ms'")
-
-        PG03_FORBIDDEN_MUTATIONS.each do |name, sql|
-          writer.exec("SAVEPOINT a3_t2c_negative")
-          denied[name] = false
-          begin
-            if name == "truncate_history"
-              writer.exec(sql)
-            else
-              writer.exec_params(sql, [issuance_ref.dup.freeze])
-            end
-          rescue StandardError => error
-            # Timeout, connectivity, undefined table etc are NOT proven
-            # ACL denials. Only PostgreSQL insufficient_privilege 42501
-            # counts as a denial. No generic-rescue => false PASS.
-            denied[name] = insufficient_privilege?(error)
-          ensure
-            writer.exec("ROLLBACK TO SAVEPOINT a3_t2c_negative")
-            writer.exec("RELEASE SAVEPOINT a3_t2c_negative")
-          end
-        end
-      ensure
-        begin
-          writer.exec("ROLLBACK") if began
-        rescue StandardError
-          return hold("rollback_unconfirmed_stop")
-        end
-      end
+      # The complete writer phase (credential inspection, BEGIN,
+      # all negative mutations, SAVEPOINT cleanup, final ROLLBACK) can block
+      # on the PostgreSQL socket. Run it under a retained bounded Thread,
+      # just like the independent reader queries. No unbounded direct
+      # writer call is permitted from this supervisor method.
+      denied = bounded_pg03_writer_only(
+        writer: writer, reader: reader, issuance_ref: issuance_ref
+      )
+      return denied if denied.is_a?(LabObservation)
+      return hold("pg03_mutation_results_unverified_stop") unless
+        denied.is_a?(Hash)
 
       after = bounded_pg03_read_only(
         reader: reader, writer: writer, phase: "after_snapshot"
@@ -390,6 +362,77 @@ module AP2E06IA3T2cNonceScenarios
     # from returning HOLD with both connection handles for supervised
     # quiescence/cleanup. No Thread.kill, no reconnect, no retry; results
     # are synthetic observations and never authoritative G1/G7 evidence.
+    # PG03 must bound the entire writer lifecycle, not only the reader.
+    # A lost libpq socket can stall authentication/status, BEGIN, SQL
+    # mutations, SAVEPOINT cleanup or ROLLBACK. Return a retained thread
+    # AND both connections if any phase does not finish promptly.
+    def bounded_pg03_writer_only(writer:, reader:, issuance_ref:)
+      writer_thread = Thread.new do
+        pg03_writer_mutations_only(writer: writer, issuance_ref: issuance_ref)
+      end
+      return pending_workers("pg03_writer_phase_timeout_stop",
+                             [writer_thread], [writer, reader]) unless
+        writer_thread.join(4.0)
+
+      writer_thread.value
+    rescue StandardError
+      pending_workers("pg03_writer_phase_unavailable_stop",
+                      [writer_thread].compact, [writer, reader])
+    end
+
+    def pg03_writer_mutations_only(writer:, issuance_ref:)
+      return hold("actual_writer_credentials_missing") unless
+        writer_session?(writer) && idle_connection?(writer)
+
+      denied = {}
+      began = false
+      uncertain = false
+      rollback_verified = false
+      begin
+        writer.exec("BEGIN")
+        began = true
+        writer.exec("SET LOCAL statement_timeout = '3000ms'")
+        writer.exec("SET LOCAL lock_timeout = '2000ms'")
+        PG03_FORBIDDEN_MUTATIONS.each do |name, sql|
+          writer.exec("SAVEPOINT a3_t2c_negative")
+          denied[name] = false
+          begin
+            if name == "truncate_history"
+              writer.exec(sql)
+            else
+              writer.exec_params(sql, [issuance_ref.dup.freeze])
+            end
+          rescue StandardError => error
+            # Only real SQLSTATE 42501 counts as a negative ACL result.
+            denied[name] = insufficient_privilege?(error)
+          ensure
+            writer.exec("ROLLBACK TO SAVEPOINT a3_t2c_negative")
+            writer.exec("RELEASE SAVEPOINT a3_t2c_negative")
+          end
+        end
+      rescue StandardError
+        uncertain = true
+      ensure
+        if began
+          begin
+            writer.exec("ROLLBACK")
+            rollback_verified = true
+          rescue StandardError
+            uncertain = true
+          end
+        end
+      end
+
+      return hold("pg03_writer_transaction_or_rollback_uncertain_stop") if
+        uncertain || !rollback_verified
+      return hold("writer_mutation_not_all_denied_stop") unless
+        denied.length == PG03_FORBIDDEN_MUTATIONS.length && denied.values.all?
+
+      denied
+    rescue StandardError
+      hold("pg03_writer_mutations_unavailable_stop")
+    end
+
     def bounded_pg03_read_only(reader:, writer:, phase:)
       observer_thread = Thread.new { yield }
       unless observer_thread.join(1.5)
@@ -420,9 +463,12 @@ module AP2E06IA3T2cNonceScenarios
     end
 
     def writer_session?(writer)
-      rowset = writer.exec("SELECT current_user AS role_name")
+      rowset = writer.exec(
+        "SELECT current_user AS role_name, session_user AS login_role"
+      )
       rowset.respond_to?(:ntuples) && rowset.ntuples == 1 &&
-        rowset[0]["role_name"] == "a3_t2c_writer"
+        rowset[0]["role_name"] == "a3_t2c_writer" &&
+        rowset[0]["login_role"] == "a3_t2c_writer"
     rescue StandardError
       false
     end
