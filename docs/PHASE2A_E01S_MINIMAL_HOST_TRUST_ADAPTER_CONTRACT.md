@@ -68,6 +68,8 @@ To calculate an EC JWK thumbprint, use the **RFC 7638** canonical public members
 
 **Do not edit** `research/phase2a_dc04/fixed_issuer_verifier.rb`, `research/p1_2/two_hop_research.rb`, `research/p1_3/checkout_binding_research.rb`, existing CI workflows, or Gem/public API to add this test. If a truly necessary change arises, **STOP and rescope/reapprove**.
 
+**Time-source limitation to review:** The existing DC04 verifier and `AP2TwoHopResearch.verify!` call `Time.now` internally (including Root, Terminal and Closed checks). A Host adapter's single frozen `trusted_clock_snapshot` **does not freeze these existing Ruby reads**. The future harness must log the Host snapshot and Ruby execution wall-clock interval, generate timestamps with enough validity margin for the full bounded run, fail closed if any boundary/expiry becomes ambiguous, and explicitly state this is **not same-instant/TOCTOU-proof Host time enforcement**. Do not monkey-patch global `Time.now` or claim a single clock covers the existing verifier; if exact clock injection is required for the E01-S claim, STOP and separately approve changing scope.
+
 The adapter's internal input notion (not a public API) is:
 - `host_policy_snapshot:` independent immutable Host record and digest.
 - `candidate_issuer_public_jwk:` untrusted per-case signer public key; **not** the trusted DC04 issuer key.
@@ -87,6 +89,8 @@ Proposed stage names are **new synthetic adapter labels**, not currently impleme
 | `S1_HOST_KEY_POLICY` | Host snapshot digest/scope/purpose/time/active single policy; calculate candidate key thumbprint and exact-match frozen A key | Allowed synthetic key selected or `UNTRUSTED_ISSUER`. An IP02 S1 reject must be **paired with independent O1 B-signature VALID** |
 | `S2_ISSUER_JWS` | Verify Root **original compact JWS signing input bytes** using the Host A key (ES256) without reserializing | Root signature valid with allowed A |
 | `S3_HOST_SIGNED_GRAMMAR` | Parse **the already verified signed Root** plus original Disclosure bytes; enumerate every signed SD path/slot and reject unknown paths, `_sd`, decoy, missing/unused/repeated/ambiguous digest and unknown authority fields against the pre-frozen grammar | IP03 rejection attributable to specific signed path and unchanged A-only policy; **not merely DC04's own earlier reject** |
+
+**Oracle reuse caveat:** `research/phase2a_dc01/independent_positive_oracle.py` has `raw_commitment_graph` support for object `_sd` as a generic SD-JWT feature; that helper **is not** the fixed Host policy that forbids `_sd` anywhere. A new S3/O3 wrapper must first inventory the **entire original signed graph**, explicitly enforce the fixed three-path allowlist (no object `_sd`, decoy, unknown, surplus or duplicate commitments), and cross-check digest consumption. Merely seeing a successfully resolved payload or a helper return value is insufficient. Keep this check demonstrably separate from DC04's own rejection path.
 | `S4_DC04_CHAIN_CHECKOUT` | Invoke existing named DC04 resolver via `AP2DC04FixedIssuerResearch.verify!`, with policy-selected A key and fixed Host context | Positive returns **LIMITED_POSITIVE only** after existing Agent/Terminal/Merchant/Checkout binding |
 | `S5_RECORD` | Record O1–O5, actual first rejecting stage/reason, raw bytes/digests, HEAD, policy digest | Proven **synthetic stage**, not real Host trust/authorization |
 
