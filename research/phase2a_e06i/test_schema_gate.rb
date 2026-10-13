@@ -1,0 +1,82 @@
+# frozen_string_literal: true
+#
+# E06-I/A proposed unit assertions. NO CI/fixture execution is authorized
+# by adding this file. Signed O1–O5 integration cases are NOT implemented.
+require "minitest/autorun"
+require_relative "schema_gate"
+require_relative "integrated_probe"
+
+class E06ISchemaOnlyProposedTest < Minitest::Test
+  def test_01_missing_upstream_must_fail_closed
+    error = assert_raises(AP2E06ISchemaGate::Rejected) do
+      AP2E06ISchemaGate::Gate.new(upstream_root: "/__nonexistent_e06i_upstream__")
+    end
+    assert_equal "verification_unavailable", error.code
+  end
+
+  def test_02_preauth_rejection_never_returns_evidence
+    result = AP2E06IPartialProbe.observe(
+      policy_json: "{}", policy_digest: "ignored",
+      case_data: { "candidate" => {}, "root" => "not-a-signed-root", "terminal" => "" }
+    )
+    assert_equal "REJECT", result.fetch("status")
+    assert_equal "G0_PREAUTH_BOUNDS", result.fetch("first_reject_stage")
+    assert_nil result.fetch("evidence")
+    assert_empty result.fetch("completed_stages")
+  end
+
+  def test_03_bad_case_shape_never_returns_evidence
+    result = AP2E06IPartialProbe.observe(
+      policy_json: "{}", policy_digest: "ignored", case_data: {}
+    )
+    assert_equal "REJECT", result.fetch("status")
+    assert_equal "G0_PREAUTH_BOUNDS", result.fetch("first_reject_stage")
+    assert_nil result.fetch("evidence")
+  end
+
+  # Only when an *independently pinned* AP2 source tree is supplied.
+  # This is a Schema mechanism test, NOT an O1–O5 signed-root experiment.
+  def test_04_pinned_open_closed_merchant_schema_mechanism
+    source = ENV["AP2_E06I_UPSTREAM_ROOT"]
+    skip "No pinned upstream: Schema mechanism test NOT RUN" if source.nil? || source.empty?
+    gate = AP2E06ISchemaGate::Gate.new(upstream_root: source)
+
+    good_open = {
+      "vct" => "mandate.checkout.open.1", "cnf" => {},
+      "constraints" => [
+        { "type" => "checkout.line_items", "items" => [
+          { "id" => "requirement-1", "quantity" => 1,
+            "acceptable_items" => [{ "id" => "sku-1", "title" => "Item" }] }
+        ] },
+        { "type" => "checkout.allowed_merchants", "allowed" => [
+          { "id" => "merchant-1", "name" => "Merchant" }
+        ] }
+      ]
+    }
+    good_closed = {
+      "vct" => "mandate.checkout.1", "checkout_jwt" => "synthetic-only",
+      "checkout_hash" => "synthetic-only"
+    }
+
+    assert_equal "VALID", gate.check!(open: good_open, closed: good_closed)["open"]
+    assert_equal "LOCAL_PINNED", gate.check!(open: good_open, closed: good_closed)["merchant_ref"]
+    refute_empty gate.fingerprints.fetch("merchant").fetch("sha256")
+
+    invalid_open = Marshal.load(Marshal.dump(good_open))
+    invalid_open["constraints"][0]["items"][0]["id"] = 123
+    assert_equal "invalid_open_schema", assert_raises(AP2E06ISchemaGate::Rejected) {
+      gate.check!(open: invalid_open, closed: good_closed)
+    }.code
+
+    invalid_merchant = Marshal.load(Marshal.dump(good_open))
+    invalid_merchant["constraints"][1]["allowed"][0]["name"] = 123
+    assert_equal "invalid_open_schema", assert_raises(AP2E06ISchemaGate::Rejected) {
+      gate.check!(open: invalid_merchant, closed: good_closed)
+    }.code
+
+    invalid_closed = good_closed.reject { |key, _| key == "checkout_hash" }
+    assert_equal "invalid_closed_schema", assert_raises(AP2E06ISchemaGate::Rejected) {
+      gate.check!(open: good_open, closed: invalid_closed)
+    }.code
+  end
+end
