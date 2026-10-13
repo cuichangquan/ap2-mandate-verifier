@@ -67,11 +67,73 @@ CREATE TABLE a3_t2c.nonce_issuance_history (
 -- issuance rows, nonce hashes, challenge or Checkout/JWT bindings.
 -- PostgreSQL table owner, superuser and backup restore remain beyond
 -- this restricted-writer guarantee (separate failure/rollback investigation).
-REVOKE ALL ON TABLE a3_t2c.nonce_issuance_history FROM PUBLIC;
+-- Explicitly erase any per-role table grants automatically populated by
+-- ALTER DEFAULT PRIVILEGES. Revoking PUBLIC alone cannot remove named grants.
+-- Effective grants inherited through other roles cannot be revoked here;
+-- the fail-closed catalog assertion below must reject those configurations.
+REVOKE ALL ON TABLE a3_t2c.nonce_issuance_history
+  FROM PUBLIC, a3_t2c_writer, a3_t2c_reader;
 REVOKE ALL ON SCHEMA a3_t2c FROM a3_t2c_writer, a3_t2c_reader;
 GRANT USAGE ON SCHEMA a3_t2c TO a3_t2c_writer, a3_t2c_reader;
 GRANT INSERT ON TABLE a3_t2c.nonce_issuance_history TO a3_t2c_writer;
 GRANT SELECT ON TABLE a3_t2c.nonce_issuance_history TO a3_t2c_reader;
+
+-- Fail the whole DDL transaction if either effective role is privileged,
+-- owns the table via membership, or can SET ROLE to a dangerous role.
+-- PG16 pg_auth_members.set_option is traversed transitively. Inherited
+-- grants are caught by has_table_privilege on the effective role, even when
+-- SET ROLE is not available. A subsequent role grant/privilege change
+-- requires an independent B-time recheck under actual credentials.
+DO $a3_t2c_acl$
+DECLARE
+  lab_role text;
+  should_insert boolean;
+  should_select boolean;
+BEGIN
+  FOR lab_role IN SELECT unnest(ARRAY['a3_t2c_writer', 'a3_t2c_reader'])
+  LOOP
+    should_insert := lab_role = 'a3_t2c_writer';
+    should_select := lab_role = 'a3_t2c_reader';
+
+    IF EXISTS (
+      WITH RECURSIVE assumable(oid) AS (
+        SELECT oid FROM pg_catalog.pg_roles WHERE rolname = lab_role
+        UNION
+        SELECT m.roleid FROM pg_catalog.pg_auth_members m
+          JOIN assumable a ON m.member = a.oid
+         WHERE m.set_option
+      )
+      SELECT 1 FROM assumable a
+        JOIN pg_catalog.pg_roles role ON role.oid = a.oid
+        JOIN pg_catalog.pg_class t
+          ON t.oid = 'a3_t2c.nonce_issuance_history'::regclass
+        JOIN pg_catalog.pg_namespace ns ON ns.oid = t.relnamespace
+       WHERE role.rolsuper OR role.rolcreaterole OR role.rolcreatedb
+          OR role.rolbypassrls OR NOT role.rolcanlogin AND a.oid =
+            (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = lab_role)
+          OR pg_catalog.pg_has_role(a.oid, t.relowner, 'MEMBER')
+          OR pg_catalog.has_schema_privilege(a.oid, ns.oid, 'CREATE')
+          OR pg_catalog.has_table_privilege(a.oid, t.oid, 'UPDATE')
+          OR pg_catalog.has_table_privilege(a.oid, t.oid, 'DELETE')
+          OR pg_catalog.has_table_privilege(a.oid, t.oid, 'TRUNCATE')
+          OR pg_catalog.has_table_privilege(a.oid, t.oid, 'TRIGGER')
+          OR pg_catalog.has_table_privilege(a.oid, t.oid, 'REFERENCES')
+    ) THEN
+      RAISE EXCEPTION 'A3-T2c unsafe effective/assumable % role', lab_role;
+    END IF;
+
+    IF pg_catalog.has_table_privilege(lab_role,
+         'a3_t2c.nonce_issuance_history', 'INSERT') IS DISTINCT FROM should_insert
+       OR pg_catalog.has_table_privilege(lab_role,
+         'a3_t2c.nonce_issuance_history', 'SELECT') IS DISTINCT FROM should_select
+       OR pg_catalog.has_schema_privilege(lab_role, 'a3_t2c', 'CREATE')
+       OR NOT (SELECT rolcanlogin FROM pg_catalog.pg_roles WHERE rolname = lab_role)
+    THEN
+      RAISE EXCEPTION 'A3-T2c role ACL shape invalid: %', lab_role;
+    END IF;
+  END LOOP;
+END;
+$a3_t2c_acl$;
 
 COMMENT ON TABLE a3_t2c.nonce_issuance_history IS
   'Issue #97 synthetic Host-wide nonce issuance lab; untrusted for G1/G7; NEVER DELETE/UPDATE/TRUNCATE history';
