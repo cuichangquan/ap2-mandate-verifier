@@ -48,36 +48,78 @@ module AP2E06IA3T2cNonceLedgerOracle
   # any exclusion index (indisexclusion) because it can make the observer
   # see a transaction-ID wait on a non-nonce constraint.
   INDEX_SQL = <<~SQL.freeze
-    SELECT COUNT(*) FILTER (WHERE i.indisunique)::integer AS total_unique_indexes,
-           COUNT(*) FILTER (WHERE i.indisexclusion)::integer AS exclusion_indexes,
-           COUNT(*) FILTER (
-             WHERE a.attname = 'nonce_sha256'
-               AND a.attnotnull
-               AND NOT a.attisdropped
-               AND i.indisvalid AND i.indisready
+    WITH observed AS (
+      SELECT a.attname, ci.relname AS index_name,
+             co.conname AS constraint_name, co.contype,
+             i.indisprimary, i.indisunique,
+             (
+               i.indisunique AND NOT i.indisexclusion
+               AND i.indisvalid AND i.indisready AND i.indimmediate
+               AND NOT i.indisnullsnotdistinct
                AND i.indpred IS NULL AND i.indexprs IS NULL
                AND i.indnkeyatts = 1 AND i.indnatts = 1
+               AND i.indoption[0] = 0
+               AND a.attnotnull AND NOT a.attisdropped
+               AND ci.relkind = 'i' AND ci.relpersistence = 'p'
+               AND am.amname = 'btree'
+               AND oc.opcmethod = ci.relam
+               AND ons.nspname = 'pg_catalog'
+               AND cl.collname = 'default'
+               AND cns.nspname = 'pg_catalog'
+               AND i.indcollation[0] = a.attcollation
+               AND co.condeferrable = false AND co.condeferred = false
+               AND co.convalidated = true
+               AND (
+                 (a.attname = 'nonce_sha256' AND oc.opcname = 'bpchar_ops')
+                 OR
+                 (a.attname IN ('issuance_ref', 'challenge_ref')
+                  AND oc.opcname = 'text_ops')
+               )
+             ) AS safe_builtin_btree
+        FROM pg_catalog.pg_index i
+        LEFT JOIN pg_catalog.pg_class ci ON ci.oid = i.indexrelid
+        LEFT JOIN pg_catalog.pg_am am ON am.oid = ci.relam
+        LEFT JOIN pg_catalog.pg_attribute a
+          ON a.attrelid = i.indrelid AND a.attnum = i.indkey[0]
+        LEFT JOIN pg_catalog.pg_opclass oc ON oc.oid = i.indclass[0]
+        LEFT JOIN pg_catalog.pg_namespace ons ON ons.oid = oc.opcnamespace
+        LEFT JOIN pg_catalog.pg_collation cl ON cl.oid = i.indcollation[0]
+        LEFT JOIN pg_catalog.pg_namespace cns ON cns.oid = cl.collnamespace
+        LEFT JOIN pg_catalog.pg_constraint co
+          ON co.conindid = i.indexrelid AND co.conrelid = i.indrelid
+       WHERE i.indrelid = 'a3_t2c.nonce_issuance_history'::regclass
+    )
+    SELECT COUNT(*)::integer AS total_indexes,
+           COUNT(*) FILTER (
+             WHERE safe_builtin_btree
+               AND attname = 'nonce_sha256'
+               AND index_name = 'a3_t2c_global_nonce_unique'
+               AND constraint_name = 'a3_t2c_global_nonce_unique'
+               AND contype = 'u' AND NOT indisprimary
            )::integer AS matching_indexes,
            COUNT(*) FILTER (
-             WHERE a.attname = 'issuance_ref'
-               AND a.attnotnull AND NOT a.attisdropped
-               AND i.indisvalid AND i.indisready
-               AND i.indpred IS NULL AND i.indexprs IS NULL
-               AND i.indnkeyatts = 1 AND i.indnatts = 1
+             WHERE safe_builtin_btree
+               AND attname = 'issuance_ref'
+               AND index_name = 'nonce_issuance_history_pkey'
+               AND constraint_name = 'nonce_issuance_history_pkey'
+               AND contype = 'p' AND indisprimary
            )::integer AS issuance_unique_indexes,
            COUNT(*) FILTER (
-             WHERE a.attname = 'challenge_ref'
-               AND a.attnotnull AND NOT a.attisdropped
-               AND i.indisvalid AND i.indisready
-               AND i.indpred IS NULL AND i.indexprs IS NULL
-               AND i.indnkeyatts = 1 AND i.indnatts = 1
+             WHERE safe_builtin_btree
+               AND attname = 'challenge_ref'
+               AND index_name = 'nonce_issuance_history_challenge_ref_key'
+               AND constraint_name = 'nonce_issuance_history_challenge_ref_key'
+               AND contype = 'u' AND NOT indisprimary
            )::integer AS challenge_unique_indexes
-      FROM pg_catalog.pg_index i
-      LEFT JOIN pg_catalog.pg_attribute a
-        ON a.attrelid = i.indrelid AND a.attnum = i.indkey[0]
-     WHERE i.indrelid = 'a3_t2c.nonce_issuance_history'::regclass
-       AND (i.indisunique OR i.indisexclusion)
+      FROM observed
   SQL
+
+  # PG02 requires exactly three *total* indexes, each backed by its
+  # expected non-deferrable constraint and built-in B-tree opclass, database
+  # default deterministic comparator semantics, and exact index name.
+  # An extra non-unique expression index is also forbidden: it could call
+  # owner-controlled code and cause an unrelated transaction-ID wait.
+  # Any catalog mismatch is HOLD pending PostgreSQL 16 runtime validation.
 
   # A broad transactionid lock witness is unsafe if an owner installs
   # INSERT triggers, rules, foreign keys, RLS or partitioning. Any added
@@ -162,6 +204,53 @@ module AP2E06IA3T2cNonceLedgerOracle
       FROM pg_catalog.pg_class t
      WHERE t.oid = 'a3_t2c.nonce_issuance_history'::regclass
   SQL
+
+  # Fully pin the five approved CHECK expressions. Testing only their
+  # names or membership in pg_catalog is unsafe: volatile catalog builtins
+  # can cause unrelated transaction waits. The deparsed CHECK text is
+  # conservatively token-matched to the exact approved source expressions;
+  # unmatched PG16 formatting must FAIL CLOSED (future B verification).
+  CHECK_EXPR_SQL = <<~SQL.freeze
+    SELECT conname, pg_catalog.pg_get_expr(conbin, conrelid) AS expression
+      FROM pg_catalog.pg_constraint
+     WHERE conrelid = 'a3_t2c.nonce_issuance_history'::regclass
+       AND contype = 'c' AND convalidated
+       AND conislocal AND coninhcount = 0 AND NOT connoinherit
+     ORDER BY conname
+  SQL
+
+  CHECK_BOUND_REF_COLUMNS = %w[
+    issuance_ref challenge_ref host_verifier_domain aud agent_thumbprint
+    buyer_account_ref tenant_id checkout_id checkout_jwt_source_ref
+  ].freeze
+
+  # The normalizer strips ONLY syntactic grouping parentheses and outside
+  # whitespace. It preserves quoted literal contents and all operators,
+  # casts, names, operands and conjunction order. Every approved expression
+  # uses only AND with fixed ranges; changing parentheses cannot add a
+  # function or change its evaluation via OR.
+  CHECK_BOUNDS_COMPARISON = CHECK_BOUND_REF_COLUMNS.map { |name|
+    "char_length#{name}>=1ANDchar_length#{name}<=256"
+  }.join("AND").freeze
+  CHECK_BOUNDS_BETWEEN = CHECK_BOUND_REF_COLUMNS.map { |name|
+    "char_length#{name}BETWEEN1AND256"
+  }.join("AND").freeze
+
+  APPROVED_CHECK_TOKENS = {
+    "a3_t2c_nonce_digest_canonical" => [
+      "nonce_sha256::text~'^[0-9a-f]{64}$'::text",
+      "nonce_sha256::text~'^[0-9a-f]{64}$'"
+    ].freeze,
+    "a3_t2c_checkout_digest_canonical" => [
+      "merchant_checkout_sha256::text~'^[0-9a-f]{64}$'::text",
+      "merchant_checkout_sha256::text~'^[0-9a-f]{64}$'"
+    ].freeze,
+    "a3_t2c_valid_checkout_version" => ["checkout_version>=1"].freeze,
+    "a3_t2c_valid_issuance_window" => ["issued_at<expires_at"].freeze,
+    "a3_t2c_bounded_refs" => [
+      CHECK_BOUNDS_COMPARISON, CHECK_BOUNDS_BETWEEN
+    ].freeze
+  }.freeze
 
   # PG02 must not credit transaction-ID waits created by arbitrary
   # omitted-column defaults or generated expressions. The worker supplies
@@ -331,6 +420,7 @@ module AP2E06IA3T2cNonceLedgerOracle
         # or executable column expression. All shapes must match.
         shape_ok = unique_index_shape?(reader) &&
                    pg02_write_shape?(reader) &&
+                   pg02_check_expressions_shape?(reader) &&
                    pg02_insert_columns_shape?(reader)
         observed = false
         if shape_ok
@@ -342,6 +432,7 @@ module AP2E06IA3T2cNonceLedgerOracle
           # a schema that changed while the lock was being witnessed.
           observed &&= unique_index_shape?(reader) &&
                       pg02_write_shape?(reader) &&
+                      pg02_check_expressions_shape?(reader) &&
                       pg02_insert_columns_shape?(reader)
         end
         ack = reader.exec("COMMIT")
@@ -374,6 +465,8 @@ module AP2E06IA3T2cNonceLedgerOracle
         unique_index_shape?(reader)
       return hold("pg02_write_side_effects_unverified") unless
         pg02_write_shape?(reader)
+      return hold("approved_check_expressions_unverified") unless
+        pg02_check_expressions_shape?(reader)
       return hold("approved_insert_column_shape_unverified") unless
         pg02_insert_columns_shape?(reader)
 
@@ -447,6 +540,66 @@ module AP2E06IA3T2cNonceLedgerOracle
       false
     end
 
+    def pg02_check_expressions_shape?(reader)
+      result = reader.exec(CHECK_EXPR_SQL)
+      return false unless result.respond_to?(:ntuples) &&
+        result.ntuples == APPROVED_CHECK_TOKENS.length
+
+      observed = {}
+      result.ntuples.times do |index|
+        row = result[index]
+        return false unless row.is_a?(Hash) &&
+          row["conname"].is_a?(String) && row["expression"].is_a?(String)
+        name = row["conname"]
+        allowed = APPROVED_CHECK_TOKENS[name]
+        return false if !allowed || observed.key?(name)
+        shape = check_expression_tokens(row["expression"])
+        return false unless shape && allowed.include?(shape)
+        observed[name] = true
+      end
+      observed.keys.sort == APPROVED_CHECK_TOKENS.keys.sort
+    rescue StandardError
+      false
+    end
+
+    # Canonical text normalization never strips characters inside quoted
+    # literals or identifiers: rewriting a regex literal must stay visible.
+    # Only syntactic parentheses and SQL pretty-printer whitespace outside
+    # quotes are ignored. Any different token, implicit function/cast name
+    # or side-effecting call fails the allowlist.
+    def check_expression_tokens(expression)
+      return nil unless expression.is_a?(String) &&
+        expression.ascii_only? && expression.bytesize.between?(1, 8192)
+      output = +""
+      quote = nil
+      index = 0
+      while index < expression.length
+        char = expression[index]
+        if quote
+          output << char
+          if char == quote
+            if expression[index + 1] == quote
+              index += 1
+              output << expression[index]
+            else
+              quote = nil
+            end
+          end
+        elsif char == "'" || char == '"'
+          quote = char
+          output << char
+        elsif char == "(" || char == ")" || char.match?(/[[:space:]]/)
+          # Only deparser formatting; not part of the token fingerprint.
+        else
+          output << char
+        end
+        index += 1
+      end
+      quote.nil? ? output : nil
+    rescue StandardError
+      nil
+    end
+
     def pg02_insert_columns_shape?(reader)
       res = reader.exec(PG02_INSERT_COLUMNS_SQL)
       singleton_row(res) &&
@@ -458,8 +611,7 @@ module AP2E06IA3T2cNonceLedgerOracle
     def unique_index_shape?(reader)
       res = reader.exec(INDEX_SQL)
       singleton_row(res) &&
-        res[0]["total_unique_indexes"] == "3" &&
-        res[0]["exclusion_indexes"] == "0" &&
+        res[0]["total_indexes"] == "3" &&
         res[0]["matching_indexes"] == "1" &&
         res[0]["issuance_unique_indexes"] == "1" &&
         res[0]["challenge_unique_indexes"] == "1"
