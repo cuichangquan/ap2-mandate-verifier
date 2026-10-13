@@ -163,9 +163,9 @@ module AP2E06INonceIssuanceSource
         ledger["registry_ref"].is_a?(String) &&
         ledger["registry_ref"].ascii_only? &&
         ledger["registry_ref"].bytesize.between?(1, 256) &&
-        %w[durable atomic_uniqueness all_history].all? do |name|
+        %w[durable atomic_uniqueness all_history].all? { |name|
           ledger[name] == true || ledger[name] == false
-        end
+        }
       # A known narrower domain is REJECT, even if "unique" is true.
       halt!("REJECT", "unsafe_nonce_uniqueness_domain") unless
         ledger["domain"] == DOMAIN &&
