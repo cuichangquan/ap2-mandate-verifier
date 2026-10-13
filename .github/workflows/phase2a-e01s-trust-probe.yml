@@ -58,7 +58,7 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/e01s-evidence"
           # Hard timeout on the whole O1-O4 process, not just the CI job.
-          timeout --signal=TERM --kill-after=1s 10s env PYTHONDONTWRITEBYTECODE=1 python -B research/phase2a_e01s/generate_and_oracle.py \
+          timeout --signal=KILL 10s env PYTHONDONTWRITEBYTECODE=1 python -B research/phase2a_e01s/generate_and_oracle.py \
             --policy "$RUNNER_TEMP/e01s-evidence/host-policy.json" \
             --fixture "$RUNNER_TEMP/e01s-evidence/public-fixture.json" \
             --report "$RUNNER_TEMP/e01s-evidence/python-oracles.json" \
@@ -72,13 +72,13 @@ jobs:
           export AP2_E01S_FIXTURE="$RUNNER_TEMP/e01s-evidence/public-fixture.json"
           export AP2_E01S_RUBY_REPORT="$RUNNER_TEMP/e01s-evidence/ruby-oracles.json"
           # Ruby internal per-case timeout is not a process timeout.
-          timeout --signal=TERM --kill-after=1s 10s ruby research/phase2a_e01s/observe_ruby.rb
+          timeout --signal=KILL 10s ruby research/phase2a_e01s/observe_ruby.rb
       - name: Final gate distinct from CI and strictly public artifact bound
         shell: bash
         run: |
           set -euo pipefail
           # The final evidence-validator is also bounded as a subprocess.
-          timeout --signal=TERM --kill-after=1s 10s python - "$RUNNER_TEMP/e01s-evidence" <<'PY'
+          timeout --signal=KILL 10s python - "$RUNNER_TEMP/e01s-evidence" <<'PY'
           import hashlib, json, subprocess, sys
           from pathlib import Path
           folder = Path(sys.argv[1])
