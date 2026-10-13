@@ -8,12 +8,12 @@ require "json"
 require "digest"
 require "base64"
 require "jwt"
-require_relative "../phase2a_e01s/synthetic_host_policy"
-require_relative "../phase2a_dc04/fixed_issuer_verifier"
+require_relative "isolated_host_policy"
+require_relative "isolated_root_closure"
 
 module AP2E06IPartialProbe
-  HOST = AP2E01SHostPolicy
-  ROOT = AP2DC04FixedIssuerResearch
+  HOST = AP2E06IHostPolicy
+  ROOT = AP2E06IRootClosure
   STAGES = %w[
     G0_PREAUTH_BOUNDS G1_HOST_TRUST_SNAPSHOT G2_ISSUER_ROOT_AUTHENTICITY
     G3_ROOT_ORIGINAL_SD_CLOSURE G4_AGENT_AND_MERCHANT_CRYPTO_BINDING
@@ -91,8 +91,9 @@ module AP2E06IPartialProbe
       reached << current
 
       current = STAGES.fetch(3)
-      # DC04 repeats G2 with the same Host key while performing original
-      # signed Root whole-graph closure and its fixed local Open shape.
+      # Isolated snapshot of the DC04 Root code repeats G2 with the Host key
+      # and performs original signed Root whole-graph closure / local shape.
+      # This copy avoids loading minitest/autorun through old P1-1.
       # "reached G3" is marked only when THIS call succeeds.
       verified_open = ROOT.verify_full_root!(root, trusted_jwk: trusted)
       raise Halt, "unsupported_profile" unless verified_open.is_a?(Hash)
@@ -114,7 +115,7 @@ module AP2E06IPartialProbe
         "reason" => error.code, "completed_stages" => reached.freeze,
         "evidence" => nil
       }
-    rescue AP2RootSDJWTResearch::Rejected => error
+    rescue ROOT::Rejected => error
       {
         "status" => "REJECT", "first_reject_stage" => current,
         "reason" => error.message, "completed_stages" => reached.freeze,
