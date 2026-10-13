@@ -92,7 +92,8 @@ module AP2E06IA3T2cNonceIssuanceWorker
     # nonce across two different tenant/Checkout contexts. DO NOT use this
     # for ordinary issuance or treat it as evidence of CSPRNG quality.
     # Even when INSERT commits, NO nonce is exposed through this method.
-    def collision_probe_only!(connection:, context:, checkout_wire:, nonce:)
+    def collision_probe_only!(connection:, context:, checkout_wire:, nonce:,
+                              lab_probe_hook: nil)
       return hold("invalid_collision_probe_nonce") unless nonce.is_a?(String)
       frozen_nonce = nonce.dup.freeze
       return hold("invalid_collision_probe_nonce") unless
@@ -100,7 +101,8 @@ module AP2E06IA3T2cNonceIssuanceWorker
         frozen_nonce.match?(/\A[A-Za-z0-9_-]{43}\z/)
       insert_synthetic_lab!(
         connection: connection, context: context, checkout_wire: checkout_wire,
-        nonce: frozen_nonce, disclose_after_commit: false
+        nonce: frozen_nonce, disclose_after_commit: false,
+        lab_probe_hook: lab_probe_hook
       )
     rescue StandardError
       hold("collision_probe_unavailable")
@@ -109,7 +111,8 @@ module AP2E06IA3T2cNonceIssuanceWorker
     private
 
     def insert_synthetic_lab!(connection:, context:, checkout_wire:,
-                              nonce:, disclose_after_commit:)
+                              nonce:, disclose_after_commit:,
+                              lab_probe_hook: nil)
       return hold("synthetic_context_invalid") unless context.is_a?(Hash)
       # Detach the whole caller-owned mapping and every nested String before
       # reading/checking it. Passing a Hash#dup with shared mutable values
@@ -158,10 +161,19 @@ module AP2E06IA3T2cNonceIssuanceWorker
         began = true
         connection.exec("SET LOCAL statement_timeout = '3000ms'")
         connection.exec("SET LOCAL lock_timeout = '2000ms'")
+
+        # PG02 negative-probe only. Synchronize AFTER both BEGINs and
+        # immediately BEFORE the actual INSERT. A separate post-INSERT
+        # hook can keep the winning unique-index lock uncommitted while
+        # the other worker attempts its conflicting INSERT. A hook
+        # failure or CANCEL must raise -> ROLLBACK/HOLD, never commit.
+        lab_probe_hook.call(:before_insert) if lab_probe_hook && !disclose_after_commit
         insert = connection.exec_params(INSERT_SQL, args)
         return hold_with_rollback(connection, "insert_rowcount_unknown") unless
           insert.cmd_tuples == 1
 
+        lab_probe_hook.call(:after_insert_before_commit) if
+          lab_probe_hook && !disclose_after_commit
         ack = connection.exec("COMMIT")
         began = false
         return hold("commit_acknowledgment_unknown") unless
