@@ -1,0 +1,133 @@
+name: Phase 2-A E01-S Synthetic Host Issuer Trust (3 cases research ONLY)
+
+on:
+  pull_request:
+    types: [opened]
+    paths:
+      - "research/phase2a_e01s/**"
+      - ".github/workflows/phase2a-e01s-trust-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  e01s-one-authorized-run:
+    # Only the specific approved first-open PR from this repository.
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'research/e01s-three-case-issuer-trust'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout research read-only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
+      - name: Checkout pinned official AP2 v0.2.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none https://github.com/google-agentic-commerce/AP2.git "$RUNNER_TEMP/ap2"
+          git -C "$RUNNER_TEMP/ap2" checkout --detach b4587ac1d055888a73b4b21750973cffba961793
+          test "$(git -C "$RUNNER_TEMP/ap2" rev-parse HEAD)" = b4587ac1d055888a73b4b21750973cffba961793
+      - name: Install pinned research dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -e "$RUNNER_TEMP/ap2"
+          python -m pip install --disable-pip-version-check jsonschema==4.26.0
+          gem install jwt -v 3.3.0 --no-document
+          ruby -rjwt -e 'abort "wrong JWT" unless Gem.loaded_specs.fetch("jwt").version.to_s == "3.3.0"'
+      - name: Compile isolated Ruby; no legacy changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in research/phase2a_e01s/*.rb; do ruby -c "$f"; done
+          python -B -m py_compile research/phase2a_e01s/generate_and_oracle.py
+      - name: O1-O4 sign exactly 3 cases and independently check all raw oracles
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/e01s-evidence"
+          PYTHONDONTWRITEBYTECODE=1 python -B research/phase2a_e01s/generate_and_oracle.py \
+            --policy "$RUNNER_TEMP/e01s-evidence/host-policy.json" \
+            --fixture "$RUNNER_TEMP/e01s-evidence/public-fixture.json" \
+            --report "$RUNNER_TEMP/e01s-evidence/python-oracles.json" \
+            --schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/open_checkout_mandate.json" \
+            --merchant-schema "$RUNNER_TEMP/ap2/code/sdk/schemas/ap2/types/merchant.json"
+      - name: O5 run unchanged DC04 via isolated Ruby Host trust stage adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          export AP2_E01S_POLICY="$RUNNER_TEMP/e01s-evidence/host-policy.json"
+          export AP2_E01S_FIXTURE="$RUNNER_TEMP/e01s-evidence/public-fixture.json"
+          export AP2_E01S_RUBY_REPORT="$RUNNER_TEMP/e01s-evidence/ruby-oracles.json"
+          ruby research/phase2a_e01s/observe_ruby.rb
+      - name: Final gate distinct from CI and strictly public artifact bound
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - "$RUNNER_TEMP/e01s-evidence" <<'PY'
+          import hashlib, json, subprocess, sys
+          from pathlib import Path
+          folder = Path(sys.argv[1])
+          policy = json.loads((folder / "host-policy.json").read_text())
+          fixture = json.loads((folder / "public-fixture.json").read_text())
+          independent = json.loads((folder / "python-oracles.json").read_text())
+          ruby = json.loads((folder / "ruby-oracles.json").read_text())
+          cases = {"IP01", "IP02", "IP03"}
+          assert set(fixture["roots"]) == set(fixture["terminals"]) == cases
+          assert set(independent["oracles"]) == set(ruby["oracles_O5"]) == cases
+          assert all(o["O1_issuer_signature"] == "VALID_WITH_CASE_SIGNER" and
+                     o["O2_agent_merchant_checkout_binding"] == "VALID" and
+                     o["O4_official_open_schema"] == "VALID"
+                     for o in independent["oracles"].values())
+          assert policy["policy_digest"] == fixture["policy_digest"] == independent["policy_digest"] == ruby["policy_digest"]
+          assert policy["issuer_thumbprint"] == independent["oracles"]["IP01"]["signer_thumbprint"] == independent["oracles"]["IP03"]["signer_thumbprint"]
+          assert policy["issuer_thumbprint"] != independent["oracles"]["IP02"]["signer_thumbprint"]
+          assert "$/delegate_payload/0/disclosed/constraints/1" in independent["oracles"]["IP03"]["O3_signed_paths"]
+          assert ruby["gate"] == "LIMITED_SYNTHETIC_E01S_OBSERVED"
+          assert ruby["oracles_O5"]["IP01"]["status"] == "LIMITED_POSITIVE"
+          assert ruby["oracles_O5"]["IP02"]["first_reject_stage"] == "S1_HOST_KEY_POLICY"
+          assert ruby["oracles_O5"]["IP02"]["reason"] == "UNTRUSTED_ISSUER"
+          assert ruby["oracles_O5"]["IP03"]["first_reject_stage"] == "S3_HOST_SIGNED_GRAMMAR"
+          assert ruby["oracles_O5"]["IP03"]["reason"] == "UNSUPPORTED_SIGNED_PROFILE"
+          for obj in (policy, fixture, independent, ruby):
+              def only_public(node):
+                  if isinstance(node, dict):
+                      if "kty" in node:
+                          assert "d" not in node and "PRIVATE KEY" not in repr(node)
+                      for val in node.values():
+                          only_public(val)
+                  elif isinstance(node, list):
+                      for val in node:
+                          only_public(val)
+              only_public(obj)
+          entries = []
+          for file in sorted(folder.iterdir()):
+              raw = file.read_bytes()
+              entries.append({"filename": file.name, "bytes": len(raw),
+                              "sha256": hashlib.sha256(raw).hexdigest()})
+          manifest = {"case_id": "E01-S", "files": entries,
+                      "main_or_pr_checkout_sha": subprocess.check_output(
+                          ["git", "rev-parse", "HEAD"], text=True).strip(),
+                      "pinned_ap2_sha": fixture["ap2_commit"],
+                      "gate": ruby["gate"],
+                      "phase2b": "HOLD", "real_issuer": "UNPROVEN"}
+          (folder / "evidence-manifest.json").write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
+          assert sum(p.stat().st_size for p in folder.iterdir()) <= 1024*1024
+          print("E01-S O1-O5 bounded synthetic stage evidence:", ruby["gate"])
+          print("Real Issuer UNPROVEN. Parent #47 OPEN, Phase 2-B HOLD.")
+          PY
+      - name: Upload only synthetic public-key evidence, capped at 1 MiB
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2a-e01s-public-only-three-case
+          path: ${{ runner.temp }}/e01s-evidence/
+          retention-days: 7
+          if-no-files-found: error
