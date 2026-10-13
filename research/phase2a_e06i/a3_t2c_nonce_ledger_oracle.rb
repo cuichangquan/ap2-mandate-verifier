@@ -44,9 +44,12 @@ module AP2E06IA3T2cNonceLedgerOracle
   # unique-index set against the three immutable schema declarations:
   # issuance_ref PK, challenge_ref UNIQUE and nonce_sha256 UNIQUE.
   # Reject added, partial, expression, invalid, included-column or swapped
-  # indexes, even if nonce's own constraint still exists.
+  # indexes, even if nonce's own constraint still exists. Also reject
+  # any exclusion index (indisexclusion) because it can make the observer
+  # see a transaction-ID wait on a non-nonce constraint.
   INDEX_SQL = <<~SQL.freeze
-    SELECT COUNT(*)::integer AS total_unique_indexes,
+    SELECT COUNT(*) FILTER (WHERE i.indisunique)::integer AS total_unique_indexes,
+           COUNT(*) FILTER (WHERE i.indisexclusion)::integer AS exclusion_indexes,
            COUNT(*) FILTER (
              WHERE a.attname = 'nonce_sha256'
                AND a.attnotnull
@@ -73,7 +76,7 @@ module AP2E06IA3T2cNonceLedgerOracle
       LEFT JOIN pg_catalog.pg_attribute a
         ON a.attrelid = i.indrelid AND a.attnum = i.indkey[0]
      WHERE i.indrelid = 'a3_t2c.nonce_issuance_history'::regclass
-       AND i.indisunique
+       AND (i.indisunique OR i.indisexclusion)
   SQL
 
   # An independent reader checks the actual WRITER role's effective
@@ -264,6 +267,7 @@ module AP2E06IA3T2cNonceLedgerOracle
       res = reader.exec(INDEX_SQL)
       singleton_row(res) &&
         res[0]["total_unique_indexes"] == "3" &&
+        res[0]["exclusion_indexes"] == "0" &&
         res[0]["matching_indexes"] == "1" &&
         res[0]["issuance_unique_indexes"] == "1" &&
         res[0]["challenge_unique_indexes"] == "1"
@@ -273,7 +277,8 @@ module AP2E06IA3T2cNonceLedgerOracle
 
     def reader_session?(reader)
       res = reader.exec(<<~SQL)
-        SELECT current_user AS role_name, pg_is_in_recovery() AS replica,
+        SELECT current_user AS role_name, session_user AS login_role,
+               pg_is_in_recovery() AS replica,
                has_table_privilege(current_user,
                  'a3_t2c.nonce_issuance_history', 'SELECT') AS may_read,
                has_table_privilege(current_user,
@@ -287,6 +292,7 @@ module AP2E06IA3T2cNonceLedgerOracle
       SQL
       return false unless singleton_row(res) &&
         res[0]["role_name"] == READER_ROLE &&
+        res[0]["login_role"] == READER_ROLE &&
         res[0]["replica"] == "f" &&
         res[0]["may_read"] == "t" &&
         %w[may_insert may_update may_delete may_truncate].all? {
