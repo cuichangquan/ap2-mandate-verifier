@@ -2,7 +2,9 @@ name: Phase 2-A E01-S Synthetic Host Issuer Trust (3 cases research ONLY)
 
 on:
   pull_request:
-    types: [opened]
+    # Single explicit owner-approved follow-up is triggered by moving PR #68
+    # from Draft to Ready exactly once; no opened/synchronize/push dispatch.
+    types: [ready_for_review]
     paths:
       - "research/phase2a_e01s/**"
       - ".github/workflows/phase2a-e01s-trust-probe.yml"
@@ -12,11 +14,10 @@ permissions:
 
 jobs:
   e01s-one-authorized-run:
-    # Only the specific approved first-open PR from this repository.
-    # Guard prospective reruns. Historical attempt #1 at its original SHA
-    # remains immutable and can still be manually rerun by GitHub operators;
-    # that operational risk is explicitly HOLD/owner-controlled.
-    if: github.run_attempt == 1 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'research/e01s-three-case-issuer-trust'
+    # Only authorized PR #68 on this repo, with a first attempt.
+    # Old workflow runs are immutable and can still be manually rerun using
+    # their old unpatched YAML: prohibit that by project-owner procedure.
+    if: github.run_attempt == 1 && github.event.pull_request.number == 68 && github.event.action == 'ready_for_review' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'research/e01s-three-case-issuer-trust'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
