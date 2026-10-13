@@ -108,6 +108,9 @@ module AP2E06IA3T2cNonceIssuanceWorker
       observation = runner.value
       return hold("issuance_result_unverified", connections: [connection]) unless
         observation.is_a?(LabObservation)
+      # An exception can complete a worker Thread while PostgreSQL keeps
+      # an open transaction. Never drop the quarantine handle merely
+      # because Thread#alive? is false.
       observation
     rescue StandardError
       hold("csprng_or_issuance_unavailable_quarantine",
@@ -181,10 +184,18 @@ module AP2E06IA3T2cNonceIssuanceWorker
       # Under an uncertain INSERT/COMMIT outcome, do not reuse or disclose
       # the nonce; never turn an unknown ACK into a known rollback or retry.
       # No external side effects, retries or terminal delivery in this class.
-      began = false
+      begin_attempted = false
+      begin_acknowledged = false
+      commit_attempted = false
       begin
-        connection.exec("BEGIN")
-        began = true
+        # The DB may accept BEGIN and lose its wire acknowledgement.
+        # Mark uncertainty *before* issuing libpq. Any exception returns
+        # the socket handle for B-time quarantine even if this Thread exits.
+        begin_attempted = true
+        begin_result = connection.exec("BEGIN")
+        begin_acknowledged = begin_result.respond_to?(:cmd_status) &&
+                             begin_result.cmd_status == "BEGIN"
+        raise "issuance_begin_ack_unknown" unless begin_acknowledged
         connection.exec("SET LOCAL statement_timeout = '3000ms'")
         connection.exec("SET LOCAL lock_timeout = '2000ms'")
 
@@ -200,9 +211,12 @@ module AP2E06IA3T2cNonceIssuanceWorker
 
         lab_probe_hook.call(:after_insert_before_commit) if
           lab_probe_hook && !disclose_after_commit
+        # A lost COMMIT ACK means the nonce may already exist. Do not
+        # retry, recycle or issue a second nonce for this Checkout.
+        commit_attempted = true
         ack = connection.exec("COMMIT")
-        began = false
-        return hold("commit_acknowledgment_unknown") unless
+        return hold("commit_acknowledgment_unknown_quarantine_stop",
+                    connections: [connection]) unless
           ack.respond_to?(:cmd_status) && ack.cmd_status == "COMMIT"
 
         LabObservation.new(
@@ -211,15 +225,19 @@ module AP2E06IA3T2cNonceIssuanceWorker
           nonce: (disclose_after_commit ? nonce : nil)
         )
       rescue StandardError
-        # On connection loss, even ROLLBACK may fail or COMMIT may have
-        # occurred. Always HOLD, never reuse this candidate or claim
-        # "not issued" from a transport error.
-        begin
-          connection.exec("ROLLBACK") if began
-        rescue StandardError
-          nil
+        # An attempted BEGIN can be active even with NO ACK. A later
+        # ROLLBACK attempt cannot rescue uncertainty about a sent COMMIT.
+        # Always return the injected socket to the supervisor for explicit
+        # quarantine instead of returning an ordinary hold with no handle.
+        if begin_attempted && !commit_attempted
+          begin
+            connection.exec("ROLLBACK")
+          rescue StandardError
+            nil
+          end
         end
-        hold("transaction_or_commit_outcome_uncertain")
+        hold("transaction_or_commit_outcome_uncertain_quarantine_stop",
+             connections: [connection])
       end
     end
 
@@ -299,12 +317,14 @@ module AP2E06IA3T2cNonceIssuanceWorker
     end
 
     def hold_with_rollback(connection, reason)
+      # SQL may already be in flight or ROLLBACK's ACK may be lost. A
+      # non-one-row INSERT cannot safely authorize connection reuse.
       begin
         connection.exec("ROLLBACK")
       rescue StandardError
         nil
       end
-      hold(reason)
+      hold("#{reason}_quarantine_stop", connections: [connection])
     end
   end
 end
