@@ -37,6 +37,8 @@ Existing *reuse candidates*, not E01-S observations:
 
 This ordering is reproducible *synthetic evidence*, not a cryptographically certified real Host approval, durable registry, key revocation system or real-Issuer identity proof. A digest by itself **does not** prove the snapshot was approved independently.
 
+**Snapshot digest calculation:** canonicalize the Host record with a fixed UTF-8/sorted-key JSON encoding, **excluding the `policy_digest` field itself**, hash those exact bytes with SHA-256, and separately assert the manifest's recorded bytes and digest match the read-only snapshot. This is only an integrity/replay check; it is not a signature, an external authorization record, or proof of when the snapshot was created. The proposed future harness must record and assert its *actual* freeze event before any issuer signing call.
+
 ### Frozen policy shape — a proposal, not a Ruby public API
 
 | Required field | Contract |
