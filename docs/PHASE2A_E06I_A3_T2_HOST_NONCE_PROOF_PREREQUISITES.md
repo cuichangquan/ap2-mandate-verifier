@@ -9,25 +9,35 @@
 ## 1. 一枚でわかる未証明部分
 
 ```text
-                           HOST正本の世界（未実証）
- Host登録・承認者の証跡   鍵/ポリシー現在状態   一つの監査可能な時計
-                 \          |          /
-                  \         v         /
-       署名トークンとは別経路で取得する信頼済みHostスナップショット
-                         |
-       Host全体で原子的に重複発行を防いだnonce発行台帳（未実証）
-                         |
-                     G1 真正性
-                         v
-     G0 原文検査 → G2 Issuer署名 → G3 Root完全開示
-                  → G4 Agent/Merchant暗号
-                  → G5 公式Schema → G6 Checkout制約
-                         |
-             G7 有限期限を持つEvidence「のみ」
-                         |
-   Hostが現在の信頼・注文状態と一回限りのnonce消費を原子的に再確認
-                         |
-                  Hostだけが最終判断
+               検証フロー：入力に対するステージ順序
+                      G0 元wireの厳格・上限検査
+                                |
+                                v
+                      G1 Host信頼確認
+                                ^
+                                |
+                  HOST正本の世界（未実証）
+       登録・承認履歴 / 鍵・policyの失効 / 信頼済み時刻
+       発行nonceのHost全域・原子的・永続一意性（未実証）
+       ※ G0を通過した入力に対してのみG1へ進む
+                                |
+              （G1の成功には独立出所の証明が必要）
+                                v
+                 G2 Issuerの元Root署名確認
+                                |
+                 G3 元Root全域の完全開示
+                                |
+                 G4 Agent/Merchant署名と結合
+                                |
+                 G5 公式Open/Closed/Merchant Schema
+                                |
+                 G6 全制約とHost Checkoutの照合
+                                |
+                 G7 有限期限のEvidence「のみ」
+                                |
+          Hostによる現在状態の再照合と一回限りのnonce消費
+                                |
+                       Hostだけが最終判断
 ```
 
 **現実：** A3-H1はユーザーが渡した「Hostらしい登録簿／nonce台帳JSON」の整合を見るだけ。A3-T1は同じ`verified_at`と元のRoot/Terminal/Checkoutワイヤのダイジェストを結びつけるHOLD専用候補。いずれも**本物のHostを証明する出所がない**ためG1・G7はHOLD。歴史的`observe`も真正なG0→G7統合実装ではない。
