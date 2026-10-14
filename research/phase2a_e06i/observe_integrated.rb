@@ -85,14 +85,53 @@ module AP2E06IA7SignedReachability
     def git_head!(path)
       stop!("invalid_repo_path") unless path.instance_of?(String) &&
         path.bytesize.between?(1, 1024) && !path.include?("\0")
+      actual = File.realpath(path)
       stdout, _stderr, status = Timeout.timeout(2) do
-        Open3.capture3("git", "-C", File.realpath(path), "rev-parse", "HEAD")
+        Open3.capture3("git", "-c", "core.fsmonitor=false",
+                       "-c", "core.hooksPath=/dev/null", "-C", actual,
+                       "rev-parse", "--verify", "HEAD")
       end
       stop!("git_head_unavailable") unless
         status.success? && stdout.strip.match?(/\A[0-9a-f]{40}\z/)
+      # A Git HEAD SHA does NOT authenticate modified tracked bytes, staged
+      # changes or untracked source shadowing. Fail closed for BOTH repos.
+      git_clean!(actual)
       stdout.strip.freeze
     rescue Timeout::Error
       stop!("git_head_unavailable")
+    end
+
+    def git_clean!(directory)
+      stop!("git_status_unavailable") unless directory.instance_of?(String)
+      # One-byte maximum stdout consumption: a huge dirty worktree cannot
+      # force an unbounded Git porcelain output into the observer's memory.
+      # Omit no untracked file; staged, unstaged and submodules are included.
+      Timeout.timeout(5) do
+        Open3.popen3(
+          "git", "-c", "core.fsmonitor=false",
+          "-c", "core.hooksPath=/dev/null", "-C", directory,
+          "status", "--porcelain=v1", "--untracked-files=all",
+          "--ignore-submodules=none"
+        ) do |input, output, errors, waiter|
+          input.close
+          errors.close
+          begin
+            first_byte = output.read(1)
+            stop!("dirty_repository_source") unless first_byte.nil?
+            stop!("git_status_unavailable") unless waiter.value.success?
+          ensure
+            if waiter.alive?
+              begin
+                Process.kill("KILL", waiter.pid)
+              rescue Errno::ESRCH
+                # Child finished between the liveness check and signal.
+              end
+            end
+          end
+        end
+      end
+    rescue Timeout::Error
+      stop!("git_status_unavailable")
     end
 
     def checked_observation(result)
@@ -112,8 +151,15 @@ module AP2E06IA7SignedReachability
         [actual_reject, blocked].all? { |stage| stage.nil? || STAGES.include?(stage) }
       reason = result["reason"]
       # Never copy raw tokens/nonce or exception text into a public report.
-      safe_reason = reason.is_a?(String) &&
-        reason.match?(/\A[a-zA-Z0-9_.:-]{1,96}\z/) ? reason : "redacted"
+      safe_reason = if reason == "unsupported signed commitment path"
+        # Exact stable G3 rejection mapped from the existing Root inspector.
+        "unsupported_signed_commitment_path"
+      elsif reason.is_a?(String) &&
+            reason.match?(/\A[a-zA-Z0-9_.:-]{1,96}\z/)
+        reason
+      else
+        "redacted"
+      end
       {
         "status" => status,
         "first_reject_stage" => actual_reject,
@@ -233,10 +279,12 @@ module AP2E06IA7SignedReachability
         elsif case_id == "IP02"
           checked["status"] == "REJECT" &&
             checked["first_reject_stage"] == STAGES.fetch(1) &&
+            checked["reason"] == "UNTRUSTED_ISSUER" &&
             checked["completed_stages"] == STAGES.take(1)
         else
           checked["status"] == "REJECT" &&
             checked["first_reject_stage"] == STAGES.fetch(3) &&
+            checked["reason"] == "unsupported_signed_commitment_path" &&
             checked["completed_stages"] == STAGES.take(3)
         end
         checked["matched_predeclared_stage"] = case_expected
