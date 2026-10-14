@@ -29,10 +29,19 @@ module AP2E06IG4Crypto
     def inspect!(
       root_wire:, terminal_wire:, verified_open:, expected_agent_jwk:,
       trusted_merchant_jwk:, expected_aud:, expected_nonce:,
-      host_checkout_jwt:
+      host_checkout_jwt:, verified_at:, terminal_not_after:
     )
       raise Unavailable, "verification_unavailable:jwt_version" unless
         AP2E06IRootClosure.jwt_supported?
+      # This instant is caller-asserted in the synthetic observer; it is NOT
+      # a Host-authenticated B1 verification clock. Missing time is HOLD.
+      raise Unavailable, "g4_verification_clock_unavailable" unless
+        verified_at.is_a?(Integer) &&
+        verified_at.between?(1, AP2E06IRootClosure::MAX_VERIFIED_AT) &&
+        terminal_not_after.is_a?(Integer) &&
+        terminal_not_after.between?(1, AP2E06IRootClosure::MAX_VERIFIED_AT)
+      raise Rejected, "g4_terminal_host_deadline" unless
+        verified_at < terminal_not_after
       raise Rejected, "g4_invalid_wires" unless
         bounded_wire?(root_wire, 32_768) &&
         bounded_wire?(terminal_wire, 32_768) &&
@@ -49,6 +58,14 @@ module AP2E06IG4Crypto
         verified_open["cnf"].keys == ["jwk"] &&
         verified_open["cnf"]["jwk"] == expected_agent_jwk
       raise Rejected, "g4_invalid_merchant_key" unless public_p256?(trusted_merchant_jwk)
+      # Preserve P1-2's strict signed Root/Closed lifetime and immutable
+      # shared-claim invariants, even though official G5 follows later.
+      raise Rejected, "g4_invalid_signed_root_time" unless
+        verified_open["iat"].is_a?(Integer) &&
+        verified_open["exp"].is_a?(Integer) &&
+        verified_open["iat"] <= verified_at &&
+        verified_at < verified_open["exp"] &&
+        (verified_open["exp"] - verified_open["iat"]).between?(1, 7200)
       raise Rejected, "g4_invalid_host_challenge" unless
         [expected_aud, expected_nonce].all? { |s|
           s.is_a?(String) && s.ascii_only? && s.bytesize.between?(1, 256)
@@ -68,6 +85,9 @@ module AP2E06IG4Crypto
         (required - signed.keys).empty? &&
         [nil, "sha-256"].include?(signed["_sd_alg"]) &&
         signed["iat"].is_a?(Integer) &&
+        (verified_at - signed["iat"]).between?(0, 300) &&
+        terminal_not_after > signed["iat"] &&
+        (terminal_not_after - signed["iat"]).between?(1, 7200) &&
         signed["aud"] == expected_aud &&
         signed["nonce"] == expected_nonce
 
@@ -93,10 +113,17 @@ module AP2E06IG4Crypto
         disclosed[1].is_a?(Hash) &&
         secure_equal?(marker_digest, b64(Digest::SHA256.digest(disclosure.b)))
       closed = disclosed[1]
-      # G4 checks only the cryptographic carrier: G5/G6 must validate shape,
-      # time, constraints, status, amounts, SKU and Host order semantics.
-      raise Rejected, "g4_invalid_closed_carrier" if
-        closed.key?("cnf") || closed.key?("_sd") || closed.key?("...")
+      # Verify all nested disclosure-bearing paths (not merely top-level
+      # keys), then keep the original P1-2 signed Closed clock/claim checks.
+      reject_sd_markers!(closed)
+      raise Rejected, "g4_invalid_closed_carrier" unless
+        closed.keys.sort == %w[checkout_hash checkout_jwt exp iat vct] &&
+        closed["vct"] == "mandate.checkout.1" &&
+        closed["iat"].is_a?(Integer) && closed["exp"].is_a?(Integer) &&
+        closed["iat"] == verified_open["iat"] &&
+        closed["exp"] == verified_open["exp"] &&
+        closed["iat"] <= verified_at && verified_at < closed["exp"] &&
+        (closed["exp"] - closed["iat"]).between?(1, 7200)
       raise Rejected, "g4_missing_checkout_binding" unless
         bounded_wire?(closed["checkout_jwt"], 16_384) &&
         closed["checkout_hash"].is_a?(String) &&
@@ -124,6 +151,22 @@ module AP2E06IG4Crypto
     end
 
     private
+
+    # Signed disclosure JSON only; recursive full-depth SD marker rejection.
+    # Every non-supported commitment is ambiguous, not harmless metadata.
+    def reject_sd_markers!(obj, depth = 0)
+      raise Rejected, "g4_unsupported_nested_disclosure" if depth > 24
+      case obj
+      when Hash
+        raise Rejected, "g4_unsupported_nested_disclosure" if
+          obj.size > 32 || obj.key?("_sd") || obj.key?("...") ||
+          obj.keys.any? { |key| !key.is_a?(String) }
+        obj.each_value { |child| reject_sd_markers!(child, depth + 1) }
+      when Array
+        raise Rejected, "g4_unsupported_nested_disclosure" if obj.size > 16
+        obj.each { |child| reject_sd_markers!(child, depth + 1) }
+      end
+    end
 
     def bounded_wire?(s, max)
       s.is_a?(String) && s.ascii_only? && s.bytesize.between?(1, max)
