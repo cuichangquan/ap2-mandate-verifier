@@ -26,7 +26,7 @@ jobs:
           set -Eeuo pipefail
           umask 077
           stop() { echo "STOP/HOLD: $*" >&2; exit 1; }
-          for tool in curl gpg gpgv sha256sum awk xz date stat; do
+          for tool in curl gpg gpgv sha256sum awk xz date stat head mkfifo; do
             command -v "$tool" >/dev/null 2>&1 || stop "preinstalled tool unavailable: $tool"
           done
           [ "$RUNNER_OS" = Linux ] || stop "unexpected runner OS"
@@ -41,6 +41,7 @@ jobs:
           # All HTTP bodies (including redirects) count toward the 16MiB cap.
           budget=$((16 * 1024 * 1024))
           used=0
+          mkfifo "$work/response.headers.fifo"
           fetch() {
             local url="$1" dest="$2" current header status bytes remaining attempt location
             case "$url" in
@@ -53,15 +54,25 @@ jobs:
               [ "$remaining" -gt 0 ] || stop "16MiB body budget exhausted"
               header="$work/response.headers"
               : > "$header"
+              # Bound the header sink while the transfer is active. Using a
+              # FIFO avoids an unbounded --dump-header file on disk.
+              # 8193 bytes is a one-byte sentinel for the 8192-byte limit.
+              head -c 8193 < "$work/response.headers.fifo" > "$header" &
+              header_pid=$!
               status="$(curl --disable --silent --show-error \
                 --proto '=https' --tlsv1.2 --max-redirs 0 \
                 --proxy '' --noproxy '*' --retry 0 \
                 --connect-timeout 12 --max-time 90 \
-                --max-filesize "$remaining" --dump-header "$header" \
-                --write-out '%{http_code}' --output "$dest" "$current")" \
-                || stop "HTTP transfer failure or response too large"
+                --max-filesize "$remaining" \
+                --dump-header "$work/response.headers.fifo" \
+                --write-out '%{http_code}' --output "$dest" "$current")" || {
+                  kill "$header_pid" 2>/dev/null || :
+                  wait "$header_pid" 2>/dev/null || :
+                  stop "HTTP transfer failure or response too large"
+                }
+              wait "$header_pid" || stop "bounded header reader failure"
               [ "$(stat -c '%s' "$header")" -le 8192 ] \
-                || stop "HTTP response headers too large"
+                || stop "HTTP response headers exceed 8KiB"
               [[ "$status" =~ ^[0-9]{3}$ ]] || stop "invalid HTTP status"
               bytes="$(stat -c '%s' "$dest")" || stop "missing HTTP response body"
               used=$((used + bytes))
@@ -81,11 +92,15 @@ jobs:
                   [[ "$url" == https://snapshot.debian.org/archive/* ]] \
                     || stop "redirect outside approved snapshot metadata"
                   location="$(awk '
-                    tolower($1) == "location:" {
-                      value=$0
-                      sub(/^[^:]*:[[:space:]]*/, "", value)
-                      sub(/\r$/, "", value)
-                      print value
+                    {
+                      colon=index($0, ":")
+                      if (colon > 1 && tolower(substr($0, 1, colon-1)) == "location") {
+                        value=substr($0, colon+1)
+                        sub(/\r$/, "", value)
+                        sub(/^[ \t]*/, "", value)
+                        sub(/[ \t]*$/, "", value)
+                        print value
+                      }
                     }' "$header")"
                   [ -n "$location" ] && [[ "$location" != *$'\n'* ]] \
                     || stop "missing or duplicate HTTP Location"
