@@ -1,0 +1,62 @@
+name: "E06-I A9 Isolated Research Design — DISABLED"
+# Issue #73 / Owner A9: SOURCE-ONLY planning, NOT an execution authorization.
+# A manual workflow_dispatch creates no E06 execution: entire job is false.
+# NEVER replace the condition with true without a FRESH scoped Owner approval,
+# exact-HEAD static security review, verified B costs/budget and STOP criteria.
+# No pull_request/push/schedule/workflow_run trigger; no unauthorized CI.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  a9-always-disabled:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    # FUTURE-B DESIGN CONTRACT ONLY — these steps are NOT implemented here:
+    #
+    # PREPARE (trusted external control plane, not verification of itself):
+    # - Obtain explicit one-run B authorization, bounded limits and billing
+    #   confirmation. Only the standard GitHub-hosted ubuntu-24.04 runner;
+    #   no larger/self-hosted/GCP/PG16/DB/real payment, no automatic reruns.
+    # - Trust/attest the supervisor and resolved interpreter/library bytes
+    #   BEFORE their first import. The source manifest must originate from
+    #   an independent reviewed authority, not from the script being tested.
+    # - Checkout EXACT verifier approval SHA and official AP2 v0.2.0
+    #   b4587ac1d055888a73b4b21750973cffba961793. Independently validate
+    #   every repository file and all transitive Ruby/Python/gem/native/OS
+    #   runtime load paths against locked SHA256 digests; unknown -> STOP.
+    # - Pin Actions/image references by immutable digest or SHA, and disallow
+    #   runtime dependency installation within the offline test boundary.
+    #
+    # ISOLATE (must be established by the OS, not by a status flag):
+    # - Immutable verifier/AP2 trees and source imports for the ENTIRE
+    #   interpreter lifetime, read-only bind mounts, non-root/no privilege
+    #   escalation, no network/DNS, limited writable scratch for results.
+    # - An independent OS watchdog must hard-kill/reap the supervisor AND
+    #   its complete child process tree on any timeout or failure.
+    #   Do not equate Ruby Timeout or Python subprocess.wait with this.
+    #
+    # OBSERVE (future separately authorized B ONLY):
+    # - E01-S genuinely signed PUBLIC-ONLY IP01/IP02/IP03, exact original
+    #   Root/Terminal/Merchant bytes; independent O1-O4 first, Ruby G0-G5
+    #   first-reject/causal stage O5 second. Each child <=10s and one job
+    #   <=10min, up to 3 cases, bounded ≤1MiB evidence / retention 7 days.
+    # - No private key, raw nonce, real Buyer/Host/merchant payment output.
+    # - Source/hash/time/trace mismatch -> RED/HOLD. Preserve G6/G7 HOLD;
+    #   a green Action or synthetic 3-case match is NOT Phase 2-A PASS.
+    # - Runner's own HOLD result requires a separate trusted supervisor's
+    #   attribution; do not turn caller-authored metadata into authority.
+    #
+    # No Actions steps to checkout, clone, install, build or run are present.
+    steps:
+      - name: "Inert fail-closed marker — never execute under A9"
+        shell: bash
+        run: |
+          echo "::error::HOLD — Owner Approval B and independently reviewed execution boundary required"
+          exit 1

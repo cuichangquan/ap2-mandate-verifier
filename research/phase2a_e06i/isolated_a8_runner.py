@@ -35,7 +35,16 @@ REQUIRED_VERIFIER = {
     "research/phase2a_e06i/isolated_host_snapshot.rb",
     "research/phase2a_e06i/isolated_g4_crypto.rb",
     "research/phase2a_e06i/isolated_checkout_shape.rb",
+    # A9: complete known relative Ruby import closure for integrated_probe
+    # and isolated_host_snapshot (incl. host/nonce source contracts).
+    "research/phase2a_e06i/isolated_stage_context.rb",
+    "research/phase2a_e06i/isolated_host_source.rb",
+    "research/phase2a_e06i/isolated_nonce_issuance_source.rb",
     "research/phase2a_dc01/independent_positive_oracle.py",
+    # E01-S's future signed fixture generation is a distinct pre-run stage.
+    # Its local source provenance must be covered too if invoked under B.
+    "research/phase2a_e01s/generate_and_oracle.py",
+    "research/p1_3/generate_merchant_checkout.py",
     "research/shared/strict_json_research.rb",
 }
 REQUIRED_SCHEMAS = {
@@ -43,6 +52,27 @@ REQUIRED_SCHEMAS = {
     "code/sdk/schemas/ap2/checkout_mandate.json",
     "code/sdk/schemas/ap2/types/merchant.json",
 }
+# Mandatory EXTERNAL pre-interpreter dependency-closure digest claims:
+# Python: executable, stdlib/native extensions, jwcrypto, cryptography,
+# jsonschema, referencing and every transitive package actually imported.
+# Ruby: executable, stdlib/native extensions, jwt=3.3.0,
+# json_schemer=2.5.0 and ALL transitive gem/native dependencies.
+# Also require loader/search paths and OS/container runtime libraries.
+# Values below are only user-supplied SHA claims, NEVER trusted attestations;
+# a separately authorized B bootstrap must independently authenticate every
+# actual resolved module/gem path, dependency bytes and immutable lifetime.
+# An unknown resolved import or a missing digest MUST STOP outside this script.
+REQUIRED_RUNTIME_GROUPS = (
+    "python_executable",
+    "python_stdlib_native_closure",
+    "python_all_third_party_transitive",
+    "ruby_executable",
+    "ruby_stdlib_native_closure",
+    "ruby_jwt_3_3_0_transitive",
+    "ruby_json_schemer_2_5_0_transitive",
+    "actual_runtime_import_and_gem_search_paths",
+    "os_dynamic_libraries_and_container_image",
+)
 MAX_MANIFEST = 131_072
 MAX_SOURCE_FILE = 262_144
 MAX_SOURCE_FILES = 128
@@ -164,12 +194,22 @@ def attest_snapshot_files(root, expected, required):
     return total
 
 
-def external_manifest!(path):
+def external_manifest(path):
     manifest, data = json_document(path, MAX_MANIFEST)
     demand(set(manifest) == {"protocol", "verifier_commit_claim",
                             "ap2_commit_claim", "verifier_files",
-                            "ap2_files", "bootstrap_status"},
+                            "ap2_files", "bootstrap_status",
+                            "external_runtime_sha256_claims"},
            "INVALID_ATTESTATION_FIELDS")
+    runtime = manifest["external_runtime_sha256_claims"]
+    demand(type(runtime) is dict and
+           set(runtime) == set(REQUIRED_RUNTIME_GROUPS) and
+           all(type(v) is str and HEX64.fullmatch(v) is not None
+               for v in runtime.values()),
+           "EXTERNAL_RUNTIME_CLOSURE_CLAIMS_MISSING")
+    # Full resolved dynamic import closure cannot be enumerated or
+    # authenticated by code running under that same mutable interpreter.
+    # These are untrusted metadata, and may all be fabricated. ALWAYS HOLD.
     demand(manifest["protocol"] == "E06I_A8_UNTRUSTED_MANIFEST" and
            manifest["bootstrap_status"] == "EXTERNAL_ATTESTATION_REQUIRED" and
            type(manifest["verifier_commit_claim"]) is str and
@@ -239,7 +279,7 @@ def run(args):
     demand(Path(__file__).resolve(strict=True) ==
            source / "research/phase2a_e06i/isolated_a8_runner.py",
            "RUNNER_NOT_IN_SOURCE_SNAPSHOT")
-    manifest, manifest_sha = external_manifest!(args.source_manifest)
+    manifest, manifest_sha = external_manifest(args.source_manifest)
     verifier_bytes_before = attest_snapshot_files(
         source, manifest["verifier_files"], REQUIRED_VERIFIER
     )
@@ -265,6 +305,8 @@ def run(args):
         "status": "HOLD",
         "reason": "INDEPENDENT_BOOTSTRAP_NOT_ESTABLISHED",
         "external_source_authentication": "UNPROVEN",
+        "external_runtime_claims_verified": False,
+        "actual_loaded_dependency_closure": "UNPROVEN",
         "phase2a_e03_e04_e06": "UNPROVEN",
         "approval_b": "NOT_GRANTED_BY_THIS_SOURCE",
         "pinned_ap2_sha_claim": PINNED_AP2,
