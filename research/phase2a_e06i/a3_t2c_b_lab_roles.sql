@@ -27,8 +27,8 @@ DECLARE
   db_owner text;
 BEGIN
   IF pg_catalog.current_database() <> 'a3_t2c_b_disposable' OR
-     pg_catalog.current_user <> 'a3_t2c_b_installer' OR
-     pg_catalog.session_user <> 'a3_t2c_b_installer' OR
+     current_user <> 'a3_t2c_b_installer' OR
+     session_user <> 'a3_t2c_b_installer' OR
      pg_catalog.pg_is_in_recovery() THEN
     RAISE EXCEPTION 'A3-T2c B lab context mismatch; STOP';
   END IF;
@@ -36,7 +36,7 @@ BEGIN
   SELECT pg_catalog.pg_get_userbyid(d.datdba) INTO db_owner
     FROM pg_catalog.pg_database d
    WHERE d.datname = pg_catalog.current_database();
-  IF db_owner IS DISTINCT FROM pg_catalog.current_user THEN
+  IF db_owner IS DISTINCT FROM current_user THEN
     RAISE EXCEPTION 'A3-T2c B installer is not lab database owner; STOP';
   END IF;
 
@@ -53,7 +53,7 @@ BEGIN
   -- connection could apply the script to a database bearing the same name.
   IF NOT EXISTS (
      SELECT 1 FROM pg_catalog.pg_roles r
-      WHERE r.rolname = pg_catalog.current_user
+      WHERE r.rolname = current_user
         AND r.rolcanlogin AND r.rolcreaterole
         AND NOT r.rolsuper AND NOT r.rolcreatedb
         AND NOT r.rolbypassrls AND NOT r.rolreplication
