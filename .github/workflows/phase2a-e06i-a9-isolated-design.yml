@@ -1,5 +1,6 @@
-name: "E06-I A9 Isolated Research Design — DISABLED"
-# Issue #73 / Owner A9: SOURCE-ONLY planning, NOT an execution authorization.
+name: "E06-I A10-S Preparation Contract — DISABLED"
+# Issue #73 / Owner A10-S: SOURCE-ONLY change and static Codex review.
+# No preparation P1/B/CI, checkout, OCI/image build or monetary approval.
 # A manual workflow_dispatch creates no E06 execution: entire job is false.
 # NEVER replace the condition with true without a FRESH scoped Owner approval,
 # exact-HEAD static security review, verified B costs/budget and STOP criteria.
@@ -18,6 +19,17 @@ jobs:
     permissions:
       contents: read
 
+    # A10-S PREPARATION SOURCE CONTRACT (NOT EXECUTED):
+    # - Read-only source: .github/scripts/phase2a-e06i-a10-prepare.sh
+    # - Currently returns HOLD/78; unreviewed OCI/dependency pins are UNSET.
+    # - Do NOT call it from this workflow: adding a uses:/run: step or
+    #   enabling this job is a distinct scoped Owner approval and Codex review.
+    # - A later separate P1 authorization may allow dependency resolution and
+    #   one bounded image preparation ONLY after full external SHA/digest
+    #   provenance and zero-cost billing gates are independently confirmed.
+    # - An ephemeral OCI build cannot be assumed to persist for future B.
+    # - Preparation P1 must NOT generate signed fixtures or run Verifier.
+    #
     # FUTURE-B DESIGN CONTRACT ONLY — these steps are NOT implemented here:
     #
     # PREPARE (trusted external control plane, not verification of itself):
@@ -55,7 +67,7 @@ jobs:
     #
     # No Actions steps to checkout, clone, install, build or run are present.
     steps:
-      - name: "Inert fail-closed marker — never execute under A9"
+      - name: "Inert fail-closed marker — A10-S never executes"
         shell: bash
         run: |
           echo "::error::HOLD — Owner Approval B and independently reviewed execution boundary required"
