@@ -30,6 +30,15 @@ ALLOWED = {
     "$/delegate_payload/0/disclosed/constraints/0/items/0/acceptable_items/0",
 }
 EXTRA = "$/delegate_payload/0/disclosed/constraints/1"
+# Existing E01-S alternate metadata hides constraint[1] AS an SD array
+# element, so its *nested* merchant element moves under "/disclosed".
+# All signed slots, including the unchanged Root and SKU, are fixed here.
+IP03_SIGNED_PATHS = {
+    "$/delegate_payload/0",
+    "$/delegate_payload/0/disclosed/constraints/0/items/0/acceptable_items/0",
+    EXTRA,
+    "$/delegate_payload/0/disclosed/constraints/1/disclosed/allowed/0",
+}
 SCHEMAS = {
     "open": ("open_checkout_mandate.json",
              "https://ap2-protocol.org/schemas/open_checkout_mandate",
@@ -183,6 +192,7 @@ def signed_cases(fixture, policy, e01_report, validators):
     )
     demand(type(merchant) is dict, "bad_merchant_signed_payload")
     out = {}
+    opened_controls = {}
     for case_id in IDS:
         root, terminal = fixture["roots"][case_id], fixture["terminals"][case_id]
         signer = fixture["candidate_issuer_public_jwks"][case_id]
@@ -212,10 +222,12 @@ def signed_cases(fixture, policy, e01_report, validators):
                all(item["kind"] == "array" for item in graph),
                "signed_commitment_graph_invalid")
         if case_id == "IP03":
-            demand(EXTRA in paths and set(paths) != ALLOWED,
-                   "missing_signed_unknown_path")
+            demand(set(paths) == IP03_SIGNED_PATHS and
+                   len(paths) == len(IP03_SIGNED_PATHS),
+                   "wrong_exact_ip03_signed_graph")
         else:
-            demand(set(paths) == ALLOWED, "allowed_root_graph_changed")
+            demand(set(paths) == ALLOWED and len(paths) == len(ALLOWED),
+                   "allowed_root_graph_changed")
 
         signed_terminal_jws, terminal_disclosures = segments(terminal)
         agent_signed = jws_payload(
@@ -242,8 +254,17 @@ def signed_cases(fixture, policy, e01_report, validators):
                closed.get("checkout_hash") == b64url(
                    hashlib.sha256(jwt.encode("ascii")).digest()
                ) and
-               opened.get("iat") == closed.get("iat") and
-               opened.get("exp") == closed.get("exp"),
+               type(policy.get("freeze_epoch")) is int and
+               type(opened.get("iat")) is int and
+               type(opened.get("exp")) is int and
+               opened["iat"] == policy["freeze_epoch"] and
+               opened["exp"] - opened["iat"] == 3600 and
+               type(policy.get("not_after")) is int and
+               policy["freeze_epoch"] < policy["not_after"] and
+               type(closed.get("iat")) is int and
+               type(closed.get("exp")) is int and
+               opened["iat"] == closed["iat"] and
+               opened["exp"] == closed["exp"],
                "closed_unsigned_or_unbound")
         demand(validators["open"].is_valid(opened), "official_open_invalid")
         demand(validators["closed"].is_valid(closed), "official_closed_invalid")
@@ -265,6 +286,7 @@ def signed_cases(fixture, policy, e01_report, validators):
                old.get("root_wire_sha256") == sha(root.encode("ascii")) and
                set(old.get("O3_signed_paths", [])) == set(paths),
                "e01_source_oracle_not_correlated")
+        opened_controls[case_id] = opened
         out[case_id] = {
             "root_wire_sha256": sha(root.encode("ascii")),
             "terminal_wire_sha256": sha(terminal.encode("ascii")),
@@ -278,6 +300,10 @@ def signed_cases(fixture, policy, e01_report, validators):
             "official_closed_schema": "VALID",
             "nested_merchant_schema": "VALID",
         }
+    # Exclude even a *correctly signed* but confounded IP03 variant that
+    # changed the disclosed Mandate itself, not just the protected SD slots.
+    demand(opened_controls["IP01"] == opened_controls["IP02"] ==
+           opened_controls["IP03"], "ip03_open_semantics_changed")
     return out
 
 
