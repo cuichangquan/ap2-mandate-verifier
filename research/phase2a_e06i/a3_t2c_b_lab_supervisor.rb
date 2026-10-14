@@ -16,32 +16,39 @@ module AP2E06IA3T2cBLabSupervisor
   MAX_JOB_SECONDS = 600
   MAX_REPORT_BYTES = 1_048_576
   RETENTION_DAYS = 7
-  EXPECTED_REPO_SHA = "1ab189c77f65677f4cb8eedcc1b187c7114f9a8f"
-  CASES = %w[PG01 PG02 PG03 PG04 PG05].freeze
-  ALLOWED_OUTCOMES = %w[HOLD LOCAL_OBSERVED RED_STOP NOT_RUN].freeze
+  # This file changes the PR HEAD when edited, so never hardcode a base
+  # commit as the executable. Future Approval B must name the reviewed SHA.
+  CASES = %w[PG01 PG02 PG03 PG04 PG05].map!(&:freeze).freeze
+  ALLOWED_OUTCOMES = %w[HOLD LOCAL_OBSERVED RED_STOP NOT_RUN].map!(&:freeze).freeze
 
   class Stop < StandardError; end
 
   class Session
     attr_reader :quarantined_threads, :quarantined_connections
 
-    # Scope identifiers and approval URL are *claims* supplied by an operator,
-    # NOT authenticated authority. Verify the actual B approval externally.
+    # Both SHA strings and the B approval URL are UNAUTHENTICATED assertions.
+    # Before any B run, an independent operator MUST verify the Owner-approved
+    # exact reviewed executable SHA, actual clean checkout + loaded code, and
+    # approved isolated environment. String equality alone is not proof.
     def initialize(approval_b_url:, operator_ref:, lab_scope_ref:,
-                   repo_sha: EXPECTED_REPO_SHA)
+                   repo_sha:, approved_repo_sha:)
       unless approval_b_url.is_a?(String) &&
              approval_b_url.match?(/\Ahttps:\/\/github\.com\/cuichangquan\/ap2-mandate-verifier\/issues\/97#issuecomment-\d+\z/) &&
              operator_ref.is_a?(String) &&
              operator_ref.match?(/\A[a-zA-Z0-9_-]{1,64}\z/) &&
              lab_scope_ref.is_a?(String) &&
              lab_scope_ref.match?(/\A[a-zA-Z0-9_-]{1,64}\z/) &&
-             repo_sha == EXPECTED_REPO_SHA
-        raise Stop, "B approval claim / scope / fixed SHA missing; STOP"
+             repo_sha.is_a?(String) &&
+              approved_repo_sha.is_a?(String) &&
+              repo_sha.match?(/\A[0-9a-f]{40}\z/) &&
+              approved_repo_sha.match?(/\A[0-9a-f]{40}\z/) &&
+              repo_sha == approved_repo_sha
+        raise Stop, "B approval claim / scope / approved executable SHA mismatch; STOP"
       end
       @approval_b_url = approval_b_url.dup.freeze
       @operator_ref = operator_ref.dup.freeze
       @scope_ref = lab_scope_ref.dup.freeze
-      @repo_sha = repo_sha.freeze
+      @repo_sha = repo_sha.dup.freeze
       @start_time = nil
       @events = 0
       @case_results = {}
@@ -135,10 +142,12 @@ module AP2E06IA3T2cBLabSupervisor
              reason.match?(/\A[a-z0-9_]{1,80}\z/)
         raise Stop, "invalid sanitized case result"
       end
-      @case_results[case_id] = { "outcome" => outcome,
-                                 "reason" => reason }.freeze
+      @case_results[case_id.dup.freeze] = {
+         "outcome" => outcome.dup.freeze,
+         "reason" => reason.dup.freeze
+       }.freeze
       if %w[HOLD RED_STOP].include?(outcome)
-        @stop_reason ||= "case_#{case_id.downcase}_#{reason}"
+        @stop_reason ||= "case_#{case_id.downcase}_#{reason}".freeze
       end
     end
 
@@ -151,7 +160,7 @@ module AP2E06IA3T2cBLabSupervisor
     # No automatic ROLLBACK, DROP, service stop, credential removal or
     # "cleanup successful" bit is provided by this research class.
     def quarantine!(reason:, threads: [], connections: [])
-      @stop_reason ||= safe_reason(reason)
+      @stop_reason ||= safe_reason(reason).dup.freeze
       @quarantined_threads.concat(threads.compact).uniq!
       @quarantined_connections.concat(connections.compact).uniq!
       @stop_reason
@@ -161,10 +170,10 @@ module AP2E06IA3T2cBLabSupervisor
       @completed = true
       elapsed = @start_time ? (monotonic - @start_time).ceil : nil
       results = CASES.each_with_object({}) do |key, result|
-        result[key] = @case_results.fetch(key, {
-          "outcome" => "NOT_RUN", "reason" => "not_executed"
-        })
-      end
+         result[key] = @case_results.fetch(key) {
+           { "outcome" => "NOT_RUN", "reason" => "not_executed" }.freeze
+         }
+       end.freeze
       report = {
         "issue" => 97,
         "approval" => "B_OPERATOR_ASSERTION_NOT_AUTHENTICATED",
