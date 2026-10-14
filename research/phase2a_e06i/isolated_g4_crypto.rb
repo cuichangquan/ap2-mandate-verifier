@@ -22,6 +22,30 @@ module AP2E06IG4Crypto
 
   class Unavailable < StandardError; end
 
+  # Internal, immutable source-only handoff. Its existence proves neither
+  # independent Host enrollment nor any business authorization or G5 PASS.
+  # Never deserialize, accept from a caller, or expose as bearer evidence.
+  class AuthenticatedChain
+    attr_reader :verified_open, :signed_terminal, :verified_closed,
+                :verified_checkout_payload, :wire_sha256, :signed_expiries,
+                :source_context, :key_fingerprints
+
+    def initialize(verified_open:, signed_terminal:, verified_closed:,
+                   verified_checkout_payload:, wire_sha256:, signed_expiries:,
+                   source_context:, key_fingerprints:)
+      @verified_open = verified_open
+      @signed_terminal = signed_terminal
+      @verified_closed = verified_closed
+      @verified_checkout_payload = verified_checkout_payload
+      @wire_sha256 = wire_sha256
+      @signed_expiries = signed_expiries
+      @source_context = source_context
+      @key_fingerprints = key_fingerprints
+      freeze
+    end
+  end
+  private_constant :AuthenticatedChain
+
   class << self
     # All named trusted_* inputs MUST be selected by an independent Host
     # boundary in a future implementation. The current caller uses only a
@@ -29,7 +53,8 @@ module AP2E06IG4Crypto
     def inspect!(
       root_wire:, terminal_wire:, verified_open:, expected_agent_jwk:,
       trusted_merchant_jwk:, expected_aud:, expected_nonce:,
-      host_checkout_jwt:, verified_at:, terminal_not_after:
+      host_checkout_jwt:, verified_at:, terminal_not_after:,
+      host_policy_wire_sha256:, host_policy_digest:
     )
       raise Unavailable, "verification_unavailable:jwt_version" unless
         AP2E06IRootClosure.jwt_supported?
@@ -42,6 +67,12 @@ module AP2E06IG4Crypto
         terminal_not_after.between?(1, AP2E06IRootClosure::MAX_VERIFIED_AT)
       raise Rejected, "g4_terminal_host_deadline" unless
         verified_at < terminal_not_after
+      # Hash identifiers are correlation labels only: they do not authenticate
+      # the synthetic Host policy or the caller-supplied verification instant.
+      raise Unavailable, "g4_host_snapshot_identity_unavailable" unless
+        [host_policy_wire_sha256, host_policy_digest].all? { |digest|
+          digest.is_a?(String) && digest.match?(/\A[0-9a-f]{64}\z/)
+        }
       raise Rejected, "g4_invalid_wires" unless
         bounded_wire?(root_wire, 32_768) &&
         bounded_wire?(terminal_wire, 32_768) &&
@@ -140,7 +171,36 @@ module AP2E06IG4Crypto
         host_checkout_jwt, trusted_merchant_jwk, merchant_signed,
         "g4_invalid_merchant_signature"
       )
-      true # Internal conditional crypto observation; NEVER VerifiedEvidence.
+      # Persist only authenticated, deeply detached JSON and original-wire
+      # identities. No G5 validator is invoked and no commerce facts accepted.
+      # The private class is an in-process research type, NOT an authority.
+      AuthenticatedChain.new(
+        verified_open: deep_detach_json!(verified_open),
+        signed_terminal: deep_detach_json!(signed),
+        verified_closed: deep_detach_json!(closed),
+        verified_checkout_payload: deep_detach_json!(merchant_signed),
+        wire_sha256: {
+          "root" => Digest::SHA256.hexdigest(root_wire.b).freeze,
+          "terminal" => Digest::SHA256.hexdigest(terminal_wire.b).freeze,
+          "checkout" => Digest::SHA256.hexdigest(host_checkout_jwt.b).freeze
+        }.freeze,
+        signed_expiries: {
+          "root_exp" => verified_open.fetch("exp"),
+          "closed_exp" => closed.fetch("exp"),
+          "terminal_iat" => signed.fetch("iat"),
+          "host_not_after" => terminal_not_after
+        }.freeze,
+        source_context: {
+          "kind" => "synthetic_conditional_only".freeze,
+          "host_policy_wire_sha256" => host_policy_wire_sha256.dup.freeze,
+          "host_policy_digest" => host_policy_digest.dup.freeze,
+          "verified_at" => verified_at
+        }.freeze,
+        key_fingerprints: {
+          "agent_public_key_sha256" => public_jwk_sha256(expected_agent_jwk),
+          "merchant_public_key_sha256" => public_jwk_sha256(trusted_merchant_jwk)
+        }.freeze
+      )
     rescue Rejected, Unavailable
       raise
     rescue JWT::DecodeError, JWT::JWKError, JSON::ParserError,
@@ -150,7 +210,84 @@ module AP2E06IG4Crypto
       raise Unavailable, "g4_verification_unavailable"
     end
 
+    # Called by the same-invocation synthetic observer. A Hash or serialized
+    # "G4 success" is never accepted as an authenticated chain result.
+    # This merely detects cross-invocation or mutated-input substitution;
+    # it is NOT a trusted Host proof or a new signature-verification stage.
+    def same_invocation_result?(result, root_wire:, terminal_wire:,
+                                host_checkout_jwt:, verified_open:,
+                                host_policy_wire_sha256:, host_policy_digest:,
+                                verified_at:)
+      return false unless result.instance_of?(AuthenticatedChain) &&
+        result.frozen? && result.source_context["kind"] == "synthetic_conditional_only" &&
+        result.source_context["verified_at"] == verified_at &&
+        result.source_context["host_policy_wire_sha256"] == host_policy_wire_sha256 &&
+        result.source_context["host_policy_digest"] == host_policy_digest &&
+        result.verified_open == verified_open &&
+        result.wire_sha256["root"] == Digest::SHA256.hexdigest(root_wire.b) &&
+        result.wire_sha256["terminal"] == Digest::SHA256.hexdigest(terminal_wire.b) &&
+        result.wire_sha256["checkout"] == Digest::SHA256.hexdigest(host_checkout_jwt.b)
+      true
+    rescue StandardError
+      false
+    end
+
     private
+
+    # Bounded JSON-only copy after exact original-wire signature verification.
+    # No nested mutable object can escape into a future G5 caller.
+    def deep_detach_json!(value, depth = 0, budget = [0])
+      budget[0] += 1
+      raise Rejected, "g4_handoff_resource_limit" if
+        depth > 24 || budget[0] > 4096
+      case value
+      when Hash
+        raise Rejected, "g4_handoff_resource_limit" if value.size > 32
+        out = {}
+        value.each do |key, child|
+          raise Rejected, "g4_handoff_resource_limit" if out.size >= 32
+          raise Rejected, "g4_handoff_invalid_json" unless
+            key.is_a?(String) && key.bytesize.between?(1, 256)
+          key_copy = key.byteslice(0, 257)
+          raise Rejected, "g4_handoff_invalid_json" unless
+            key_copy.is_a?(String) && key_copy == key &&
+            key_copy.bytesize.between?(1, 256)
+          out[key_copy.freeze] = deep_detach_json!(child, depth + 1, budget)
+        end
+        raise Rejected, "g4_handoff_resource_limit" if value.size != out.size
+        out.freeze
+      when Array
+        raise Rejected, "g4_handoff_resource_limit" if value.size > 16
+        out = []
+        index = 0
+        while index < value.size
+          raise Rejected, "g4_handoff_resource_limit" if index >= 16
+          out << deep_detach_json!(value.fetch(index), depth + 1, budget)
+          index += 1
+        end
+        out.freeze
+      when String
+        raise Rejected, "g4_handoff_resource_limit" if value.bytesize > 32_768
+        copy = value.byteslice(0, 32_769)
+        raise Rejected, "g4_handoff_resource_limit" unless
+          copy.is_a?(String) && copy.bytesize <= 32_768 &&
+          value.bytesize == copy.bytesize && value == copy
+        copy.freeze
+      when Integer, TrueClass, FalseClass, NilClass
+        value
+      when Float
+        raise Rejected, "g4_handoff_invalid_json" unless value.finite?
+        value
+      else
+        raise Rejected, "g4_handoff_invalid_json"
+      end
+    end
+
+    # Local reproducible fingerprint; not proof that a Host enrolled this key.
+    def public_jwk_sha256(jwk)
+      fields = %w[crv kty x y].to_h { |key| [key, jwk.fetch(key)] }
+      Digest::SHA256.hexdigest(JSON.generate(fields)).freeze
+    end
 
     # Signed disclosure JSON only; recursive full-depth SD marker rejection.
     # Every non-supported commitment is ambiguous, not harmless metadata.

@@ -329,15 +329,34 @@ module AP2E06IPartialProbe
       # enrollment are NOT independently authenticated. G4 never calls
       # P1-2/P1-3's mixed crypto/commerce verify! entrypoints.
       current = STAGES.fetch(4)
-      G4.inspect!(
+      # Pin the exact G1 synthetic policy input, not a reconstructed Hash or
+      # caller-supplied "success" marker. An A4 artifact stays private to this
+      # single call and is not an authorization/evidence object.
+      host_policy_wire_sha256 = Digest::SHA256.hexdigest(policy_json.b).freeze
+      g4_result = G4.inspect!(
         root_wire: root, terminal_wire: terminal, verified_open: verified_open,
         expected_agent_jwk: policy.fetch("expected_agent_public_jwk"),
         trusted_merchant_jwk: policy.fetch("trusted_merchant_public_jwk"),
         expected_aud: policy.fetch("expected_aud"),
         expected_nonce: policy.fetch("expected_nonce"),
         host_checkout_jwt: policy.fetch("host_checkout_jwt"),
-        verified_at: verified_at, terminal_not_after: policy.fetch("not_after")
+        verified_at: verified_at, terminal_not_after: policy.fetch("not_after"),
+        host_policy_wire_sha256: host_policy_wire_sha256,
+        host_policy_digest: policy.fetch("policy_digest")
       )
+      # The result must be an internal G4 type bound to these exact original
+      # frozen bytes, G3 verified Open, Host policy and single verification
+      # instant. Any mismatch is unavailable, never a later-stage PASS.
+      unless G4.same_invocation_result?(
+        g4_result, root_wire: root, terminal_wire: terminal,
+        host_checkout_jwt: policy.fetch("host_checkout_jwt"),
+        verified_open: verified_open,
+        host_policy_wire_sha256: host_policy_wire_sha256,
+        host_policy_digest: policy.fetch("policy_digest"),
+        verified_at: verified_at
+      )
+        raise G4::Unavailable, "g4_authenticated_handoff_unavailable"
+      end
       reached << current
 
       # Neither Schema (G5) nor commerce/Host semantics (G6) runs here.
