@@ -38,9 +38,9 @@ module AP2E06IA3T2cBLabSupervisor
              repo_sha == EXPECTED_REPO_SHA
         raise Stop, "B approval claim / scope / fixed SHA missing; STOP"
       end
-      @approval_b_url = approval_b_url.freeze
-      @operator_ref = operator_ref.freeze
-      @scope_ref = lab_scope_ref.freeze
+      @approval_b_url = approval_b_url.dup.freeze
+      @operator_ref = operator_ref.dup.freeze
+      @scope_ref = lab_scope_ref.dup.freeze
       @repo_sha = repo_sha.freeze
       @start_time = nil
       @events = 0
@@ -118,6 +118,8 @@ module AP2E06IA3T2cBLabSupervisor
       end
       result
     rescue Stop
+      quarantine!(reason: "bounded_stop_#{label}",
+                  threads: [worker].compact, connections: connections)
       raise
     rescue StandardError
       quarantine!(reason: "operation_exception_#{label}",
