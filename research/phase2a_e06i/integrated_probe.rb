@@ -502,17 +502,23 @@ module AP2E06IPartialProbe
         "evidence" => nil
       }
     rescue JSON::ParserError, ArgumentError, TypeError, KeyError
+      # Unexpected G5 local error is not proof of a signed-input defect.
+      at_g5 = current == STAGES.fetch(5)
       {
-        "status" => "REJECT", "first_reject_stage" => current,
-        "reason" => "invalid_input_or_ambiguous_json", "stage_trace_basis" => "synthetic_conditional_only",
+        "status" => at_g5 ? "HOLD" : "REJECT",
+        "first_reject_stage" => at_g5 ? nil : current,
+        "blocked_stage" => at_g5 ? current : nil,
+        "reason" => at_g5 ? "verification_unavailable" : "invalid_input_or_ambiguous_json",
+        "stage_trace_basis" => "synthetic_conditional_only",
         "completed_stages" => reached.freeze,
         "evidence" => nil
       }
     rescue StandardError
-      # Other local exceptions must not authorize anything; never emit a
-      # successfully verified stage or a serialized exception / sensitive wire.
+      # Unknown dependency failures are HOLD, never G5 Schema-invalid.
+      at_g5 = current == STAGES.fetch(5)
       {
-        "status" => "HOLD", "first_reject_stage" => current,
+        "status" => "HOLD", "first_reject_stage" => at_g5 ? nil : current,
+        "blocked_stage" => at_g5 ? current : nil,
         "reason" => "unexpected_unverified_failure",
         "stage_trace_basis" => "synthetic_conditional_only",
         "completed_stages" => reached.freeze, "evidence" => nil
