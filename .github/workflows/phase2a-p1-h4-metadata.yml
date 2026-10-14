@@ -121,9 +121,22 @@ jobs:
                     || stop "missing, empty or duplicate final HTTP Location"
                   location="$(jq -s -r '.[0].redirect_url' "$meta")" \
                     || stop "cannot read curl redirect target"
-                  [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/[0-9a-f]{40,64}$ ]] \
-                    || stop "redirect not to immutable same-host snapshot file"
-                  current="$location"
+                  # Diagnostics are fixed category labels only: never emit
+                  # Location, redirect_url, credentials, query, or headers.
+                  # Keep the original exact URL allowlist unchanged.
+                  if [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/[0-9a-f]{40,64}$ ]]; then
+                    current="$location"
+                  elif [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/ ]]; then
+                    stop "redirect denied category=SAME_HOST_FILE_NONPINNED"
+                  elif [[ "$location" =~ ^https://snapshot[.]debian[.]org/ ]]; then
+                    stop "redirect denied category=SAME_HOST_OTHER_PATH"
+                  elif [[ "$location" =~ ^https:// ]]; then
+                    stop "redirect denied category=OTHER_HTTPS_DESTINATION"
+                  elif [[ "$location" =~ ^http:// ]]; then
+                    stop "redirect denied category=INSECURE_HTTP_DESTINATION"
+                  else
+                    stop "redirect denied category=UNEXPECTED_URL_FORMAT"
+                  fi
                   ;;
                 *) stop "unexpected HTTP status $status" ;;
               esac
