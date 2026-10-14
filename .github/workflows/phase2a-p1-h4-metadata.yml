@@ -26,7 +26,7 @@ jobs:
           set -Eeuo pipefail
           umask 077
           stop() { echo "STOP/HOLD: $*" >&2; exit 1; }
-          for tool in curl gpg gpgv sha256sum awk xz date stat head mkfifo; do
+          for tool in curl gpg gpgv sha256sum awk xz date stat head mkfifo jq; do
             command -v "$tool" >/dev/null 2>&1 || stop "preinstalled tool unavailable: $tool"
           done
           [ "$RUNNER_OS" = Linux ] || stop "unexpected runner OS"
@@ -37,13 +37,15 @@ jobs:
 
           # Only approved HTTPS metadata sources. A snapshot /archive/ URL may
           # redirect ONCE to the same host's content-addressed /file/<hash>.
-          # No other redirect, external host, proxy, fallback, or automatic retry.
-          # All HTTP bodies (including redirects) count toward the 16MiB cap.
+          # Curl owns HTTP response-block parsing: never parse Location from
+          # raw --dump-header bytes, which can include interim 1xx responses.
+          # No automatic redirects, external host, proxy, fallback, or retry.
+          # All received HTTP bodies count toward the 16MiB cap.
           budget=$((16 * 1024 * 1024))
           used=0
           mkfifo "$work/response.headers.fifo"
           fetch() {
-            local url="$1" dest="$2" current header status bytes remaining attempt location
+            local url="$1" dest="$2" current header meta status location bytes remaining attempt header_pid
             case "$url" in
               https://snapshot.debian.org/archive/*|https://ftp-master.debian.org/keys/archive-key-12*.asc) ;;
               *) stop "unapproved initial metadata URL" ;;
@@ -53,27 +55,44 @@ jobs:
               remaining=$((budget - used))
               [ "$remaining" -gt 0 ] || stop "16MiB body budget exhausted"
               header="$work/response.headers"
+              meta="$work/response.meta.json"
               : > "$header"
-              # Bound the header sink while the transfer is active. Using a
-              # FIFO avoids an unbounded --dump-header file on disk.
-              # 8193 bytes is a one-byte sentinel for the 8192-byte limit.
+              : > "$meta"
+              # The FIFO reader stops after byte 8193. Thus an oversized
+              # header stream forces curl's write failure before persisting
+              # unbounded headers; wait/reap before accepting the response.
               head -c 8193 < "$work/response.headers.fifo" > "$header" &
               header_pid=$!
-              status="$(curl --disable --silent --show-error \
+              curl --disable --silent --show-error \
                 --proto '=https' --tlsv1.2 --max-redirs 0 \
                 --proxy '' --noproxy '*' --retry 0 \
                 --connect-timeout 12 --max-time 90 \
                 --max-filesize "$remaining" \
                 --dump-header "$work/response.headers.fifo" \
-                --write-out '%{http_code}' --output "$dest" "$current")" || {
+                --write-out '%{json}\n%{header_json}\n' \
+                --output "$dest" "$current" > "$meta" || {
                   kill "$header_pid" 2>/dev/null || :
                   wait "$header_pid" 2>/dev/null || :
-                  stop "HTTP transfer failure or response too large"
+                  stop "HTTP transfer failed, oversized headers or body"
                 }
-              wait "$header_pid" || stop "bounded header reader failure"
+              wait "$header_pid" || stop "bounded header reader failed"
               [ "$(stat -c '%s' "$header")" -le 8192 ] \
                 || stop "HTTP response headers exceed 8KiB"
-              [[ "$status" =~ ^[0-9]{3}$ ]] || stop "invalid HTTP status"
+              # Exactly two curl-generated JSON objects:
+              # transfer metadata + final response headers. Reject invalid,
+              # missing or extra output rather than trusting raw header text.
+              jq -s -e '
+                length == 2
+                and (.[0] | type) == "object"
+                and (.[1] | type) == "object"
+                and (.[0].http_code | type) == "number"
+                and (.[0].redirect_url | type) == "string"
+                and (.[0].url_effective | type) == "string"
+              ' "$meta" > /dev/null || stop "invalid curl response metadata"
+              status="$(jq -s -r '.[0].http_code' "$meta")" \
+                || stop "cannot read HTTP status"
+              [ "$(jq -s -r '.[0].url_effective' "$meta")" = "$current" ] \
+                || stop "unexpected effective HTTP request URL"
               bytes="$(stat -c '%s' "$dest")" || stop "missing HTTP response body"
               used=$((used + bytes))
               [ "$used" -le "$budget" ] || stop "aggregate HTTP body exceeds 16MiB"
@@ -91,32 +110,20 @@ jobs:
                   [ "$attempt" -eq 0 ] || stop "multiple redirects forbidden"
                   [[ "$url" == https://snapshot.debian.org/archive/* ]] \
                     || stop "redirect outside approved snapshot metadata"
-                  # Count fields in awk: shell command substitution strips
-                  # trailing newlines, so blank duplicate Location headers
-                  # cannot be detected by inspecting captured output alone.
-                  location="$(awk '
-                    {
-                      colon=index($0, ":")
-                      if (colon > 1 && tolower(substr($0, 1, colon-1)) == "location") {
-                        count++
-                        value=substr($0, colon+1)
-                        sub(/\r$/, "", value)
-                        sub(/^[ \t]*/, "", value)
-                        sub(/[ \t]*$/, "", value)
-                      }
-                    }
-                    END {
-                      if (count != 1 || value == "") exit 1
-                      print value
-                    }' "$header")" \
-                    || stop "missing, empty or duplicate HTTP Location"
-                  if [[ "$location" =~ ^/file/[0-9a-f]{40,64}$ ]]; then
-                    current="https://snapshot.debian.org$location"
-                  elif [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/[0-9a-f]{40,64}$ ]]; then
-                    current="$location"
-                  else
-                    stop "redirect target not immutable same-host snapshot file"
-                  fi
+                  # curl's final-response header_json preserves duplicate
+                  # Location fields as array entries, including empty ones.
+                  jq -s -e '
+                    (.[1].location | type) == "array"
+                    and (.[1].location | length) == 1
+                    and (.[1].location[0] | type) == "string"
+                    and (.[1].location[0] | length) > 0
+                  ' "$meta" > /dev/null \
+                    || stop "missing, empty or duplicate final HTTP Location"
+                  location="$(jq -s -r '.[0].redirect_url' "$meta")" \
+                    || stop "cannot read curl redirect target"
+                  [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/[0-9a-f]{40,64}$ ]] \
+                    || stop "redirect not to immutable same-host snapshot file"
+                  current="$location"
                   ;;
                 *) stop "unexpected HTTP status $status" ;;
               esac
