@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "record_type": "A11_S_STATIC_CANDIDATE_INPUT_BOM_NOT_EXECUTABLE",
+  "issue": 73,
+  "approval_scope": "A11-S: one new JSON file and independent Codex static review only",
+  "security_assertion": {
+    "source_controlled_file_is_independent_trust_anchor": false,
+    "production_or_payment_authority": false,
+    "preparation_p1_authorized": false,
+    "signed_pilot_b_authorized": false,
+    "runtime_execution_authorized": false,
+    "phase_2b_authorized": false,
+    "overall_verifier_security_pass": false,
+    "on_unknown_or_mismatch": "STOP/HOLD; do not fallback to mutable tag, resolver, installer, caller-provided digest or unsigned reports",
+    "verified_archive_hashes_do_not_prove_loaded_runtime_identity": true
+  },
+  "source_roles": {
+    "official_ap2_v0_2_commit": {
+      "repository": "google-agentic-commerce/AP2",
+      "commit_sha": "b4587ac1d055888a73b4b21750973cffba961793",
+      "role": "upstream reference to official source and uv.lock; not evidence of installed byte identity"
+    },
+    "verifier_research_reference": {
+      "repository": "cuichangquan/ap2-mandate-verifier",
+      "commit_sha": "cd72c07947c2f6dfbc1ef900de252e7b82b74712",
+      "role": "A10-S intended candidate research snapshot; not runtime attestation"
+    },
+    "control_plane_main_at_owner_log_review": {
+      "repository": "cuichangquan/ap2-mandate-verifier",
+      "commit_sha": "afc121e6402e6e7e790659424a5c0023cf7713c9",
+      "role": "historical review baseline only; not an approval to run or pin for the future"
+    }
+  },
+  "evidence_provenance": {
+    "kind": "owner_supplied_mac_terminal_stdout_not_independently_attested",
+    "rubygems_and_oci": {
+      "issue_comment_url": "https://github.com/cuichangquan/ap2-mandate-verifier/issues/73#issuecomment-6168495855",
+      "scope": "five whole .gem archive SHA256 comparisons against official RubyGems version sha plus OCI index and linux/amd64 leaf manifest metadata byte SHA and registry headers"
+    },
+    "python_wheels": {
+      "issue_comment_url": "https://github.com/cuichangquan/ap2-mandate-verifier/issues/73#issuecomment-6169755166",
+      "scope": "16 whole .whl archive SHA256 comparisons against official PyPI digests and fixed upstream uv.lock across two Mac sessions; CPython 3.11 linux/amd64 candidate files"
+    },
+    "reported_hash_comparison_is_not_supply_chain_attestation": true,
+    "temporary_file_cleanup": "Owner copy-pasted scripts contained exit traps; actual local deletion and any retained package caches are not independently attested"
+  },
+  "target_candidate": {
+    "os": "linux",
+    "architecture": "amd64",
+    "python": "CPython 3.11",
+    "ruby": "Ruby 3.3",
+    "optional_python_extras": [],
+    "actual_interpreter_and_native_abi_attested": false
+  },
+  "ruby_gem_archives": {
+    "data_origin": "RubyGems official version JSON sha plus exact downloaded .gem per Owner stdout",
+    "status": "OWNER_REPORTED_ARCHIVE_SHA256_MATCH_ONLY",
+    "not_full_runtime_gem_closure": true,
+    "items": [
+      {
+        "name": "jwt",
+        "version": "3.3.0",
+        "filename": "jwt-3.3.0.gem",
+        "sha256": "44cc34fbc341c148233cf66641522b4bce0dfb1ce55e8073f05c56f44f4ee546"
+      },
+      {
+        "name": "json_schemer",
+        "version": "2.5.0",
+        "filename": "json_schemer-2.5.0.gem",
+        "sha256": "2f01fb4cce721a4e08dd068fc2030cffd0702a7f333f1ea2be6e8991f00ae396"
+      },
+      {
+        "name": "hana",
+        "version": "1.3.7",
+        "filename": "hana-1.3.7.gem",
+        "sha256": "5425db42d651fea08859811c29d20446f16af196308162894db208cac5ce9b0d"
+      },
+      {
+        "name": "regexp_parser",
+        "version": "2.13.1",
+        "filename": "regexp_parser-2.13.1.gem",
+        "sha256": "5aedb6b7c35688f51e86eef17a15374dfd287c83f4ca644b2c5f3ec50a33b44b"
+      },
+      {
+        "name": "simpleidn",
+        "version": "0.3.0",
+        "filename": "simpleidn-0.3.0.gem",
+        "sha256": "12ca730bed2f3db04d11e9bfd1bca3e11fb37f55b21eb2e9793fb5814bf54d03"
+      }
+    ]
+  },
+  "python_wheel_archives": {
+    "data_origin": "upstream pinned uv.lock + PyPI JSON archive digests per Owner stdout",
+    "status": "OWNER_REPORTED_ARCHIVE_SHA256_MATCH_ONLY",
+    "selection": "exact one selected wheel filename per package, not an installer plan",
+    "declared_dependency_metadata": "MANUALLY_REVIEWED_FOR_CPYTHON311_LINUX_AMD64_WITHOUT_EXTRAS_NOT_RUNTIME_ATTESTED",
+    "items": [
+      {
+        "name": "annotated-types",
+        "version": "0.7.0",
+        "filename": "annotated_types-0.7.0-py3-none-any.whl",
+        "sha256": "1f02e8b43a8fbbc3f3e0d4f0f4bfc8131bcb4eebe8849b8e5c773f3a1c582a53"
+      },
+      {
+        "name": "attrs",
+        "version": "26.1.0",
+        "filename": "attrs-26.1.0-py3-none-any.whl",
+        "sha256": "c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309"
+      },
+      {
+        "name": "cffi",
+        "version": "2.0.0",
+        "filename": "cffi-2.0.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+        "sha256": "8941aaadaf67246224cee8c3803777eed332a19d909b47e29c9842ef1e79ac26"
+      },
+      {
+        "name": "cryptography",
+        "version": "46.0.5",
+        "filename": "cryptography-46.0.5-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+        "sha256": "4d7e3d356b8cd4ea5aff04f129d5f66ebdc7b6f8eae802b93739ed520c47c79b"
+      },
+      {
+        "name": "jsonschema",
+        "version": "4.26.0",
+        "filename": "jsonschema-4.26.0-py3-none-any.whl",
+        "sha256": "d489f15263b8d200f8387e64b4c3a75f06629559fb73deb8fdfb525f2dab50ce"
+      },
+      {
+        "name": "jsonschema-specifications",
+        "version": "2025.9.1",
+        "filename": "jsonschema_specifications-2025.9.1-py3-none-any.whl",
+        "sha256": "98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe"
+      },
+      {
+        "name": "jwcrypto",
+        "version": "1.5.6",
+        "filename": "jwcrypto-1.5.6-py3-none-any.whl",
+        "sha256": "150d2b0ebbdb8f40b77f543fb44ffd2baeff48788be71f67f03566692fd55789"
+      },
+      {
+        "name": "pycparser",
+        "version": "3.0",
+        "filename": "pycparser-3.0-py3-none-any.whl",
+        "sha256": "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992"
+      },
+      {
+        "name": "pydantic",
+        "version": "2.12.5",
+        "filename": "pydantic-2.12.5-py3-none-any.whl",
+        "sha256": "e561593fccf61e8a20fc46dfc2dfe075b8be7d0188df33f221ad1f0139180f9d"
+      },
+      {
+        "name": "pydantic-core",
+        "version": "2.41.5",
+        "filename": "pydantic_core-2.41.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+        "sha256": "f31d95a179f8d64d90f6831d71fa93290893a33148d890ba15de25642c5d075b"
+      },
+      {
+        "name": "pyyaml",
+        "version": "6.0.3",
+        "filename": "pyyaml-6.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+        "sha256": "b8bb0864c5a28024fac8a632c443c87c5aa6f215c0b126c449ae1a150412f31d"
+      },
+      {
+        "name": "referencing",
+        "version": "0.37.0",
+        "filename": "referencing-0.37.0-py3-none-any.whl",
+        "sha256": "381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231"
+      },
+      {
+        "name": "rpds-py",
+        "version": "0.30.0",
+        "filename": "rpds_py-0.30.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+        "sha256": "33f559f3104504506a44bb666b93a33f5d33133765b0c216a5bf2f1e1503af89"
+      },
+      {
+        "name": "sd-jwt",
+        "version": "0.10.4",
+        "filename": "sd_jwt-0.10.4-py3-none-any.whl",
+        "sha256": "d7ae669eb5d51bceeb38e0df8ab2faddd12e3b21ab64d831b6d048fc1e00ce75"
+      },
+      {
+        "name": "typing-extensions",
+        "version": "4.15.0",
+        "filename": "typing_extensions-4.15.0-py3-none-any.whl",
+        "sha256": "f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548"
+      },
+      {
+        "name": "typing-inspection",
+        "version": "0.4.2",
+        "filename": "typing_inspection-0.4.2-py3-none-any.whl",
+        "sha256": "4ed1cacbdc298c220f1bd249ed5287caa16f34d44ef4e9c3d0cbad5b521545e7"
+      }
+    ]
+  },
+  "oci_base_reference": {
+    "registry": "registry-1.docker.io",
+    "repository": "library/ruby",
+    "mutable_tag_at_observation": "3.3.12-slim-bookworm",
+    "architecture": "amd64",
+    "os": "linux",
+    "index_digest": "sha256:2e32876dfe84913ec84eb4a59617f72dab7c0989d38f8219487491e384543975",
+    "selected_platform_manifest_digest": "sha256:64788045fc5e88016aa060f91b5b25cc0c41aed52accc7625cfca48037b0ec35",
+    "status": "OWNER_REPORTED_REGISTRY_METADATA_DIGEST_MATCH_ONLY",
+    "not_full_image_layer_attestation": true,
+    "not_final_built_oci_digest": true
+  },
+  "unverified_hold": [
+    "Ruby native/default gem runtime closure including base64 and bigdecimal and actual gem search paths",
+    "CPython 3.11 interpreter provenance and stdlib/native ABI/import/search paths",
+    "All Ruby and Python dynamically loaded native extensions and shared objects (OpenSSL, libc and loader)",
+    "Installed OS runtime Debian package snapshot, signature provenance, apt repositories and build frontend",
+    "OCI base layers and exact files as installed; selected platform manifest digest does not attest consumed layers",
+    "Final built OCI image digest, runtime reproducibility and immutability across preparation P1 and future B",
+    "Independent externally trusted source/schema/runner/supervisor hash manifest and authenticated loaded bytes",
+    "Host policy, real Issuer identity, nonce ledger, G6/G7/Host final authorization",
+    "Original signed Root O1-O5 and E03/E04/E06 independent integrated measurement",
+    "Approved zero-cost P1 preparation environment, any CI execution, experiment B and Phase 2-B"
+  ],
+  "execution_guards": {
+    "owner_approval_for_source_only": true,
+    "ci_test_db_container_execution": false,
+    "merge_approved": false,
+    "older_a10_prepare_script_must_stay_disabled": ".github/scripts/phase2a-e06i-a10-prepare.sh exits 78",
+    "older_a9_workflow_must_stay_disabled": ".github/workflows/phase2a-e06i-a9-isolated-design.yml job if:false",
+    "consumer_must_fail_closed": "Never load this JSON as trusted runtime authorization or infer any missing digest from mutable/downloaded input"
+  }
+}
