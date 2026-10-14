@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 #
 # Phase 2-A E06-I approval A, isolated research-only stage observer.
-# WARNING: G0–G4 synthetic-local only. G5–G7 deliberately FAIL CLOSED.
+# WARNING: G0–G5 conditional synthetic-only; G6/G7 deliberately HOLD.
+# G5 is only a staged offline candidate, NOT a Host or Issuer trust proof.
 # This is NOT an integrated verifier, not authorization and not a Gem API.
 # Never relabel a G0 or G1 reject as proof of signature/SD closure.
 require "json"
@@ -11,6 +12,9 @@ require_relative "isolated_host_policy"
 require_relative "isolated_host_snapshot"
 require_relative "isolated_root_closure"
 require_relative "isolated_g4_crypto"
+# Reuse both pre-existing offline validators; neither provides authorization.
+require_relative "schema_gate"
+require_relative "isolated_checkout_shape"
 require_relative "isolated_stage_context"
 # A3-T1 diagnostic needs these distinct Halt classes to preserve REJECT.
 # Modules define contracts only; no fixtures, tests or runner are loaded.
@@ -21,6 +25,8 @@ module AP2E06IPartialProbe
   HOST = AP2E06IHostPolicy
   ROOT = AP2E06IRootClosure
   G4 = AP2E06IG4Crypto
+  SCHEMA = AP2E06ISchemaGate
+  SHAPE = AP2E06ILocalCheckoutShape
   STAGES = %w[
     G0_PREAUTH_BOUNDS G1_HOST_TRUST_SNAPSHOT G2_ISSUER_ROOT_AUTHENTICITY
     G3_ROOT_ORIGINAL_SD_CLOSURE G4_AGENT_AND_MERCHANT_CRYPTO_BINDING
@@ -197,7 +203,8 @@ module AP2E06IPartialProbe
     # policy_json MUST come from the independent Host fixture, not a token.
     # The synthetic-only `verified_at:` is explicit: no unreviewed wall-clock
     # fallback can cause G4 to be recorded complete. It is NOT B1 Host proof.
-    def observe(policy_json:, case_data:, policy_digest:, verified_at: nil)
+    def observe(policy_json:, case_data:, policy_digest:, verified_at: nil,
+                upstream_root: nil)
       current = STAGES.fetch(0)
       reached = []
       # Dependency semantics are part of the bounded E06-I research profile.
@@ -359,12 +366,95 @@ module AP2E06IPartialProbe
       end
       reached << current
 
-      # Neither Schema (G5) nor commerce/Host semantics (G6) runs here.
-      # This is a blocked NEXT stage, NOT a G5 reject or VerifiedEvidence.
+      # G5 runs ONLY after the same-invocation private G4 chain passed all
+      # original-wire and synthetic Host-context correlation checks above.
+      # The caller must EXPLICITLY supply a pre-existing, pinned AP2 source
+      # tree. Missing/unsafe path => G5 HOLD, never schema-invalid REJECT.
       current = STAGES.fetch(5)
+      unless upstream_root.instance_of?(String) &&
+          upstream_root.bytesize.between?(1, 1024) &&
+          !upstream_root.include?("\0")
+        return {
+          "status" => "HOLD", "first_reject_stage" => nil,
+          "blocked_stage" => current, "reason" => "verification_unavailable",
+          "g1_admissible" => false,
+          "stage_trace_basis" => "synthetic_conditional_only",
+          "completed_stages" => reached.freeze, "evidence" => nil
+        }
+      end
+
+      # Gate.new enforces json_schemer=2.5.0, three pinned official schema
+      # blobs, exact $id/$schema and a local-only Merchant $ref resolver.
+      # No source checkout, dependency installation or network fallback here.
+      official_gate = SCHEMA::Gate.new(upstream_root: upstream_root)
+      official = official_gate.check!(
+        open: g4_result.verified_open, closed: g4_result.verified_closed
+      )
+      # The official nested Merchant Schema does NOT validate the separate
+      # Merchant-signed Checkout JWT JSON. Its strict local shape is mandatory.
+      # Pre-existing ShapeOnly is NOT itself a trusted/authenticated marker.
+      local = SHAPE::Gate.new.check!(
+        verified_checkout_payload: g4_result.verified_checkout_payload
+      )
+      unless official.instance_of?(Hash) &&
+          official["open"] == "VALID" &&
+          official["closed"] == "VALID" &&
+          official["merchant_ref"] == "LOCAL_PINNED" &&
+          local.instance_of?(SHAPE::ShapeOnly) &&
+          local.frozen? && local.local_checkout_shape == "VALID" &&
+          local.authority == "NONE_SHAPE_ONLY" &&
+          !local.authenticated? && local.evidence.nil?
+        return {
+          "status" => "HOLD", "first_reject_stage" => nil,
+          "blocked_stage" => current, "reason" => "g5_gate_result_unavailable",
+          "g1_admissible" => false,
+          "stage_trace_basis" => "synthetic_conditional_only",
+          "completed_stages" => reached.freeze, "evidence" => nil
+        }
+      end
+      # Local report is constructed only here, after BOTH checks succeeded
+      # on G4's detached signed data. Never accept a caller-provided G5 flag.
+      g5_checks = {
+        "official_open" => official.fetch("open"),
+        "official_closed" => official.fetch("closed"),
+        "official_merchant_ref" => official.fetch("merchant_ref"),
+        "local_checkout_shape" => local.local_checkout_shape,
+        "original_checkout_wire_sha256" => g4_result.wire_sha256.fetch("checkout"),
+        "host_policy_wire_sha256" => host_policy_wire_sha256,
+        "pinned_schema_fingerprints" => official_gate.fingerprints
+      }.freeze
+      reached << current
+
+      # G6 Host identity/cart/constraint/price and G7 evidence remain absent.
+      # Even successful G5 is conditional on caller-supplied synthetic trust.
+      current = STAGES.fetch(6)
       {
         "status" => "HOLD", "first_reject_stage" => nil,
-        "blocked_stage" => current, "reason" => "G5_G6_G7_NOT_WIRED",
+        "blocked_stage" => current, "reason" => "G6_G7_NOT_WIRED",
+        "g1_admissible" => false,
+        "stage_trace_basis" => "synthetic_conditional_only",
+        "g5_checks" => g5_checks,
+        "completed_stages" => reached.freeze, "evidence" => nil
+      }
+    rescue SCHEMA::Rejected => error
+      # Only genuine post-G4 official Schema failures count as G5 negatives.
+      # Any missing/wrong library, source, digest or $ref => HOLD at G5.
+      invalid = %w[invalid_open_schema invalid_closed_schema].include?(error.code)
+      {
+        "status" => invalid ? "REJECT" : "HOLD",
+        "first_reject_stage" => invalid ? current : nil,
+        "blocked_stage" => invalid ? nil : current,
+        "reason" => invalid ? error.code : "verification_unavailable",
+        "g1_admissible" => false,
+        "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze, "evidence" => nil
+      }
+    rescue SHAPE::Rejected => error
+      # Local fixed Checkout structural reject is NOT a business G6 verdict.
+      {
+        "status" => "REJECT", "first_reject_stage" => current,
+        "reason" => "unsupported_checkout_profile",
+        "local_shape_code" => error.code,
         "g1_admissible" => false,
         "stage_trace_basis" => "synthetic_conditional_only",
         "completed_stages" => reached.freeze, "evidence" => nil
