@@ -17,7 +17,7 @@
 -- * This script MUST NOT silently reuse existing lab roles.
 --
 -- Do not use psql's ON_ERROR_STOP alone as evidence of applied permissions.
--- Independently verify BEGIN/COMMIT and all effective privileges in PG16.
+-- Independently verify the top-level DO COMMIT and actual PG16 privileges.
 
 -- Single top-level DO is intentionally the entire bootstrap transaction.
 -- Its final PL/pgSQL COMMIT is legal only for a top-level DO, NOT inside any
