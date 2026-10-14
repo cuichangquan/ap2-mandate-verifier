@@ -245,17 +245,34 @@ module AP2E06IG4Crypto
         raise Rejected, "g4_handoff_resource_limit" if value.size > 32
         out = {}
         value.each do |key, child|
+          raise Rejected, "g4_handoff_resource_limit" if out.size >= 32
           raise Rejected, "g4_handoff_invalid_json" unless
             key.is_a?(String) && key.bytesize.between?(1, 256)
-          out[key.dup.freeze] = deep_detach_json!(child, depth + 1, budget)
+          key_copy = key.byteslice(0, 257)
+          raise Rejected, "g4_handoff_invalid_json" unless
+            key_copy.is_a?(String) && key_copy == key &&
+            key_copy.bytesize.between?(1, 256)
+          out[key_copy.freeze] = deep_detach_json!(child, depth + 1, budget)
         end
+        raise Rejected, "g4_handoff_resource_limit" if value.size != out.size
         out.freeze
       when Array
         raise Rejected, "g4_handoff_resource_limit" if value.size > 16
-        value.map { |child| deep_detach_json!(child, depth + 1, budget) }.freeze
+        out = []
+        index = 0
+        while index < value.size
+          raise Rejected, "g4_handoff_resource_limit" if index >= 16
+          out << deep_detach_json!(value.fetch(index), depth + 1, budget)
+          index += 1
+        end
+        out.freeze
       when String
         raise Rejected, "g4_handoff_resource_limit" if value.bytesize > 32_768
-        value.dup.freeze
+        copy = value.byteslice(0, 32_769)
+        raise Rejected, "g4_handoff_resource_limit" unless
+          copy.is_a?(String) && copy.bytesize <= 32_768 &&
+          value.bytesize == copy.bytesize && value == copy
+        copy.freeze
       when Integer, TrueClass, FalseClass, NilClass
         value
       when Float
