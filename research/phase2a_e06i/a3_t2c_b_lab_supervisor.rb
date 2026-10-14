@@ -39,10 +39,10 @@ module AP2E06IA3T2cBLabSupervisor
              lab_scope_ref.is_a?(String) &&
              lab_scope_ref.match?(/\A[a-zA-Z0-9_-]{1,64}\z/) &&
              repo_sha.is_a?(String) &&
-              approved_repo_sha.is_a?(String) &&
-              repo_sha.match?(/\A[0-9a-f]{40}\z/) &&
-              approved_repo_sha.match?(/\A[0-9a-f]{40}\z/) &&
-              repo_sha == approved_repo_sha
+             approved_repo_sha.is_a?(String) &&
+             repo_sha.match?(/\A[0-9a-f]{40}\z/) &&
+             approved_repo_sha.match?(/\A[0-9a-f]{40}\z/) &&
+             repo_sha == approved_repo_sha
         raise Stop, "B approval claim / scope / approved executable SHA mismatch; STOP"
       end
       @approval_b_url = approval_b_url.dup.freeze
@@ -143,9 +143,9 @@ module AP2E06IA3T2cBLabSupervisor
         raise Stop, "invalid sanitized case result"
       end
       @case_results[case_id.dup.freeze] = {
-         "outcome" => outcome.dup.freeze,
-         "reason" => reason.dup.freeze
-       }.freeze
+        "outcome" => outcome.dup.freeze,
+        "reason" => reason.dup.freeze
+      }.freeze
       if %w[HOLD RED_STOP].include?(outcome)
         @stop_reason ||= "case_#{case_id.downcase}_#{reason}".freeze
       end
@@ -170,15 +170,16 @@ module AP2E06IA3T2cBLabSupervisor
       @completed = true
       elapsed = @start_time ? (monotonic - @start_time).ceil : nil
       results = CASES.each_with_object({}) do |key, result|
-         result[key] = @case_results.fetch(key) {
-           { "outcome" => "NOT_RUN", "reason" => "not_executed" }.freeze
-         }
-       end.freeze
+        result[key] = @case_results.fetch(key) {
+          { "outcome" => "NOT_RUN", "reason" => "not_executed" }.freeze
+        }
+      end.freeze
       report = {
         "issue" => 97,
         "approval" => "B_OPERATOR_ASSERTION_NOT_AUTHENTICATED",
         "approval_reference" => @approval_b_url,
         "repository_sha" => @repo_sha,
+        "repository_sha_provenance" => "OPERATOR_ASSERTED_UNVERIFIED",
         "operator_ref" => @operator_ref,
         "scope_ref" => @scope_ref,
         "status" => "HOLD",
