@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 #
 # Phase 2-A E06-I approval A, isolated research-only stage observer.
-# WARNING: only G0–G3 are wired. G4–G7 deliberately FAIL CLOSED.
+# WARNING: G0–G4 synthetic-local only. G5–G7 deliberately FAIL CLOSED.
 # This is NOT an integrated verifier, not authorization and not a Gem API.
 # Never relabel a G0 or G1 reject as proof of signature/SD closure.
 require "json"
@@ -10,6 +10,7 @@ require "base64"
 require_relative "isolated_host_policy"
 require_relative "isolated_host_snapshot"
 require_relative "isolated_root_closure"
+require_relative "isolated_g4_crypto"
 require_relative "isolated_stage_context"
 # A3-T1 diagnostic needs these distinct Halt classes to preserve REJECT.
 # Modules define contracts only; no fixtures, tests or runner are loaded.
@@ -19,6 +20,7 @@ require_relative "isolated_nonce_issuance_source"
 module AP2E06IPartialProbe
   HOST = AP2E06IHostPolicy
   ROOT = AP2E06IRootClosure
+  G4 = AP2E06IG4Crypto
   STAGES = %w[
     G0_PREAUTH_BOUNDS G1_HOST_TRUST_SNAPSHOT G2_ISSUER_ROOT_AUTHENTICITY
     G3_ROOT_ORIGINAL_SD_CLOSURE G4_AGENT_AND_MERCHANT_CRYPTO_BINDING
@@ -193,7 +195,9 @@ module AP2E06IPartialProbe
 
     # Synthetic fixture inputs are NOT a Host authorization decision.
     # policy_json MUST come from the independent Host fixture, not a token.
-    def observe(policy_json:, case_data:, policy_digest:)
+    # The synthetic-only `verified_at:` is explicit: no unreviewed wall-clock
+    # fallback can cause G4 to be recorded complete. It is NOT B1 Host proof.
+    def observe(policy_json:, case_data:, policy_digest:, verified_at: nil)
       current = STAGES.fetch(0)
       reached = []
       # Dependency semantics are part of the bounded E06-I research profile.
@@ -202,26 +206,57 @@ module AP2E06IPartialProbe
         return {
           "status" => "HOLD", "first_reject_stage" => current,
           "reason" => "verification_unavailable:jwt_version",
+          "stage_trace_basis" => "synthetic_conditional_only",
           "completed_stages" => reached.freeze, "evidence" => nil
         }
       end
-      raise Halt, "invalid_input" unless case_data.is_a?(Hash) &&
-        case_data.keys.sort == %w[candidate root terminal]
-      root, terminal, candidate = case_data.values_at("root", "terminal", "candidate")
-      raise Halt, "resource_limit" unless [root, terminal].all? do |wire|
-        wire.is_a?(String) && wire.ascii_only? && wire.bytesize.between?(1, 32_768)
-      end
-      # Bound the untrusted presentation key before Host policy comparison.
-      # Key material is never used as a trust source; G1 chooses Host's key.
-      raise Halt, "resource_limit" unless candidate.is_a?(Hash) &&
-        candidate.size == 4 && candidate.keys.all? { |k| k.is_a?(String) } &&
-        candidate.keys.sort == %w[crv kty x y] &&
-        candidate.values.all? { |v| v.is_a?(String) && v.ascii_only? && v.bytesize.between?(1, 128) }
+      # G0: never call keys/values/to_h on a caller-controlled Hash. Even a
+      # concurrently growing Hash may only supply these three named members.
+      required_case = %w[candidate root terminal]
+      raise Halt, "invalid_input" unless case_data.instance_of?(Hash) &&
+        case_data.size == 3 && required_case.all? { |key| case_data.key?(key) }
+      root_source = case_data.fetch("root")
+      terminal_source = case_data.fetch("terminal")
+      candidate_source = case_data.fetch("candidate")
+      raise Halt, "invalid_input" unless
+        policy_json.is_a?(String) && root_source.is_a?(String) &&
+        terminal_source.is_a?(String)
+      # Precheck, bounded copy, and detach originals BEFORE any parsing.
+      root = bounded_wire_snapshot!(root_source, 32_768)
+      terminal = bounded_wire_snapshot!(terminal_source, 32_768)
+      policy_json = bounded_wire_snapshot!(policy_json, 16_384)
+
+      # Extract exactly four *named* candidate JWK members. No enumeration of
+      # a mutable untrusted Hash is allowed, including on failure paths.
+      jwk_fields = %w[crv kty x y]
+      raise Halt, "resource_limit" unless candidate_source.instance_of?(Hash) &&
+        candidate_source.size == 4 &&
+        jwk_fields.all? { |key| candidate_source.key?(key) }
+      candidate = jwk_fields.to_h do |key|
+        [key, bounded_wire_snapshot!(candidate_source.fetch(key), 128)]
+      end.freeze
+      raise Halt, "resource_limit" unless
+        candidate_source.size == 4 &&
+        jwk_fields.all? { |key|
+          candidate_source.key?(key) &&
+            candidate_source.fetch(key) == candidate.fetch(key)
+        }
+      raise Halt, "invalid_input" unless
+        case_data.size == 3 &&
+        required_case.all? { |key| case_data.key?(key) } &&
+        case_data.fetch("root").equal?(root_source) &&
+        case_data.fetch("terminal").equal?(terminal_source) &&
+        case_data.fetch("candidate").equal?(candidate_source)
       candidate_bytes = JSON.generate(candidate).bytesize
-      raise Halt, "resource_limit" unless policy_json.is_a?(String) &&
+      raise Halt, "resource_limit" unless
         policy_json.ascii_only? && policy_json.bytesize.between?(1, 16_384) &&
         root.bytesize + terminal.bytesize + policy_json.bytesize + candidate_bytes <= 131_072
 
+      # Digest remains caller-asserted rather than Host-authenticated.
+      # It is always bounded before copying and must have a pinned form.
+      policy_digest = bounded_wire_snapshot!(policy_digest, 64)
+      raise Halt, "invalid_host_context" unless
+        policy_digest.match?(/\A[0-9a-f]{64}\z/)
       untrusted_policy = AP2StrictJSONResearch.parse!(policy_json)
       check_tree_bounds!(untrusted_policy)
       raise Halt, "invalid_host_context" unless untrusted_policy.is_a?(Hash)
@@ -236,8 +271,27 @@ module AP2E06IPartialProbe
 
       current = STAGES.fetch(1)
       policy = HOST.load!(policy_json)
-      trusted = HOST.verify_candidate!(
-        policy, candidate, case_policy_digest: policy_digest
+      # The instant is caller-asserted and therefore NOT authoritative Host
+      # time. No G1 stage completion is recorded for missing/out-of-window
+      # claims, and no implicit Time.now fallback is permitted.
+      unless verified_at.is_a?(Integer) &&
+          verified_at.between?(1, ROOT::MAX_VERIFIED_AT) &&
+          policy["not_before"].is_a?(Integer) &&
+          policy["not_after"].is_a?(Integer) &&
+          policy["not_before"] <= verified_at &&
+          verified_at < policy["not_after"]
+        return {
+          "status" => "HOLD", "first_reject_stage" => nil,
+          "blocked_stage" => current,
+          "reason" => "synthetic_clock_or_policy_window_unavailable",
+          "g1_admissible" => false,
+          "stage_trace_basis" => "synthetic_conditional_only",
+          "completed_stages" => reached.freeze, "evidence" => nil
+        }
+      end
+      trusted = HOST.verify_candidate_at!(
+        policy, candidate, case_policy_digest: policy_digest,
+        verified_at: verified_at
       )
       reached << current
 
@@ -265,48 +319,84 @@ module AP2E06IPartialProbe
       # and performs original signed Root whole-graph closure / local shape.
       # This copy avoids loading minitest/autorun through old P1-1.
       # "reached G3" is marked only when THIS call succeeds.
-      verified_open = ROOT.verify_full_root!(root, trusted_jwk: trusted)
+      verified_open = ROOT.verify_full_root_at!(
+        root, trusted_jwk: trusted, verified_at: verified_at
+      )
       raise Halt, "unsupported_profile" unless verified_open.is_a?(Hash)
       reached << current
 
-      # G4/G6 currently mix crypto and semantics inside old P1-2/P1-3.
-      # Calling old checkout verify! now, then applying Schema, would
-      # violate G5-before-G6. DO NOT do so or return success.
+      # Conditional synthetic G4 only: Host policy, clock and issuer
+      # enrollment are NOT independently authenticated. G4 never calls
+      # P1-2/P1-3's mixed crypto/commerce verify! entrypoints.
       current = STAGES.fetch(4)
+      G4.inspect!(
+        root_wire: root, terminal_wire: terminal, verified_open: verified_open,
+        expected_agent_jwk: policy.fetch("expected_agent_public_jwk"),
+        trusted_merchant_jwk: policy.fetch("trusted_merchant_public_jwk"),
+        expected_aud: policy.fetch("expected_aud"),
+        expected_nonce: policy.fetch("expected_nonce"),
+        host_checkout_jwt: policy.fetch("host_checkout_jwt"),
+        verified_at: verified_at, terminal_not_after: policy.fetch("not_after")
+      )
+      reached << current
+
+      # Neither Schema (G5) nor commerce/Host semantics (G6) runs here.
+      # This is a blocked NEXT stage, NOT a G5 reject or VerifiedEvidence.
+      current = STAGES.fetch(5)
       {
-        "status" => "HOLD", "first_reject_stage" => current,
-        "reason" => "G4_G6_SAFE_EXTRACTION_NOT_IMPLEMENTED",
+        "status" => "HOLD", "first_reject_stage" => nil,
+        "blocked_stage" => current, "reason" => "G5_G6_G7_NOT_WIRED",
+        "g1_admissible" => false,
+        "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze, "evidence" => nil
+      }
+    rescue G4::Rejected => error
+      {
+        "status" => "REJECT", "first_reject_stage" => current,
+        "reason" => error.code, "stage_trace_basis" => "synthetic_conditional_only",
         "completed_stages" => reached.freeze,
         "evidence" => nil
+      }
+    rescue G4::Unavailable => error
+      {
+        "status" => "HOLD", "first_reject_stage" => nil,
+        "blocked_stage" => current, "reason" => error.message,
+        "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze, "evidence" => nil
       }
     rescue HOST::Rejected => error
       {
         "status" => "REJECT", "first_reject_stage" => current,
-        "reason" => error.code, "completed_stages" => reached.freeze,
+        "reason" => error.code, "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze,
         "evidence" => nil
       }
     rescue ROOT::Rejected => error
       {
         "status" => "REJECT", "first_reject_stage" => current,
-        "reason" => error.message, "completed_stages" => reached.freeze,
+        "reason" => error.message, "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze,
         "evidence" => nil
       }
     rescue Halt => error
       {
         "status" => "REJECT", "first_reject_stage" => current,
-        "reason" => error.code, "completed_stages" => reached.freeze,
+        "reason" => error.code, "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze,
         "evidence" => nil
       }
     rescue JWT::DecodeError, JWT::JWKError
       {
         "status" => "REJECT", "first_reject_stage" => current,
-        "reason" => "invalid_issuer_signature", "completed_stages" => reached.freeze,
+        "reason" => "invalid_issuer_signature", "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze,
         "evidence" => nil
       }
     rescue JSON::ParserError, ArgumentError, TypeError, KeyError
       {
         "status" => "REJECT", "first_reject_stage" => current,
-        "reason" => "invalid_input_or_ambiguous_json", "completed_stages" => reached.freeze,
+        "reason" => "invalid_input_or_ambiguous_json", "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze,
         "evidence" => nil
       }
     rescue StandardError
@@ -315,6 +405,7 @@ module AP2E06IPartialProbe
       {
         "status" => "HOLD", "first_reject_stage" => current,
         "reason" => "unexpected_unverified_failure",
+        "stage_trace_basis" => "synthetic_conditional_only",
         "completed_stages" => reached.freeze, "evidence" => nil
       }
     end
@@ -341,6 +432,20 @@ module AP2E06IPartialProbe
           "checkout" => context.checkout_wire_sha256
         }.freeze
       }.freeze
+    end
+
+    # Snapshot untrusted inputs WITHOUT ever copying more than max + 1 bytes.
+    # Precheck avoids allocations for plainly oversized inputs; the bounded
+    # slice and postchecks also fail closed on concurrent source mutation.
+    def bounded_wire_snapshot!(source, max)
+      raise Halt, "resource_limit" unless source.is_a?(String) &&
+        source.bytesize.between?(1, max)
+      copy = source.byteslice(0, max + 1)
+      raise Halt, "resource_limit" unless copy.is_a?(String) &&
+        copy.bytesize.between?(1, max) &&
+        copy.bytesize == source.bytesize && copy.ascii_only? &&
+        source == copy
+      copy.freeze
     end
 
     # G0 structural/strict parse ONLY; the returned original JWS is untrusted.

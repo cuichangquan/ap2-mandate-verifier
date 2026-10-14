@@ -126,6 +126,26 @@ module AP2E06IHostPolicy
       policy.fetch("issuer_public_jwk")
     end
 
+    # A3 synthetic-only clock-consistent variant. Do not use as evidence of
+    # independently enrolled Host keys, challenge issuance, or trusted time.
+    # Preserve verify_candidate! for historical callers without altering it.
+    def verify_candidate_at!(policy, candidate, case_policy_digest:, verified_at:)
+      stage = "S1_HOST_KEY_POLICY"
+      reject!(stage, "POLICY_SNAPSHOT_MISMATCH") unless
+        policy.is_a?(Hash) && policy["policy_digest"] == case_policy_digest
+      reject!(stage, "VERIFICATION_CLOCK_UNAVAILABLE") unless
+        verified_at.is_a?(Integer) && verified_at.between?(1, 4_102_444_800)
+      reject!(stage, "EXPIRED_OR_INACTIVE_POLICY") unless
+        policy["active"] &&
+        policy["not_before"].is_a?(Integer) &&
+        policy["not_after"].is_a?(Integer) &&
+        policy["not_before"] <= verified_at && verified_at < policy["not_after"]
+      actual = thumbprint(candidate)
+      reject!(stage, "UNTRUSTED_ISSUER") unless
+        actual == policy.fetch("issuer_thumbprint")
+      policy.fetch("issuer_public_jwk")
+    end
+
     def checkout_context(policy)
       {
         issuer_jwk: policy.fetch("issuer_public_jwk"),
