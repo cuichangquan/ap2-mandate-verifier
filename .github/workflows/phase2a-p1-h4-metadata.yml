@@ -35,29 +35,72 @@ jobs:
           export GNUPGHOME="$work/gnupg"
           mkdir -m 700 "$GNUPGHOME"
 
-          # Only two Debian HTTPS hosts; no redirect/proxy/fallback; 16MiB cap
-          # on aggregate downloaded response bodies, including signing keys.
+          # Only approved HTTPS metadata sources. A snapshot /archive/ URL may
+          # redirect ONCE to the same host's content-addressed /file/<hash>.
+          # No other redirect, external host, proxy, fallback, or automatic retry.
+          # All HTTP bodies (including redirects) count toward the 16MiB cap.
           budget=$((16 * 1024 * 1024))
           used=0
           fetch() {
-            local url="$1" dest="$2" remaining bytes
+            local url="$1" dest="$2" current header status bytes remaining attempt location
             case "$url" in
-              https://snapshot.debian.org/*|https://ftp-master.debian.org/*) ;;
-              *) stop "unapproved download host" ;;
+              https://snapshot.debian.org/archive/*|https://ftp-master.debian.org/keys/archive-key-12*.asc) ;;
+              *) stop "unapproved initial metadata URL" ;;
             esac
-            remaining=$((budget - used))
-            [ "$remaining" -gt 0 ] || stop "16MiB budget exhausted"
-            curl --disable --fail --silent --show-error \
-              --proto '=https' --tlsv1.2 --max-redirs 0 \
-              --proxy '' --noproxy '*' --retry 0 \
-              --connect-timeout 12 --max-time 90 \
-              --max-filesize "$remaining" --output "$dest" "$url" \
-              || stop "download failed, redirected, or exceeded budget"
-            bytes="$(stat -c '%s' "$dest")"
-            [ "$bytes" -gt 0 ] || stop "empty downloaded metadata"
-            used=$((used + bytes))
-            [ "$used" -le "$budget" ] || stop "aggregate body bytes >16MiB"
-            echo "FETCH_BODY_BYTES=$bytes TOTAL_BODY_BYTES=$used"
+            current="$url"
+            for attempt in 0 1; do
+              remaining=$((budget - used))
+              [ "$remaining" -gt 0 ] || stop "16MiB body budget exhausted"
+              header="$work/response.headers"
+              : > "$header"
+              status="$(curl --disable --silent --show-error \
+                --proto '=https' --tlsv1.2 --max-redirs 0 \
+                --proxy '' --noproxy '*' --retry 0 \
+                --connect-timeout 12 --max-time 90 \
+                --max-filesize "$remaining" --dump-header "$header" \
+                --write-out '%{http_code}' --output "$dest" "$current")" \
+                || stop "HTTP transfer failure or response too large"
+              [ "$(stat -c '%s' "$header")" -le 8192 ] \
+                || stop "HTTP response headers too large"
+              [[ "$status" =~ ^[0-9]{3}$ ]] || stop "invalid HTTP status"
+              bytes="$(stat -c '%s' "$dest")" || stop "missing HTTP response body"
+              used=$((used + bytes))
+              [ "$used" -le "$budget" ] || stop "aggregate HTTP body exceeds 16MiB"
+              echo "HTTP_STATUS=$status FETCH_BODY_BYTES=$bytes TOTAL_BODY_BYTES=$used"
+              case "$status" in
+                200)
+                  [ "$bytes" -gt 0 ] || stop "empty metadata body"
+                  if [[ "$url" == */InRelease ]]; then
+                    [ "$(head -c 34 "$dest")" = "-----BEGIN PGP SIGNED MESSAGE-----" ] \
+                      || stop "InRelease is not an OpenPGP clear-signed message"
+                  fi
+                  return 0
+                  ;;
+                301|302|307|308)
+                  [ "$attempt" -eq 0 ] || stop "multiple redirects forbidden"
+                  [[ "$url" == https://snapshot.debian.org/archive/* ]] \
+                    || stop "redirect outside approved snapshot metadata"
+                  location="$(awk '
+                    tolower($1) == "location:" {
+                      value=$0
+                      sub(/^[^:]*:[[:space:]]*/, "", value)
+                      sub(/\r$/, "", value)
+                      print value
+                    }' "$header")"
+                  [ -n "$location" ] && [[ "$location" != *$'\n'* ]] \
+                    || stop "missing or duplicate HTTP Location"
+                  if [[ "$location" =~ ^/file/[0-9a-f]{40,64}$ ]]; then
+                    current="https://snapshot.debian.org$location"
+                  elif [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/[0-9a-f]{40,64}$ ]]; then
+                    current="$location"
+                  else
+                    stop "redirect target not immutable same-host snapshot file"
+                  fi
+                  ;;
+                *) stop "unexpected HTTP status $status" ;;
+              esac
+            done
+            stop "redirect limit exceeded"
           }
 
           # Debian official published primary key fingerprints are pinned here.
