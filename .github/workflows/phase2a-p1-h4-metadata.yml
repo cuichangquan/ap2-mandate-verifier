@@ -1,0 +1,151 @@
+name: "Issue 73 P1-H4 Debian signed metadata (one-shot)"
+# Dedicated metadata-only action; existing E06-I workflows stay disabled.
+on:
+  push:
+    branches:
+      - research/issue73-p1h4-metadata-gha-20261015
+    paths:
+      - .github/workflows/phase2a-p1-h4-metadata.yml
+
+permissions: {}
+concurrency:
+  group: issue73-p1h4-metadata-single
+  cancel-in-progress: false
+
+jobs:
+  verify-metadata:
+    if: github.repository == 'cuichangquan/ap2-mandate-verifier'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - name: Verify Bookworm signed metadata without downloading packages
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          stop() { echo "STOP/HOLD: $*" >&2; exit 1; }
+          for tool in curl gpg gpgv sha256sum awk xz date stat; do
+            command -v "$tool" >/dev/null 2>&1 || stop "preinstalled tool unavailable: $tool"
+          done
+          [ "$RUNNER_OS" = Linux ] || stop "unexpected runner OS"
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          export GNUPGHOME="$work/gnupg"
+          mkdir -m 700 "$GNUPGHOME"
+
+          # Only two Debian HTTPS hosts; no redirect/proxy/fallback; 16MiB cap
+          # on aggregate downloaded response bodies, including signing keys.
+          budget=$((16 * 1024 * 1024))
+          used=0
+          fetch() {
+            local url="$1" dest="$2" remaining bytes
+            case "$url" in
+              https://snapshot.debian.org/*|https://ftp-master.debian.org/*) ;;
+              *) stop "unapproved download host" ;;
+            esac
+            remaining=$((budget - used))
+            [ "$remaining" -gt 0 ] || stop "16MiB budget exhausted"
+            curl --disable --fail --silent --show-error \
+              --proto '=https' --tlsv1.2 --max-redirs 0 \
+              --proxy '' --noproxy '*' --retry 0 \
+              --connect-timeout 12 --max-time 90 \
+              --max-filesize "$remaining" --output "$dest" "$url" \
+              || stop "download failed, redirected, or exceeded budget"
+            bytes="$(stat -c '%s' "$dest")"
+            [ "$bytes" -gt 0 ] || stop "empty downloaded metadata"
+            used=$((used + bytes))
+            [ "$used" -le "$budget" ] || stop "aggregate body bytes >16MiB"
+            echo "FETCH_BODY_BYTES=$bytes TOTAL_BODY_BYTES=$used"
+          }
+
+          # Debian official published primary key fingerprints are pinned here.
+          fetch "https://ftp-master.debian.org/keys/archive-key-12.asc" "$work/main.asc"
+          fetch "https://ftp-master.debian.org/keys/archive-key-12-security.asc" "$work/security.asc"
+          check_key() {
+            local label="$1" expected="$2" primary
+            primary="$(gpg --batch --with-colons --show-keys --fingerprint "$work/$label.asc" 2>/dev/null \
+              | awk -F: '$1=="fpr" {print $10; exit}')"
+            [ "$primary" = "$expected" ] || stop "$label primary fingerprint mismatch"
+            gpg --batch --yes --dearmor --output "$work/$label.gpg" "$work/$label.asc" \
+              || stop "$label key dearmor failure"
+            echo "PASS_PINNED_KEY $label $primary"
+          }
+          main_fpr=B8B80B5B623EAB6AD8775C45B7C5D7D6350947F8
+          security_fpr=05AB90340C0C5E797F44A8C8254CF3B5AEC0A8F0
+          check_key main "$main_fpr"
+          check_key security "$security_fpr"
+
+          # Snapshot request points to a frozen historical date; the selected
+          # import ID is NOT independently attested by the requested date.
+          snapshot=20261014T000000Z
+          for entry in "main debian bookworm $main_fpr" \
+                       "security debian-security bookworm-security $security_fpr"; do
+            read -r label archive codename signer <<< "$entry"
+            base="https://snapshot.debian.org/archive/$archive/$snapshot/dists/$codename"
+            fetch "$base/InRelease" "$work/$label.InRelease"
+
+            gpgv --keyring "$work/$label.gpg" --status-fd 1 \
+              --output "$work/$label.Release" "$work/$label.InRelease" \
+              > "$work/$label.status" 2>&1 \
+              || stop "$label InRelease signature invalid or unknown"
+            awk -v fpr="$signer" \
+              '$2 == "VALIDSIG" && ($3 == fpr || $NF == fpr) {ok=1}
+               END {exit ok ? 0 : 1}' "$work/$label.status" \
+              || stop "$label signature signer fingerprint mismatch"
+            grep -qx "Codename: $codename" "$work/$label.Release" \
+              || stop "$label codename mismatch"
+            grep -Eq '^Components: .*main' "$work/$label.Release" \
+              || stop "$label missing main component"
+            grep -Eq '^Architectures: .*amd64' "$work/$label.Release" \
+              || stop "$label missing amd64"
+            valid="$(awk '/^Valid-Until: / {$1=""; sub(/^ /,""); print; exit}' "$work/$label.Release")"
+            if [ -n "$valid" ]; then
+              expiry="$(date -u -d "$valid" +%s)" || stop "$label invalid Valid-Until"
+              now="$(date -u +%s)"
+              [ "$expiry" -ge "$now" ] || stop "$label expired Valid-Until; no bypass"
+            fi
+            echo "PASS_INRELEASE_SIGNATURE $label sha256=$(sha256sum "$work/$label.InRelease" | awk '{print $1}')"
+            echo "RELEASE_DATE $label $(grep -m1 '^Date: ' "$work/$label.Release")"
+            echo "RELEASE_VALID_UNTIL $label $valid"
+
+            # Compare exact index file bytes with the signed Release SHA256
+            # without fetching any .deb or invoking any package manager.
+            expected="$(awk '
+              $0 == "SHA256:" {inside=1; next}
+              inside && /^[^[:space:]]/ {exit}
+              inside && $3 == "main/binary-amd64/Packages.xz" {print $1, $2; exit}
+            ' "$work/$label.Release")"
+            [ -n "$expected" ] || stop "$label missing signed Packages.xz index entry"
+            read -r digest size <<< "$expected"
+            [[ "$digest" =~ ^[0-9a-f]{64}$ ]] || stop "$label bad signed SHA256"
+            [[ "$size" =~ ^[0-9]+$ ]] || stop "$label bad signed index size"
+            [ "$size" -le $((budget - used)) ] || stop "$label index too large"
+            fetch "$base/main/binary-amd64/Packages.xz" "$work/$label.Packages.xz"
+            actual_size="$(stat -c '%s' "$work/$label.Packages.xz")"
+            [ "$actual_size" -eq "$size" ] || stop "$label index size mismatch"
+            echo "$digest  $work/$label.Packages.xz" | sha256sum -c --status \
+              || stop "$label index SHA256 mismatch"
+            xz -t "$work/$label.Packages.xz" || stop "$label xz corrupted"
+            echo "PASS_SIGNED_INDEX_SHA256 $label $digest size=$size"
+
+            # Read text stanzas of the authenticated Packages indexes only.
+            xz -dc "$work/$label.Packages.xz" | awk -v repo="$label" '
+              /^Package: / {name=$2}
+              /^Version: / {version=$2}
+              /^Architecture: / {arch=$2}
+              /^$/ {
+                if (name ~ /^(python3[.]11|python3[.]11-minimal|libpython3[.]11-minimal|libpython3[.]11-stdlib)$/ &&
+                    arch=="amd64" && version!="")
+                  print "PYTHON_CANDIDATE",repo,name,version
+                name=version=arch=""
+              }'
+          done
+
+          echo "P1-H4 METADATA SIGNATURE AND INDEX SHA CHECK COMPLETE"
+          echo "TOTAL_BODY_BYTES=$used MAX_BYTES=$budget"
+          echo "SNAPSHOT_REQUEST=$snapshot RESOLVED_IMPORT_ID=UNVERIFIED"
+          echo "FULL_TRANSITIVE_DEPENDENCY_CLOSURE=UNVERIFIED/HOLD"
+          echo "DEB_FETCH=NONE INSTALL=NONE CONTAINER=NONE"
+          echo "PREPARATION_P1=HOLD SIGNED_B=HOLD PHASE_2B=HOLD"
