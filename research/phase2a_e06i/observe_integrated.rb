@@ -7,8 +7,6 @@
 require "json"
 require "digest"
 require "optparse"
-require "open3"
-require "timeout"
 require_relative "../shared/strict_json_research"
 require_relative "integrated_probe"
 
@@ -79,60 +77,10 @@ module AP2E06IA7SignedReachability
       Digest::SHA256.hexdigest(raw.b)
     end
 
-    # Git is queried read-only, without a shell or network. The caller must
-    # separately approve execution under B and impose OS process time limits.
-    # Never accept a caller-typed HEAD SHA as proof of tested source.
-    def git_head!(path)
-      stop!("invalid_repo_path") unless path.instance_of?(String) &&
-        path.bytesize.between?(1, 1024) && !path.include?("\0")
-      actual = File.realpath(path)
-      stdout, _stderr, status = Timeout.timeout(2) do
-        Open3.capture3("git", "-c", "core.fsmonitor=false",
-                       "-c", "core.hooksPath=/dev/null", "-C", actual,
-                       "rev-parse", "--verify", "HEAD")
-      end
-      stop!("git_head_unavailable") unless
-        status.success? && stdout.strip.match?(/\A[0-9a-f]{40}\z/)
-      # A Git HEAD SHA does NOT authenticate modified tracked bytes, staged
-      # changes or untracked source shadowing. Fail closed for BOTH repos.
-      git_clean!(actual)
-      stdout.strip.freeze
-    rescue Timeout::Error
-      stop!("git_head_unavailable")
-    end
-
-    def git_clean!(directory)
-      stop!("git_status_unavailable") unless directory.instance_of?(String)
-      # One-byte maximum stdout consumption: a huge dirty worktree cannot
-      # force an unbounded Git porcelain output into the observer's memory.
-      # Omit no untracked file; staged, unstaged and submodules are included.
-      Timeout.timeout(5) do
-        Open3.popen3(
-          "git", "-c", "core.fsmonitor=false",
-          "-c", "core.hooksPath=/dev/null", "-C", directory,
-          "status", "--porcelain=v1", "--untracked-files=all",
-          "--ignore-submodules=none"
-        ) do |input, output, errors, waiter|
-          input.close
-          errors.close
-          begin
-            first_byte = output.read(1)
-            stop!("dirty_repository_source") unless first_byte.nil?
-            stop!("git_status_unavailable") unless waiter.value.success?
-          ensure
-            if waiter.alive?
-              begin
-                Process.kill("KILL", waiter.pid)
-              rescue Errno::ESRCH
-                # Child finished between the liveness check and signal.
-              end
-            end
-          end
-        end
-      end
-    rescue Timeout::Error
-      stop!("git_status_unavailable")
-    end
+    # A8: source SHA/provenance and process control are EXTERNAL runner
+    # responsibilities. No git, subprocess or wall-clock timer is permitted
+    # in the Ruby signed-stage observer. All supplied oracle JSON is a CLAIM,
+    # not an attestation of the interpreter bytes that were actually loaded.
 
     def checked_observation(result)
       stop!("invalid_observer_result") unless result.instance_of?(Hash)
@@ -206,10 +154,11 @@ module AP2E06IA7SignedReachability
       clock = policy.fetch("freeze_epoch")
       stop!("invalid_fixed_lab_clock") unless
         clock.is_a?(Integer) && clock.between?(1, 4_102_444_800)
-      root_repo = File.expand_path("../..", __dir__)
-      tested_head = git_head!(root_repo)
-      pinned_tree_sha = git_head!(paths.fetch("upstream_root"))
-      stop!("unpinned_ap2_checkout") unless pinned_tree_sha == PINNED_AP2
+      # G5 itself independently verifies fixed local schema Git blob hashes.
+      # This code deliberately does NOT assert its loaded Ruby code, the
+      # external AP2 source tree, or caller-supplied oracle came from any
+      # trusted immutable checkout. Only an independently attested execution
+      # boundary could establish those claims at the future Approval B.
 
       %w[roots terminals candidate_issuer_public_jwks
          candidate_issuer_thumbprints].each do |name|
@@ -297,11 +246,15 @@ module AP2E06IA7SignedReachability
       matched = per_case.values.all? { |x| x["matched_predeclared_stage"] }
       report = {
         "case_id" => "E06I_A7_SIGNED_G5_REACHABILITY",
-        "status" => matched ? "LIMITED_SYNTHETIC_G5_OBSERVED" : "RED_HOLD",
+        "status" => "HOLD",
+        "reason" => matched ? "SOURCE_PROVENANCE_UNVERIFIED" : "STAGE_EXPECTATION_MISMATCH",
+        "case_outcomes_match" => matched,
         "gate" => "PHASE2A_E03_E04_E06_UNPROVEN",
         "pinned_ap2_sha" => PINNED_AP2,
-        "upstream_checked_head" => pinned_tree_sha,
-        "verifier_tested_head" => tested_head,
+        # No untrusted Git HEAD, manifest or JSON label can certify these
+        # interpreter source bytes. Only the separate trusted runner could
+        # attach an independently reviewed tested HEAD after B approval.
+        "source_provenance" => "UNVERIFIED_EXTERNAL_RUNNER",
         "source_fixture_sha256" => sha(fixture_raw),
         "source_policy_sha256" => sha(policy_raw),
         "source_e01_report_sha256" => sha(e01_raw),
@@ -317,7 +270,9 @@ module AP2E06IA7SignedReachability
       stop!("unauthorized_evidence") unless
         control["evidence"].nil? && report["g6_g7"] == "HOLD_NOT_WIRED"
       write_report_exclusive!(paths.fetch("report"), report)
-      matched
+      # Always return HOLD. Even matching signed lab stages do not establish
+      # immutable loaded-source or independent Host/Issuer provenance.
+      false
     end
 
     def write_report_exclusive!(path, report)
@@ -347,10 +302,9 @@ if $PROGRAM_NAME == __FILE__
     parser.parse!(ARGV)
     raise AP2E06IA7SignedReachability::Stop, "unexpected_arguments" unless
       ARGV.empty?
-    success = AP2E06IA7SignedReachability.run!(options)
-    puts(success ? "E06-I A7: LIMITED SYNTHETIC STAGE OBSERVATION ONLY" :
-                   "E06-I A7: RED/HOLD; actual stages preserved")
-    exit(success ? 0 : 1)
+    AP2E06IA7SignedReachability.run!(options)
+    puts "E06-I A8: HOLD; synthetic stages only, source provenance unverified"
+    exit 1
   rescue StandardError
     # Fail closed without printing private/wire contents or local filesystem
     # details. Without a complete report, no independent proof is admitted.
