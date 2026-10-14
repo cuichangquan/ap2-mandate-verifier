@@ -206,34 +206,47 @@ module AP2E06IPartialProbe
         return {
           "status" => "HOLD", "first_reject_stage" => current,
           "reason" => "verification_unavailable:jwt_version",
-          "completed_stages" => reached.freeze, "evidence" => nil
+          "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze, "evidence" => nil
         }
       end
-      raise Halt, "invalid_input" unless case_data.is_a?(Hash) &&
-        case_data.keys.sort == %w[candidate root terminal]
-      root, terminal, candidate = case_data.values_at("root", "terminal", "candidate")
+      # G0: never call keys/values/to_h on a caller-controlled Hash. Even a
+      # concurrently growing Hash may only supply these three named members.
+      required_case = %w[candidate root terminal]
+      raise Halt, "invalid_input" unless case_data.instance_of?(Hash) &&
+        case_data.size == 3 && required_case.all? { |key| case_data.key?(key) }
+      root_source = case_data.fetch("root")
+      terminal_source = case_data.fetch("terminal")
+      candidate_source = case_data.fetch("candidate")
       raise Halt, "invalid_input" unless
-        root.is_a?(String) && terminal.is_a?(String) &&
-        policy_json.is_a?(String)
-      # Bounded copies BEFORE G0: never duplicate unlimited caller-controlled
-      # bytes. The exact frozen copies are used across G0/G1/G2/G3/G4.
-      root = bounded_wire_snapshot!(root, 32_768)
-      terminal = bounded_wire_snapshot!(terminal, 32_768)
+        policy_json.is_a?(String) && root_source.is_a?(String) &&
+        terminal_source.is_a?(String)
+      # Precheck, bounded copy, and detach originals BEFORE any parsing.
+      root = bounded_wire_snapshot!(root_source, 32_768)
+      terminal = bounded_wire_snapshot!(terminal_source, 32_768)
       policy_json = bounded_wire_snapshot!(policy_json, 16_384)
-      # Bound the untrusted presentation key before Host policy comparison.
-      # Key material is never used as a trust source; G1 chooses Host's key.
-      raise Halt, "resource_limit" unless candidate.is_a?(Hash) &&
-        candidate.size == 4 && candidate.keys.all? { |k| k.is_a?(String) } &&
-        candidate.keys.sort == %w[crv kty x y] &&
-        candidate.values.all? { |v| v.is_a?(String) && v.ascii_only? && v.bytesize.between?(1, 128) }
-      candidate = candidate.to_h { |key, value|
-        [bounded_wire_snapshot!(key, 16),
-         bounded_wire_snapshot!(value, 128)]
-      }.freeze
+
+      # Extract exactly four *named* candidate JWK members. No enumeration of
+      # a mutable untrusted Hash is allowed, including on failure paths.
+      jwk_fields = %w[crv kty x y]
+      raise Halt, "resource_limit" unless candidate_source.instance_of?(Hash) &&
+        candidate_source.size == 4 &&
+        jwk_fields.all? { |key| candidate_source.key?(key) }
+      candidate = jwk_fields.to_h do |key|
+        [key, bounded_wire_snapshot!(candidate_source.fetch(key), 128)]
+      end.freeze
       raise Halt, "resource_limit" unless
-        candidate.keys.sort == %w[crv kty x y] &&
-        candidate.values.all? { |v| v.is_a?(String) &&
-          v.ascii_only? && v.bytesize.between?(1, 128) }
+        candidate_source.size == 4 &&
+        jwk_fields.all? { |key|
+          candidate_source.key?(key) &&
+            candidate_source.fetch(key) == candidate.fetch(key)
+        }
+      raise Halt, "invalid_input" unless
+        case_data.size == 3 &&
+        required_case.all? { |key| case_data.key?(key) } &&
+        case_data.fetch("root").equal?(root_source) &&
+        case_data.fetch("terminal").equal?(terminal_source) &&
+        case_data.fetch("candidate").equal?(candidate_source)
       candidate_bytes = JSON.generate(candidate).bytesize
       raise Halt, "resource_limit" unless
         policy_json.ascii_only? && policy_json.bytesize.between?(1, 16_384) &&
@@ -258,8 +271,27 @@ module AP2E06IPartialProbe
 
       current = STAGES.fetch(1)
       policy = HOST.load!(policy_json)
-      trusted = HOST.verify_candidate!(
-        policy, candidate, case_policy_digest: policy_digest
+      # The instant is caller-asserted and therefore NOT authoritative Host
+      # time. No G1 stage completion is recorded for missing/out-of-window
+      # claims, and no implicit Time.now fallback is permitted.
+      unless verified_at.is_a?(Integer) &&
+          verified_at.between?(1, ROOT::MAX_VERIFIED_AT) &&
+          policy["not_before"].is_a?(Integer) &&
+          policy["not_after"].is_a?(Integer) &&
+          policy["not_before"] <= verified_at &&
+          verified_at < policy["not_after"]
+        return {
+          "status" => "HOLD", "first_reject_stage" => nil,
+          "blocked_stage" => current,
+          "reason" => "synthetic_clock_or_policy_window_unavailable",
+          "g1_admissible" => false,
+          "stage_trace_basis" => "synthetic_conditional_only",
+          "completed_stages" => reached.freeze, "evidence" => nil
+        }
+      end
+      trusted = HOST.verify_candidate_at!(
+        policy, candidate, case_policy_digest: policy_digest,
+        verified_at: verified_at
       )
       reached << current
 
@@ -287,7 +319,9 @@ module AP2E06IPartialProbe
       # and performs original signed Root whole-graph closure / local shape.
       # This copy avoids loading minitest/autorun through old P1-1.
       # "reached G3" is marked only when THIS call succeeds.
-      verified_open = ROOT.verify_full_root!(root, trusted_jwk: trusted)
+      verified_open = ROOT.verify_full_root_at!(
+        root, trusted_jwk: trusted, verified_at: verified_at
+      )
       raise Halt, "unsupported_profile" unless verified_open.is_a?(Hash)
       reached << current
 
@@ -313,48 +347,56 @@ module AP2E06IPartialProbe
         "status" => "HOLD", "first_reject_stage" => nil,
         "blocked_stage" => current, "reason" => "G5_G6_G7_NOT_WIRED",
         "g1_admissible" => false,
+        "stage_trace_basis" => "synthetic_conditional_only",
         "completed_stages" => reached.freeze, "evidence" => nil
       }
     rescue G4::Rejected => error
       {
         "status" => "REJECT", "first_reject_stage" => current,
-        "reason" => error.code, "completed_stages" => reached.freeze,
+        "reason" => error.code, "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze,
         "evidence" => nil
       }
     rescue G4::Unavailable => error
       {
         "status" => "HOLD", "first_reject_stage" => nil,
         "blocked_stage" => current, "reason" => error.message,
+        "stage_trace_basis" => "synthetic_conditional_only",
         "completed_stages" => reached.freeze, "evidence" => nil
       }
     rescue HOST::Rejected => error
       {
         "status" => "REJECT", "first_reject_stage" => current,
-        "reason" => error.code, "completed_stages" => reached.freeze,
+        "reason" => error.code, "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze,
         "evidence" => nil
       }
     rescue ROOT::Rejected => error
       {
         "status" => "REJECT", "first_reject_stage" => current,
-        "reason" => error.message, "completed_stages" => reached.freeze,
+        "reason" => error.message, "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze,
         "evidence" => nil
       }
     rescue Halt => error
       {
         "status" => "REJECT", "first_reject_stage" => current,
-        "reason" => error.code, "completed_stages" => reached.freeze,
+        "reason" => error.code, "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze,
         "evidence" => nil
       }
     rescue JWT::DecodeError, JWT::JWKError
       {
         "status" => "REJECT", "first_reject_stage" => current,
-        "reason" => "invalid_issuer_signature", "completed_stages" => reached.freeze,
+        "reason" => "invalid_issuer_signature", "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze,
         "evidence" => nil
       }
     rescue JSON::ParserError, ArgumentError, TypeError, KeyError
       {
         "status" => "REJECT", "first_reject_stage" => current,
-        "reason" => "invalid_input_or_ambiguous_json", "completed_stages" => reached.freeze,
+        "reason" => "invalid_input_or_ambiguous_json", "stage_trace_basis" => "synthetic_conditional_only",
+        "completed_stages" => reached.freeze,
         "evidence" => nil
       }
     rescue StandardError
@@ -363,6 +405,7 @@ module AP2E06IPartialProbe
       {
         "status" => "HOLD", "first_reject_stage" => current,
         "reason" => "unexpected_unverified_failure",
+        "stage_trace_basis" => "synthetic_conditional_only",
         "completed_stages" => reached.freeze, "evidence" => nil
       }
     end
@@ -400,7 +443,8 @@ module AP2E06IPartialProbe
       copy = source.byteslice(0, max + 1)
       raise Halt, "resource_limit" unless copy.is_a?(String) &&
         copy.bytesize.between?(1, max) &&
-        copy.bytesize == source.bytesize && copy.ascii_only?
+        copy.bytesize == source.bytesize && copy.ascii_only? &&
+        source == copy
       copy.freeze
     end
 
