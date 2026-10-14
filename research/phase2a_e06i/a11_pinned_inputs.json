@@ -11,7 +11,8 @@
     "runtime_execution_authorized": false,
     "phase_2b_authorized": false,
     "overall_verifier_security_pass": false,
-    "on_unknown_or_mismatch": "STOP/HOLD; do not fallback to mutable tag, resolver, installer, caller-provided digest or unsigned reports"
+    "on_unknown_or_mismatch": "STOP/HOLD; do not fallback to mutable tag, resolver, installer, caller-provided digest or unsigned reports",
+    "verified_archive_hashes_do_not_prove_loaded_runtime_identity": true
   },
   "source_roles": {
     "official_ap2_v0_2_commit": {
@@ -41,7 +42,7 @@
       "scope": "16 whole .whl archive SHA256 comparisons against official PyPI digests and fixed upstream uv.lock across two Mac sessions; CPython 3.11 linux/amd64 candidate files"
     },
     "reported_hash_comparison_is_not_supply_chain_attestation": true,
-    "temporary_download_files_not_persisted_as_package_cache": true
+    "temporary_file_cleanup": "Owner copy-pasted scripts contained exit traps; actual local deletion and any retained package caches are not independently attested"
   },
   "target_candidate": {
     "os": "linux",
