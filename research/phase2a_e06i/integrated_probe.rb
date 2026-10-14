@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 #
 # Phase 2-A E06-I approval A, isolated research-only stage observer.
-# WARNING: only G0–G3 are wired. G4–G7 deliberately FAIL CLOSED.
+# WARNING: G0–G4 synthetic-local only. G5–G7 deliberately FAIL CLOSED.
 # This is NOT an integrated verifier, not authorization and not a Gem API.
 # Never relabel a G0 or G1 reject as proof of signature/SD closure.
 require "json"
@@ -10,6 +10,7 @@ require "base64"
 require_relative "isolated_host_policy"
 require_relative "isolated_host_snapshot"
 require_relative "isolated_root_closure"
+require_relative "isolated_g4_crypto"
 require_relative "isolated_stage_context"
 # A3-T1 diagnostic needs these distinct Halt classes to preserve REJECT.
 # Modules define contracts only; no fixtures, tests or runner are loaded.
@@ -19,6 +20,7 @@ require_relative "isolated_nonce_issuance_source"
 module AP2E06IPartialProbe
   HOST = AP2E06IHostPolicy
   ROOT = AP2E06IRootClosure
+  G4 = AP2E06IG4Crypto
   STAGES = %w[
     G0_PREAUTH_BOUNDS G1_HOST_TRUST_SNAPSHOT G2_ISSUER_ROOT_AUTHENTICITY
     G3_ROOT_ORIGINAL_SD_CLOSURE G4_AGENT_AND_MERCHANT_CRYPTO_BINDING
@@ -269,15 +271,40 @@ module AP2E06IPartialProbe
       raise Halt, "unsupported_profile" unless verified_open.is_a?(Hash)
       reached << current
 
-      # G4/G6 currently mix crypto and semantics inside old P1-2/P1-3.
-      # Calling old checkout verify! now, then applying Schema, would
-      # violate G5-before-G6. DO NOT do so or return success.
+      # Conditional synthetic G4 only: Host policy, clock and issuer
+      # enrollment are NOT independently authenticated. G4 never calls
+      # P1-2/P1-3's mixed crypto/commerce verify! entrypoints.
       current = STAGES.fetch(4)
+      G4.inspect!(
+        root_wire: root, terminal_wire: terminal, verified_open: verified_open,
+        expected_agent_jwk: policy.fetch("expected_agent_public_jwk"),
+        trusted_merchant_jwk: policy.fetch("trusted_merchant_public_jwk"),
+        expected_aud: policy.fetch("expected_aud"),
+        expected_nonce: policy.fetch("expected_nonce"),
+        host_checkout_jwt: policy.fetch("host_checkout_jwt")
+      )
+      reached << current
+
+      # Neither Schema (G5) nor commerce/Host semantics (G6) runs here.
+      # This is a blocked NEXT stage, NOT a G5 reject or VerifiedEvidence.
+      current = STAGES.fetch(5)
       {
-        "status" => "HOLD", "first_reject_stage" => current,
-        "reason" => "G4_G6_SAFE_EXTRACTION_NOT_IMPLEMENTED",
-        "completed_stages" => reached.freeze,
+        "status" => "HOLD", "first_reject_stage" => nil,
+        "blocked_stage" => current, "reason" => "G5_G6_G7_NOT_WIRED",
+        "g1_admissible" => false,
+        "completed_stages" => reached.freeze, "evidence" => nil
+      }
+    rescue G4::Rejected => error
+      {
+        "status" => "REJECT", "first_reject_stage" => current,
+        "reason" => error.code, "completed_stages" => reached.freeze,
         "evidence" => nil
+      }
+    rescue G4::Unavailable => error
+      {
+        "status" => "HOLD", "first_reject_stage" => nil,
+        "blocked_stage" => current, "reason" => error.message,
+        "completed_stages" => reached.freeze, "evidence" => nil
       }
     rescue HOST::Rejected => error
       {
