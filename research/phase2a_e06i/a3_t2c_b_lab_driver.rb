@@ -153,7 +153,7 @@ module AP2E06IA3T2cBLabDriver
 
     def pg01_only(supervisor, writer, reader, issued_at, expires_at)
       context = INPUTS.pg01(issued_at: issued_at, expires_at: expires_at)
-      wire = INPUTS.unsigned_checkout_wire_for("pg01")
+      wire = INPUTS.unsigned_checkout_wire_for(label: "pg01")
       supervisor.reserve_attempts!
       receipt = supervisor.bounded!(label: "pg01_issue",
                                     connections: [writer], seconds: 8) do
@@ -178,7 +178,7 @@ module AP2E06IA3T2cBLabDriver
     def pg02_only(supervisor, left, right, reader, issued_at, expires_at)
       first, second = INPUTS.pg02_pair(issued_at: issued_at,
                                       expires_at: expires_at)
-      wire = INPUTS.unsigned_checkout_wire_for("pg02")
+      wire = INPUTS.unsigned_checkout_wire_for(label: "pg02")
       fixed_nonce = INPUTS.pg02_probe_nonce
       supervisor.reserve_attempts!(2)
       observation = supervisor.bounded!(label: "pg02_lock_probe",
@@ -221,7 +221,7 @@ module AP2E06IA3T2cBLabDriver
     def pg03_only(supervisor, writer, reader, baseline, issued_at, expires_at)
       context = INPUTS.pg03_reissue(issued_at: issued_at,
                                     expires_at: expires_at)
-      wire = INPUTS.unsigned_checkout_wire_for("pg03")
+      wire = INPUTS.unsigned_checkout_wire_for(label: "pg03")
       before = fetch_event(supervisor, reader,
                            baseline[:context].fetch("issuance_ref"),
                            "pg03_before")
@@ -284,7 +284,7 @@ module AP2E06IA3T2cBLabDriver
     def pg04_only(supervisor, writer, reader, issued_at, expires_at)
       context = INPUTS.pg04_rollback(issued_at: issued_at,
                                      expires_at: expires_at)
-      wire = INPUTS.unsigned_checkout_wire_for("pg04")
+      wire = INPUTS.unsigned_checkout_wire_for(label: "pg04")
       supervisor.reserve_attempts!
       result = supervisor.bounded!(label: "pg04_known_rollback",
                                    connections: [writer], seconds: 8) do
