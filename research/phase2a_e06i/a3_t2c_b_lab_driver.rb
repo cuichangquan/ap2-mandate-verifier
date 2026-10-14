@@ -107,8 +107,17 @@ module AP2E06IA3T2cBLabDriver
       raise "unknown transaction status" unless
         defined?(PG::PQTRANS_IDLE) &&
         connection.transaction_status == PG::PQTRANS_IDLE
+      unless connection.respond_to?(:conninfo_hash) &&
+             connection.conninfo_hash.is_a?(Hash)
+        raise "unverifiable libpq login credential"
+      end
       result = connection.exec(ROLE_ID_SQL)
       raise "role result not unique" unless result.ntuples == 1
+      expected = result[0]["effective_role"]
+      unless expected == result[0]["login_role"] &&
+             connection.conninfo_hash[:user] == expected
+        raise "startup authentication cannot be attributed to restricted role"
+      end
       result[0]
     end
 
