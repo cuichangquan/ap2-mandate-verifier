@@ -198,17 +198,19 @@ def child_command(command, seconds):
     except subprocess.TimeoutExpired:
         raise Stop("CHILD_OS_WALL_CLOCK_EXCEEDED") from None
     finally:
-        # Always terminate the entire process group, including subprocesses.
-        # External B supervisor must separately hard-kill this runner itself.
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        # A returned waiter has already reaped; a timed-out waiter is
-        # reaped explicitly. This does not guarantee arbitrary descendants
-        # have vanished; the OS execution boundary MUST own that guarantee.
+        # Never send a signal to a *reaped* PID: it may have been reused for
+        # another process group. If the direct child remains, kill its group
+        # before wait/reap. Descendants surviving an early parent exit are
+        # an EXTERNAL cgroup/OS-supervisor responsibility, never a PASS.
         if proc.poll() is None:
-            proc.wait(timeout=3)
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            try:
+                proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                raise Stop("CHILD_REAP_NOT_CONFIRMED") from None
 
 
 def exclusive_json(path, report):
@@ -246,6 +248,12 @@ def run(args):
     )
     # The external OS/supervisor must attest Ruby/Python/gem imports too;
     # hash matching alone is NOT evidence of complete interpreter closure.
+    # The runner cannot attest the executable/runtime it was loaded with.
+    # Avoid an arbitrary caller-provided command name or relative PATH binary.
+    ruby = safe_path(args.ruby_binary)
+    demand(ruby.is_absolute() and ruby.name in ("ruby", "ruby3.3") and
+           not ruby.is_symlink() and ruby.is_file() and
+           os.access(ruby, os.X_OK), "RUBY_EXECUTABLE_NOT_PINNED")
     fixture = safe_path(args.fixture)
     policy = safe_path(args.policy)
     previous = safe_path(args.e01_report)
@@ -301,7 +309,7 @@ def run(args):
                "INDEPENDENT_ORACLE_NOT_BOUND")
         result["oracle_result"] = "CLAIM_ONLY_VALIDATED_STRUCTURE"
         ruby_command = [
-            args.ruby_binary, str(ruby_observer),
+            str(ruby), str(ruby_observer),
             "--fixture", str(fixture), "--policy", str(policy),
             "--e01-report", str(previous), "--independent-oracle",
             oracle_path, "--upstream-root", str(upstream),
