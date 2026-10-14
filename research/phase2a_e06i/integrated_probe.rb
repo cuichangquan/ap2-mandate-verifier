@@ -212,13 +212,17 @@ module AP2E06IPartialProbe
       raise Halt, "invalid_input" unless case_data.is_a?(Hash) &&
         case_data.keys.sort == %w[candidate root terminal]
       root, terminal, candidate = case_data.values_at("root", "terminal", "candidate")
-      raise Halt, "resource_limit" unless [root, terminal].all? do |wire|
-        wire.is_a?(String) && wire.ascii_only? && wire.bytesize.between?(1, 32_768)
-      end
-      # Detach the original Root/Terminal wires before ANY stage. G3 and G4
-      # must read the same unchanged bytes even if caller objects mutate.
+      raise Halt, "invalid_input" unless
+        root.is_a?(String) && terminal.is_a?(String) &&
+        policy_json.is_a?(String)
+      # Detach BEFORE bounds/parse. The values actually checked in G0 are
+      # exactly the same immutable original bytes consumed by G2/G3/G4.
       root = root.dup.freeze
       terminal = terminal.dup.freeze
+      policy_json = policy_json.dup.freeze
+      raise Halt, "resource_limit" unless [root, terminal].all? do |wire|
+        wire.ascii_only? && wire.bytesize.between?(1, 32_768)
+      end
       # Bound the untrusted presentation key before Host policy comparison.
       # Key material is never used as a trust source; G1 chooses Host's key.
       raise Halt, "resource_limit" unless candidate.is_a?(Hash) &&
@@ -228,14 +232,17 @@ module AP2E06IPartialProbe
       candidate = candidate.to_h { |key, value|
         [key.dup.freeze, value.dup.freeze]
       }.freeze
+      raise Halt, "resource_limit" unless
+        candidate.keys.sort == %w[crv kty x y] &&
+        candidate.values.all? { |v| v.is_a?(String) &&
+          v.ascii_only? && v.bytesize.between?(1, 128) }
       candidate_bytes = JSON.generate(candidate).bytesize
-      raise Halt, "resource_limit" unless policy_json.is_a?(String) &&
+      raise Halt, "resource_limit" unless
         policy_json.ascii_only? && policy_json.bytesize.between?(1, 16_384) &&
         root.bytesize + terminal.bytesize + policy_json.bytesize + candidate_bytes <= 131_072
 
-      # One detached policy byte string for G0, G1 and the subsequent G4
-      # binding. `policy_digest` is caller asserted; it is not Host authority.
-      policy_json = policy_json.dup.freeze
+      # Policy bytes were detached before G0; the asserted digest is not
+      # independent Host authority even if it matches that immutable policy.
       policy_digest = policy_digest.dup.freeze if policy_digest.is_a?(String)
       untrusted_policy = AP2StrictJSONResearch.parse!(policy_json)
       check_tree_bounds!(untrusted_policy)
