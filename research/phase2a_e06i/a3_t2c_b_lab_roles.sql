@@ -19,13 +19,26 @@
 -- Do not use psql's ON_ERROR_STOP alone as evidence of applied permissions.
 -- Independently verify BEGIN/COMMIT and all effective privileges in PG16.
 
-BEGIN;
-SET LOCAL search_path = pg_catalog, pg_temp;
-
-DO $a3_t2c_b_scope$
+-- Single top-level DO is intentionally the entire bootstrap transaction.
+-- Its final PL/pgSQL COMMIT is legal only for a top-level DO, NOT inside any
+-- pre-existing explicit transaction (including psql --single-transaction).
+-- If the caller already owns a transaction, COMMIT raises and PostgreSQL
+-- aborts/rolls back these uncommitted role and ACL changes. Never replace
+-- this with a bare SQL BEGIN/COMMIT pair or an error-ignoring wrapper.
+-- Execute as ONE top-level statement on a fresh, verified session, with
+-- client error-stop enabled; no arbitrary multi-statement batching.
+DO $a3_t2c_b_bootstrap$
 DECLARE
   db_owner text;
 BEGIN
+  PERFORM pg_catalog.set_config('search_path', 'pg_catalog, pg_temp', true);
+
+  -- The lab is explicitly PG16-only. Check *before* cluster-wide DDL.
+  IF pg_catalog.current_setting('server_version_num')::integer NOT BETWEEN
+     160000 AND 169999 THEN
+    RAISE EXCEPTION 'A3-T2c B requires PostgreSQL 16; STOP';
+  END IF;
+
   IF pg_catalog.current_database() <> 'a3_t2c_b_disposable' OR
      current_user <> 'a3_t2c_b_installer' OR
      session_user <> 'a3_t2c_b_installer' OR
@@ -49,8 +62,7 @@ BEGIN
     RAISE EXCEPTION 'A3-T2c B schema or role already exists; STOP';
   END IF;
 
-  -- The installer must be restricted; otherwise a mistaken privileged
-  -- connection could apply the script to a database bearing the same name.
+  -- A privileged or shared installer would defeat disposable scope.
   IF NOT EXISTS (
      SELECT 1 FROM pg_catalog.pg_roles r
       WHERE r.rolname = current_user
@@ -60,28 +72,22 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'A3-T2c B installer permissions not restricted; STOP';
   END IF;
-END;
-$a3_t2c_b_scope$;
 
--- No password, secret, connection string or broad privilege is committed.
--- PostgreSQL instance authentication is an *independent* Approval B gate.
-CREATE ROLE a3_t2c_writer LOGIN NOINHERIT NOSUPERUSER NOCREATEDB
-  NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD NULL;
-CREATE ROLE a3_t2c_reader LOGIN NOINHERIT NOSUPERUSER NOCREATEDB
-  NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD NULL;
+  -- Fixed SQL strings only; no user-supplied SQL interpolation.
+  -- Passwords and external authentication are NOT provisioned.
+  EXECUTE 'CREATE ROLE a3_t2c_writer LOGIN NOINHERIT NOSUPERUSER NOCREATEDB
+    NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD NULL';
+  EXECUTE 'CREATE ROLE a3_t2c_reader LOGIN NOINHERIT NOSUPERUSER NOCREATEDB
+    NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD NULL';
 
--- Dedicated database only; no grant on any existing project database.
--- The separate existing A3-T2c schema file applies its per-schema and
--- per-table INSERT / SELECT grants after these roles exist.
-REVOKE CONNECT ON DATABASE a3_t2c_b_disposable FROM PUBLIC;
-GRANT CONNECT ON DATABASE a3_t2c_b_disposable
-  TO a3_t2c_writer, a3_t2c_reader;
+  -- Grants are restricted to the independently verified disposable database.
+  -- Existing A3-T2c schema SQL must grant narrowly scoped table rights later.
+  EXECUTE 'REVOKE CONNECT ON DATABASE a3_t2c_b_disposable FROM PUBLIC';
+  EXECUTE 'GRANT CONNECT ON DATABASE a3_t2c_b_disposable
+    TO a3_t2c_writer, a3_t2c_reader';
 
--- Verify roles carry zero membership and no right to switch into owner,
--- including PG16-specific membership options. Recheck again independently
--- under actual credentials in the future approved experiment.
-DO $a3_t2c_b_roles$
-BEGIN
+  -- Zero role membership, no owner switch and no elevated privileges.
+  -- Verify this *again* with independent catalog/credential observations in B.
   IF EXISTS (
     SELECT 1 FROM pg_catalog.pg_auth_members m
     JOIN pg_catalog.pg_roles r ON r.oid = m.member
@@ -95,12 +101,18 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'A3-T2c B new role privilege escape; STOP';
   END IF;
+
+  -- Critical fail-closed transaction fence: a pre-existing caller
+  -- transaction CANNOT be committed by this script. In that context,
+  -- PostgreSQL raises invalid transaction termination and rolls back DDL.
+  -- As always, lost COMMIT acknowledgment remains HOLD until checked.
+  COMMIT;
 END;
-$a3_t2c_b_roles$;
+$a3_t2c_b_bootstrap$;
 
-COMMIT;
-
--- This is NOT a provisioned database or a proof of successful role setup.
--- An independently authorized B operator must check catalog/actual sessions,
--- preserve unknown ACK as HOLD, and later delete ONLY the isolated cluster.
--- NO DROP ROLE, DROP DATABASE, ALTER SYSTEM, trust authentication, or retry.
+-- SOURCE ONLY. No PostgreSQL or roles have been provisioned.
+-- An independently approved B operator must confirm actual commit,
+-- catalog/ACL/cluster identity, role authentication and manual cleanup.
+-- SQL identifiers, observed version and a successful COMMIT are NOT
+-- independent proof of cluster isolation or Host authenticity.
+-- NO DROP ROLE, DROP DATABASE, ALTER SYSTEM, trust auth, or retry.
