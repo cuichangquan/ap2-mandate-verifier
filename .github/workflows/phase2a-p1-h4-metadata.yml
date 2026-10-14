@@ -86,7 +86,6 @@ jobs:
                 and (.[0] | type) == "object"
                 and (.[1] | type) == "object"
                 and (.[0].http_code | type) == "number"
-                and (.[0].redirect_url | type) == "string"
                 and (.[0].url_effective | type) == "string"
               ' "$meta" > /dev/null || stop "invalid curl response metadata"
               status="$(jq -s -r '.[0].http_code' "$meta")" \
@@ -113,7 +112,8 @@ jobs:
                   # curl's final-response header_json preserves duplicate
                   # Location fields as array entries, including empty ones.
                   jq -s -e '
-                    (.[1].location | type) == "array"
+                    (.[0].redirect_url | type) == "string"
+                    and (.[1].location | type) == "array"
                     and (.[1].location | length) == 1
                     and (.[1].location[0] | type) == "string"
                     and (.[1].location[0] | length) > 0
