@@ -41,6 +41,10 @@ REQUIRED_VERIFIER = {
     "research/phase2a_e06i/isolated_host_source.rb",
     "research/phase2a_e06i/isolated_nonce_issuance_source.rb",
     "research/phase2a_dc01/independent_positive_oracle.py",
+    # E01-S's future signed fixture generation is a distinct pre-run stage.
+    # Its local source provenance must be covered too if invoked under B.
+    "research/phase2a_e01s/generate_and_oracle.py",
+    "research/p1_3/generate_merchant_checkout.py",
     "research/shared/strict_json_research.rb",
 }
 REQUIRED_SCHEMAS = {
