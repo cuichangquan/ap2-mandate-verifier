@@ -70,12 +70,9 @@ module AP2E06ISchemaGate
 
       FILES.each do |label, expected|
         pathname = File.join(directory, expected.fetch(:path))
-        actual = File.realpath(pathname)
-        raise Rejected, "verification_unavailable" unless
-          actual.start_with?(prefix) && !File.symlink?(pathname) &&
-          File.file?(actual) && File.size(actual).between?(1, 32_768)
-
-        raw = File.binread(actual)
+        # The path is never trusted merely because a prior File.size passed.
+        # Descriptor-scoped reads cap memory even if a peer grows the file.
+        raw = bounded_pinned_schema_bytes!(pathname, prefix: prefix)
         git_blob = Digest::SHA1.hexdigest("blob #{raw.bytesize}\0".b + raw.b)
         raise Rejected, "verification_unavailable" unless
           git_blob == expected.fetch(:blob)
@@ -124,6 +121,56 @@ module AP2E06ISchemaGate
       raise
     rescue StandardError
       raise Rejected, "verification_unavailable"
+    end
+
+    private
+
+    # Only the three allowlisted, SHA-pinned local Schema files reach here.
+    # O_NOFOLLOW prevents leaf-symlink replacement; O_NONBLOCK prevents a
+    # swapped FIFO from hanging before fstat establishes a regular file.
+    # If the platform lacks these flags, fail closed (initialize rescues).
+    # We do NOT rely on pathname File.size followed by unbounded File.binread.
+    def bounded_pinned_schema_bytes!(pathname, prefix:)
+      actual = File.realpath(pathname)
+      before_path = File.lstat(pathname)
+      raise Rejected, "verification_unavailable" unless
+        actual.start_with?(prefix) &&
+        before_path.file? && before_path.size.between?(1, 32_768)
+
+      flags = File::RDONLY | File::NOFOLLOW | File::NONBLOCK
+      File.open(pathname, flags) do |file|
+        file.binmode
+        before_fd = file.stat
+        raise Rejected, "verification_unavailable" unless
+          same_file_snapshot?(before_path, before_fd) &&
+          File.realpath(pathname) == actual
+
+        # This read is bounded *on the opened descriptor*, never by a
+        # pathname size check. 32_769 is the single-byte overflow sentinel.
+        raw = file.read(32_769)
+        after_fd = file.stat
+        after_path = File.lstat(pathname)
+        raise Rejected, "verification_unavailable" unless
+          raw.is_a?(String) && raw.bytesize.between?(1, 32_768) &&
+          raw.bytesize == before_fd.size &&
+          same_file_snapshot?(before_fd, after_fd) &&
+          same_file_snapshot?(after_fd, after_path) &&
+          File.realpath(pathname) == actual &&
+          actual.start_with?(prefix)
+        raw.b
+      end
+    end
+
+    # Compare the opened inode with both pathname observations and recheck
+    # stable metadata before accepting content. The fixed Git blob digest,
+    # checked by the caller next, protects against equal-size byte mutation.
+    def same_file_snapshot?(left, right)
+      left.file? && right.file? &&
+        left.dev == right.dev && left.ino == right.ino &&
+        left.mode == right.mode && left.nlink == right.nlink &&
+        left.uid == right.uid && left.gid == right.gid &&
+        left.size == right.size && left.mtime == right.mtime &&
+        left.ctime == right.ctime
     end
   end
 end
