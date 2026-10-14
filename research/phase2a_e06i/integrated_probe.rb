@@ -207,7 +207,7 @@ module AP2E06IPartialProbe
           "status" => "HOLD", "first_reject_stage" => current,
           "reason" => "verification_unavailable:jwt_version",
           "stage_trace_basis" => "synthetic_conditional_only",
-        "completed_stages" => reached.freeze, "evidence" => nil
+          "completed_stages" => reached.freeze, "evidence" => nil
         }
       end
       # G0: never call keys/values/to_h on a caller-controlled Hash. Even a
