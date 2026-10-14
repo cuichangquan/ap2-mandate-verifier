@@ -195,7 +195,9 @@ module AP2E06IPartialProbe
 
     # Synthetic fixture inputs are NOT a Host authorization decision.
     # policy_json MUST come from the independent Host fixture, not a token.
-    def observe(policy_json:, case_data:, policy_digest:)
+    # The synthetic-only `verified_at:` is explicit: no unreviewed wall-clock
+    # fallback can cause G4 to be recorded complete. It is NOT B1 Host proof.
+    def observe(policy_json:, case_data:, policy_digest:, verified_at: nil)
       current = STAGES.fetch(0)
       reached = []
       # Dependency semantics are part of the bounded E06-I research profile.
@@ -213,17 +215,28 @@ module AP2E06IPartialProbe
       raise Halt, "resource_limit" unless [root, terminal].all? do |wire|
         wire.is_a?(String) && wire.ascii_only? && wire.bytesize.between?(1, 32_768)
       end
+      # Detach the original Root/Terminal wires before ANY stage. G3 and G4
+      # must read the same unchanged bytes even if caller objects mutate.
+      root = root.dup.freeze
+      terminal = terminal.dup.freeze
       # Bound the untrusted presentation key before Host policy comparison.
       # Key material is never used as a trust source; G1 chooses Host's key.
       raise Halt, "resource_limit" unless candidate.is_a?(Hash) &&
         candidate.size == 4 && candidate.keys.all? { |k| k.is_a?(String) } &&
         candidate.keys.sort == %w[crv kty x y] &&
         candidate.values.all? { |v| v.is_a?(String) && v.ascii_only? && v.bytesize.between?(1, 128) }
+      candidate = candidate.to_h { |key, value|
+        [key.dup.freeze, value.dup.freeze]
+      }.freeze
       candidate_bytes = JSON.generate(candidate).bytesize
       raise Halt, "resource_limit" unless policy_json.is_a?(String) &&
         policy_json.ascii_only? && policy_json.bytesize.between?(1, 16_384) &&
         root.bytesize + terminal.bytesize + policy_json.bytesize + candidate_bytes <= 131_072
 
+      # One detached policy byte string for G0, G1 and the subsequent G4
+      # binding. `policy_digest` is caller asserted; it is not Host authority.
+      policy_json = policy_json.dup.freeze
+      policy_digest = policy_digest.dup.freeze if policy_digest.is_a?(String)
       untrusted_policy = AP2StrictJSONResearch.parse!(policy_json)
       check_tree_bounds!(untrusted_policy)
       raise Halt, "invalid_host_context" unless untrusted_policy.is_a?(Hash)
@@ -281,7 +294,8 @@ module AP2E06IPartialProbe
         trusted_merchant_jwk: policy.fetch("trusted_merchant_public_jwk"),
         expected_aud: policy.fetch("expected_aud"),
         expected_nonce: policy.fetch("expected_nonce"),
-        host_checkout_jwt: policy.fetch("host_checkout_jwt")
+        host_checkout_jwt: policy.fetch("host_checkout_jwt"),
+        verified_at: verified_at, terminal_not_after: policy.fetch("not_after")
       )
       reached << current
 
