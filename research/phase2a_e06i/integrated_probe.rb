@@ -215,14 +215,11 @@ module AP2E06IPartialProbe
       raise Halt, "invalid_input" unless
         root.is_a?(String) && terminal.is_a?(String) &&
         policy_json.is_a?(String)
-      # Detach BEFORE bounds/parse. The values actually checked in G0 are
-      # exactly the same immutable original bytes consumed by G2/G3/G4.
-      root = root.dup.freeze
-      terminal = terminal.dup.freeze
-      policy_json = policy_json.dup.freeze
-      raise Halt, "resource_limit" unless [root, terminal].all? do |wire|
-        wire.ascii_only? && wire.bytesize.between?(1, 32_768)
-      end
+      # Bounded copies BEFORE G0: never duplicate unlimited caller-controlled
+      # bytes. The exact frozen copies are used across G0/G1/G2/G3/G4.
+      root = bounded_wire_snapshot!(root, 32_768)
+      terminal = bounded_wire_snapshot!(terminal, 32_768)
+      policy_json = bounded_wire_snapshot!(policy_json, 16_384)
       # Bound the untrusted presentation key before Host policy comparison.
       # Key material is never used as a trust source; G1 chooses Host's key.
       raise Halt, "resource_limit" unless candidate.is_a?(Hash) &&
@@ -230,7 +227,8 @@ module AP2E06IPartialProbe
         candidate.keys.sort == %w[crv kty x y] &&
         candidate.values.all? { |v| v.is_a?(String) && v.ascii_only? && v.bytesize.between?(1, 128) }
       candidate = candidate.to_h { |key, value|
-        [key.dup.freeze, value.dup.freeze]
+        [bounded_wire_snapshot!(key, 16),
+         bounded_wire_snapshot!(value, 128)]
       }.freeze
       raise Halt, "resource_limit" unless
         candidate.keys.sort == %w[crv kty x y] &&
@@ -241,9 +239,11 @@ module AP2E06IPartialProbe
         policy_json.ascii_only? && policy_json.bytesize.between?(1, 16_384) &&
         root.bytesize + terminal.bytesize + policy_json.bytesize + candidate_bytes <= 131_072
 
-      # Policy bytes were detached before G0; the asserted digest is not
-      # independent Host authority even if it matches that immutable policy.
-      policy_digest = policy_digest.dup.freeze if policy_digest.is_a?(String)
+      # Digest remains caller-asserted rather than Host-authenticated.
+      # It is always bounded before copying and must have a pinned form.
+      policy_digest = bounded_wire_snapshot!(policy_digest, 64)
+      raise Halt, "invalid_host_context" unless
+        policy_digest.match?(/\A[0-9a-f]{64}\z/)
       untrusted_policy = AP2StrictJSONResearch.parse!(policy_json)
       check_tree_bounds!(untrusted_policy)
       raise Halt, "invalid_host_context" unless untrusted_policy.is_a?(Hash)
@@ -389,6 +389,19 @@ module AP2E06IPartialProbe
           "checkout" => context.checkout_wire_sha256
         }.freeze
       }.freeze
+    end
+
+    # Snapshot untrusted inputs WITHOUT ever copying more than max + 1 bytes.
+    # Precheck avoids allocations for plainly oversized inputs; the bounded
+    # slice and postchecks also fail closed on concurrent source mutation.
+    def bounded_wire_snapshot!(source, max)
+      raise Halt, "resource_limit" unless source.is_a?(String) &&
+        source.bytesize.between?(1, max)
+      copy = source.byteslice(0, max + 1)
+      raise Halt, "resource_limit" unless copy.is_a?(String) &&
+        copy.bytesize.between?(1, max) &&
+        copy.bytesize == source.bytesize && copy.ascii_only?
+      copy.freeze
     end
 
     # G0 structural/strict parse ONLY; the returned original JWS is untrusted.
