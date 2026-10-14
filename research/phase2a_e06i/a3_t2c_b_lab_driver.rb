@@ -28,6 +28,7 @@ module AP2E06IA3T2cBLabDriver
 
   ROLE_ID_SQL = <<~SQL.freeze
     SELECT pg_catalog.current_database() AS db_name,
+           pg_catalog.current_setting('server_version_num') AS server_version_num,
            current_user AS effective_role,
            session_user AS login_role,
            pg_catalog.pg_is_in_recovery() AS is_replica,
@@ -45,6 +46,16 @@ module AP2E06IA3T2cBLabDriver
     SELECT pg_catalog.count(*)::pg_catalog.text AS row_count
       FROM a3_t2c.nonce_issuance_history
      WHERE issuance_ref = $1::pg_catalog.text
+  SQL
+
+  # Use the reader's actual database clock and the persisted row's expiry,
+  # within the same read-only statement. Caller-provided Ruby timestamps
+  # cannot be treated as evidence that PG03 ran after expiration.
+  EXPIRED_REF_COUNT_SQL = <<~SQL.freeze
+    SELECT pg_catalog.count(*)::pg_catalog.text AS row_count
+      FROM a3_t2c.nonce_issuance_history
+     WHERE issuance_ref = $1::pg_catalog.text
+       AND expires_at < pg_catalog.clock_timestamp()
   SQL
 
   class << self
@@ -126,6 +137,8 @@ module AP2E06IA3T2cBLabDriver
       ids.each_with_index do |row, index|
         expected = index == 2 ? "a3_t2c_reader" : "a3_t2c_writer"
         return false unless row["db_name"] == "a3_t2c_b_disposable" &&
+          row["server_version_num"].is_a?(String) &&
+          row["server_version_num"].match?(/\A16[0-9]{4}\z/) &&
           row["effective_role"] == expected &&
           row["login_role"] == expected && row["is_replica"] == "f" &&
           row["backend_pid"].to_s.match?(/\A[0-9]{1,10}\z/) &&
@@ -212,6 +225,23 @@ module AP2E06IA3T2cBLabDriver
       before = fetch_event(supervisor, reader,
                            baseline[:context].fetch("issuance_ref"),
                            "pg03_before")
+      unless exact_event_match?(before, baseline[:context], baseline[:wire],
+                                nonce: baseline[:nonce])
+        supervisor.stop!(reason: "pg03_baseline_binding_unverified")
+      end
+
+      # A normal nonce conflict before expiry does NOT establish the
+      # advertised no-reissue-after-expiry property. No sleeping, fake
+      # clock, or caller assertion may substitute for the reader's DB clock.
+      # When unexpired, retain a NON-RUN result and continue other cases;
+      # the final report remains HOLD / non-authoritative.
+      expired_count = count_only(supervisor, reader, EXPIRED_REF_COUNT_SQL,
+        baseline[:context].fetch("issuance_ref"), "pg03_expiry_check")
+      unless expired_count == 1
+        supervisor.record_case!("PG03", outcome: "NOT_RUN",
+                                reason: "baseline_expiry_not_observed")
+        return
+      end
       supervisor.reserve_attempts!
       collision = supervisor.bounded!(label: "pg03_reuse",
                                       connections: [writer], seconds: 8) do
@@ -245,8 +275,10 @@ module AP2E06IA3T2cBLabDriver
                                 nonce: baseline[:nonce])
         supervisor.stop!(reason: "pg03_immutable_row_or_binding_unverified")
       end
+      # Expired issuance history only; actual consumed-state lifecycle,
+      # restore/retention guarantees and global durability remain NOT RUN.
       supervisor.record_case!("PG03", outcome: "LOCAL_OBSERVED",
-                              reason: "reissue_denied_writer_acl_immutable")
+                              reason: "expired_reissue_denied_acl_immutable")
     end
 
     def pg04_only(supervisor, writer, reader, issued_at, expires_at)
