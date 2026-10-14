@@ -45,7 +45,7 @@ jobs:
           used=0
           mkfifo "$work/response.headers.fifo"
           fetch() {
-            local url="$1" dest="$2" current header meta status location bytes remaining attempt header_pid
+            local url="$1" dest="$2" current header meta status location requested_filename bytes remaining attempt header_pid
             case "$url" in
               https://snapshot.debian.org/archive/*|https://ftp-master.debian.org/keys/archive-key-12*.asc) ;;
               *) stop "unapproved initial metadata URL" ;;
@@ -123,8 +123,20 @@ jobs:
                     || stop "cannot read curl redirect target"
                   # Diagnostics are fixed category labels only: never emit
                   # Location, redirect_url, credentials, query, or headers.
-                  # Keep the original exact URL allowlist unchanged.
+                  # Keep the original hash-only URL allowlist unchanged.
+                  # Debian snapshot also supports /file/<40-hex-sha1>/<name>.
+                  # Accept that form only when the name is the exact basename
+                  # of the originally requested metadata file. No URL decode,
+                  # suffix, query, fragment, or extra path segment is allowed.
+                  requested_filename="${url##*/}"
+                  case "$requested_filename" in
+                    InRelease|Packages.xz) ;;
+                    *) stop "redirect denied category=UNEXPECTED_METADATA_NAME" ;;
+                  esac
                   if [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/[0-9a-f]{40,64}$ ]]; then
+                    current="$location"
+                  elif [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/[0-9a-f]{40}/(InRelease|Packages[.]xz)$ ]] &&
+                       [ "${BASH_REMATCH[1]}" = "$requested_filename" ]; then
                     current="$location"
                   elif [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/ ]]; then
                     stop "redirect denied category=SAME_HOST_FILE_NONPINNED"
