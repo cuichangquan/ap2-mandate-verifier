@@ -584,6 +584,38 @@ def exclusive_write(dirfd, name, obj, cap):
         raise
 
 
+
+def commit_output_pair(directory, names, policy, fixture):
+    """Pair-level durability contract, including rollback directory fsync.
+
+    Success means both files and the directory have been fsynced. Failure
+    always means STOP/HOLD and NO automatic retry; rollback is best-effort,
+    not a crash-atomic two-file transaction. Preserve the triggering error.
+    """
+    first, second = None, None
+    try:
+        first = exclusive_write(directory, names[0], policy, 16_384)
+        second = exclusive_write(directory, names[1], fixture, 262_144)
+        os.fsync(directory)
+    except BaseException as original:
+        # A prior creation may have become durable even when a later write
+        # fails. Attempt BOTH deletions and persist the directory metadata.
+        # Do not let a cleanup/fsync error mask the original STOP cause.
+        rollback_uncertain = False
+        for name, identity in ((names[1], second), (names[0], first)):
+            try:
+                remove_created(directory, name, identity)
+            except BaseException:
+                rollback_uncertain = True
+        try:
+            os.fsync(directory)
+        except BaseException:
+            rollback_uncertain = True
+        if rollback_uncertain and hasattr(original, "add_note"):
+            original.add_note("rollback_persistence_unconfirmed; inspect scratch before retry")
+        raise
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--epoch", required=True, type=int)
@@ -601,22 +633,10 @@ def main():
         sdk = import_pinned_sdk()
         demand(sys.meta_path[0] is finder, "sdk_import_guard_removed")
         policy, fixture = make(args.epoch, sdk)
-        first, second = None, None
-        try:
-            first = exclusive_write(directory, names[0], policy, 16_384)
-            second = exclusive_write(directory, names[1], fixture, 262_144)
-            os.fsync(directory)
-            # The two durable outputs are committed here. Later diagnostics
-            # and directory close cannot turn a completed pair into a retry.
-            committed = True
-        except BaseException:
-            # Roll back BOTH created files, including directory fsync failure.
-            # Never remove pre-existing entries; first-error remains STOP.
-            try:
-                remove_created(directory, names[1], second)
-            finally:
-                remove_created(directory, names[0], first)
-            raise
+        commit_output_pair(directory, names, policy, fixture)
+        # The two durable outputs are committed here. Later diagnostics
+        # and directory close cannot turn a completed pair into a retry.
+        committed = True
     finally:
         try:
             os.close(directory)
