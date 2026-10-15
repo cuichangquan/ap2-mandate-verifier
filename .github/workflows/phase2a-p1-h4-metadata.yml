@@ -687,8 +687,9 @@ jobs:
           def load(path, origin, inventory):
               n = 0
               for raw in paragraphs(path):
-                  if not raw.strip():
-                      continue
+                  # Every wire-delimited stanza must be validated. Never strip or skip
+                  # "whitespace-only" segments: CR/NEL/VT/FF/Unicode separators can
+                  # otherwise bypass record()'s exact-LF and required-field checks.
                   n += 1
                   demand(n <= MAX_PACKAGES, "PACKAGE_LIMIT")
                   item = record(raw)
