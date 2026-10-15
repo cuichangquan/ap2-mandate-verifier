@@ -105,9 +105,8 @@ def load(path, origin, inventory):
         prev = inventory.get(key)
         if prev:
             # Same tuple in two archives must refer to the SAME exact artifact.
-            demand(all(prev[0].get(k) == item.get(k) for k in
-                       ("Filename", "Size", "SHA256", "Depends", "Pre-Depends")
-                       if k in prev[0] or k in item), "DUPLICATE_CONFLICT")
+            demand(all(prev[0].get(k) == item.get(k) for k in KEYS),
+                   "DUPLICATE_CONFLICT")
         else:
             inventory[key] = (item, origin)
     demand(n > 0, "EMPTY_INDEX")
@@ -150,9 +149,14 @@ def satisfies(actual, op, wanted, state):
 
 def graph(inventory, root_version):
     roots = []
+    root_origin = ("main" if root_version.endswith("deb12u8")
+                   else "security" if root_version.endswith("deb12u9")
+                   else None)
+    demand(root_origin is not None, "UNAPPROVED_ROOT_VERSION")
     for name in ROOTS:
         options = [(k, v) for k, v in inventory.items()
-                   if k[0] == name and k[1] == root_version and k[2] == "amd64"]
+                   if k[0] == name and k[1] == root_version and k[2] == "amd64"
+                   and v[1] == root_origin]
         demand(len(options) == 1, "ROOT_MISSING_OR_AMBIGUOUS")
         roots.append(options[0][0])
     selected = set()
@@ -221,7 +225,8 @@ if __name__ == "__main__":
                  "UNRESOLVED_ALTERNATIVE_OR_PROFILE", "UNSUPPORTED_DEPENDENCY",
                  "INVALID_CONSTRAINT", "VERSION_CHECK_LIMIT",
                  "DPKG_COMPARATOR_UNAVAILABLE", "DPKG_COMPARATOR_FAILURE",
-                 "ROOT_MISSING_OR_AMBIGUOUS", "GRAPH_NODE_LIMIT",
+                 "ROOT_MISSING_OR_AMBIGUOUS", "UNAPPROVED_ROOT_VERSION",
+                 "GRAPH_NODE_LIMIT",
                  "DEPENDENCY_UNAVAILABLE", "DEPENDENCY_AMBIGUOUS", "REPORT_LIMIT",
                  "UNTERMINATED_STANZA", "CONTINUED_SECURITY_FIELD",
                  "BASELINE_OR_VIRTUAL_SEMANTICS_UNKNOWN")
