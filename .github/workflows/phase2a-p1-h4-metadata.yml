@@ -280,8 +280,10 @@ jobs:
               }
               !started { bad("SIGNATURE_PAIR"); next }
               $2 == "GOODSIG" {
-                # GnuPG may report either the 16-hex key ID or 40-hex FPR.
-                if (NF < 3 || NF > 4 || length($0)>2048 ||
+                # GnuPG may report a 16-hex ID or 40-hex FPR.
+                # Username tail contains spaces; it is untrusted and ignored.
+                # Keep a whole-line bound, but never cap its field count.
+                if (NF < 3 || length($0)>2048 ||
                     (!ishex($3,16) && !ishex($3,40))) bad("FORMAT")
                 good_count++; good_key=$3
                 next
