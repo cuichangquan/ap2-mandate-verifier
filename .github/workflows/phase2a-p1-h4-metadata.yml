@@ -605,6 +605,9 @@ jobs:
           MAX_NODES = 512
           MAX_CHECKS = 4096
           MAX_REPORT = 4096
+          # Local resource policy, not Debian syntax maxima.
+          MAX_RELATIONS = 1024  # combined Depends + Pre-Depends per visited node
+          MAX_EDGES = 4096  # all relations visited per graph, even unavailable targets
           ROOTS = ("python3.11", "python3.11-minimal",
                    "libpython3.11-minimal", "libpython3.11-stdlib")
           NAME = re.compile(r"[a-z0-9][a-z0-9+.-]{0,127}\Z")
@@ -658,12 +661,16 @@ jobs:
                   yield bytes(stanza)
           
           def record(raw):
+              demand(len(raw) <= MAX_STANZA, "STANZA_LIMIT")
               try:
                   text = raw.decode("utf-8", "strict")
               except UnicodeError as exc:
                   raise Hold("INVALID_UTF8") from exc
               demand(not any(ch in BAD_SEPARATORS for ch in text),
                      "UNSUPPORTED_LINE_SEPARATOR")
+              demand(not any((ord(ch) < 32 and ch not in "\t\n")
+                             or 127 <= ord(ch) <= 159 for ch in text),
+                     "INVALID_CONTROL_CHARACTER")
               # A stanza ends with exactly the LF delimiter emitted by paragraphs(),
               # or with LF LF. Neither leading LF nor any extra internal blank line
               # is a valid field boundary. Do not drop empty records before validation.
@@ -695,8 +702,8 @@ jobs:
                   seen.add(lower)
                   current = key
                   if key in KEYS:
-                      demand(key not in fields and len(value) <= 1024,
-                             "DUPLICATE_OR_OVERSIZE_FIELD")
+                      # Wire bytes are bounded by MAX_STANZA; duplicates were checked
+                      # above. Identity fields retain their narrower syntax checks.
                       fields[key] = value
               for key in ("Package", "Version", "Architecture", "Filename", "Size", "SHA256"):
                   demand(key in fields, "MISSING_REQUIRED_FIELD")
@@ -732,12 +739,15 @@ jobs:
               return n
           
           def edges(item):
+              relations = 0
               for field in ("Pre-Depends", "Depends"):
                   text = item.get(field, "")
-                  demand(len(text) <= 1024, "DEPENDENCY_LIMIT")
+                  demand(len(text.encode("utf-8")) <= MAX_STANZA, "STANZA_LIMIT")
                   if not text:
                       continue
                   for group in text.split(","):
+                      relations += 1
+                      demand(relations <= MAX_RELATIONS, "DEPENDENCY_LIMIT")
                       # Do not silently choose OR alternatives, architecture selectors,
                       # virtual Provides or build profiles; they require an OS baseline.
                       demand("|" not in group and "[" not in group and "]" not in group,
@@ -782,6 +792,7 @@ jobs:
               selected = set()
               queue = deque(roots)
               constraints = [0]
+              visited_edges = 0
               # One installed binary version per package name on this fixed amd64
               # target, including packages declared Architecture: all. Reserve each
               # choice when ENQUEUED, not on traversal, so competing parents cannot
@@ -806,6 +817,8 @@ jobs:
                   demand(not any(item.get(k) for k in ("Provides", "Conflicts", "Breaks")),
                          "BASELINE_OR_VIRTUAL_SEMANTICS_UNKNOWN")
                   for _, name, op, required in edges(item):
+                      visited_edges += 1
+                      demand(visited_edges <= MAX_EDGES, "GRAPH_EDGE_LIMIT")
                       # Indexed access prevents O(all Packages entries x all edges).
                       # The bounded work budget also counts unversioned candidates.
                       choices = [k for k in by_name.get(name, ())
@@ -852,7 +865,7 @@ jobs:
           if __name__ == "__main__":
               try:
                   main()
-              except (Hold, OSError, ValueError, lzma.LZMAError) as exc:
+              except (Hold, OSError, EOFError, ValueError, lzma.LZMAError) as exc:
                   code = str(exc)
                   # Only known internally generated labels; avoid printing raw paths.
                   known = ("DECOMPRESSED_LIMIT", "STANZA_LIMIT", "PACKAGE_LIMIT",
@@ -872,6 +885,7 @@ jobs:
                            "EMPTY_WIRE_RECORD", "NONCANONICAL_SECURITY_FIELD",
                            "ORPHAN_CONTINUATION", "EMPTY_CONTINUATION",
                            "INVALID_FIELD_NAME", "DUPLICATE_FIELD",
+                           "INVALID_CONTROL_CHARACTER", "GRAPH_EDGE_LIMIT",
                            "BASELINE_OR_VIRTUAL_SEMANTICS_UNKNOWN")
                   print("P1M_STATUS=STOP/HOLD:" + (code if code in known else "PARSE_ERROR"),
                         file=sys.stderr)
