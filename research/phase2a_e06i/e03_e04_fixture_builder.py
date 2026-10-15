@@ -533,80 +533,85 @@ def private_output_dir(policy_path, fixture_path):
         raise
 
 
-def remove_created(dirfd, name, identity):
-    """Identity precheck inside private dir; no shared-path cleanup race."""
-    if identity is None:
+def remove_created(dirfd, entry):
+    """Remove only our O_EXCL entry inside the verified private namespace."""
+    if not entry["created"]:
         return
     try:
-        st = os.stat(name, dir_fd=dirfd, follow_symlinks=False)
+        st = os.stat(entry["name"], dir_fd=dirfd, follow_symlinks=False)
     except FileNotFoundError:
         return
-    demand(stat.S_ISREG(st.st_mode) and
-           (st.st_dev, st.st_ino) ==
-           (identity.st_dev, identity.st_ino), "output_identity_changed")
-    os.unlink(name, dir_fd=dirfd)
-
-
-def exclusive_write(dirfd, name, obj, cap):
-    data = canonical(obj) + b"\n"
-    demand(0 < len(data) <= cap, "oversized_output")
-    handle, identity, created = None, None, False
-    try:
-        handle = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
-                         os.O_NOFOLLOW, 0o600, dir_fd=dirfd)
-        created = True
-        identity = os.fstat(handle)
-        demand(stat.S_ISREG(identity.st_mode) and
-               identity.st_nlink == 1 and identity.st_uid == os.geteuid(),
-               "unsafe_output_type")
-        pos = 0
-        while pos < len(data):
-            n = os.write(handle, data[pos:])
-            demand(n > 0, "output_write_failed")
-            pos += n
-        os.fsync(handle)
-        os.close(handle)
-        handle = None
-        return identity
-    except BaseException:
-        # Even if fstat or close failed AFTER O_EXCL created the entry,
-        # cleanup must run. The verified private namespace excludes hostile
-        # same-UID renames; never remove pre-existing/unowned entries.
-        try:
-            if handle is not None:
-                os.close(handle)
-        finally:
-            if created:
-                if identity is None:
-                    os.unlink(name, dir_fd=dirfd)
-                else:
-                    remove_created(dirfd, name, identity)
-        raise
-
+    identity = entry["identity"]
+    # If fstat failed immediately after successful O_EXCL, the private
+    # same-UID-isolated namespace still permits removal of OUR created name,
+    # but only if the present entry is a regular owned single-link file.
+    demand(stat.S_ISREG(st.st_mode) and st.st_uid == os.geteuid() and
+           st.st_nlink == 1 and
+           (identity is None or (st.st_dev, st.st_ino) == identity),
+           "output_identity_changed")
+    os.unlink(entry["name"], dir_fd=dirfd)
 
 
 def commit_output_pair(directory, names, policy, fixture):
-    """Pair-level durability contract, including rollback directory fsync.
+    """Single ownership journal for BOTH outputs, including failure rollback.
 
-    Success means both files and the directory have been fsynced. Failure
-    always means STOP/HOLD and NO automatic retry; rollback is best-effort,
-    not a crash-atomic two-file transaction. Preserve the triggering error.
+    Return only after both file fsyncs and the directory fsync succeed.
+    Failure always means STOP/HOLD and NO automatic retry. Even a successful
+    rollback is not a crash-atomic two-file transaction.
     """
-    first, second = None, None
+    # Validate and cap BOTH serialized outputs before any file is created.
+    data = (canonical(policy) + b"\n", canonical(fixture) + b"\n")
+    for payload, cap in zip(data, (16_384, 262_144)):
+        demand(0 < len(payload) <= cap, "oversized_output")
+    # Pre-register both names BEFORE opening either. Each successful O_EXCL
+    # is recorded immediately; later fstat/write/fsync/close failures cannot
+    # lose the name or inode needed by the pair-level rollback owner.
+    journal = [
+        {"name": name, "created": False, "fd": None, "identity": None}
+        for name in names
+    ]
     try:
-        first = exclusive_write(directory, names[0], policy, 16_384)
-        second = exclusive_write(directory, names[1], fixture, 262_144)
+        for entry, payload in zip(journal, data):
+            handle = os.open(entry["name"],
+                             os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+                             os.O_NOFOLLOW, 0o600, dir_fd=directory)
+            entry["fd"] = handle
+            entry["created"] = True
+            identity = os.fstat(handle)
+            entry["identity"] = (identity.st_dev, identity.st_ino)
+            demand(stat.S_ISREG(identity.st_mode) and
+                   identity.st_nlink == 1 and
+                   identity.st_uid == os.geteuid(),
+                   "unsafe_output_type")
+            pos = 0
+            while pos < len(payload):
+                count = os.write(handle, payload[pos:])
+                demand(count > 0, "output_write_failed")
+                pos += count
+            os.fsync(handle)
+            # POSIX close-on-error may have already released the descriptor;
+            # disarm before closing to avoid an unsafe second close attempt.
+            entry["fd"] = None
+            os.close(handle)
         os.fsync(directory)
     except BaseException as original:
-        # A prior creation may have become durable even when a later write
-        # fails. Attempt BOTH deletions and persist the directory metadata.
-        # Do not let a cleanup/fsync error mask the original STOP cause.
         rollback_uncertain = False
-        for name, identity in ((names[1], second), (names[0], first)):
+        for entry in reversed(journal):
+            handle = entry["fd"]
+            entry["fd"] = None
+            if handle is not None:
+                try:
+                    os.close(handle)
+                except BaseException:
+                    rollback_uncertain = True
+            # Attempt BOTH removals even if close or the previous unlink
+            # failed. Never touch a pre-existing uncreated entry.
             try:
-                remove_created(directory, name, identity)
+                remove_created(directory, entry)
             except BaseException:
                 rollback_uncertain = True
+        # Persist successful unlinks, including those after a failed write or
+        # failed initial directory fsync; retain original failure on fsync err.
         try:
             os.fsync(directory)
         except BaseException:
@@ -614,7 +619,6 @@ def commit_output_pair(directory, names, policy, fixture):
         if rollback_uncertain and hasattr(original, "add_note"):
             original.add_note("rollback_persistence_unconfirmed; inspect scratch before retry")
         raise
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -638,13 +642,14 @@ def main():
         # and directory close cannot turn a completed pair into a retry.
         committed = True
     finally:
+        # Never let a directory-close error overwrite an earlier primary
+        # failure. After durable commit, close is postcommit best effort.
+        had_primary_error = sys.exc_info()[0] is not None
         try:
             os.close(directory)
         except OSError:
-            if not committed:
+            if not committed and not had_primary_error:
                 raise
-            # Directory fsync already succeeded. Do not report failure after
-            # both outputs are durable merely because descriptor close failed.
     # Completion logging is best-effort AFTER the commit point. Unbuffered
     # os.write also avoids an interpreter-shutdown BrokenPipeError on stdout.
     try:
