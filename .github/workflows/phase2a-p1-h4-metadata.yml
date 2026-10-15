@@ -162,20 +162,45 @@ jobs:
           # The official Debian archive keyring includes this stable key.
           # Pin this exact additional key only for the main archive.
           fetch "https://ftp-master.debian.org/keys/release-12.asc" "$work/stable.asc"
+          # The complete public key structure is checked for every keyring.
+          # Unpinned Debian 12 subkey fingerprints remain UNVERIFIED/HOLD.
           check_key() {
-            local label="$1" expected="$2" primary
-            primary="$(gpg --batch --with-colons --show-keys --fingerprint "$work/$label.asc" 2>/dev/null \
-              | awk -F: '$1=="fpr" {print $10; exit}')"
-            [ "$primary" = "$expected" ] || stop "$label primary fingerprint mismatch"
-            if [ "$label" = stable ]; then
-              # Reject a bundle containing any unrelated primary key.
-              [ "$(gpg --batch --with-colons --show-keys "$work/stable.asc" 2>/dev/null \
-                | awk -F: '$1=="pub" {n++} END {print n+0}')" -eq 1 ] \
-                || stop "stable key bundle contains unexpected public keys"
-            fi
+            local label="$1" expected="$2" approved_signer="${3:-}"
+            gpg --batch --with-colons --with-fingerprint --with-subkey-fingerprint \
+              --show-keys "$work/$label.asc" 2>/dev/null \
+              | awk -F: -v expected="$expected" -v approved_signer="$approved_signer" '
+                function hex40(v) { return length(v)==40 && v ~ /^[0-9A-F]+$/ }
+                $1 == "pub" {
+                  if (pending != "") bad=1
+                  primary_count++; pending="primary"; next
+                }
+                $1 == "sub" {
+                  if (pending != "") bad=1
+                  subkey_count++; pending="subkey"; next
+                }
+                $1 == "fpr" {
+                  if (!hex40($10) || seen[$10]++) bad=1
+                  if (pending == "primary") {
+                    primary_fprs++
+                    if ($10 != expected) bad=1
+                  } else if (pending == "subkey") {
+                    subkey_fprs++
+                    if (approved_signer != "" && $10 != approved_signer) bad=1
+                  } else bad=1
+                  pending=""
+                  next
+                }
+                $1 == "uid" || $1 == "uat" || $1 == "rvk" { next }
+                { bad=1 }
+                END {
+                  if (primary_count != 1 || primary_fprs != 1 || pending != "" ||
+                      subkey_count != subkey_fprs || subkey_count > 16 || bad ||
+                      (approved_signer != "" && subkey_count != 1)) exit 1
+                }
+              ' || stop "$label public key set mismatch"
             gpg --batch --yes --dearmor --output "$work/$label.gpg" "$work/$label.asc" \
               || stop "$label key dearmor failure"
-            echo "PASS_PINNED_KEY $label $primary"
+            echo "PASS_PINNED_KEY $label $expected"
           }
           main_fpr=B8B80B5B623EAB6AD8775C45B7C5D7D6350947F8
           security_fpr=05AB90340C0C5E797F44A8C8254CF3B5AEC0A8F0
@@ -183,6 +208,133 @@ jobs:
           check_key main "$main_fpr"
           check_key security "$security_fpr"
           check_key stable "$stable_fpr"
+
+          # Machine-readable GnuPG statuses: bounded per-NEWSIG state.
+          # Only fixed category labels are logged, never UID, ID or stderr.
+          status_check() {
+            local phase="$1" label="$2" file="$3" expected="$4"
+            echo "GPGV_STATUS_CONTEXT phase=$phase archive=$label"
+            awk -v phase="$phase" -v kind="$label" -v expected="$expected" \
+              -v stable="$stable_fpr" -v bullseye="$bullseye_fpr" \
+              -v approved_missing="0E98404D386FA1D9" \
+              -v missing_full="A7236886F3CCCAAD148A27F80E98404D386FA1D9" '
+              function bad(category) { issues[category]=1 }
+              function ishex(v,n) { return length(v)==n && v ~ /^[0-9A-F]+$/ }
+              function permitted(p) {
+                return p == expected || (kind == "main" &&
+                  (p == stable || (phase == "final" && p == bullseye)))
+              }
+              function complete() {
+                if (!started) return
+                count++
+                if (count > 8) bad("SIGNATURE_COUNT")
+                if (valid_count == 1 && err_count == 0 && missing_count == 0) {
+                  if (good_count > 1 ||
+                      (good_count == 1 && good_key != substr(signing_fpr,25)))
+                    bad("SIGNATURE_PAIR")
+                  valid_groups++
+                  if (verified_primary == expected) expected_seen++
+                } else if (phase == "preflight" && valid_count == 0 &&
+                           err_count == 1 && missing_count == 1) {
+                  if (errkey != approved_missing ||
+                      missingkey != approved_missing ||
+                      errkey != missingkey || err_rc != "9")
+                    bad("KEY_MISMATCH")
+                  unknown_groups++
+                } else bad("SIGNATURE_PAIR")
+                started=0
+              }
+              BEGIN {
+                if (phase != "preflight" && phase != "final") bad("FORMAT")
+                if (kind != "main" && kind != "security") bad("FORMAT")
+              }
+              $1 != "[GNUPG:]" { bad("FORMAT"); next }
+              $2 == "NEWSIG" {
+                if (NF != 2) bad("FORMAT")
+                complete(); started=1
+                valid_count=err_count=missing_count=good_count=0
+                errkey=missingkey=err_rc=good_key=signing_fpr=verified_primary=""
+                next
+              }
+              $2 == "KEY_CONSIDERED" || $2 == "SIG_ID" {
+                if (NF < 3 || NF > 6) bad("FORMAT")
+                next
+              }
+              !started { bad("SIGNATURE_PAIR"); next }
+              $2 == "GOODSIG" {
+                if (NF < 3 || !ishex($3,16)) bad("FORMAT")
+                good_count++; good_key=$3
+                next
+              }
+              $2 == "VALIDSIG" {
+                if (NF != 11 && NF != 12) { bad("FORMAT"); next }
+                if (!ishex($3,40) || $5 !~ /^[0-9]+$/ ||
+                    $6 !~ /^[0-9]+$/ || $7 !~ /^[0-9]+$/ ||
+                    $8 !~ /^[0-9]+$/ || $9 !~ /^[0-9]+$/ ||
+                    $10 !~ /^[0-9]+$/ || !ishex($11,2) ||
+                    (NF == 12 && !ishex($12,40))) bad("FORMAT")
+                valid_count++; signing_fpr=$3
+                verified_primary=(NF == 12 ? $12 : $3)
+                if (!permitted(verified_primary)) bad("KEY_MISMATCH")
+                next
+              }
+              $2 == "ERRSIG" {
+                if ((NF != 8 && NF != 9) || !ishex($3,16) ||
+                    $4 !~ /^[0-9]+$/ || $5 !~ /^[0-9]+$/ ||
+                    !ishex($6,2) || $7 !~ /^[0-9]+$/ ||
+                    $8 !~ /^[0-9]+$/ ||
+                    (NF == 9 && (!ishex($9,40) || $9 != missing_full)))
+                  bad("FORMAT")
+                err_count++; errkey=$3; err_rc=$8
+                next
+              }
+              $2 == "NO_PUBKEY" {
+                if (NF != 3 || !ishex($3,16)) bad("FORMAT")
+                missing_count++; missingkey=$3
+                next
+              }
+              $2 == "BADSIG" || $2 == "EXPSIG" || $2 == "EXPKEYSIG" ||
+              $2 == "REVKEYSIG" || $2 == "NODATA" || $2 == "FAILURE" ||
+              $2 == "BADARMOR" || $2 == "ERROR" || $2 == "KEYREVOKED" {
+                bad("UNEXPECTED_SIGNATURE_STATUS"); next
+              }
+              { bad("UNEXPECTED_STATUS") }
+              END {
+                complete()
+                if (count < 1 || valid_groups < 1) bad("SIGNATURE_COUNT")
+                if (phase == "preflight" &&
+                    (unknown_groups != 1 || count != valid_groups + 1))
+                  bad("SIGNATURE_COUNT")
+                if (phase == "final" &&
+                    (unknown_groups != 0 || count != valid_groups ||
+                     expected_seen < 1)) bad("AUTH_SIGNER_MISSING")
+                failed=0
+                if (issues["FORMAT"]) {
+                  print "STATUS_CATEGORY=FORMAT"; failed=1
+                }
+                if (issues["SIGNATURE_PAIR"]) {
+                  print "STATUS_CATEGORY=SIGNATURE_PAIR"; failed=1
+                }
+                if (issues["KEY_MISMATCH"]) {
+                  print "STATUS_CATEGORY=KEY_MISMATCH"; failed=1
+                }
+                if (issues["SIGNATURE_COUNT"]) {
+                  print "STATUS_CATEGORY=SIGNATURE_COUNT"; failed=1
+                }
+                if (issues["AUTH_SIGNER_MISSING"]) {
+                  print "STATUS_CATEGORY=AUTH_SIGNER_MISSING"; failed=1
+                }
+                if (issues["UNEXPECTED_SIGNATURE_STATUS"]) {
+                  print "STATUS_CATEGORY=UNEXPECTED_SIGNATURE_STATUS"; failed=1
+                }
+                if (issues["UNEXPECTED_STATUS"]) {
+                  print "STATUS_CATEGORY=UNEXPECTED_STATUS"; failed=1
+                }
+                if (failed) exit 1
+                print "STATUS_CATEGORY=PASS"
+              }
+            ' "$file"
+          }
 
           # Snapshot request points to a frozen historical date; the selected
           # import ID is NOT independently attested by the requested date.
@@ -203,32 +355,7 @@ jobs:
                    2>"$work/main.preflight.stderr" >/dev/null; then
                 stop "main preflight did not require additional key"
               fi
-              awk -v missing="0E98404D386FA1D9" \
-                  -v automatic="$main_fpr" -v stable="$stable_fpr" '
-                $1 == "[GNUPG:]" && $2 == "NEWSIG" { newsig++; next }
-                $1 == "[GNUPG:]" && $2 == "NO_PUBKEY" {
-                  missing_count++
-                  if (NF != 3 || $3 != missing) bad=1
-                  next
-                }
-                $1 == "[GNUPG:]" && $2 == "ERRSIG" {
-                  error_count++
-                  if (NF < 8 || $3 != missing || $8 != 9) bad=1
-                  next
-                }
-                $1 == "[GNUPG:]" && $2 == "VALIDSIG" {
-                  valid_count++
-                  if ($3 != automatic && $NF != automatic &&
-                      $3 != stable && $NF != stable) bad=1
-                  next
-                }
-                $1 == "[GNUPG:]" && $2 ~ /^(BADSIG|EXPSIG|EXPKEYSIG|REVKEYSIG|NODATA|FAILURE|BADARMOR|ERROR|KEYREVOKED)$/ { bad=1 }
-                END {
-                  if (missing_count != 1 || error_count != 1 ||
-                      valid_count < 1 || newsig != valid_count + error_count || bad)
-                    exit 1
-                }
-              ' "$work/main.preflight.status" \
+              status_check preflight main "$work/main.preflight.status" "$main_fpr" \
                 || stop "main missing signer identity or status not uniquely approved"
               echo "GPGV_PREFLIGHT main category=EXACT_BULLSEYE_SUBKEY_ONLY"
 
@@ -236,26 +363,8 @@ jobs:
               fetch "https://ftp-master.debian.org/keys/archive-key-11.asc" "$work/bullseye.asc"
               bullseye_fpr=1F89983E0081FDE018F3CC9673A4F27B8DD47936
               bullseye_signing_fpr=A7236886F3CCCAAD148A27F80E98404D386FA1D9
-              # Independently check exactly one primary and one subkey.
-              # Reject extra, missing or substituted public-key material.
-              gpg --batch --with-colons --with-fingerprint --with-subkey-fingerprint \
-                --show-keys "$work/bullseye.asc" 2>/dev/null \
-                | awk -F: -v primary="$bullseye_fpr" -v signer="$bullseye_signing_fpr" '
-                  $1 == "pub" { pub++; context="primary"; next }
-                  $1 == "sub" { sub++; context="subkey"; next }
-                  $1 == "fpr" {
-                    if (context == "primary" && $10 == primary) valid_primary++
-                    else if (context == "subkey" && $10 == signer) valid_subkey++
-                    else bad=1
-                    context=""
-                    next
-                  }
-                  END {
-                    if (pub != 1 || sub != 1 || valid_primary != 1 ||
-                        valid_subkey != 1 || bad) exit 1
-                  }
-                ' || stop "bullseye primary or signing subkey mismatch"
-              check_key bullseye "$bullseye_fpr"
+              # Require the D3 signing subkey fingerprint exactly.
+              check_key bullseye "$bullseye_fpr" "$bullseye_signing_fpr"
               echo "PASS_PINNED_SIGNING_SUBKEY bullseye"
             fi
 
@@ -272,19 +381,13 @@ jobs:
             if gpgv "${gpgv_keyrings[@]}" --status-fd 3 \
                  --output "$work/$label.Release" "$work/$label.InRelease" \
                  3>"$work/$label.status" 2>"$work/$label.stderr" >/dev/null; then
-              :
+              status_check final "$label" "$work/$label.status" "$signer" \
+                || stop "$label signature status or signer mismatch"
             else
-              for category in VALIDSIG NO_PUBKEY BADSIG EXPKEYSIG EXPSIG REVKEYSIG ERRSIG NODATA FAILURE; do
-                if grep -Eq "^\[GNUPG:\] $category( |$)" "$work/$label.status"; then
-                  echo "GPGV_DIAGNOSTIC $label category=$category"
-                fi
-              done
+              # A parser result can NEVER override gpgv nonzero exit.
+              status_check final "$label" "$work/$label.status" "$signer" || :
               stop "$label InRelease signature invalid or unknown"
             fi
-            awk -v fpr="$signer" \
-              '$2 == "VALIDSIG" && ($3 == fpr || $NF == fpr) {ok=1}
-               END {exit ok ? 0 : 1}' "$work/$label.status" \
-              || stop "$label signature signer fingerprint mismatch"
             grep -qx "Codename: $codename" "$work/$label.Release" \
               || stop "$label codename mismatch"
             grep -Eq '^Components: .*main' "$work/$label.Release" \
