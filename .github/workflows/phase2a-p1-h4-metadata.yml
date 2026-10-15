@@ -47,7 +47,7 @@ jobs:
           fetch() {
             local url="$1" dest="$2" current header meta status location requested_filename bytes remaining attempt header_pid
             case "$url" in
-              https://snapshot.debian.org/archive/*|https://ftp-master.debian.org/keys/archive-key-12*.asc) ;;
+              https://snapshot.debian.org/archive/*|https://ftp-master.debian.org/keys/archive-key-12*.asc|https://ftp-master.debian.org/keys/release-12.asc) ;;
               *) stop "unapproved initial metadata URL" ;;
             esac
             current="$url"
@@ -159,19 +159,30 @@ jobs:
           # Debian official published primary key fingerprints are pinned here.
           fetch "https://ftp-master.debian.org/keys/archive-key-12.asc" "$work/main.asc"
           fetch "https://ftp-master.debian.org/keys/archive-key-12-security.asc" "$work/security.asc"
+          # The official Debian archive keyring includes this stable key.
+          # Pin this exact additional key only for the main archive.
+          fetch "https://ftp-master.debian.org/keys/release-12.asc" "$work/stable.asc"
           check_key() {
             local label="$1" expected="$2" primary
             primary="$(gpg --batch --with-colons --show-keys --fingerprint "$work/$label.asc" 2>/dev/null \
               | awk -F: '$1=="fpr" {print $10; exit}')"
             [ "$primary" = "$expected" ] || stop "$label primary fingerprint mismatch"
+            if [ "$label" = stable ]; then
+              # Reject a bundle containing any unrelated primary key.
+              [ "$(gpg --batch --with-colons --show-keys "$work/stable.asc" 2>/dev/null \
+                | awk -F: '$1=="pub" {n++} END {print n+0}')" -eq 1 ] \
+                || stop "stable key bundle contains unexpected public keys"
+            fi
             gpg --batch --yes --dearmor --output "$work/$label.gpg" "$work/$label.asc" \
               || stop "$label key dearmor failure"
             echo "PASS_PINNED_KEY $label $primary"
           }
           main_fpr=B8B80B5B623EAB6AD8775C45B7C5D7D6350947F8
           security_fpr=05AB90340C0C5E797F44A8C8254CF3B5AEC0A8F0
+          stable_fpr=4D64FEC119C2029067D6E791F8D2585B8783D481
           check_key main "$main_fpr"
           check_key security "$security_fpr"
+          check_key stable "$stable_fpr"
 
           # Snapshot request points to a frozen historical date; the selected
           # import ID is NOT independently attested by the requested date.
@@ -187,7 +198,11 @@ jobs:
             # signatures, signer IDs, metadata or other untrusted strings.
             # A rejected multi-signature InRelease remains rejected even
             # if one pinned signature generated a VALIDSIG record.
-            if gpgv --keyring "$work/$label.gpg" --status-fd 3 \
+            gpgv_keyrings=(--keyring "$work/$label.gpg")
+            if [ "$label" = main ]; then
+              gpgv_keyrings+=(--keyring "$work/stable.gpg")
+            fi
+            if gpgv "${gpgv_keyrings[@]}" --status-fd 3 \
                  --output "$work/$label.Release" "$work/$label.InRelease" \
                  3>"$work/$label.status" 2>"$work/$label.stderr" >/dev/null; then
               :
