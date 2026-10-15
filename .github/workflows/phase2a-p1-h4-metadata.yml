@@ -47,7 +47,7 @@ jobs:
           fetch() {
             local url="$1" dest="$2" current header meta status location requested_filename bytes remaining attempt header_pid
             case "$url" in
-              https://snapshot.debian.org/archive/*|https://ftp-master.debian.org/keys/archive-key-12*.asc|https://ftp-master.debian.org/keys/release-12.asc) ;;
+              https://snapshot.debian.org/archive/*|https://ftp-master.debian.org/keys/archive-key-12*.asc|https://ftp-master.debian.org/keys/release-12.asc|https://ftp-master.debian.org/keys/archive-key-11.asc) ;;
               *) stop "unapproved initial metadata URL" ;;
             esac
             current="$url"
@@ -193,6 +193,72 @@ jobs:
             base="https://snapshot.debian.org/archive/$archive/$snapshot/dists/$codename"
             fetch "$base/InRelease" "$work/$label.InRelease"
 
+            if [ "$label" = main ]; then
+              # One private preflight against the previously pinned keys.
+              # Any additional/unknown signer or non-key failure means HOLD.
+              # The missing key ID stays private; never print status args.
+              if gpgv --keyring "$work/main.gpg" --keyring "$work/stable.gpg" \
+                   --status-fd 3 "$work/main.InRelease" \
+                   3>"$work/main.preflight.status" \
+                   2>"$work/main.preflight.stderr" >/dev/null; then
+                stop "main preflight did not require additional key"
+              fi
+              awk -v missing="0E98404D386FA1D9" \
+                  -v automatic="$main_fpr" -v stable="$stable_fpr" '
+                $1 == "[GNUPG:]" && $2 == "NEWSIG" { newsig++; next }
+                $1 == "[GNUPG:]" && $2 == "NO_PUBKEY" {
+                  missing_count++
+                  if (NF != 3 || $3 != missing) bad=1
+                  next
+                }
+                $1 == "[GNUPG:]" && $2 == "ERRSIG" {
+                  error_count++
+                  if (NF < 8 || $3 != missing || $8 != 9) bad=1
+                  next
+                }
+                $1 == "[GNUPG:]" && $2 == "VALIDSIG" {
+                  valid_count++
+                  if ($3 != automatic && $NF != automatic &&
+                      $3 != stable && $NF != stable) bad=1
+                  next
+                }
+                $1 == "[GNUPG:]" && $2 ~ /^(BADSIG|EXPSIG|EXPKEYSIG|REVKEYSIG|NODATA|FAILURE|BADARMOR|ERROR|KEYREVOKED)$/ { bad=1 }
+                END {
+                  if (missing_count != 1 || error_count != 1 ||
+                      valid_count < 1 || newsig != valid_count + error_count || bad)
+                    exit 1
+                }
+              ' "$work/main.preflight.status" \
+                || stop "main missing signer identity or status not uniquely approved"
+              echo "GPGV_PREFLIGHT main category=EXACT_BULLSEYE_SUBKEY_ONLY"
+
+              # Fetch this public key only AFTER the exact preflight match.
+              fetch "https://ftp-master.debian.org/keys/archive-key-11.asc" "$work/bullseye.asc"
+              bullseye_fpr=1F89983E0081FDE018F3CC9673A4F27B8DD47936
+              bullseye_signing_fpr=A7236886F3CCCAAD148A27F80E98404D386FA1D9
+              # Independently check exactly one primary and one subkey.
+              # Reject extra, missing or substituted public-key material.
+              gpg --batch --with-colons --with-fingerprint --with-subkey-fingerprint \
+                --show-keys "$work/bullseye.asc" 2>/dev/null \
+                | awk -F: -v primary="$bullseye_fpr" -v signer="$bullseye_signing_fpr" '
+                  $1 == "pub" { pub++; context="primary"; next }
+                  $1 == "sub" { sub++; context="subkey"; next }
+                  $1 == "fpr" {
+                    if (context == "primary" && $10 == primary) valid_primary++
+                    else if (context == "subkey" && $10 == signer) valid_subkey++
+                    else bad=1
+                    context=""
+                    next
+                  }
+                  END {
+                    if (pub != 1 || sub != 1 || valid_primary != 1 ||
+                        valid_subkey != 1 || bad) exit 1
+                  }
+                ' || stop "bullseye primary or signing subkey mismatch"
+              check_key bullseye "$bullseye_fpr"
+              echo "PASS_PINNED_SIGNING_SUBKEY bullseye"
+            fi
+
             # Keep gpgv's machine-readable status separate from untrusted
             # human-readable stderr. Never print status arguments, raw
             # signatures, signer IDs, metadata or other untrusted strings.
@@ -201,6 +267,7 @@ jobs:
             gpgv_keyrings=(--keyring "$work/$label.gpg")
             if [ "$label" = main ]; then
               gpgv_keyrings+=(--keyring "$work/stable.gpg")
+              gpgv_keyrings+=(--keyring "$work/bullseye.gpg")
             fi
             if gpgv "${gpgv_keyrings[@]}" --status-fd 3 \
                  --output "$work/$label.Release" "$work/$label.InRelease" \
