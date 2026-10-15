@@ -112,10 +112,13 @@ def pinned_blob(repo, relative):
     demand(name.startswith("code/sdk/python/ap2/") and
            name.endswith(".py") and ".." not in relative.parts,
            "invalid_sdk_module")
-    size = git_read(repo, "cat-file", "-s", "HEAD:" + name)
+    # Pin *each read* to the immutable object ID; HEAD may change during
+    # concurrent checkout/reset after the one-time provenance preflight.
+    object_name = PINNED_AP2 + ":" + name
+    size = git_read(repo, "cat-file", "-s", object_name)
     demand(size.strip().isdigit() and int(size) <= 262144,
            "oversized_sdk_module")
-    data = git_read(repo, "show", "HEAD:" + name, limit=262144)
+    data = git_read(repo, "show", object_name, limit=262144)
     demand(len(data) == int(size), "changed_sdk_module")
     return data
 
@@ -461,11 +464,14 @@ def make(epoch, sdk):
 
 
 def private_output_dir(policy_path, fixture_path):
-    """A pre-existing, exclusively-owned 0700 directory is our trust boundary.
+    """Open a trusted, private OUTPUT NAMESPACE, not merely the leaf directory.
 
-    The separately approved future runner must allocate an unshared scratch
-    directory first. Untrusted concurrent actors with the *same UID* are
-    outside this boundary; shared/group/world-writable directories STOP.
+    The future separately approved runner must create an isolated owner-0700
+    directory. Every ancestor must be controlled by root/current UID and
+    non-writable by other UIDs. Root-owned sticky /tmp is allowed, but only
+    when its child belongs to root/current UID and can't be renamed by peers.
+    No symlink traversals; a single FD anchors all writes and later reads.
+    Other hostile processes of our *same UID* are outside this future runner.
     """
     demand(hasattr(os, "O_DIRECTORY") and hasattr(os, "O_NOFOLLOW"),
            "safe_directory_unavailable")
@@ -478,13 +484,44 @@ def private_output_dir(policy_path, fixture_path):
     demand(parents[0] == parents[1] and names[0] != names[1] and
            all(n not in ("", ".", "..") and "/" not in n for n in names),
            "unsafe_output_locations")
-    # Descriptor-scoped writes and cleanup cannot be redirected by renaming
-    # the caller's pathname after the original directory is opened.
-    fd = os.open(parents[0], os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    components = parents[0].split(os.sep)[1:]
+    demand(1 <= len(components) <= 32 and
+           all(c not in ("", ".", "..") for c in components),
+           "unsafe_directory_path")
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    # Start at root and open every component relative to a descriptor.
+    # No ambient cwd, no follow-symlink realpath resolution, no unchecked
+    # ancestor with rename authority over the private output leaf.
+    fd = os.open("/", flags)
     try:
-        st = os.fstat(fd)
-        demand(stat.S_ISDIR(st.st_mode) and st.st_uid == os.geteuid() and
-               stat.S_IMODE(st.st_mode) == 0o700,
+        for component in components:
+            ancestor = os.fstat(fd)
+            demand(stat.S_ISDIR(ancestor.st_mode) and
+                   ancestor.st_uid in (0, os.geteuid()),
+                   "untrusted_ancestor_owner")
+            child_fd = os.open(component, flags, dir_fd=fd)
+            try:
+                child = os.fstat(child_fd)
+                demand(stat.S_ISDIR(child.st_mode) and
+                       child.st_uid in (0, os.geteuid()),
+                       "untrusted_directory_owner")
+                # Non-owner write on a parent normally permits rename of
+                # child regardless of that child's 0700 permissions.
+                # Root-owned sticky /tmp protects root/euid-owned entries.
+                if stat.S_IMODE(ancestor.st_mode) & 0o022:
+                    demand(ancestor.st_mode & stat.S_ISVTX and
+                           ancestor.st_uid in (0, os.geteuid()) and
+                           child.st_uid in (0, os.geteuid()),
+                           "renameable_output_namespace")
+            except BaseException:
+                os.close(child_fd)
+                raise
+            os.close(fd)
+            fd = child_fd
+        leaf = os.fstat(fd)
+        demand(stat.S_ISDIR(leaf.st_mode) and
+               leaf.st_uid == os.geteuid() and
+               stat.S_IMODE(leaf.st_mode) == 0o700,
                "untrusted_output_directory")
         return fd, names
     except BaseException:
@@ -509,10 +546,11 @@ def remove_created(dirfd, name, identity):
 def exclusive_write(dirfd, name, obj, cap):
     data = canonical(obj) + b"\n"
     demand(0 < len(data) <= cap, "oversized_output")
-    handle, identity = None, None
+    handle, identity, created = None, None, False
     try:
         handle = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
                          os.O_NOFOLLOW, 0o600, dir_fd=dirfd)
+        created = True
         identity = os.fstat(handle)
         demand(stat.S_ISREG(identity.st_mode) and
                identity.st_nlink == 1 and identity.st_uid == os.geteuid(),
@@ -527,10 +565,18 @@ def exclusive_write(dirfd, name, obj, cap):
         handle = None
         return identity
     except BaseException:
-        if handle is not None:
-            os.close(handle)
-            handle = None
-        remove_created(dirfd, name, identity)
+        # Even if fstat or close failed AFTER O_EXCL created the entry,
+        # cleanup must run. The verified private namespace excludes hostile
+        # same-UID renames; never remove pre-existing/unowned entries.
+        try:
+            if handle is not None:
+                os.close(handle)
+        finally:
+            if created:
+                if identity is None:
+                    os.unlink(name, dir_fd=dirfd)
+                else:
+                    remove_created(dirfd, name, identity)
         raise
 
 
@@ -558,8 +604,10 @@ def main():
         except BaseException:
             # Roll back BOTH created files, including directory fsync failure.
             # Never remove pre-existing entries; first-error remains STOP.
-            remove_created(directory, names[1], second)
-            remove_created(directory, names[0], first)
+            try:
+                remove_created(directory, names[1], second)
+            finally:
+                remove_created(directory, names[0], first)
             raise
     finally:
         os.close(directory)
