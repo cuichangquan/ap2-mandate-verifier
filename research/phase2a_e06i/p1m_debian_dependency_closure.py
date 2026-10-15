@@ -31,6 +31,10 @@ SHA = re.compile(r"[a-f0-9]{64}\Z")
 KEYS = frozenset(("Package", "Version", "Architecture", "Depends",
                   "Pre-Depends", "Provides", "Conflicts", "Breaks",
                   "Filename", "Size", "SHA256"))
+# Fail closed on any case variant of a security-sensitive Deb822 field.
+# Debian field names are case-insensitive; silently dropping a variant
+# would omit security-critical dependency/virtual-package information.
+KNOWN_FIELD_CASE = {key.lower(): key for key in KEYS}
 # Only LF is an actual Deb822 wire record separator. Never let Python's
 # broader splitlines() promote embedded text to a new signed-index field.
 BAD_SEPARATORS = frozenset("\r\v\f\x1c\x1d\x1e\x1f\x85\u2028\u2029")
@@ -70,17 +74,24 @@ def record(raw):
         raise Hold("INVALID_UTF8") from exc
     demand(not any(ch in BAD_SEPARATORS for ch in text),
            "UNSUPPORTED_LINE_SEPARATOR")
-    lines = text.split("\n")
+    # A stanza ends with exactly the LF delimiter emitted by paragraphs(),
+    # or with LF LF. Neither leading LF nor any extra internal blank line
+    # is a valid field boundary. Do not drop empty records before validation.
+    demand(text.endswith("\n"), "UNTERMINATED_STANZA")
+    body = text[:-2] if text.endswith("\n\n") else text[:-1]
+    demand(bool(body) and not body.startswith("\n") and "\n\n" not in body,
+           "EMPTY_WIRE_RECORD")
+    lines = body.split("\n")
     fields = {}
     current = None
     for line in lines:
-        if not line:
-            continue
         if line[0] in (" ", "\t"):
             demand(current not in KEYS, "CONTINUED_SECURITY_FIELD")
             continue
         demand(": " in line, "MALFORMED_FIELD")
         key, value = line.split(": ", 1)
+        demand(key == KNOWN_FIELD_CASE.get(key.lower(), key),
+               "NONCANONICAL_SECURITY_FIELD")
         current = key
         if key in KEYS:
             demand(key not in fields and len(value) <= 1024,
@@ -257,6 +268,7 @@ if __name__ == "__main__":
                  "DEPENDENCY_UNAVAILABLE", "DEPENDENCY_AMBIGUOUS",
                  "DEPENDENCY_VERSION_CONFLICT", "REPORT_LIMIT",
                  "UNTERMINATED_STANZA", "CONTINUED_SECURITY_FIELD",
+                 "EMPTY_WIRE_RECORD", "NONCANONICAL_SECURITY_FIELD",
                  "BASELINE_OR_VIRTUAL_SEMANTICS_UNKNOWN")
         print("P1M_STATUS=STOP/HOLD:" + (code if code in known else "PARSE_ERROR"),
               file=sys.stderr)
