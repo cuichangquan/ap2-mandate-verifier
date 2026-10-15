@@ -616,6 +616,9 @@ jobs:
           KEYS = frozenset(("Package", "Version", "Architecture", "Depends",
                             "Pre-Depends", "Provides", "Conflicts", "Breaks",
                             "Filename", "Size", "SHA256"))
+          # Only LF is an actual Deb822 wire record separator. Never let Python's
+          # broader splitlines() promote embedded text to a new signed-index field.
+          BAD_SEPARATORS = frozenset("\r\v\f\x1c\x1d\x1e\x1f\x85\u2028\u2029")
           
           class Hold(Exception):
               pass
@@ -647,9 +650,12 @@ jobs:
           
           def record(raw):
               try:
-                  lines = raw.decode("utf-8", "strict").splitlines()
+                  text = raw.decode("utf-8", "strict")
               except UnicodeError as exc:
                   raise Hold("INVALID_UTF8") from exc
+              demand(not any(ch in BAD_SEPARATORS for ch in text),
+                     "UNSUPPORTED_LINE_SEPARATOR")
+              lines = text.split("\n")
               fields = {}
               current = None
               for line in lines:
@@ -716,10 +722,11 @@ jobs:
                       yield field, name, operator, version
           
           def satisfies(actual, op, wanted, state):
-              if op is None:
-                  return True
+              # Charge EVERY candidate scanned, including unversioned dependencies.
               demand(state[0] < MAX_CHECKS, "VERSION_CHECK_LIMIT")
               state[0] += 1
+              if op is None:
+                  return True
               # dpkg's Debian-policy version ordering is authoritative; no shell.
               args = ["/usr/bin/dpkg", "--compare-versions", actual, op, wanted]
               try:
@@ -732,16 +739,16 @@ jobs:
               demand(proc.returncode in (0, 1), "DPKG_COMPARATOR_FAILURE")
               return proc.returncode == 0
           
-          def graph(inventory, root_version):
+          def graph(inventory, by_name, root_version):
               roots = []
               root_origin = ("main" if root_version.endswith("deb12u8")
                              else "security" if root_version.endswith("deb12u9")
                              else None)
               demand(root_origin is not None, "UNAPPROVED_ROOT_VERSION")
               for name in ROOTS:
-                  options = [(k, v) for k, v in inventory.items()
-                             if k[0] == name and k[1] == root_version and k[2] == "amd64"
-                             and v[1] == root_origin]
+                  options = [(k, inventory[k]) for k in by_name.get(name, ())
+                             if k[1] == root_version and k[2] == "amd64"
+                             and inventory[k][1] == root_origin]
                   demand(len(options) == 1, "ROOT_MISSING_OR_AMBIGUOUS")
                   roots.append(options[0][0])
               selected = set()
@@ -771,8 +778,10 @@ jobs:
                   demand(not any(item.get(k) for k in ("Provides", "Conflicts", "Breaks")),
                          "BASELINE_OR_VIRTUAL_SEMANTICS_UNKNOWN")
                   for _, name, op, required in edges(item):
-                      choices = [k for k in inventory if k[0] == name
-                                 and k[2] in ("amd64", "all")
+                      # Indexed access prevents O(all Packages entries x all edges).
+                      # The bounded work budget also counts unversioned candidates.
+                      choices = [k for k in by_name.get(name, ())
+                                 if k[2] in ("amd64", "all")
                                  and satisfies(k[1], op, required, constraints)]
                       demand(choices, "DEPENDENCY_UNAVAILABLE")
                       demand(len(choices) == 1, "DEPENDENCY_AMBIGUOUS")
@@ -797,9 +806,12 @@ jobs:
               inventory = {}
               counts = (load(args.main, "main", inventory),
                         load(args.security, "security", inventory))
+              by_name = {}
+              for key in inventory:
+                  by_name.setdefault(key[0], []).append(key)
               output = []
               for version in ("3.11.2-6+deb12u8", "3.11.2-6+deb12u9"):
-                  nodes, digest = graph(inventory, version)
+                  nodes, digest = graph(inventory, by_name, version)
                   output.append({"version": version, "candidate_nodes": nodes,
                                  "graph_sha256": digest})
               result = json.dumps({"status": "CANDIDATE_ONLY_RUNTIME_UNPROVEN",
@@ -816,7 +828,8 @@ jobs:
                   code = str(exc)
                   # Only known internally generated labels; avoid printing raw paths.
                   known = ("DECOMPRESSED_LIMIT", "STANZA_LIMIT", "PACKAGE_LIMIT",
-                           "INVALID_UTF8", "MALFORMED_FIELD", "DUPLICATE_OR_OVERSIZE_FIELD",
+                           "INVALID_UTF8", "UNSUPPORTED_LINE_SEPARATOR",
+                           "MALFORMED_FIELD", "DUPLICATE_OR_OVERSIZE_FIELD",
                            "MISSING_REQUIRED_FIELD", "INVALID_IDENTITY", "INVALID_ARCH",
                            "INVALID_FILENAME", "INVALID_SIZE", "INVALID_SHA",
                            "DUPLICATE_CONFLICT", "EMPTY_INDEX", "DEPENDENCY_LIMIT",
