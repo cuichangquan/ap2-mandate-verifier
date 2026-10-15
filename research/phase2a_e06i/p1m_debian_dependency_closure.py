@@ -100,7 +100,7 @@ def load(path, origin, inventory):
         prev = inventory.get(key)
         if prev:
             # Same tuple in two archives must refer to the SAME exact artifact.
-            demand(all(prev[0][k] == item[k] for k in
+            demand(all(prev[0].get(k) == item.get(k) for k in
                        ("Filename", "Size", "SHA256", "Depends", "Pre-Depends")
                        if k in prev[0] or k in item), "DUPLICATE_CONFLICT")
         else:
@@ -117,8 +117,7 @@ def edges(item):
         for group in text.split(","):
             # Do not silently choose OR alternatives, architecture selectors,
             # virtual Provides or build profiles; they require an OS baseline.
-            demand("|" not in group and "[" not in group and "<" not in
-                   group.replace("<<", "") and ":" not in group,
+            demand("|" not in group and "[" not in group and "]" not in group,
                    "UNRESOLVED_ALTERNATIVE_OR_PROFILE")
             match = REL.fullmatch(group.strip())
             demand(match is not None, "UNSUPPORTED_DEPENDENCY")
