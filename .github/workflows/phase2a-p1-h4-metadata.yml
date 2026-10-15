@@ -221,7 +221,8 @@ jobs:
             awk -v phase="$phase" -v kind="$label" -v expected="$expected" \
               -v stable="$stable_fpr" -v bullseye="$bullseye_fpr" \
               -v approved_missing="0E98404D386FA1D9" \
-              -v missing_full="A7236886F3CCCAAD148A27F80E98404D386FA1D9" '
+              -v missing_full="A7236886F3CCCAAD148A27F80E98404D386FA1D9" \
+              -f /dev/stdin "$file" <<'STATUS_AWK'
               function bad(category) { issues[category]=1 }
               # GnuPG's TIME is epoch seconds or ISO 8601 (with a T).
               # Accept documented lexical forms, not unbounded tokens.
@@ -244,14 +245,15 @@ jobs:
                 count++
                 if (count > 8) bad("SIGNATURE_COUNT")
                 if (valid_count == 1 && err_count == 0 && missing_count == 0) {
-                  if (good_count > 1 ||
-                      (good_count == 1 && good_key != signing_fpr &&
-                       good_key != substr(signing_fpr,25)))
+                  if (good_count != 1 ||
+                      (good_key != signing_fpr &&
+                       good_key != substr(signing_fpr,25)) ||
+                      seen_signers[signing_fpr]++)
                     bad("SIGNATURE_PAIR")
                   valid_groups++
                   if (verified_primary == expected) expected_seen++
                 } else if (phase == "preflight" && valid_count == 0 &&
-                           err_count == 1 && missing_count == 1) {
+                           err_count == 1 && missing_count == 1 && good_count == 0) {
                   if (errkey != approved_missing ||
                       missingkey != approved_missing ||
                       errkey != missingkey || err_rc != "9")
@@ -265,6 +267,14 @@ jobs:
                 if (kind != "main" && kind != "security") bad("FORMAT")
               }
               $1 != "[GNUPG:]" { bad("FORMAT"); next }
+              $2 == "PLAINTEXT" {
+                # Clear-signed input emits this before the first NEWSIG.
+                # It describes output only; it never authenticates data.
+                if (plaintext_seen++ || started || count ||
+                    (NF != 4 && NF != 5) || $3 != "74" ||
+                    $4 !~ /^[0-9]+$/ || length($0)>2048) bad("FORMAT")
+                next
+              }
               $2 == "NEWSIG" {
                 # Optional percent-escaped SIGNERS_UID or "-" token.
                 if ((NF != 2 && NF != 3) ||
@@ -360,7 +370,7 @@ jobs:
                 if (failed) exit 1
                 print "STATUS_CATEGORY=PASS"
               }
-            ' "$file"
+          STATUS_AWK
           }
 
           # Snapshot request points to a frozen historical date; the selected
