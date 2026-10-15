@@ -205,6 +205,10 @@ jobs:
           main_fpr=B8B80B5B623EAB6AD8775C45B7C5D7D6350947F8
           security_fpr=05AB90340C0C5E797F44A8C8254CF3B5AEC0A8F0
           stable_fpr=4D64FEC119C2029067D6E791F8D2585B8783D481
+          # D3 fingerprints must be initialized before status_check under
+          # set -u; initialization does not download or trust Bullseye.
+          bullseye_fpr=1F89983E0081FDE018F3CC9673A4F27B8DD47936
+          bullseye_signing_fpr=A7236886F3CCCAAD148A27F80E98404D386FA1D9
           check_key main "$main_fpr"
           check_key security "$security_fpr"
           check_key stable "$stable_fpr"
@@ -361,8 +365,6 @@ jobs:
 
               # Fetch this public key only AFTER the exact preflight match.
               fetch "https://ftp-master.debian.org/keys/archive-key-11.asc" "$work/bullseye.asc"
-              bullseye_fpr=1F89983E0081FDE018F3CC9673A4F27B8DD47936
-              bullseye_signing_fpr=A7236886F3CCCAAD148A27F80E98404D386FA1D9
               # Require the D3 signing subkey fingerprint exactly.
               check_key bullseye "$bullseye_fpr" "$bullseye_signing_fpr"
               echo "PASS_PINNED_SIGNING_SUBKEY bullseye"
