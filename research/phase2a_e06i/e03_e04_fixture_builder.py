@@ -19,6 +19,8 @@ import argparse
 import base64
 import copy
 import hashlib
+import importlib.abc
+import importlib.machinery
 import json
 import os
 from pathlib import Path
@@ -29,15 +31,8 @@ import sys
 from jwcrypto import jws
 from jwcrypto.jwk import JWK
 
-from ap2.sdk.disclosure_metadata import DisclosureMetadata
-from ap2.sdk.generated.checkout_mandate import CheckoutMandate
-from ap2.sdk.generated.open_checkout_mandate import (
-    AllowedMerchants, Item, LineItems, LineItemRequirements, OpenCheckoutMandate,
-)
-from ap2.sdk.generated.types.checkout import Checkout
-from ap2.sdk.generated.types.merchant import Merchant
-from ap2.sdk.mandate import MandateClient
-from ap2.sdk.sdjwt import common, kb_sd_jwt
+# AP2 is intentionally NOT imported at module load. A pinned source-only
+# importer below must be installed first, before any AP2 code can execute.
 
 PINNED_AP2 = "b4587ac1d055888a73b4b21750973cffba961793"
 CASES = ("FULL", "HIDDEN", "UNKNOWN", "DUPLICATE", "EXTRA", "DECOY")
@@ -91,65 +86,130 @@ def parsed(encoded):
     return json.loads(decode64(encoded))
 
 
-def git_read(repo, *args, output=False):
-    """Offline, bounded Git reads, with inherited Git overrides disabled."""
+def git_read(repo, *args, limit=4096):
+    """Only bounded, offline Git object reads: no hooks, networks or filters."""
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     env.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
                 "GIT_NO_REPLACE_OBJECTS": "1", "GIT_OPTIONAL_LOCKS": "0",
                 "GIT_TERMINAL_PROMPT": "0", "GIT_PAGER": "cat"})
     try:
-        proc = subprocess.run(
+        p = subprocess.run(
             ["git", "-C", str(repo), "-c", "core.fsmonitor=false",
              "-c", "diff.external=", *args],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE if output else subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, timeout=5, check=False, env=env,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
-        raise Stop("sdk_provenance_unavailable") from exc
-    demand(proc.returncode == 0, "sdk_provenance_mismatch")
-    if output:
-        demand(len(proc.stdout) <= 4096, "sdk_provenance_unbounded")
+        raise Stop("sdk_git_unavailable") from exc
+    demand(p.returncode == 0 and len(p.stdout) <= limit,
+           "sdk_git_mismatch_or_unbounded")
+    return p.stdout
+
+
+def pinned_blob(repo, relative):
+    """Verified bytes from the pinned Git *object*, never filesystem or .pyc."""
+    name = relative.as_posix()
+    demand(name.startswith("code/sdk/python/ap2/") and
+           name.endswith(".py") and ".." not in relative.parts,
+           "invalid_sdk_module")
+    size = git_read(repo, "cat-file", "-s", "HEAD:" + name)
+    demand(size.strip().isdigit() and int(size) <= 262144,
+           "oversized_sdk_module")
+    data = git_read(repo, "show", "HEAD:" + name, limit=262144)
+    demand(len(data) == int(size), "changed_sdk_module")
+    return data
+
+
+class PinnedSourceLoader(importlib.abc.Loader):
+    """Executes only pinned Git source bytes, ignoring __pycache__ entirely."""
+    def __init__(self, root, path, relative):
+        self.root, self.path, self.relative = root, path, relative
+
+    def create_module(self, spec):
+        return None
+
+    def exec_module(self, module):
+        blob = pinned_blob(self.root, self.relative)
+        compiled = compile(blob, str(self.path), "exec", dont_inherit=True)
+        exec(compiled, module.__dict__)
+
+
+class PinnedAP2Finder(importlib.abc.MetaPathFinder):
+    """No installed SDK wheel, namespace overlay or cached bytecode permitted."""
+    def __init__(self, root):
+        self.root = root
+        self.sdk = root / "code/sdk/python/ap2"
+        demand(self.sdk.is_dir(), "missing_pinned_python_sdk")
+
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname != "ap2" and not fullname.startswith("ap2."):
+            return None
+        # ap2 at the pinned commit is a namespace root (no __init__.py).
+        if fullname == "ap2":
+            spec = importlib.machinery.ModuleSpec(
+                fullname, loader=None, is_package=True)
+            spec.submodule_search_locations = [str(self.sdk)]
+            return spec
+        relative_pkg = Path(*fullname.split("."))
+        stem = self.root / "code/sdk/python" / relative_pkg
+        is_package = False
+        source = stem.with_suffix(".py")
+        relative = source.relative_to(self.root)
         try:
-            return proc.stdout.decode("ascii", "strict").strip()
-        except UnicodeError as exc:
-            raise Stop("sdk_provenance_invalid") from exc
+            pinned_blob(self.root, relative)
+        except Stop:
+            # A package initializer is a separate pinned object.
+            source = stem / "__init__.py"
+            relative = source.relative_to(self.root)
+            pinned_blob(self.root, relative)
+            is_package = True
+        spec = importlib.machinery.ModuleSpec(
+            fullname, PinnedSourceLoader(self.root, source, relative),
+            origin=str(source), is_package=is_package)
+        if is_package:
+            spec.submodule_search_locations = [str(stem)]
+        return spec
 
 
-def require_pinned_sdk(root_arg):
-    """Reject wrong/modified SDK or site-packages substitution before stamping."""
+def install_pinned_sdk(root_arg):
+    """Verify source and install hook BEFORE the first ap2 import."""
     demand(isinstance(root_arg, str) and
            1 <= len(os.fsencode(root_arg)) <= 1024 and "\x00" not in root_arg,
            "invalid_upstream_path")
+    demand(not any(n == "ap2" or n.startswith("ap2.")
+                   for n in sys.modules), "sdk_preimported")
     try:
         root = Path(root_arg).resolve(strict=True)
     except (OSError, RuntimeError) as exc:
         raise Stop("sdk_source_unavailable") from exc
     demand(root.is_dir() and (root / ".git").exists(),
            "sdk_source_unavailable")
-    demand(git_read(root, "rev-parse", "--show-toplevel", output=True) ==
-           str(root), "sdk_wrong_worktree")
-    demand(git_read(root, "rev-parse", "HEAD", output=True) == PINNED_AP2,
-           "sdk_wrong_head")
-    # A matching HEAD with modified tracked source is NOT the pinned SDK.
+    demand(git_read(root, "rev-parse", "--show-toplevel").decode("ascii").strip()
+           == str(root), "sdk_wrong_worktree")
+    demand(git_read(root, "rev-parse", "HEAD").decode("ascii").strip()
+           == PINNED_AP2, "sdk_wrong_head")
+    # Fail closed for tracked edits and index differences. Untracked .pyc
+    # cannot affect the source loader because only HEAD Git blobs are compiled.
     git_read(root, "diff", "--no-ext-diff", "--quiet", "HEAD", "--")
-    # Every *actually loaded* AP2 Python module must be a tracked file in
-    # that exact clean worktree, not a similarly named installed wheel,
-    # site-package, namespace overlay or untracked replacement.
-    modules = [(name, module) for name, module in tuple(sys.modules.items())
-               if name == "ap2" or name.startswith("ap2.")]
-    demand(modules and any(name == "ap2.sdk.mandate" for name, _ in modules),
-           "sdk_not_imported")
-    for name, module in modules:
-        location = getattr(module, "__file__", None)
-        demand(isinstance(location, str), "sdk_namespace_not_pinned")
-        try:
-            relative = Path(location).resolve(strict=True).relative_to(root)
-        except (ValueError, OSError, RuntimeError) as exc:
-            raise Stop("sdk_import_outside_pinned_tree") from exc
-        demand(relative.suffix == ".py", "sdk_untracked_binary")
-        git_read(root, "cat-file", "-e", "HEAD:" + relative.as_posix())
-    return root
+    finder = PinnedAP2Finder(root)
+    sys.meta_path.insert(0, finder)
+    return finder
+
+
+def import_pinned_sdk():
+    """All AP2 imports occur only through the installed HEAD-blob importer."""
+    from ap2.sdk.disclosure_metadata import DisclosureMetadata
+    from ap2.sdk.generated.checkout_mandate import CheckoutMandate
+    from ap2.sdk.generated.open_checkout_mandate import (
+        AllowedMerchants, Item, LineItems, LineItemRequirements, OpenCheckoutMandate,
+    )
+    from ap2.sdk.generated.types.checkout import Checkout
+    from ap2.sdk.generated.types.merchant import Merchant
+    from ap2.sdk.mandate import MandateClient
+    from ap2.sdk.sdjwt import common, kb_sd_jwt
+    return (DisclosureMetadata, CheckoutMandate, AllowedMerchants, Item,
+            LineItems, LineItemRequirements, OpenCheckoutMandate, Checkout,
+            Merchant, MandateClient, common, kb_sd_jwt)
 
 
 def public(key):
@@ -257,7 +317,7 @@ def signed_variant(original, issuer, kind):
     return "~".join([reissued, *retained, ""])
 
 
-def checkout_payload():
+def checkout_payload(Checkout):
     value = {
         "id": "checkout-001",
         "merchant": {"id": "merchant-allowed", "name": "Research Merchant"},
@@ -300,13 +360,16 @@ def host_policy(issuer, agent, merchant, checkout_jwt, epoch):
     return data
 
 
-def make(epoch):
+def make(epoch, sdk):
+    (DisclosureMetadata, CheckoutMandate, AllowedMerchants, Item,
+     LineItems, LineItemRequirements, OpenCheckoutMandate, Checkout,
+     Merchant, MandateClient, common, kb_sd_jwt) = sdk
     demand(type(epoch) is int and 61 <= epoch <= MAX_EPOCH - 3600,
            "invalid_synthetic_epoch")
     issuer = JWK.generate(kty="EC", crv="P-256")
     agent = JWK.generate(kty="EC", crv="P-256")
     merchant = JWK.generate(kty="EC", crv="P-256")
-    checkout_jwt = sign_json(merchant, checkout_payload(),
+    checkout_jwt = sign_json(merchant, checkout_payload(Checkout),
                              {"alg": "ES256", "typ": "JWT"})
 
     # Select synthetic policy PUBLIC keys before creating any Issuer Root.
@@ -397,80 +460,108 @@ def make(epoch):
     return policy, fixture
 
 
-def remove_created(path, snapshot):
-    """Best-effort rollback ONLY if the file still has our inode identity."""
-    if snapshot is None:
+def private_output_dir(policy_path, fixture_path):
+    """A pre-existing, exclusively-owned 0700 directory is our trust boundary.
+
+    The separately approved future runner must allocate an unshared scratch
+    directory first. Untrusted concurrent actors with the *same UID* are
+    outside this boundary; shared/group/world-writable directories STOP.
+    """
+    demand(hasattr(os, "O_DIRECTORY") and hasattr(os, "O_NOFOLLOW"),
+           "safe_directory_unavailable")
+    paths = (policy_path, fixture_path)
+    demand(all(isinstance(p, str) and "\x00" not in p and
+               1 <= len(os.fsencode(p)) <= 1024 and
+               os.path.isabs(p) for p in paths), "invalid_output_paths")
+    parents = [os.path.dirname(p) for p in paths]
+    names = [os.path.basename(p) for p in paths]
+    demand(parents[0] == parents[1] and names[0] != names[1] and
+           all(n not in ("", ".", "..") and "/" not in n for n in names),
+           "unsafe_output_locations")
+    # Descriptor-scoped writes and cleanup cannot be redirected by renaming
+    # the caller's pathname after the original directory is opened.
+    fd = os.open(parents[0], os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        st = os.fstat(fd)
+        demand(stat.S_ISDIR(st.st_mode) and st.st_uid == os.geteuid() and
+               stat.S_IMODE(st.st_mode) == 0o700,
+               "untrusted_output_directory")
+        return fd, names
+    except BaseException:
+        os.close(fd)
+        raise
+
+
+def remove_created(dirfd, name, identity):
+    """Identity precheck inside private dir; no shared-path cleanup race."""
+    if identity is None:
         return
     try:
-        current = os.stat(path, follow_symlinks=False)
+        st = os.stat(name, dir_fd=dirfd, follow_symlinks=False)
     except FileNotFoundError:
         return
-    demand(stat.S_ISREG(current.st_mode) and
-           (current.st_dev, current.st_ino) ==
-           (snapshot.st_dev, snapshot.st_ino), "output_identity_changed")
-    os.unlink(path)
+    demand(stat.S_ISREG(st.st_mode) and
+           (st.st_dev, st.st_ino) ==
+           (identity.st_dev, identity.st_ino), "output_identity_changed")
+    os.unlink(name, dir_fd=dirfd)
 
 
-def exclusive_write(path, obj, cap):
+def exclusive_write(dirfd, name, obj, cap):
     data = canonical(obj) + b"\n"
-    demand(0 < len(data) <= cap and isinstance(path, str) and
-           1 <= len(os.fsencode(path)) <= 1024 and "\x00" not in path and
-           hasattr(os, "O_NOFOLLOW"), "unsafe_output")
-    fd, identity = None, None
+    demand(0 < len(data) <= cap, "oversized_output")
+    handle, identity = None, None
     try:
-        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
-                     os.O_NOFOLLOW, 0o600)
-        identity = os.fstat(fd)
+        handle = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+                         os.O_NOFOLLOW, 0o600, dir_fd=dirfd)
+        identity = os.fstat(handle)
         demand(stat.S_ISREG(identity.st_mode) and
-               identity.st_nlink == 1 and identity.st_uid == os.getuid(),
+               identity.st_nlink == 1 and identity.st_uid == os.geteuid(),
                "unsafe_output_type")
         pos = 0
         while pos < len(data):
-            n = os.write(fd, data[pos:])
+            n = os.write(handle, data[pos:])
             demand(n > 0, "output_write_failed")
             pos += n
-        os.fsync(fd)
-        os.close(fd)
-        fd = None
+        os.fsync(handle)
+        os.close(handle)
+        handle = None
         return identity
     except BaseException:
-        try:
-            remove_created(path, identity)
-        except OSError:
-            pass  # Existing scratch file remains visibly STOP/HOLD.
+        if handle is not None:
+            os.close(handle)
+            handle = None
+        remove_created(dirfd, name, identity)
         raise
-    finally:
-        if fd is not None:
-            os.close(fd)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--epoch", required=True, type=int)
     parser.add_argument("--upstream-root", required=True,
-                        help="locally present pinned, pristine official AP2 Git tree")
+                        help="locally available pristine pinned official AP2 worktree")
     parser.add_argument("--policy", required=True)
     parser.add_argument("--fixture", required=True)
     args = parser.parse_args()
-    demand(os.path.abspath(args.policy) != os.path.abspath(args.fixture),
-           "aliased_output")
-    # Precheck SDK origin and tracked bytes BEFORE generating any signing key.
-    require_pinned_sdk(args.upstream_root)
-    policy, fixture = make(args.epoch)
-    # Only exclusive writes; no mkdir, overwrite, network or upload. On
-    # either write failure, rollback only files created by this invocation.
-    first = None
+    # Establish *both* trust boundaries before importing executable AP2 code
+    # and before any signing key is generated.
+    finder = install_pinned_sdk(args.upstream_root)
+    directory, names = private_output_dir(args.policy, args.fixture)
     try:
-        first = exclusive_write(args.policy, policy, 16_384)
-        exclusive_write(args.fixture, fixture, 262_144)
-    except BaseException:
-        if first is not None:
-            try:
-                remove_created(args.policy, first)
-            except OSError:
-                pass
-        raise
+        sdk = import_pinned_sdk()
+        demand(sys.meta_path[0] is finder, "sdk_import_guard_removed")
+        policy, fixture = make(args.epoch, sdk)
+        first = None
+        try:
+            first = exclusive_write(directory, names[0], policy, 16_384)
+            exclusive_write(directory, names[1], fixture, 262_144)
+            os.fsync(directory)
+        except BaseException:
+            remove_created(directory, names[0], first)
+            raise
+    finally:
+        os.close(directory)
     print("E03/E04 F: public-only builder complete; O1-O5 NOT RUN; Gate HOLD")
+
 
 if __name__ == "__main__":
     try:
