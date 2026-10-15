@@ -613,6 +613,8 @@ jobs:
                            r"(?: \((<<|<=|=|>=|>>) ([0-9A-Za-z.+:~\-]{1,128})\))?\Z")
           FILENAME = re.compile(r"pool/[a-zA-Z0-9_+./-]{1,512}\Z")
           SHA = re.compile(r"[a-f0-9]{64}\Z")
+          # Signed .deb metadata length only; not a file download or allocation cap.
+          SIZE = re.compile(r"[1-9][0-9]{0,19}\Z")
           # Debian Policy 5.1: ASCII visible non-colon, non-whitespace field names;
           # the initial character cannot be # or -. Validate even unknown fields.
           FIELD_NAME = re.compile(r"[!-\x39;-\x7e]+\Z")
@@ -704,8 +706,7 @@ jobs:
               filename = fields["Filename"]
               demand(FILENAME.fullmatch(filename) and ".." not in filename.split("/"),
                      "INVALID_FILENAME")
-              demand(fields["Size"].isascii() and fields["Size"].isdigit()
-                     and 0 < int(fields["Size"]) <= 1024 * 1024 * 1024, "INVALID_SIZE")
+              demand(SIZE.fullmatch(fields["Size"]) is not None, "INVALID_SIZE")
               demand(SHA.fullmatch(fields["SHA256"]), "INVALID_SHA")
               return fields
           
