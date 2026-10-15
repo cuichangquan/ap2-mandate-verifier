@@ -1,11 +1,8 @@
 name: "Issue 73 P1-H4 Debian signed metadata (one-shot)"
 # Dedicated metadata-only action; existing E06-I workflows stay disabled.
+# Inert until separately approved: no push trigger; job guard below is false.
 on:
-  push:
-    branches:
-      - research/issue73-p1h4-metadata-gha-20261015
-    paths:
-      - .github/workflows/phase2a-p1-h4-metadata.yml
+  workflow_dispatch:
 
 permissions: {}
 concurrency:
@@ -14,7 +11,7 @@ concurrency:
 
 jobs:
   verify-metadata:
-    if: github.repository == 'cuichangquan/ap2-mandate-verifier'
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     permissions:
