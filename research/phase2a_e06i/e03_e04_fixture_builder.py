@@ -497,6 +497,7 @@ def private_output_dir(policy_path, fixture_path):
     # No ambient cwd, no follow-symlink realpath resolution, no unchecked
     # ancestor with rename authority over the private output leaf.
     fd = os.open("/", flags)
+    child_fd = None
     try:
         for component in components:
             ancestor = os.fstat(fd)
@@ -504,32 +505,42 @@ def private_output_dir(policy_path, fixture_path):
                    ancestor.st_uid in (0, os.geteuid()),
                    "untrusted_ancestor_owner")
             child_fd = os.open(component, flags, dir_fd=fd)
-            try:
-                child = os.fstat(child_fd)
-                demand(stat.S_ISDIR(child.st_mode) and
+            child = os.fstat(child_fd)
+            demand(stat.S_ISDIR(child.st_mode) and
+                   child.st_uid in (0, os.geteuid()),
+                   "untrusted_directory_owner")
+            # Non-owner write on a parent normally permits rename of
+            # child regardless of that child's 0700 permissions.
+            # Root-owned sticky /tmp protects root/euid-owned entries.
+            if stat.S_IMODE(ancestor.st_mode) & 0o022:
+                demand(ancestor.st_mode & stat.S_ISVTX and
+                       ancestor.st_uid in (0, os.geteuid()) and
                        child.st_uid in (0, os.geteuid()),
-                       "untrusted_directory_owner")
-                # Non-owner write on a parent normally permits rename of
-                # child regardless of that child's 0700 permissions.
-                # Root-owned sticky /tmp protects root/euid-owned entries.
-                if stat.S_IMODE(ancestor.st_mode) & 0o022:
-                    demand(ancestor.st_mode & stat.S_ISVTX and
-                           ancestor.st_uid in (0, os.geteuid()) and
-                           child.st_uid in (0, os.geteuid()),
-                           "renameable_output_namespace")
-            except BaseException:
-                os.close(child_fd)
-                raise
-            os.close(fd)
+                       "renameable_output_namespace")
+            # Transfer ownership of the parent descriptor BEFORE close.
+            # Even if close raises after releasing it, do not close its
+            # numeric value a second time in the outer failure handler.
+            parent_fd = fd
+            fd = None
+            os.close(parent_fd)
             fd = child_fd
+            child_fd = None
         leaf = os.fstat(fd)
         demand(stat.S_ISDIR(leaf.st_mode) and
                leaf.st_uid == os.geteuid() and
                stat.S_IMODE(leaf.st_mode) == 0o700,
                "untrusted_output_directory")
+        # Caller owns this one descriptor from now on.
         return fd, names
     except BaseException:
-        os.close(fd)
+        # Cleanup may not replace the original traversal/close failure.
+        # Never retry an already-disarmed descriptor after close raises.
+        for owned in (child_fd, fd):
+            if owned is not None:
+                try:
+                    os.close(owned)
+                except OSError:
+                    pass
         raise
 
 
