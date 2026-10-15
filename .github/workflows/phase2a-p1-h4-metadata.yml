@@ -182,10 +182,23 @@ jobs:
             base="https://snapshot.debian.org/archive/$archive/$snapshot/dists/$codename"
             fetch "$base/InRelease" "$work/$label.InRelease"
 
-            gpgv --keyring "$work/$label.gpg" --status-fd 1 \
-              --output "$work/$label.Release" "$work/$label.InRelease" \
-              > "$work/$label.status" 2>&1 \
-              || stop "$label InRelease signature invalid or unknown"
+            # Keep gpgv's machine-readable status separate from untrusted
+            # human-readable stderr. Never print status arguments, raw
+            # signatures, signer IDs, metadata or other untrusted strings.
+            # A rejected multi-signature InRelease remains rejected even
+            # if one pinned signature generated a VALIDSIG record.
+            if gpgv --keyring "$work/$label.gpg" --status-fd 3 \
+                 --output "$work/$label.Release" "$work/$label.InRelease" \
+                 3>"$work/$label.status" 2>"$work/$label.stderr" >/dev/null; then
+              :
+            else
+              for category in VALIDSIG NO_PUBKEY BADSIG EXPKEYSIG EXPSIG REVKEYSIG ERRSIG NODATA FAILURE; do
+                if grep -Eq "^\[GNUPG:\] $category( |$)" "$work/$label.status"; then
+                  echo "GPGV_DIAGNOSTIC $label category=$category"
+                fi
+              done
+              stop "$label InRelease signature invalid or unknown"
+            fi
             awk -v fpr="$signer" \
               '$2 == "VALIDSIG" && ($3 == fpr || $NF == fpr) {ok=1}
                END {exit ok ? 0 : 1}' "$work/$label.status" \
