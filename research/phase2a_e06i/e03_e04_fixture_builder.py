@@ -21,7 +21,9 @@ import copy
 import hashlib
 import json
 import os
+from pathlib import Path
 import stat
+import subprocess
 import sys
 
 from jwcrypto import jws
@@ -87,6 +89,67 @@ def decode64(text):
 def parsed(encoded):
     # The independent oracle, not this generator, owns duplicate-key checks.
     return json.loads(decode64(encoded))
+
+
+def git_read(repo, *args, output=False):
+    """Offline, bounded Git reads, with inherited Git overrides disabled."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+                "GIT_NO_REPLACE_OBJECTS": "1", "GIT_OPTIONAL_LOCKS": "0",
+                "GIT_TERMINAL_PROMPT": "0", "GIT_PAGER": "cat"})
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(repo), "-c", "core.fsmonitor=false",
+             "-c", "diff.external=", *args],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE if output else subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL, timeout=5, check=False, env=env,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise Stop("sdk_provenance_unavailable") from exc
+    demand(proc.returncode == 0, "sdk_provenance_mismatch")
+    if output:
+        demand(len(proc.stdout) <= 4096, "sdk_provenance_unbounded")
+        try:
+            return proc.stdout.decode("ascii", "strict").strip()
+        except UnicodeError as exc:
+            raise Stop("sdk_provenance_invalid") from exc
+
+
+def require_pinned_sdk(root_arg):
+    """Reject wrong/modified SDK or site-packages substitution before stamping."""
+    demand(isinstance(root_arg, str) and
+           1 <= len(os.fsencode(root_arg)) <= 1024 and "\x00" not in root_arg,
+           "invalid_upstream_path")
+    try:
+        root = Path(root_arg).resolve(strict=True)
+    except (OSError, RuntimeError) as exc:
+        raise Stop("sdk_source_unavailable") from exc
+    demand(root.is_dir() and (root / ".git").exists(),
+           "sdk_source_unavailable")
+    demand(git_read(root, "rev-parse", "--show-toplevel", output=True) ==
+           str(root), "sdk_wrong_worktree")
+    demand(git_read(root, "rev-parse", "HEAD", output=True) == PINNED_AP2,
+           "sdk_wrong_head")
+    # A matching HEAD with modified tracked source is NOT the pinned SDK.
+    git_read(root, "diff", "--no-ext-diff", "--quiet", "HEAD", "--")
+    # Every *actually loaded* AP2 Python module must be a tracked file in
+    # that exact clean worktree, not a similarly named installed wheel,
+    # site-package, namespace overlay or untracked replacement.
+    modules = [(name, module) for name, module in tuple(sys.modules.items())
+               if name == "ap2" or name.startswith("ap2.")]
+    demand(modules and any(name == "ap2.sdk.mandate" for name, _ in modules),
+           "sdk_not_imported")
+    for name, module in modules:
+        location = getattr(module, "__file__", None)
+        demand(isinstance(location, str), "sdk_namespace_not_pinned")
+        try:
+            relative = Path(location).resolve(strict=True).relative_to(root)
+        except (ValueError, OSError, RuntimeError) as exc:
+            raise Stop("sdk_import_outside_pinned_tree") from exc
+        demand(relative.suffix == ".py", "sdk_untracked_binary")
+        git_read(root, "cat-file", "-e", "HEAD:" + relative.as_posix())
+    return root
 
 
 def public(key):
@@ -319,6 +382,9 @@ def make(epoch):
     for case_id in CASES:
         root = roots[case_id]
         claim = copy.deepcopy(term_payload)
+        # Pinned KB builder may use wall-clock iat; synthetic G4 clock uses
+        # --epoch. Re-sign both iat AND sd_hash under the same Agent key.
+        claim["iat"] = epoch
         claim["sd_hash"] = b64(digest(root.encode("ascii")))
         terminal = "~".join([
             sign_json(agent, claim, term_header), *term_disclosures, ""
@@ -331,39 +397,80 @@ def make(epoch):
     return policy, fixture
 
 
+def remove_created(path, snapshot):
+    """Best-effort rollback ONLY if the file still has our inode identity."""
+    if snapshot is None:
+        return
+    try:
+        current = os.stat(path, follow_symlinks=False)
+    except FileNotFoundError:
+        return
+    demand(stat.S_ISREG(current.st_mode) and
+           (current.st_dev, current.st_ino) ==
+           (snapshot.st_dev, snapshot.st_ino), "output_identity_changed")
+    os.unlink(path)
+
+
 def exclusive_write(path, obj, cap):
     data = canonical(obj) + b"\n"
     demand(0 < len(data) <= cap and isinstance(path, str) and
            1 <= len(os.fsencode(path)) <= 1024 and "\x00" not in path and
            hasattr(os, "O_NOFOLLOW"), "unsafe_output")
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
-                 os.O_NOFOLLOW, 0o600)
+    fd, identity = None, None
     try:
-        demand(stat.S_ISREG(os.fstat(fd).st_mode), "unsafe_output_type")
-        with os.fdopen(fd, "wb") as output:
-            output.write(data)
-            output.flush()
-            os.fsync(output.fileno())
-    except Exception:
-        # A partial file is NOT proof; external isolation cleans scratch.
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+                     os.O_NOFOLLOW, 0o600)
+        identity = os.fstat(fd)
+        demand(stat.S_ISREG(identity.st_mode) and
+               identity.st_nlink == 1 and identity.st_uid == os.getuid(),
+               "unsafe_output_type")
+        pos = 0
+        while pos < len(data):
+            n = os.write(fd, data[pos:])
+            demand(n > 0, "output_write_failed")
+            pos += n
+        os.fsync(fd)
+        os.close(fd)
+        fd = None
+        return identity
+    except BaseException:
+        try:
+            remove_created(path, identity)
+        except OSError:
+            pass  # Existing scratch file remains visibly STOP/HOLD.
         raise
+    finally:
+        if fd is not None:
+            os.close(fd)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--epoch", required=True, type=int)
+    parser.add_argument("--upstream-root", required=True,
+                        help="locally present pinned, pristine official AP2 Git tree")
     parser.add_argument("--policy", required=True)
     parser.add_argument("--fixture", required=True)
     args = parser.parse_args()
     demand(os.path.abspath(args.policy) != os.path.abspath(args.fixture),
            "aliased_output")
+    # Precheck SDK origin and tracked bytes BEFORE generating any signing key.
+    require_pinned_sdk(args.upstream_root)
     policy, fixture = make(args.epoch)
-    # Both outputs are new, under a future approved ephemeral runner tmpdir.
-    # No mkdir, no overwrite, no private JWK export, no network, no upload.
-    exclusive_write(args.policy, policy, 16_384)
-    exclusive_write(args.fixture, fixture, 262_144)
+    # Only exclusive writes; no mkdir, overwrite, network or upload. On
+    # either write failure, rollback only files created by this invocation.
+    first = None
+    try:
+        first = exclusive_write(args.policy, policy, 16_384)
+        exclusive_write(args.fixture, fixture, 262_144)
+    except BaseException:
+        if first is not None:
+            try:
+                remove_created(args.policy, first)
+            except OSError:
+                pass
+        raise
     print("E03/E04 F: public-only builder complete; O1-O5 NOT RUN; Gate HOLD")
-
 
 if __name__ == "__main__":
     try:
