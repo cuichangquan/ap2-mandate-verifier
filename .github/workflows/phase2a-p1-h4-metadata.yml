@@ -224,6 +224,8 @@ jobs:
               -v missing_full="A7236886F3CCCAAD148A27F80E98404D386FA1D9" \
               -f /dev/stdin "$file" <<'STATUS_AWK'
               function bad(category) { issues[category]=1 }
+              # Fixed labels only. Never output a status token or signer ID.
+              function detail(category) { details[category]=1 }
               # GnuPG's TIME is epoch seconds or ISO 8601 (with a T).
               # Accept documented lexical forms, not unbounded tokens.
               function is_time(v) {
@@ -256,8 +258,14 @@ jobs:
                            err_count == 1 && missing_count == 1 && good_count == 0) {
                   if (errkey != approved_missing ||
                       missingkey != approved_missing ||
-                      errkey != missingkey || err_rc != "9")
+                      errkey != missingkey || err_rc != "9") {
                     bad("KEY_MISMATCH")
+                    if (errkey != missingkey) detail("MISSING_KEY_PAIR")
+                    if (errkey != approved_missing ||
+                        missingkey != approved_missing)
+                      detail("MISSING_KEY_NOT_APPROVED")
+                    if (err_rc != "9") detail("MISSING_KEY_REASON")
+                  }
                   unknown_groups++
                 } else bad("SIGNATURE_PAIR")
                 started=0
@@ -266,26 +274,32 @@ jobs:
                 if (phase != "preflight" && phase != "final") bad("FORMAT")
                 if (kind != "main" && kind != "security") bad("FORMAT")
               }
-              $1 != "[GNUPG:]" { bad("FORMAT"); next }
+              $1 != "[GNUPG:]" { bad("FORMAT"); detail("STATUS_PREFIX"); next }
               $2 == "PLAINTEXT" {
                 # Clear-signed input emits this before the first NEWSIG.
                 # It describes output only; it never authenticates data.
                 if (plaintext_seen++ || started || count ||
                     (NF != 4 && NF != 5) || $3 != "74" ||
-                    $4 !~ /^[0-9]+$/ || length($0)>2048) bad("FORMAT")
+                    $4 !~ /^[0-9]+$/ || length($0)>2048) {
+                  bad("FORMAT"); detail("PLAINTEXT_SHAPE")
+                }
                 next
               }
               $2 == "NEWSIG" {
                 # Optional percent-escaped SIGNERS_UID or "-" token.
                 if ((NF != 2 && NF != 3) ||
-                    (NF == 3 && length($3)>1024)) bad("FORMAT")
+                    (NF == 3 && length($3)>1024)) {
+                  bad("FORMAT"); detail("NEWSIG_SHAPE")
+                }
                 complete(); started=1
                 valid_count=err_count=missing_count=good_count=0
                 errkey=missingkey=err_rc=good_key=signing_fpr=verified_primary=""
                 next
               }
               $2 == "KEY_CONSIDERED" || $2 == "SIG_ID" {
-                if (NF < 3 || NF > 6) bad("FORMAT")
+                if (NF < 3 || NF > 6) {
+                  bad("FORMAT"); detail("KEY_METADATA_SHAPE")
+                }
                 next
               }
               !started { bad("SIGNATURE_PAIR"); next }
@@ -294,12 +308,16 @@ jobs:
                 # Username tail contains spaces; it is untrusted and ignored.
                 # Keep a whole-line bound, but never cap its field count.
                 if (NF < 3 || length($0)>2048 ||
-                    (!ishex($3,16) && !ishex($3,40))) bad("FORMAT")
+                    (!ishex($3,16) && !ishex($3,40))) {
+                  bad("FORMAT"); detail("GOODSIG_SHAPE")
+                }
                 good_count++; good_key=$3
                 next
               }
               $2 == "VALIDSIG" {
-                if (NF != 11 && NF != 12) { bad("FORMAT"); next }
+                if (NF != 11 && NF != 12) {
+                  bad("FORMAT"); detail("VALIDSIG_FIELD_COUNT"); next
+                }
                 # Creation date, timestamp and expiration may have
                 # GnuPG-documented ISO 8601 forms.
                 if (!ishex($3,40) || !is_date($4) ||
@@ -307,26 +325,37 @@ jobs:
                     $7 !~ /^[0-9]+$/ ||
                     $8 !~ /^[0-9]+$/ || $9 !~ /^[0-9]+$/ ||
                     $10 !~ /^[0-9]+$/ || !ishex($11,2) ||
-                    (NF == 12 && !ishex($12,40))) bad("FORMAT")
+                    (NF == 12 && !ishex($12,40))) {
+                  bad("FORMAT"); detail("VALIDSIG_FIELDS")
+                }
                 valid_count++; signing_fpr=$3
                 verified_primary=(NF == 12 ? $12 : $3)
-                if (!permitted(verified_primary)) bad("KEY_MISMATCH")
+                if (!permitted(verified_primary)) {
+                  bad("KEY_MISMATCH"); detail("VALIDSIG_PRIMARY")
+                }
                 next
               }
               $2 == "ERRSIG" {
-                if ((NF != 8 && NF != 9) || !ishex($3,16) ||
-                    $4 !~ /^[0-9]+$/ || $5 !~ /^[0-9]+$/ ||
-                    !ishex($6,2) || !is_time($7) ||
-                    $8 !~ /^[0-9]+$/ ||
-                    # GnuPG may emit a literal "-" when issuer FPR is absent.
-                    (NF == 9 && $9 != "-" &&
-                     (!ishex($9,40) || $9 != missing_full)))
-                  bad("FORMAT")
+                if (NF != 8 && NF != 9) {
+                  bad("FORMAT"); detail("ERRSIG_FIELD_COUNT")
+                }
+                if (!ishex($3,16) || $4 !~ /^[0-9]+$/ ||
+                    $5 !~ /^[0-9]+$/ || !ishex($6,2) ||
+                    !is_time($7) || $8 !~ /^[0-9]+$/) {
+                  bad("FORMAT"); detail("ERRSIG_FIELDS")
+                }
+                # GnuPG may emit a literal "-" when issuer FPR is absent.
+                if (NF == 9 && $9 != "-" &&
+                    (!ishex($9,40) || $9 != missing_full)) {
+                  bad("FORMAT"); detail("ERRSIG_OPTIONAL_FPR")
+                }
                 err_count++; errkey=$3; err_rc=$8
                 next
               }
               $2 == "NO_PUBKEY" {
-                if (NF != 3 || !ishex($3,16)) bad("FORMAT")
+                if (NF != 3 || !ishex($3,16)) {
+                  bad("FORMAT"); detail("NO_PUBKEY_SHAPE")
+                }
                 missing_count++; missingkey=$3
                 next
               }
@@ -367,7 +396,25 @@ jobs:
                 if (issues["UNEXPECTED_STATUS"]) {
                   print "STATUS_CATEGORY=UNEXPECTED_STATUS"; failed=1
                 }
-                if (failed) exit 1
+                # All diagnostic outputs are from a constant allowlist.
+                if (failed) {
+                  if (details["STATUS_PREFIX"]) print "STATUS_DETAIL=STATUS_PREFIX"
+                  if (details["PLAINTEXT_SHAPE"]) print "STATUS_DETAIL=PLAINTEXT_SHAPE"
+                  if (details["NEWSIG_SHAPE"]) print "STATUS_DETAIL=NEWSIG_SHAPE"
+                  if (details["KEY_METADATA_SHAPE"]) print "STATUS_DETAIL=KEY_METADATA_SHAPE"
+                  if (details["GOODSIG_SHAPE"]) print "STATUS_DETAIL=GOODSIG_SHAPE"
+                  if (details["VALIDSIG_FIELD_COUNT"]) print "STATUS_DETAIL=VALIDSIG_FIELD_COUNT"
+                  if (details["VALIDSIG_FIELDS"]) print "STATUS_DETAIL=VALIDSIG_FIELDS"
+                  if (details["VALIDSIG_PRIMARY"]) print "STATUS_DETAIL=VALIDSIG_PRIMARY"
+                  if (details["ERRSIG_FIELD_COUNT"]) print "STATUS_DETAIL=ERRSIG_FIELD_COUNT"
+                  if (details["ERRSIG_FIELDS"]) print "STATUS_DETAIL=ERRSIG_FIELDS"
+                  if (details["ERRSIG_OPTIONAL_FPR"]) print "STATUS_DETAIL=ERRSIG_OPTIONAL_FPR"
+                  if (details["NO_PUBKEY_SHAPE"]) print "STATUS_DETAIL=NO_PUBKEY_SHAPE"
+                  if (details["MISSING_KEY_PAIR"]) print "STATUS_DETAIL=MISSING_KEY_PAIR"
+                  if (details["MISSING_KEY_NOT_APPROVED"]) print "STATUS_DETAIL=MISSING_KEY_NOT_APPROVED"
+                  if (details["MISSING_KEY_REASON"]) print "STATUS_DETAIL=MISSING_KEY_REASON"
+                  exit 1
+                }
                 print "STATUS_CATEGORY=PASS"
               }
           STATUS_AWK
