@@ -28,6 +28,9 @@ REL = re.compile(r"([a-z0-9][a-z0-9+.-]{0,127})"
                  r"(?: \((<<|<=|=|>=|>>) ([0-9A-Za-z.+:~\-]{1,128})\))?\Z")
 FILENAME = re.compile(r"pool/[a-zA-Z0-9_+./-]{1,512}\Z")
 SHA = re.compile(r"[a-f0-9]{64}\Z")
+# Debian Policy 5.1: ASCII visible non-colon, non-whitespace field names;
+# the initial character cannot be # or -. Validate even unknown fields.
+FIELD_NAME = re.compile(r"[!-\x39;-\x7e]+\Z")
 KEYS = frozenset(("Package", "Version", "Architecture", "Depends",
                   "Pre-Depends", "Provides", "Conflicts", "Breaks",
                   "Filename", "Size", "SHA256"))
@@ -83,15 +86,26 @@ def record(raw):
            "EMPTY_WIRE_RECORD")
     lines = body.split("\n")
     fields = {}
+    seen = set()
     current = None
     for line in lines:
         if line[0] in (" ", "\t"):
+            demand(current is not None, "ORPHAN_CONTINUATION")
+            demand(bool(line.strip(" \t")), "EMPTY_CONTINUATION")
             demand(current not in KEYS, "CONTINUED_SECURITY_FIELD")
             continue
         demand(": " in line, "MALFORMED_FIELD")
         key, value = line.split(": ", 1)
+        demand(bool(key) and key[0] not in "#-"
+               and FIELD_NAME.fullmatch(key) is not None,
+               "INVALID_FIELD_NAME")
+        # Validate every wire field before ignoring an unknown one; Debian
+        # names are case-insensitive, including for duplicate detection.
         demand(key == KNOWN_FIELD_CASE.get(key.lower(), key),
                "NONCANONICAL_SECURITY_FIELD")
+        lower = key.lower()
+        demand(lower not in seen, "DUPLICATE_FIELD")
+        seen.add(lower)
         current = key
         if key in KEYS:
             demand(key not in fields and len(value) <= 1024,
@@ -269,6 +283,8 @@ if __name__ == "__main__":
                  "DEPENDENCY_VERSION_CONFLICT", "REPORT_LIMIT",
                  "UNTERMINATED_STANZA", "CONTINUED_SECURITY_FIELD",
                  "EMPTY_WIRE_RECORD", "NONCANONICAL_SECURITY_FIELD",
+                 "ORPHAN_CONTINUATION", "EMPTY_CONTINUATION",
+                 "INVALID_FIELD_NAME", "DUPLICATE_FIELD",
                  "BASELINE_OR_VIRTUAL_SEMANTICS_UNKNOWN")
         print("P1M_STATUS=STOP/HOLD:" + (code if code in known else "PARSE_ERROR"),
               file=sys.stderr)
