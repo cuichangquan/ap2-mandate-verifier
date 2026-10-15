@@ -747,8 +747,20 @@ jobs:
               selected = set()
               queue = deque(roots)
               constraints = [0]
+              # One installed binary version per package name on this fixed amd64
+              # target, including packages declared Architecture: all. Reserve each
+              # choice when ENQUEUED, not on traversal, so competing parents cannot
+              # smuggle two incompatible versions into a successful candidate graph.
+              chosen = {}
+              def reserve(key):
+                  prior = chosen.get(key[0])
+                  demand(prior is None or prior == key, "DEPENDENCY_VERSION_CONFLICT")
+                  chosen[key[0]] = key
+              for root in roots:
+                  reserve(root)
               while queue:
                   key = queue.popleft()
+                  demand(chosen.get(key[0]) == key, "DEPENDENCY_VERSION_CONFLICT")
                   if key in selected:
                       continue
                   demand(len(selected) < MAX_NODES, "GRAPH_NODE_LIMIT")
@@ -764,6 +776,7 @@ jobs:
                                  and satisfies(k[1], op, required, constraints)]
                       demand(choices, "DEPENDENCY_UNAVAILABLE")
                       demand(len(choices) == 1, "DEPENDENCY_AMBIGUOUS")
+                      reserve(choices[0])
                       queue.append(choices[0])
               # Candidate graph only; installed base and shared-object paths unknown.
               # Bind candidate nodes to signed-index archive file metadata as trace
@@ -812,7 +825,8 @@ jobs:
                            "DPKG_COMPARATOR_UNAVAILABLE", "DPKG_COMPARATOR_FAILURE",
                            "ROOT_MISSING_OR_AMBIGUOUS", "UNAPPROVED_ROOT_VERSION",
                            "GRAPH_NODE_LIMIT",
-                           "DEPENDENCY_UNAVAILABLE", "DEPENDENCY_AMBIGUOUS", "REPORT_LIMIT",
+                           "DEPENDENCY_UNAVAILABLE", "DEPENDENCY_AMBIGUOUS",
+                           "DEPENDENCY_VERSION_CONFLICT", "REPORT_LIMIT",
                            "UNTERMINATED_STANZA", "CONTINUED_SECURITY_FIELD",
                            "BASELINE_OR_VIRTUAL_SEMANTICS_UNKNOWN")
                   print("P1M_STATUS=STOP/HOLD:" + (code if code in known else "PARSE_ERROR"),
