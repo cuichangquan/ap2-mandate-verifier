@@ -550,12 +550,15 @@ def main():
         sdk = import_pinned_sdk()
         demand(sys.meta_path[0] is finder, "sdk_import_guard_removed")
         policy, fixture = make(args.epoch, sdk)
-        first = None
+        first, second = None, None
         try:
             first = exclusive_write(directory, names[0], policy, 16_384)
-            exclusive_write(directory, names[1], fixture, 262_144)
+            second = exclusive_write(directory, names[1], fixture, 262_144)
             os.fsync(directory)
         except BaseException:
+            # Roll back BOTH created files, including directory fsync failure.
+            # Never remove pre-existing entries; first-error remains STOP.
+            remove_created(directory, names[1], second)
             remove_created(directory, names[0], first)
             raise
     finally:
