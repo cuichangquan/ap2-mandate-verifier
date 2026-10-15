@@ -26,7 +26,7 @@ NAME = re.compile(r"[a-z0-9][a-z0-9+.-]{0,127}\Z")
 VERSION = re.compile(r"[0-9][A-Za-z0-9.+:~\-]{0,127}\Z")
 REL = re.compile(r"([a-z0-9][a-z0-9+.-]{0,127})"
                  r"(?: \((<<|<=|=|>=|>>) ([0-9A-Za-z.+:~\-]{1,128})\))?\Z")
-FILENAME = re.compile(r"pool/[a-zA-Z0-9_+./-]{1,512}\Z")
+FILENAME = re.compile(r"pool/[a-zA-Z0-9_+./~-]{1,512}\Z")
 SHA = re.compile(r"[a-f0-9]{64}\Z")
 # Signed .deb metadata length only; not a file download or allocation cap.
 SIZE = re.compile(r"[1-9][0-9]{0,19}\Z")
@@ -119,7 +119,8 @@ def record(raw):
     demand(NAME.fullmatch(name) and VERSION.fullmatch(version), "INVALID_IDENTITY")
     demand(arch in ("amd64", "all"), "INVALID_ARCH")
     filename = fields["Filename"]
-    demand(FILENAME.fullmatch(filename) and ".." not in filename.split("/"),
+    demand(FILENAME.fullmatch(filename) is not None
+           and all(part not in ("", ".", "..") for part in filename.split("/")),
            "INVALID_FILENAME")
     demand(SIZE.fullmatch(fields["Size"]) is not None, "INVALID_SIZE")
     demand(SHA.fullmatch(fields["SHA256"]), "INVALID_SHA")
