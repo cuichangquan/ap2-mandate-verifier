@@ -628,7 +628,7 @@ def main():
     # Completion logging is best-effort AFTER the commit point. Unbuffered
     # os.write also avoids an interpreter-shutdown BrokenPipeError on stdout.
     try:
-        os.write(1, b"E03/E04 F: public-only builder complete; O1-O5 NOT RUN; Gate HOLD\\n")
+        os.write(1, b"E03/E04 F: public-only builder complete; O1-O5 NOT RUN; Gate HOLD\n")
     except OSError:
         pass
 
