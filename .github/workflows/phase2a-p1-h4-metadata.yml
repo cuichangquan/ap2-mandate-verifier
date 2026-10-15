@@ -223,6 +223,17 @@ jobs:
               -v approved_missing="0E98404D386FA1D9" \
               -v missing_full="A7236886F3CCCAAD148A27F80E98404D386FA1D9" '
               function bad(category) { issues[category]=1 }
+              # GnuPG's TIME is epoch seconds or ISO 8601 (with a T).
+              # Accept documented lexical forms, not unbounded tokens.
+              function is_time(v) {
+                return (length(v)>0 && length(v)<=40 &&
+                        (v ~ /^[0-9]+$/ ||
+                         (index(v,"T")>0 && v ~ /^[0-9T:+-]+$/)))
+              }
+              function is_date(v) {
+                return (length(v)>0 && length(v)<=40 &&
+                        v ~ /^[0-9:-]+$/)
+              }
               function ishex(v,n) { return length(v)==n && v ~ /^[0-9A-F]+$/ }
               function permitted(p) {
                 return p == expected || (kind == "main" &&
@@ -234,7 +245,8 @@ jobs:
                 if (count > 8) bad("SIGNATURE_COUNT")
                 if (valid_count == 1 && err_count == 0 && missing_count == 0) {
                   if (good_count > 1 ||
-                      (good_count == 1 && good_key != substr(signing_fpr,25)))
+                      (good_count == 1 && good_key != signing_fpr &&
+                       good_key != substr(signing_fpr,25)))
                     bad("SIGNATURE_PAIR")
                   valid_groups++
                   if (verified_primary == expected) expected_seen++
@@ -254,7 +266,9 @@ jobs:
               }
               $1 != "[GNUPG:]" { bad("FORMAT"); next }
               $2 == "NEWSIG" {
-                if (NF != 2) bad("FORMAT")
+                # Optional percent-escaped SIGNERS_UID or "-" token.
+                if ((NF != 2 && NF != 3) ||
+                    (NF == 3 && length($3)>1024)) bad("FORMAT")
                 complete(); started=1
                 valid_count=err_count=missing_count=good_count=0
                 errkey=missingkey=err_rc=good_key=signing_fpr=verified_primary=""
@@ -266,14 +280,19 @@ jobs:
               }
               !started { bad("SIGNATURE_PAIR"); next }
               $2 == "GOODSIG" {
-                if (NF < 3 || !ishex($3,16)) bad("FORMAT")
+                # GnuPG may report either the 16-hex key ID or 40-hex FPR.
+                if (NF < 3 || NF > 4 || length($0)>2048 ||
+                    (!ishex($3,16) && !ishex($3,40))) bad("FORMAT")
                 good_count++; good_key=$3
                 next
               }
               $2 == "VALIDSIG" {
                 if (NF != 11 && NF != 12) { bad("FORMAT"); next }
-                if (!ishex($3,40) || $5 !~ /^[0-9]+$/ ||
-                    $6 !~ /^[0-9]+$/ || $7 !~ /^[0-9]+$/ ||
+                # Creation date, timestamp and expiration may have
+                # GnuPG-documented ISO 8601 forms.
+                if (!ishex($3,40) || !is_date($4) ||
+                    !is_time($5) || !is_time($6) ||
+                    $7 !~ /^[0-9]+$/ ||
                     $8 !~ /^[0-9]+$/ || $9 !~ /^[0-9]+$/ ||
                     $10 !~ /^[0-9]+$/ || !ishex($11,2) ||
                     (NF == 12 && !ishex($12,40))) bad("FORMAT")
@@ -285,9 +304,11 @@ jobs:
               $2 == "ERRSIG" {
                 if ((NF != 8 && NF != 9) || !ishex($3,16) ||
                     $4 !~ /^[0-9]+$/ || $5 !~ /^[0-9]+$/ ||
-                    !ishex($6,2) || $7 !~ /^[0-9]+$/ ||
+                    !ishex($6,2) || !is_time($7) ||
                     $8 !~ /^[0-9]+$/ ||
-                    (NF == 9 && (!ishex($9,40) || $9 != missing_full)))
+                    # GnuPG may emit a literal "-" when issuer FPR is absent.
+                    (NF == 9 && $9 != "-" &&
+                     (!ishex($9,40) || $9 != missing_full)))
                   bad("FORMAT")
                 err_count++; errkey=$3; err_rc=$8
                 next
