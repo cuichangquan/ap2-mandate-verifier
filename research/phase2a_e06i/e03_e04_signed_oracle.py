@@ -97,7 +97,7 @@ def strict_json(raw):
     try:
         obj = json.loads(raw, object_pairs_hook=unique,
                          parse_constant=reject_constant)
-        json.dumps(obj, ensure_ascii=False).encode("utf-8", "strict")
+        json.dumps(obj, ensure_ascii=False, allow_nan=False).encode("utf-8", "strict")
         return obj
     except (ValueError, UnicodeError, RecursionError) as exc:
         raise Stop("invalid_json") from exc
@@ -186,13 +186,15 @@ def inspect_graph(payload, disclosures):
         demand(len(raw) <= 8192, "oversize_disclosure")
         item = strict_json(raw)
         bounded_tree(item)
-        demand(isinstance(item, list) and len(item) == 2 and
+        demand(isinstance(item, list) and len(item) in (2, 3) and
                isinstance(item[0], str) and
                8 <= len(item[0].encode("utf-8")) <= 128 and
-               isinstance(item[1], dict), "unsupported_disclosure")
+               (len(item) == 3 and isinstance(item[1], str) or
+                len(item) == 2 and isinstance(item[1], dict)),
+               "unsupported_disclosure")
         digest = b64url(hashlib.sha256(part.encode("ascii")).digest())
         demand(digest not in mapping, "duplicate_disclosure")
-        mapping[digest] = item[1]
+        mapping[digest] = item
 
     seen, observed, problems = set(), [], []
 
@@ -204,11 +206,21 @@ def inspect_graph(payload, disclosures):
             problems.append("UNKNOWN_SLOT")
         if digest in seen:
             problems.append("DUPLICATE")
+            return  # Do not recurse again or create a cyclic expansion.
         seen.add(digest)
         if digest not in mapping:
             problems.append("MISSING")
             return
-        visit(mapping[digest], path + ("disclosed",), depth + 1)
+        disclosed = mapping[digest]
+        if path and path[-1] == "_sd":
+            problems.append("UNKNOWN_SLOT")
+            if len(disclosed) == 3:
+                visit(disclosed[2], path[:-1] + (disclosed[1],), depth + 1)
+            return
+        if len(disclosed) != 2:
+            problems.append("UNKNOWN_SLOT")
+            return
+        visit(disclosed[1], path + ("disclosed",), depth + 1)
 
     def visit(value, path, depth):
         demand(depth <= 24, "resource_depth")
