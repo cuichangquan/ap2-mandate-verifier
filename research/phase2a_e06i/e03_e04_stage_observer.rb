@@ -109,6 +109,24 @@ module AP2E06IE03E04StageObserver
       demand!(clock.between?(1, AP2E06IRootClosure::MAX_VERIFIED_AT),
               "invalid_synthetic_clock")
 
+      # G0 intentionally requires an *exact* built-in Hash, unlike the
+      # strict parser's UniqueKeyObject < Hash. Detach only four named JWK
+      # public members after validating the original canonical policy.
+      # Do not mutate/re-encode the original policy or signed Root bytes.
+      issuer_claim = policy_candidate.fetch("issuer_public_jwk")
+      exact_keys!(issuer_claim, %w[crv kty x y])
+      candidate_jwk = %w[crv kty x y].to_h do |field|
+        member = issuer_claim.fetch(field)
+        demand!(member.instance_of?(String) &&
+                member.ascii_only? && member.bytesize.between?(1, 128),
+                "invalid_public_jwk_member")
+        [field, member.dup.freeze]
+      end.freeze
+      demand!(candidate_jwk.instance_of?(Hash) &&
+              candidate_jwk.keys.sort == %w[crv kty x y] &&
+              candidate_jwk.values.none? { |v| v.empty? },
+              "untrusted_candidate_type")
+
       # G0→G3 use the pre-existing Ruby candidate; no alternate parser is
       # accepted as a substitute for actual stage arrival and first rejection.
       per_case = {}
@@ -142,7 +160,7 @@ module AP2E06IE03E04StageObserver
         result = PROBE.observe(
           policy_json: policy_raw,
           case_data: {
-            "candidate" => policy_candidate.fetch("issuer_public_jwk"),
+            "candidate" => candidate_jwk,
             "root" => root,
             "terminal" => terminal
           },
