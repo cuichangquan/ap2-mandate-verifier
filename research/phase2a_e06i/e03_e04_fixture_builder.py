@@ -596,6 +596,7 @@ def main():
     # and before any signing key is generated.
     finder = install_pinned_sdk(args.upstream_root)
     directory, names = private_output_dir(args.policy, args.fixture)
+    committed = False
     try:
         sdk = import_pinned_sdk()
         demand(sys.meta_path[0] is finder, "sdk_import_guard_removed")
@@ -605,6 +606,9 @@ def main():
             first = exclusive_write(directory, names[0], policy, 16_384)
             second = exclusive_write(directory, names[1], fixture, 262_144)
             os.fsync(directory)
+            # The two durable outputs are committed here. Later diagnostics
+            # and directory close cannot turn a completed pair into a retry.
+            committed = True
         except BaseException:
             # Roll back BOTH created files, including directory fsync failure.
             # Never remove pre-existing entries; first-error remains STOP.
@@ -614,8 +618,19 @@ def main():
                 remove_created(directory, names[0], first)
             raise
     finally:
-        os.close(directory)
-    print("E03/E04 F: public-only builder complete; O1-O5 NOT RUN; Gate HOLD")
+        try:
+            os.close(directory)
+        except OSError:
+            if not committed:
+                raise
+            # Directory fsync already succeeded. Do not report failure after
+            # both outputs are durable merely because descriptor close failed.
+    # Completion logging is best-effort AFTER the commit point. Unbuffered
+    # os.write also avoids an interpreter-shutdown BrokenPipeError on stdout.
+    try:
+        os.write(1, b"E03/E04 F: public-only builder complete; O1-O5 NOT RUN; Gate HOLD\\n")
+    except OSError:
+        pass
 
 
 if __name__ == "__main__":
