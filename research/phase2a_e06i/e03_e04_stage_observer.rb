@@ -8,6 +8,7 @@
 require "json"
 require "digest"
 require "optparse"
+require_relative "../shared/strict_json_research"
 require_relative "observe_integrated"
 
 module AP2E06IE03E04StageObserver
@@ -49,13 +50,17 @@ module AP2E06IE03E04StageObserver
     end
 
     def exact_keys!(obj, keys)
-      demand!(obj.instance_of?(Hash) && obj.keys.sort == keys.sort,
+      demand!(obj.is_a?(Hash) && obj.keys.sort == keys.sort,
               "unexpected_input_shape")
     end
 
     def read_json!(path, cap)
       raw = A7.safe_read!(path, cap)
-      [A7.parse!(raw), raw]
+      # A7.parse! rejects the strict parser's UniqueKeyObject < Hash.
+      # Parse original bytes strictly here, without bypassing duplicate keys.
+      parsed = AP2StrictJSONResearch.parse!(raw)
+      demand!(parsed.is_a?(Hash), "nonobject_input")
+      [parsed, raw]
     end
 
     def observe!(fixture_path:, policy_path:, oracle_path:, upstream_root:,
@@ -95,7 +100,7 @@ module AP2E06IE03E04StageObserver
       demand!(
         policy_candidate["tenant_scope"] == "synthetic-e01s" &&
         policy_candidate["profile_ref"] == "e01s-fixed-a-v1" &&
-        policy_candidate["issuer_public_jwk"].instance_of?(Hash) &&
+        policy_candidate["issuer_public_jwk"].is_a?(Hash) &&
         policy_candidate["policy_digest"].instance_of?(String) &&
         policy_candidate["freeze_epoch"].instance_of?(Integer),
         "host_authority_unproven"
@@ -145,7 +150,7 @@ module AP2E06IE03E04StageObserver
           verified_at: clock,
           upstream_root: upstream_root
         )
-        demand!(result.instance_of?(Hash) && result["evidence"].nil? &&
+        demand!(result.is_a?(Hash) && result["evidence"].nil? &&
                 result["stage_trace_basis"] == "synthetic_conditional_only" &&
                 result["g1_admissible"] != true,
                 "unauthorized_stage_evidence")
