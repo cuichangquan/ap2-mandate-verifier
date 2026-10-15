@@ -651,11 +651,16 @@ jobs:
               except UnicodeError as exc:
                   raise Hold("INVALID_UTF8") from exc
               fields = {}
+              current = None
               for line in lines:
-                  if not line or line[0] in (" ", "\t"):
+                  if not line:
+                      continue
+                  if line[0] in (" ", "\t"):
+                      demand(current not in KEYS, "CONTINUED_SECURITY_FIELD")
                       continue
                   demand(": " in line, "MALFORMED_FIELD")
                   key, value = line.split(": ", 1)
+                  current = key
                   if key in KEYS:
                       demand(key not in fields and len(value) <= 1024,
                              "DUPLICATE_OR_OVERSIZE_FIELD")
@@ -745,6 +750,10 @@ jobs:
                   demand(len(selected) < MAX_NODES, "GRAPH_NODE_LIMIT")
                   selected.add(key)
                   item = inventory[key][0]
+                  # Provides/Conflicts/Breaks require an authenticated dpkg baseline;
+                  # never report a uniquely resolved graph without those semantics.
+                  demand(not any(item.get(k) for k in ("Provides", "Conflicts", "Breaks")),
+                         "BASELINE_OR_VIRTUAL_SEMANTICS_UNKNOWN")
                   for _, name, op, required in edges(item):
                       choices = [k for k in inventory if k[0] == name
                                  and k[2] in ("amd64", "all")
@@ -753,8 +762,14 @@ jobs:
                       demand(len(choices) == 1, "DEPENDENCY_AMBIGUOUS")
                       queue.append(choices[0])
               # Candidate graph only; installed base and shared-object paths unknown.
-              digest = hashlib.sha256(json.dumps(sorted(selected),
-                                                separators=(",", ":")).encode()).hexdigest()
+              # Bind candidate nodes to signed-index archive file metadata as trace
+              # evidence only; does not authenticate downloaded/installed .deb bytes.
+              manifest = [[*key, inventory[key][1],
+                           *[inventory[key][0].get(field, "") for field in
+                             ("Filename", "Size", "SHA256", "Depends", "Pre-Depends")]]
+                          for key in sorted(selected)]
+              digest = hashlib.sha256(json.dumps(manifest, separators=(",", ":"),
+                                                ensure_ascii=True).encode()).hexdigest()
               return len(selected), digest
           
           def main():
@@ -793,7 +808,8 @@ jobs:
                            "DPKG_COMPARATOR_UNAVAILABLE", "DPKG_COMPARATOR_FAILURE",
                            "ROOT_MISSING_OR_AMBIGUOUS", "GRAPH_NODE_LIMIT",
                            "DEPENDENCY_UNAVAILABLE", "DEPENDENCY_AMBIGUOUS", "REPORT_LIMIT",
-                           "UNTERMINATED_STANZA")
+                           "UNTERMINATED_STANZA", "CONTINUED_SECURITY_FIELD",
+                           "BASELINE_OR_VIRTUAL_SEMANTICS_UNKNOWN")
                   print("P1M_STATUS=STOP/HOLD:" + (code if code in known else "PARSE_ERROR"),
                         file=sys.stderr)
                   sys.exit(1)
