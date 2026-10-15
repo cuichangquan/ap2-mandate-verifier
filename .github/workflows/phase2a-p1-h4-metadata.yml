@@ -47,7 +47,7 @@ jobs:
           fetch() {
             local url="$1" dest="$2" expected_digest="${3:-}" current header meta status location requested_filename bytes remaining attempt header_pid
             case "$url" in
-              https://snapshot.debian.org/archive/*|https://ftp-master.debian.org/keys/archive-key-12*.asc|https://ftp-master.debian.org/keys/release-12.asc|https://ftp-master.debian.org/keys/archive-key-13.asc) ;;
+              https://snapshot.debian.org/archive/*|https://ftp-master.debian.org/keys/archive-key-11-security.asc|https://ftp-master.debian.org/keys/archive-key-12*.asc|https://ftp-master.debian.org/keys/release-12.asc|https://ftp-master.debian.org/keys/archive-key-13.asc) ;;
               *) stop "unapproved initial metadata URL" ;;
             esac
             # Only verified signed Release digests can authorize SHA256-named
@@ -173,7 +173,7 @@ jobs:
           # Pin this exact additional key only for the main archive.
           fetch "https://ftp-master.debian.org/keys/release-12.asc" "$work/stable.asc"
           # Check the exact signing subkey fingerprint for each approved
-          # Debian main archive role (Owner-provided signed Release evidence).
+          # Debian archive role (Owner-provided signed Release evidence).
           check_key() {
             local label="$1" expected="$2" approved_signer="${3:-}"
             gpg --batch --with-colons --with-fingerprint --with-subkey-fingerprint \
@@ -214,6 +214,9 @@ jobs:
           }
           main_fpr=B8B80B5B623EAB6AD8775C45B7C5D7D6350947F8
           security_fpr=05AB90340C0C5E797F44A8C8254CF3B5AEC0A8F0
+          bookworm_security_signing_fpr=B0CAB9266E8C3929798B3EEEBDE6D2B9216EC7A8
+          bullseye_security_fpr=AC530D520F2F3269F5E98313A48449044AAD5C5D
+          bullseye_security_signing_fpr=ED541312A33F1128F10B1C6C54404762BBB6E853
           stable_fpr=4D64FEC119C2029067D6E791F8D2585B8783D481
           # 2025-04-06 Debian FTP key announcement: exact trixie primary,
           # signing subkey and published raw key SHA256.
@@ -222,7 +225,7 @@ jobs:
           trixie_signing_fpr=B8E5F13176D2A7A75220028078DBA3BC47EF2265
           trixie_key_sha256=6f1d277429dd7ffedcc6f8688a7ad9a458859b1139ffa026d1eeaadcbffb0da7
           check_key main "$main_fpr" "$bookworm_signing_fpr"
-          check_key security "$security_fpr"
+          check_key security "$security_fpr" "$bookworm_security_signing_fpr"
           check_key stable "$stable_fpr"
 
           # Machine-readable GnuPG statuses: bounded per-NEWSIG state.
@@ -234,6 +237,9 @@ jobs:
               -v stable="$stable_fpr" -v trixie="$trixie_fpr" \
               -v bookworm_signer="$bookworm_signing_fpr" \
               -v trixie_signer="$trixie_signing_fpr" \
+              -v bookworm_security_signer="$bookworm_security_signing_fpr" \
+              -v bullseye_security="$bullseye_security_fpr" \
+              -v bullseye_security_signer="$bullseye_security_signing_fpr" \
               -v approved_missing="78DBA3BC47EF2265" \
               -v missing_full="$trixie_signing_fpr" \
               -f /dev/stdin "$file" <<'STATUS_AWK'
@@ -254,7 +260,8 @@ jobs:
               function ishex(v,n) { return length(v)==n && v ~ /^[0-9A-F]+$/ }
               function permitted(p) {
                 return p == expected || (kind == "main" &&
-                  (p == stable || (phase == "final" && p == trixie)))
+                  (p == stable || (phase == "final" && p == trixie))) ||
+                  (kind == "security" && p == bullseye_security)
               }
               function complete() {
                 if (!started) return
@@ -270,6 +277,7 @@ jobs:
                   if (verified_primary == expected) expected_seen++
                   if (kind == "main" && verified_primary == stable) stable_seen++
                   if (kind == "main" && verified_primary == trixie) trixie_seen++
+                  if (kind == "security" && verified_primary == bullseye_security) bullseye_security_seen++
                 } else if (phase == "preflight" && valid_count == 0 &&
                            err_count == 1 && missing_count == 1 && good_count == 0) {
                   if (errkey != approved_missing ||
@@ -355,6 +363,10 @@ jobs:
                      (verified_primary == stable && signing_fpr != stable) ||
                      (verified_primary == trixie && signing_fpr != trixie_signer)))
                   bad("KEY_MISMATCH")
+                if (kind == "security" &&
+                    ((verified_primary == expected && signing_fpr != bookworm_security_signer) ||
+                     (verified_primary == bullseye_security && signing_fpr != bullseye_security_signer)))
+                  bad("KEY_MISMATCH")
                 next
               }
               $2 == "ERRSIG" {
@@ -366,9 +378,10 @@ jobs:
                     !is_time($7) || $8 !~ /^[0-9]+$/) {
                   bad("FORMAT"); detail("ERRSIG_FIELDS")
                 }
-                # Require the exact issuer FPR in the one missing-signer
-                # preflight signature; absent/"-" is not proof of identity.
-                if (NF != 9 || !ishex($9,40) || $9 != missing_full) {
+                # Only main preflight admits one exact missing Trixie signer.
+                # A security ERRSIG always rejects, never invokes this exception.
+                if (kind == "main" &&
+                    (NF != 9 || !ishex($9,40) || $9 != missing_full)) {
                   bad("FORMAT"); detail("ERRSIG_OPTIONAL_FPR")
                 }
                 err_count++; errkey=$3; err_rc=$8
@@ -390,9 +403,9 @@ jobs:
               END {
                 complete()
                 if (count < 1 || valid_groups < 1) bad("SIGNATURE_COUNT")
-                # Exact 2026-10-14 Bookworm snapshot policy: three distinct
-                # role signatures; preflight 2 known + 1 exact missing,
-                # final 3 valid and no extra/duplicate/unknown signatures.
+                # Exact main snapshot policy: three distinct role signatures;
+                # preflight 2 known + 1 exact missing, final 3 valid.
+                # Security requires exactly two distinct valid role signatures.
                 if (kind == "main") {
                   if (count != 3 || expected_seen != 1 || stable_seen != 1 ||
                       (phase == "preflight" &&
@@ -401,7 +414,8 @@ jobs:
                        (valid_groups != 3 || unknown_groups != 0 || trixie_seen != 1)))
                     bad("AUTH_SIGNER_MISSING")
                 } else if (phase != "final" || unknown_groups != 0 ||
-                           count != 1 || valid_groups != 1 || expected_seen != 1)
+                           count != 2 || valid_groups != 2 || expected_seen != 1 ||
+                           bullseye_security_seen != 1)
                   bad("AUTH_SIGNER_MISSING")
                 failed=0
                 if (issues["FORMAT"]) {
@@ -483,15 +497,24 @@ jobs:
               echo "PASS_PINNED_SIGNING_SUBKEY trixie"
             fi
 
+            if [ "$label" = security ]; then
+              # Both exact Debian security roles must be present (D15 evidence).
+              fetch "https://ftp-master.debian.org/keys/archive-key-11-security.asc" "$work/bullseye_security.asc"
+              check_key bullseye_security "$bullseye_security_fpr" "$bullseye_security_signing_fpr"
+              echo "PASS_PINNED_SIGNING_SUBKEY bullseye_security"
+            fi
+
             # Keep gpgv's machine-readable status separate from untrusted
             # human-readable stderr. Never print status arguments, raw
             # signatures, signer IDs, metadata or other untrusted strings.
-            # A rejected multi-signature InRelease remains rejected even
-            # if one pinned signature generated a VALIDSIG record.
+            # Any extra, duplicate, or unknown signature remains rejected,
+            # even if an approved signature generated a VALIDSIG record.
             gpgv_keyrings=(--keyring "$work/$label.gpg")
             if [ "$label" = main ]; then
               gpgv_keyrings+=(--keyring "$work/stable.gpg")
               gpgv_keyrings+=(--keyring "$work/trixie.gpg")
+            elif [ "$label" = security ]; then
+              gpgv_keyrings+=(--keyring "$work/bullseye_security.gpg")
             fi
             if gpgv "${gpgv_keyrings[@]}" --status-fd 3 \
                  --output "$work/$label.Release" "$work/$label.InRelease" \
