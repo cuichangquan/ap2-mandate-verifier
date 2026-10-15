@@ -45,11 +45,19 @@ jobs:
           used=0
           mkfifo "$work/response.headers.fifo"
           fetch() {
-            local url="$1" dest="$2" current header meta status location requested_filename bytes remaining attempt header_pid
+            local url="$1" dest="$2" expected_digest="${3:-}" current header meta status location requested_filename bytes remaining attempt header_pid
             case "$url" in
               https://snapshot.debian.org/archive/*|https://ftp-master.debian.org/keys/archive-key-12*.asc|https://ftp-master.debian.org/keys/release-12.asc|https://ftp-master.debian.org/keys/archive-key-13.asc) ;;
               *) stop "unapproved initial metadata URL" ;;
             esac
+            # Only verified signed Release digests can authorize SHA256-named
+            # final path segments on Packages.xz redirect URLs.
+            if [[ "$url" == */Packages.xz ]]; then
+              [[ "$expected_digest" =~ ^[0-9a-f]{64}$ ]] \
+                || stop "missing signed Packages SHA256"
+            elif [ -n "$expected_digest" ]; then
+              stop "unexpected signed digest for other metadata"
+            fi
             current="$url"
             for attempt in 0 1; do
               remaining=$((budget - used))
@@ -123,11 +131,9 @@ jobs:
                     || stop "cannot read curl redirect target"
                   # Diagnostics are fixed category labels only: never emit
                   # Location, redirect_url, credentials, query, or headers.
-                  # Keep the original hash-only URL allowlist unchanged.
-                  # Debian snapshot also supports /file/<40-hex-sha1>/<name>.
-                  # Accept that form only when the name is the exact basename
-                  # of the originally requested metadata file. No URL decode,
-                  # suffix, query, fragment, or extra path segment is allowed.
+                  # The signed Packages.xz SHA256 may name a by-hash target.
+                  # Preserve hash-only/literal basename forms and reject all
+                  # other suffixes, URL encodings, queries and fragments.
                   requested_filename="${url##*/}"
                   case "$requested_filename" in
                     InRelease|Packages.xz) ;;
@@ -137,6 +143,10 @@ jobs:
                     current="$location"
                   elif [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/[0-9a-f]{40}/(InRelease|Packages[.]xz)$ ]] &&
                        [ "${BASH_REMATCH[1]}" = "$requested_filename" ]; then
+                    current="$location"
+                  elif [[ "$requested_filename" = Packages.xz &&
+                          "$location" =~ ^https://snapshot[.]debian[.]org/file/[0-9a-f]{40}/([0-9a-f]{64})$ ]] &&
+                       [ "${BASH_REMATCH[1]}" = "$expected_digest" ]; then
                     current="$location"
                   elif [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/ ]]; then
                     stop "redirect denied category=SAME_HOST_FILE_NONPINNED"
@@ -521,7 +531,7 @@ jobs:
             [[ "$digest" =~ ^[0-9a-f]{64}$ ]] || stop "$label bad signed SHA256"
             [[ "$size" =~ ^[0-9]+$ ]] || stop "$label bad signed index size"
             [ "$size" -le $((budget - used)) ] || stop "$label index too large"
-            fetch "$base/main/binary-amd64/Packages.xz" "$work/$label.Packages.xz"
+            fetch "$base/main/binary-amd64/Packages.xz" "$work/$label.Packages.xz" "$digest"
             actual_size="$(stat -c '%s' "$work/$label.Packages.xz")"
             [ "$actual_size" -eq "$size" ] || stop "$label index size mismatch"
             echo "$digest  $work/$label.Packages.xz" | sha256sum -c --status \
