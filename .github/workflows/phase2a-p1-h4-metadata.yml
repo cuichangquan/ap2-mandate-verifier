@@ -1,0 +1,926 @@
+name: "Issue 73 P1-H4 Debian signed metadata (one-shot)"
+# Dedicated metadata-only action; existing E06-I workflows stay disabled.
+# Inert until separately approved: no push trigger; job guard below is false.
+on:
+  workflow_dispatch:
+
+permissions: {}
+concurrency:
+  group: issue73-p1h4-metadata-single
+  cancel-in-progress: false
+
+jobs:
+  verify-metadata:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - name: Verify Bookworm signed metadata without downloading packages
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          stop() { echo "STOP/HOLD: $*" >&2; exit 1; }
+          for tool in curl gpg gpgv sha256sum awk xz date stat head mkfifo jq; do
+            command -v "$tool" >/dev/null 2>&1 || stop "preinstalled tool unavailable: $tool"
+          done
+          [ "$RUNNER_OS" = Linux ] || stop "unexpected runner OS"
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          export GNUPGHOME="$work/gnupg"
+          mkdir -m 700 "$GNUPGHOME"
+
+          # Only approved HTTPS metadata sources. A snapshot /archive/ URL may
+          # redirect ONCE to the same host's content-addressed /file/<hash>.
+          # Curl owns HTTP response-block parsing: never parse Location from
+          # raw --dump-header bytes, which can include interim 1xx responses.
+          # No automatic redirects, external host, proxy, fallback, or retry.
+          # All received HTTP bodies count toward the 16MiB cap.
+          budget=$((16 * 1024 * 1024))
+          used=0
+          mkfifo "$work/response.headers.fifo"
+          fetch() {
+            local url="$1" dest="$2" expected_digest="${3:-}" current header meta status location requested_filename bytes remaining attempt header_pid
+            case "$url" in
+              https://snapshot.debian.org/archive/*|https://ftp-master.debian.org/keys/archive-key-11-security.asc|https://ftp-master.debian.org/keys/archive-key-12*.asc|https://ftp-master.debian.org/keys/release-12.asc|https://ftp-master.debian.org/keys/archive-key-13.asc) ;;
+              *) stop "unapproved initial metadata URL" ;;
+            esac
+            # Only verified signed Release digests can authorize SHA256-named
+            # final path segments on Packages.xz redirect URLs.
+            if [[ "$url" == */Packages.xz ]]; then
+              [[ "$expected_digest" =~ ^[0-9a-f]{64}$ ]] \
+                || stop "missing signed Packages SHA256"
+            elif [ -n "$expected_digest" ]; then
+              stop "unexpected signed digest for other metadata"
+            fi
+            current="$url"
+            for attempt in 0 1; do
+              remaining=$((budget - used))
+              [ "$remaining" -gt 0 ] || stop "16MiB body budget exhausted"
+              header="$work/response.headers"
+              meta="$work/response.meta.json"
+              : > "$header"
+              : > "$meta"
+              # The FIFO reader stops after byte 8193. Thus an oversized
+              # header stream forces curl's write failure before persisting
+              # unbounded headers; wait/reap before accepting the response.
+              head -c 8193 < "$work/response.headers.fifo" > "$header" &
+              header_pid=$!
+              curl --disable --silent --show-error \
+                --proto '=https' --tlsv1.2 --max-redirs 0 \
+                --proxy '' --noproxy '*' --retry 0 \
+                --connect-timeout 12 --max-time 90 \
+                --max-filesize "$remaining" \
+                --dump-header "$work/response.headers.fifo" \
+                --write-out '%{json}\n%{header_json}\n' \
+                --output "$dest" "$current" > "$meta" || {
+                  kill "$header_pid" 2>/dev/null || :
+                  wait "$header_pid" 2>/dev/null || :
+                  stop "HTTP transfer failed, oversized headers or body"
+                }
+              wait "$header_pid" || stop "bounded header reader failed"
+              [ "$(stat -c '%s' "$header")" -le 8192 ] \
+                || stop "HTTP response headers exceed 8KiB"
+              # Exactly two curl-generated JSON objects:
+              # transfer metadata + final response headers. Reject invalid,
+              # missing or extra output rather than trusting raw header text.
+              jq -s -e '
+                length == 2
+                and (.[0] | type) == "object"
+                and (.[1] | type) == "object"
+                and (.[0].http_code | type) == "number"
+                and (.[0].url_effective | type) == "string"
+              ' "$meta" > /dev/null || stop "invalid curl response metadata"
+              status="$(jq -s -r '.[0].http_code' "$meta")" \
+                || stop "cannot read HTTP status"
+              [ "$(jq -s -r '.[0].url_effective' "$meta")" = "$current" ] \
+                || stop "unexpected effective HTTP request URL"
+              bytes="$(stat -c '%s' "$dest")" || stop "missing HTTP response body"
+              used=$((used + bytes))
+              [ "$used" -le "$budget" ] || stop "aggregate HTTP body exceeds 16MiB"
+              echo "HTTP_STATUS=$status FETCH_BODY_BYTES=$bytes TOTAL_BODY_BYTES=$used"
+              case "$status" in
+                200)
+                  [ "$bytes" -gt 0 ] || stop "empty metadata body"
+                  if [[ "$url" == */InRelease ]]; then
+                    [ "$(head -c 34 "$dest")" = "-----BEGIN PGP SIGNED MESSAGE-----" ] \
+                      || stop "InRelease is not an OpenPGP clear-signed message"
+                  fi
+                  return 0
+                  ;;
+                301|302|307|308)
+                  [ "$attempt" -eq 0 ] || stop "multiple redirects forbidden"
+                  [[ "$url" == https://snapshot.debian.org/archive/* ]] \
+                    || stop "redirect outside approved snapshot metadata"
+                  # curl's final-response header_json preserves duplicate
+                  # Location fields as array entries, including empty ones.
+                  jq -s -e '
+                    (.[0].redirect_url | type) == "string"
+                    and (.[1].location | type) == "array"
+                    and (.[1].location | length) == 1
+                    and (.[1].location[0] | type) == "string"
+                    and (.[1].location[0] | length) > 0
+                  ' "$meta" > /dev/null \
+                    || stop "missing, empty or duplicate final HTTP Location"
+                  location="$(jq -s -r '.[0].redirect_url' "$meta")" \
+                    || stop "cannot read curl redirect target"
+                  # Diagnostics are fixed category labels only: never emit
+                  # Location, redirect_url, credentials, query, or headers.
+                  # The signed Packages.xz SHA256 may name a by-hash target.
+                  # Preserve hash-only/literal basename forms and reject all
+                  # other suffixes, URL encodings, queries and fragments.
+                  requested_filename="${url##*/}"
+                  case "$requested_filename" in
+                    InRelease|Packages.xz) ;;
+                    *) stop "redirect denied category=UNEXPECTED_METADATA_NAME" ;;
+                  esac
+                  if [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/[0-9a-f]{40,64}$ ]]; then
+                    current="$location"
+                  elif [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/[0-9a-f]{40}/(InRelease|Packages[.]xz)$ ]] &&
+                       [ "${BASH_REMATCH[1]}" = "$requested_filename" ]; then
+                    current="$location"
+                  elif [[ "$requested_filename" = Packages.xz &&
+                          "$location" =~ ^https://snapshot[.]debian[.]org/file/[0-9a-f]{40}/([0-9a-f]{64})$ ]] &&
+                       [ "${BASH_REMATCH[1]}" = "$expected_digest" ]; then
+                    current="$location"
+                  elif [[ "$location" =~ ^https://snapshot[.]debian[.]org/file/ ]]; then
+                    stop "redirect denied category=SAME_HOST_FILE_NONPINNED"
+                  elif [[ "$location" =~ ^https://snapshot[.]debian[.]org/ ]]; then
+                    stop "redirect denied category=SAME_HOST_OTHER_PATH"
+                  elif [[ "$location" =~ ^https:// ]]; then
+                    stop "redirect denied category=OTHER_HTTPS_DESTINATION"
+                  elif [[ "$location" =~ ^http:// ]]; then
+                    stop "redirect denied category=INSECURE_HTTP_DESTINATION"
+                  else
+                    stop "redirect denied category=UNEXPECTED_URL_FORMAT"
+                  fi
+                  ;;
+                *) stop "unexpected HTTP status $status" ;;
+              esac
+            done
+            stop "redirect limit exceeded"
+          }
+
+          # Debian official published primary key fingerprints are pinned here.
+          fetch "https://ftp-master.debian.org/keys/archive-key-12.asc" "$work/main.asc"
+          fetch "https://ftp-master.debian.org/keys/archive-key-12-security.asc" "$work/security.asc"
+          # The official Debian archive keyring includes this stable key.
+          # Pin this exact additional key only for the main archive.
+          fetch "https://ftp-master.debian.org/keys/release-12.asc" "$work/stable.asc"
+          # Check the exact signing subkey fingerprint for each approved
+          # Debian archive role (Owner-provided signed Release evidence).
+          check_key() {
+            local label="$1" expected="$2" approved_signer="${3:-}"
+            gpg --batch --with-colons --with-fingerprint --with-subkey-fingerprint \
+              --show-keys "$work/$label.asc" 2>/dev/null \
+              | awk -F: -v expected="$expected" -v approved_signer="$approved_signer" '
+                function hex40(v) { return length(v)==40 && v ~ /^[0-9A-F]+$/ }
+                $1 == "pub" {
+                  if (pending != "") bad=1
+                  primary_count++; pending="primary"; next
+                }
+                $1 == "sub" {
+                  if (pending != "") bad=1
+                  subkey_count++; pending="subkey"; next
+                }
+                $1 == "fpr" {
+                  if (!hex40($10) || seen[$10]++) bad=1
+                  if (pending == "primary") {
+                    primary_fprs++
+                    if ($10 != expected) bad=1
+                  } else if (pending == "subkey") {
+                    subkey_fprs++
+                    if (approved_signer != "" && $10 != approved_signer) bad=1
+                  } else bad=1
+                  pending=""
+                  next
+                }
+                $1 == "uid" || $1 == "uat" || $1 == "rvk" { next }
+                { bad=1 }
+                END {
+                  if (primary_count != 1 || primary_fprs != 1 || pending != "" ||
+                      subkey_count != subkey_fprs || subkey_count > 16 || bad ||
+                      (approved_signer != "" && subkey_count != 1)) exit 1
+                }
+              ' || stop "$label public key set mismatch"
+            gpg --batch --yes --dearmor --output "$work/$label.gpg" "$work/$label.asc" \
+              || stop "$label key dearmor failure"
+            echo "PASS_PINNED_KEY $label $expected"
+          }
+          main_fpr=B8B80B5B623EAB6AD8775C45B7C5D7D6350947F8
+          security_fpr=05AB90340C0C5E797F44A8C8254CF3B5AEC0A8F0
+          bookworm_security_signing_fpr=B0CAB9266E8C3929798B3EEEBDE6D2B9216EC7A8
+          bullseye_security_fpr=AC530D520F2F3269F5E98313A48449044AAD5C5D
+          bullseye_security_signing_fpr=ED541312A33F1128F10B1C6C54404762BBB6E853
+          stable_fpr=4D64FEC119C2029067D6E791F8D2585B8783D481
+          # 2025-04-06 Debian FTP key announcement: exact trixie primary,
+          # signing subkey and published raw key SHA256.
+          bookworm_signing_fpr=4CB50190207B4758A3F73A796ED0E7B82643E131
+          trixie_fpr=04B54C3CDCA79751B16BC6B5225629DF75B188BD
+          trixie_signing_fpr=B8E5F13176D2A7A75220028078DBA3BC47EF2265
+          trixie_key_sha256=6f1d277429dd7ffedcc6f8688a7ad9a458859b1139ffa026d1eeaadcbffb0da7
+          check_key main "$main_fpr" "$bookworm_signing_fpr"
+          check_key security "$security_fpr" "$bookworm_security_signing_fpr"
+          check_key stable "$stable_fpr"
+
+          # Machine-readable GnuPG statuses: bounded per-NEWSIG state.
+          # Only fixed category labels are logged, never UID, ID or stderr.
+          status_check() {
+            local phase="$1" label="$2" file="$3" expected="$4"
+            echo "GPGV_STATUS_CONTEXT phase=$phase archive=$label"
+            awk -v phase="$phase" -v kind="$label" -v expected="$expected" \
+              -v stable="$stable_fpr" -v trixie="$trixie_fpr" \
+              -v bookworm_signer="$bookworm_signing_fpr" \
+              -v trixie_signer="$trixie_signing_fpr" \
+              -v bookworm_security_signer="$bookworm_security_signing_fpr" \
+              -v bullseye_security="$bullseye_security_fpr" \
+              -v bullseye_security_signer="$bullseye_security_signing_fpr" \
+              -v approved_missing="78DBA3BC47EF2265" \
+              -v missing_full="$trixie_signing_fpr" \
+              -f /dev/stdin "$file" <<'STATUS_AWK'
+              function bad(category) { issues[category]=1 }
+              # Fixed labels only. Never output a status token or signer ID.
+              function detail(category) { details[category]=1 }
+              # GnuPG's TIME is epoch seconds or ISO 8601 (with a T).
+              # Accept documented lexical forms, not unbounded tokens.
+              function is_time(v) {
+                return (length(v)>0 && length(v)<=40 &&
+                        (v ~ /^[0-9]+$/ ||
+                         (index(v,"T")>0 && v ~ /^[0-9T:+-]+$/)))
+              }
+              function is_date(v) {
+                return (length(v)>0 && length(v)<=40 &&
+                        v ~ /^[0-9:-]+$/)
+              }
+              function ishex(v,n) { return length(v)==n && v ~ /^[0-9A-F]+$/ }
+              function permitted(p) {
+                return p == expected || (kind == "main" &&
+                  (p == stable || (phase == "final" && p == trixie))) ||
+                  (kind == "security" && p == bullseye_security)
+              }
+              function complete() {
+                if (!started) return
+                count++
+                if (count > 8) bad("SIGNATURE_COUNT")
+                if (valid_count == 1 && err_count == 0 && missing_count == 0) {
+                  if (good_count != 1 ||
+                      (good_key != signing_fpr &&
+                       good_key != substr(signing_fpr,25)) ||
+                      seen_signers[signing_fpr]++)
+                    bad("SIGNATURE_PAIR")
+                  valid_groups++
+                  if (verified_primary == expected) expected_seen++
+                  if (kind == "main" && verified_primary == stable) stable_seen++
+                  if (kind == "main" && verified_primary == trixie) trixie_seen++
+                  if (kind == "security" && verified_primary == bullseye_security) bullseye_security_seen++
+                } else if (phase == "preflight" && valid_count == 0 &&
+                           err_count == 1 && missing_count == 1 && good_count == 0) {
+                  if (errkey != approved_missing ||
+                      missingkey != approved_missing ||
+                      errkey != missingkey || err_rc != "9") {
+                    bad("KEY_MISMATCH")
+                    if (errkey != missingkey) detail("MISSING_KEY_PAIR")
+                    if (errkey != approved_missing ||
+                        missingkey != approved_missing)
+                      detail("MISSING_KEY_NOT_APPROVED")
+                    if (err_rc != "9") detail("MISSING_KEY_REASON")
+                  }
+                  unknown_groups++
+                } else bad("SIGNATURE_PAIR")
+                started=0
+              }
+              BEGIN {
+                if (phase != "preflight" && phase != "final") bad("FORMAT")
+                if (kind != "main" && kind != "security") bad("FORMAT")
+              }
+              $1 != "[GNUPG:]" { bad("FORMAT"); detail("STATUS_PREFIX"); next }
+              $2 == "PLAINTEXT" {
+                # Clear-signed input emits this before the first NEWSIG.
+                # It describes output only; it never authenticates data.
+                if (plaintext_seen++ || started || count ||
+                    (NF != 4 && NF != 5) || $3 != "74" ||
+                    $4 !~ /^[0-9]+$/ || length($0)>2048) {
+                  bad("FORMAT"); detail("PLAINTEXT_SHAPE")
+                }
+                next
+              }
+              $2 == "NEWSIG" {
+                # Optional percent-escaped SIGNERS_UID or "-" token.
+                if ((NF != 2 && NF != 3) ||
+                    (NF == 3 && length($3)>1024)) {
+                  bad("FORMAT"); detail("NEWSIG_SHAPE")
+                }
+                complete(); started=1
+                valid_count=err_count=missing_count=good_count=0
+                errkey=missingkey=err_rc=good_key=signing_fpr=verified_primary=""
+                next
+              }
+              $2 == "KEY_CONSIDERED" || $2 == "SIG_ID" {
+                if (NF < 3 || NF > 6) {
+                  bad("FORMAT"); detail("KEY_METADATA_SHAPE")
+                }
+                next
+              }
+              !started { bad("SIGNATURE_PAIR"); next }
+              $2 == "GOODSIG" {
+                # GnuPG may report a 16-hex ID or 40-hex FPR.
+                # Username tail contains spaces; it is untrusted and ignored.
+                # Keep a whole-line bound, but never cap its field count.
+                if (NF < 3 || length($0)>2048 ||
+                    (!ishex($3,16) && !ishex($3,40))) {
+                  bad("FORMAT"); detail("GOODSIG_SHAPE")
+                }
+                good_count++; good_key=$3
+                next
+              }
+              $2 == "VALIDSIG" {
+                if (NF != 11 && NF != 12) {
+                  bad("FORMAT"); detail("VALIDSIG_FIELD_COUNT"); next
+                }
+                # Creation date, timestamp and expiration may have
+                # GnuPG-documented ISO 8601 forms.
+                if (!ishex($3,40) || !is_date($4) ||
+                    !is_time($5) || !is_time($6) ||
+                    $7 !~ /^[0-9]+$/ ||
+                    $8 !~ /^[0-9]+$/ || $9 !~ /^[0-9]+$/ ||
+                    $10 !~ /^[0-9]+$/ || !ishex($11,2) ||
+                    (NF == 12 && !ishex($12,40))) {
+                  bad("FORMAT"); detail("VALIDSIG_FIELDS")
+                }
+                valid_count++; signing_fpr=$3
+                verified_primary=(NF == 12 ? $12 : $3)
+                if (!permitted(verified_primary)) {
+                  bad("KEY_MISMATCH"); detail("VALIDSIG_PRIMARY")
+                }
+                # Reject a different subkey of an otherwise approved primary.
+                if (kind == "main" &&
+                    ((verified_primary == expected && signing_fpr != bookworm_signer) ||
+                     (verified_primary == stable && signing_fpr != stable) ||
+                     (verified_primary == trixie && signing_fpr != trixie_signer)))
+                  bad("KEY_MISMATCH")
+                if (kind == "security" &&
+                    ((verified_primary == expected && signing_fpr != bookworm_security_signer) ||
+                     (verified_primary == bullseye_security && signing_fpr != bullseye_security_signer)))
+                  bad("KEY_MISMATCH")
+                next
+              }
+              $2 == "ERRSIG" {
+                if (NF != 8 && NF != 9) {
+                  bad("FORMAT"); detail("ERRSIG_FIELD_COUNT")
+                }
+                if (!ishex($3,16) || $4 !~ /^[0-9]+$/ ||
+                    $5 !~ /^[0-9]+$/ || !ishex($6,2) ||
+                    !is_time($7) || $8 !~ /^[0-9]+$/) {
+                  bad("FORMAT"); detail("ERRSIG_FIELDS")
+                }
+                # Only main preflight admits one exact missing Trixie signer.
+                # A security ERRSIG always rejects, never invokes this exception.
+                if (kind == "main" &&
+                    (NF != 9 || !ishex($9,40) || $9 != missing_full)) {
+                  bad("FORMAT"); detail("ERRSIG_OPTIONAL_FPR")
+                }
+                err_count++; errkey=$3; err_rc=$8
+                next
+              }
+              $2 == "NO_PUBKEY" {
+                if (NF != 3 || !ishex($3,16)) {
+                  bad("FORMAT"); detail("NO_PUBKEY_SHAPE")
+                }
+                missing_count++; missingkey=$3
+                next
+              }
+              $2 == "BADSIG" || $2 == "EXPSIG" || $2 == "EXPKEYSIG" ||
+              $2 == "REVKEYSIG" || $2 == "NODATA" || $2 == "FAILURE" ||
+              $2 == "BADARMOR" || $2 == "ERROR" || $2 == "KEYREVOKED" {
+                bad("UNEXPECTED_SIGNATURE_STATUS"); next
+              }
+              { bad("UNEXPECTED_STATUS") }
+              END {
+                complete()
+                if (count < 1 || valid_groups < 1) bad("SIGNATURE_COUNT")
+                # Exact main snapshot policy: three distinct role signatures;
+                # preflight 2 known + 1 exact missing, final 3 valid.
+                # Security requires exactly two distinct valid role signatures.
+                if (kind == "main") {
+                  if (count != 3 || expected_seen != 1 || stable_seen != 1 ||
+                      (phase == "preflight" &&
+                       (valid_groups != 2 || unknown_groups != 1 || trixie_seen != 0)) ||
+                      (phase == "final" &&
+                       (valid_groups != 3 || unknown_groups != 0 || trixie_seen != 1)))
+                    bad("AUTH_SIGNER_MISSING")
+                } else if (phase != "final" || unknown_groups != 0 ||
+                           count != 2 || valid_groups != 2 || expected_seen != 1 ||
+                           bullseye_security_seen != 1)
+                  bad("AUTH_SIGNER_MISSING")
+                failed=0
+                if (issues["FORMAT"]) {
+                  print "STATUS_CATEGORY=FORMAT"; failed=1
+                }
+                if (issues["SIGNATURE_PAIR"]) {
+                  print "STATUS_CATEGORY=SIGNATURE_PAIR"; failed=1
+                }
+                if (issues["KEY_MISMATCH"]) {
+                  print "STATUS_CATEGORY=KEY_MISMATCH"; failed=1
+                }
+                if (issues["SIGNATURE_COUNT"]) {
+                  print "STATUS_CATEGORY=SIGNATURE_COUNT"; failed=1
+                }
+                if (issues["AUTH_SIGNER_MISSING"]) {
+                  print "STATUS_CATEGORY=AUTH_SIGNER_MISSING"; failed=1
+                }
+                if (issues["UNEXPECTED_SIGNATURE_STATUS"]) {
+                  print "STATUS_CATEGORY=UNEXPECTED_SIGNATURE_STATUS"; failed=1
+                }
+                if (issues["UNEXPECTED_STATUS"]) {
+                  print "STATUS_CATEGORY=UNEXPECTED_STATUS"; failed=1
+                }
+                # All diagnostic outputs are from a constant allowlist.
+                if (failed) {
+                  if (details["STATUS_PREFIX"]) print "STATUS_DETAIL=STATUS_PREFIX"
+                  if (details["PLAINTEXT_SHAPE"]) print "STATUS_DETAIL=PLAINTEXT_SHAPE"
+                  if (details["NEWSIG_SHAPE"]) print "STATUS_DETAIL=NEWSIG_SHAPE"
+                  if (details["KEY_METADATA_SHAPE"]) print "STATUS_DETAIL=KEY_METADATA_SHAPE"
+                  if (details["GOODSIG_SHAPE"]) print "STATUS_DETAIL=GOODSIG_SHAPE"
+                  if (details["VALIDSIG_FIELD_COUNT"]) print "STATUS_DETAIL=VALIDSIG_FIELD_COUNT"
+                  if (details["VALIDSIG_FIELDS"]) print "STATUS_DETAIL=VALIDSIG_FIELDS"
+                  if (details["VALIDSIG_PRIMARY"]) print "STATUS_DETAIL=VALIDSIG_PRIMARY"
+                  if (details["ERRSIG_FIELD_COUNT"]) print "STATUS_DETAIL=ERRSIG_FIELD_COUNT"
+                  if (details["ERRSIG_FIELDS"]) print "STATUS_DETAIL=ERRSIG_FIELDS"
+                  if (details["ERRSIG_OPTIONAL_FPR"]) print "STATUS_DETAIL=ERRSIG_OPTIONAL_FPR"
+                  if (details["NO_PUBKEY_SHAPE"]) print "STATUS_DETAIL=NO_PUBKEY_SHAPE"
+                  if (details["MISSING_KEY_PAIR"]) print "STATUS_DETAIL=MISSING_KEY_PAIR"
+                  if (details["MISSING_KEY_NOT_APPROVED"]) print "STATUS_DETAIL=MISSING_KEY_NOT_APPROVED"
+                  if (details["MISSING_KEY_REASON"]) print "STATUS_DETAIL=MISSING_KEY_REASON"
+                  exit 1
+                }
+                print "STATUS_CATEGORY=PASS"
+              }
+          STATUS_AWK
+          }
+
+          # Snapshot request points to a frozen historical date; the selected
+          # import ID is NOT independently attested by the requested date.
+          snapshot=20261014T000000Z
+          for entry in "main debian bookworm $main_fpr" \
+                       "security debian-security bookworm-security $security_fpr"; do
+            read -r label archive codename signer <<< "$entry"
+            base="https://snapshot.debian.org/archive/$archive/$snapshot/dists/$codename"
+            fetch "$base/InRelease" "$work/$label.InRelease"
+
+            if [ "$label" = main ]; then
+              # Require the exact trixie missing subkey and two valid
+              # known signatures before any further key fetch.
+              # Any additional/unknown signer or non-key failure means HOLD.
+              # The missing key ID stays private; never print status args.
+              if gpgv --keyring "$work/main.gpg" --keyring "$work/stable.gpg" \
+                   --status-fd 3 "$work/main.InRelease" \
+                   3>"$work/main.preflight.status" \
+                   2>"$work/main.preflight.stderr" >/dev/null; then
+                stop "main preflight did not require additional key"
+              fi
+              status_check preflight main "$work/main.preflight.status" "$main_fpr" \
+                || stop "main missing signer identity or status not uniquely approved"
+              echo "GPGV_PREFLIGHT main category=EXACT_TRIXIE_SUBKEY_ONLY"
+
+              # Only after the matching missing-signature preflight, get
+              # Debian's published public key from the sole approved host.
+              fetch "https://ftp-master.debian.org/keys/archive-key-13.asc" "$work/trixie.asc"
+              printf '%s  %s\n' "$trixie_key_sha256" "$work/trixie.asc" \
+                | sha256sum -c --status \
+                || stop "trixie public key bytes mismatch official SHA256"
+              check_key trixie "$trixie_fpr" "$trixie_signing_fpr"
+              echo "PASS_PINNED_SIGNING_SUBKEY trixie"
+            fi
+
+            if [ "$label" = security ]; then
+              # Both exact Debian security roles must be present (D15 evidence).
+              fetch "https://ftp-master.debian.org/keys/archive-key-11-security.asc" "$work/bullseye_security.asc"
+              check_key bullseye_security "$bullseye_security_fpr" "$bullseye_security_signing_fpr"
+              echo "PASS_PINNED_SIGNING_SUBKEY bullseye_security"
+            fi
+
+            # Keep gpgv's machine-readable status separate from untrusted
+            # human-readable stderr. Never print status arguments, raw
+            # signatures, signer IDs, metadata or other untrusted strings.
+            # Any extra, duplicate, or unknown signature remains rejected,
+            # even if an approved signature generated a VALIDSIG record.
+            gpgv_keyrings=(--keyring "$work/$label.gpg")
+            if [ "$label" = main ]; then
+              gpgv_keyrings+=(--keyring "$work/stable.gpg")
+              gpgv_keyrings+=(--keyring "$work/trixie.gpg")
+            elif [ "$label" = security ]; then
+              gpgv_keyrings+=(--keyring "$work/bullseye_security.gpg")
+            fi
+            if gpgv "${gpgv_keyrings[@]}" --status-fd 3 \
+                 --output "$work/$label.Release" "$work/$label.InRelease" \
+                 3>"$work/$label.status" 2>"$work/$label.stderr" >/dev/null; then
+              status_check final "$label" "$work/$label.status" "$signer" \
+                || stop "$label signature status or signer mismatch"
+            else
+              # A parser result can NEVER override gpgv nonzero exit.
+              status_check final "$label" "$work/$label.status" "$signer" || :
+              stop "$label InRelease signature invalid or unknown"
+            fi
+            grep -qx "Codename: $codename" "$work/$label.Release" \
+              || stop "$label codename mismatch"
+            grep -Eq '^Components: .*main' "$work/$label.Release" \
+              || stop "$label missing main component"
+            grep -Eq '^Architectures: .*amd64' "$work/$label.Release" \
+              || stop "$label missing amd64"
+            valid="$(awk '/^Valid-Until: / {$1=""; sub(/^ /,""); print; exit}' "$work/$label.Release")"
+            if [ -n "$valid" ]; then
+              expiry="$(date -u -d "$valid" +%s)" || stop "$label invalid Valid-Until"
+              now="$(date -u +%s)"
+              [ "$expiry" -ge "$now" ] || stop "$label expired Valid-Until; no bypass"
+            fi
+            echo "PASS_INRELEASE_SIGNATURE $label sha256=$(sha256sum "$work/$label.InRelease" | awk '{print $1}')"
+            echo "RELEASE_DATE $label $(grep -m1 '^Date: ' "$work/$label.Release")"
+            echo "RELEASE_VALID_UNTIL $label $valid"
+
+            # Compare exact index file bytes with the signed Release SHA256
+            # without fetching any .deb or invoking any package manager.
+            expected="$(awk '
+              $0 == "SHA256:" {inside=1; next}
+              inside && /^[^[:space:]]/ {exit}
+              inside && $3 == "main/binary-amd64/Packages.xz" {print $1, $2; exit}
+            ' "$work/$label.Release")"
+            [ -n "$expected" ] || stop "$label missing signed Packages.xz index entry"
+            read -r digest size <<< "$expected"
+            [[ "$digest" =~ ^[0-9a-f]{64}$ ]] || stop "$label bad signed SHA256"
+            [[ "$size" =~ ^[0-9]+$ ]] || stop "$label bad signed index size"
+            [ "$size" -le $((budget - used)) ] || stop "$label index too large"
+            fetch "$base/main/binary-amd64/Packages.xz" "$work/$label.Packages.xz" "$digest"
+            actual_size="$(stat -c '%s' "$work/$label.Packages.xz")"
+            [ "$actual_size" -eq "$size" ] || stop "$label index size mismatch"
+            echo "$digest  $work/$label.Packages.xz" | sha256sum -c --status \
+              || stop "$label index SHA256 mismatch"
+            xz -t "$work/$label.Packages.xz" || stop "$label xz corrupted"
+            echo "PASS_SIGNED_INDEX_SHA256 $label $digest size=$size"
+
+            # Read text stanzas of the authenticated Packages indexes only.
+            xz -dc "$work/$label.Packages.xz" | awk -v repo="$label" '
+              /^Package: / {name=$2}
+              /^Version: / {version=$2}
+              /^Architecture: / {arch=$2}
+              /^$/ {
+                if (name ~ /^(python3[.]11|python3[.]11-minimal|libpython3[.]11-minimal|libpython3[.]11-stdlib)$/ &&
+                    arch=="amd64" && version!="")
+                  print "PYTHON_CANDIDATE",repo,name,version
+                name=version=arch=""
+              }'
+          done
+
+          # P1-M source-only: no checkout, new URLs, install or network fallback.
+          # The following is a byte-for-byte copy of the reviewed P1-M .py file;
+          # any future modification MUST update both copies and re-review.
+          # Never run this before BOTH independently checked signed indexes.
+          for tool in python3 dpkg; do
+            command -v "$tool" >/dev/null 2>&1 || stop "P1M preinstalled tool missing"
+          done
+          cat > "$work/p1m_debian_dependency_closure.py" <<'P1M_PYTHON'
+          """P1-M research only: bounded *candidate* Debian dependency graph.
+          
+          Caller MUST verify both InRelease signatures, signed index sizes/SHA256, and
+          xz integrity before invoking this parser. This program is NOT its own trust
+          anchor; neither a zero exit nor a closed graph attests the installed OCI/ELF
+          or runtime import paths. No downloads, installers, container, or fixture.
+          """
+          import argparse
+          from collections import deque
+          import hashlib
+          import json
+          import lzma
+          import re
+          import subprocess
+          import sys
+          
+          MAX_DECOMPRESSED = 128 * 1024 * 1024
+          MAX_STANZA = 16384
+          MAX_PACKAGES = 120000
+          MAX_NODES = 512
+          MAX_CHECKS = 4096
+          MAX_REPORT = 4096
+          # Local resource policy, not Debian syntax maxima.
+          MAX_RELATIONS = 1024  # relation atoms per field family / visited node
+          MAX_EDGES = 4096  # all visited dependency/provide/conflict atoms
+          ROOTS = ("python3.11", "python3.11-minimal",
+                   "libpython3.11-minimal", "libpython3.11-stdlib")
+          NAME = re.compile(r"[a-z0-9][a-z0-9+.-]{0,127}\Z")
+          VERSION = re.compile(r"[0-9][A-Za-z0-9.+:~\-]{0,127}\Z")
+          REL = re.compile(r"([a-z0-9][a-z0-9+.-]{0,127})"
+                           r"(?: \((<<|<=|=|>=|>>) ([0-9A-Za-z.+:~\-]{1,128})\))?\Z")
+          FILENAME = re.compile(r"pool/[a-zA-Z0-9_+./~-]{1,512}\Z")
+          SHA = re.compile(r"[a-f0-9]{64}\Z")
+          # Signed .deb metadata length only; not a file download or allocation cap.
+          SIZE = re.compile(r"[1-9][0-9]{0,19}\Z")
+          # Debian Policy 5.1: ASCII visible non-colon, non-whitespace field names;
+          # the initial character cannot be # or -. Validate even unknown fields.
+          FIELD_NAME = re.compile(r"[!-\x39;-\x7e]+\Z")
+          KEYS = frozenset(("Package", "Version", "Architecture", "Depends",
+                            "Pre-Depends", "Provides", "Conflicts", "Breaks",
+                            "Filename", "Size", "SHA256"))
+          # Fail closed on any case variant of a security-sensitive Deb822 field.
+          # Debian field names are case-insensitive; silently dropping a variant
+          # would omit security-critical dependency/virtual-package information.
+          KNOWN_FIELD_CASE = {key.lower(): key for key in KEYS}
+          # Only LF is an actual Deb822 wire record separator. Never let Python's
+          # broader splitlines() promote embedded text to a new signed-index field.
+          BAD_SEPARATORS = frozenset("\r\v\f\x1c\x1d\x1e\x1f\x85\u2028\u2029")
+          
+          class Hold(Exception):
+              pass
+          
+          def demand(ok, reason):
+              if not ok:
+                  raise Hold(reason)
+          
+          def paragraphs(path):
+              # Bounded decompression and stanza handling; never read an unbounded line.
+              total = 0
+              stanza = bytearray()
+              with lzma.open(path, "rb") as stream:
+                  while True:
+                      chunk = stream.read(65536)
+                      if not chunk:
+                          break
+                      total += len(chunk)
+                      demand(total <= MAX_DECOMPRESSED, "DECOMPRESSED_LIMIT")
+                      for byte in chunk:
+                          stanza.append(byte)
+                          demand(len(stanza) <= MAX_STANZA, "STANZA_LIMIT")
+                          if byte == 10 and stanza.endswith(b"\n\n"):
+                              yield bytes(stanza)
+                              stanza.clear()
+              if stanza:
+                  demand(stanza.endswith(b"\n"), "UNTERMINATED_STANZA")
+                  yield bytes(stanza)
+          
+          def record(raw):
+              demand(len(raw) <= MAX_STANZA, "STANZA_LIMIT")
+              try:
+                  text = raw.decode("utf-8", "strict")
+              except UnicodeError as exc:
+                  raise Hold("INVALID_UTF8") from exc
+              demand(not any(ch in BAD_SEPARATORS for ch in text),
+                     "UNSUPPORTED_LINE_SEPARATOR")
+              demand(not any((ord(ch) < 32 and ch not in "\t\n")
+                             or 127 <= ord(ch) <= 159 for ch in text),
+                     "INVALID_CONTROL_CHARACTER")
+              # A stanza ends with exactly the LF delimiter emitted by paragraphs(),
+              # or with LF LF. Neither leading LF nor any extra internal blank line
+              # is a valid field boundary. Do not drop empty records before validation.
+              demand(text.endswith("\n"), "UNTERMINATED_STANZA")
+              body = text[:-2] if text.endswith("\n\n") else text[:-1]
+              demand(bool(body) and not body.startswith("\n") and "\n\n" not in body,
+                     "EMPTY_WIRE_RECORD")
+              lines = body.split("\n")
+              fields = {}
+              seen = set()
+              current = None
+              for line in lines:
+                  if line[0] in (" ", "\t"):
+                      demand(current is not None, "ORPHAN_CONTINUATION")
+                      demand(bool(line.strip(" \t")), "EMPTY_CONTINUATION")
+                      demand(current not in KEYS, "CONTINUED_SECURITY_FIELD")
+                      continue
+                  demand(": " in line, "MALFORMED_FIELD")
+                  key, value = line.split(": ", 1)
+                  demand(bool(key) and key[0] not in "#-"
+                         and FIELD_NAME.fullmatch(key) is not None,
+                         "INVALID_FIELD_NAME")
+                  # Validate every wire field before ignoring an unknown one; Debian
+                  # names are case-insensitive, including for duplicate detection.
+                  demand(key == KNOWN_FIELD_CASE.get(key.lower(), key),
+                         "NONCANONICAL_SECURITY_FIELD")
+                  lower = key.lower()
+                  demand(lower not in seen, "DUPLICATE_FIELD")
+                  seen.add(lower)
+                  current = key
+                  if key in KEYS:
+                      # Wire bytes are bounded by MAX_STANZA; duplicates were checked
+                      # above. Identity fields retain their narrower syntax checks.
+                      fields[key] = value
+              for key in ("Package", "Version", "Architecture", "Filename", "Size", "SHA256"):
+                  demand(key in fields, "MISSING_REQUIRED_FIELD")
+              name, version, arch = (fields[k] for k in ("Package", "Version", "Architecture"))
+              demand(NAME.fullmatch(name) and VERSION.fullmatch(version), "INVALID_IDENTITY")
+              demand(arch in ("amd64", "all"), "INVALID_ARCH")
+              filename = fields["Filename"]
+              demand(FILENAME.fullmatch(filename) is not None
+                     and all(part not in ("", ".", "..") for part in filename.split("/")),
+                     "INVALID_FILENAME")
+              demand(SIZE.fullmatch(fields["Size"]) is not None, "INVALID_SIZE")
+              demand(SHA.fullmatch(fields["SHA256"]), "INVALID_SHA")
+              return fields
+          
+          def load(path, origin, inventory):
+              n = 0
+              for raw in paragraphs(path):
+                  # Every wire-delimited stanza must be validated. Never strip or skip
+                  # "whitespace-only" segments: CR/NEL/VT/FF/Unicode separators can
+                  # otherwise bypass record()'s exact-LF and required-field checks.
+                  n += 1
+                  demand(n <= MAX_PACKAGES, "PACKAGE_LIMIT")
+                  item = record(raw)
+                  key = (item["Package"], item["Version"], item["Architecture"])
+                  prev = inventory.get(key)
+                  if prev:
+                      # Same tuple in two archives must refer to the SAME exact artifact.
+                      demand(all(prev[0].get(k) == item.get(k) for k in KEYS),
+                             "DUPLICATE_CONFLICT")
+                  else:
+                      inventory[key] = (item, origin)
+              demand(n > 0, "EMPTY_INDEX")
+              return n
+          
+          def edges(item, fields=("Pre-Depends", "Depends")):
+              # Parse ALL alternatives before choosing; malformed unused branches reject.
+              relations = 0
+              for field in fields:
+                  text = item.get(field, "")
+                  if not text:
+                      continue
+                  for group in text.split(","):
+                      options = group.split("|")
+                      demand(field in ("Pre-Depends", "Depends") or len(options) == 1,
+                             "UNSUPPORTED_DEPENDENCY")
+                      parsed = []
+                      for option in options:
+                          relations += 1
+                          demand(relations <= MAX_RELATIONS, "DEPENDENCY_LIMIT")
+                          match = REL.fullmatch(option.strip())
+                          demand(match is not None, "UNSUPPORTED_DEPENDENCY")
+                          name, operator, version = match.groups()
+                          demand(operator is None or VERSION.fullmatch(version),
+                                 "INVALID_CONSTRAINT")
+                          demand(field != "Provides" or operator in (None, "="),
+                                 "UNSUPPORTED_DEPENDENCY")
+                          parsed.append((name, operator, version))
+                      yield field, parsed
+          
+          def satisfies(actual, op, wanted, state):
+              # Charge EVERY candidate scanned, including unversioned dependencies.
+              demand(state[0] < MAX_CHECKS, "VERSION_CHECK_LIMIT")
+              state[0] += 1
+              if op is None:
+                  return True
+              # dpkg's Debian-policy version ordering is authoritative; no shell.
+              args = ["/usr/bin/dpkg", "--compare-versions", actual, op, wanted]
+              try:
+                  proc = subprocess.run(args, stdin=subprocess.DEVNULL,
+                                        stdout=subprocess.DEVNULL,
+                                        stderr=subprocess.DEVNULL,
+                                        timeout=2, check=False)
+              except (OSError, subprocess.TimeoutExpired) as exc:
+                  raise Hold("DPKG_COMPARATOR_UNAVAILABLE") from exc
+              demand(proc.returncode in (0, 1), "DPKG_COMPARATOR_FAILURE")
+              return proc.returncode == 0
+          
+          def graph(inventory, by_name, root_version):
+              # FIXED_REAL_MAX_V1: a deliberately incomplete metadata policy, not APT.
+              # Roots are locked; every other real name has one maximum Debian version.
+              # OR chooses the first satisfied real name under that fixed assignment.
+              # Never downgrade/backtrack, infer installed state or choose virtual providers.
+              origin = "main" if root_version == "3.11.2-6+deb12u8" else "security"
+              demand(root_version in ("3.11.2-6+deb12u8", "3.11.2-6+deb12u9"),
+                     "UNAPPROVED_ROOT_VERSION")
+              preferred = {name: (name, root_version, "amd64") for name in ROOTS}
+              demand(all(k in inventory and inventory[k][1] == origin
+                         for k in preferred.values()), "ROOT_MISSING_OR_AMBIGUOUS")
+              checks, edge_count = [0], 0
+          
+              def choice(name):
+                  if name not in preferred:
+                      best, tied = None, False
+                      for key in sorted(by_name.get(name, ())):
+                          if best is None or satisfies(key[1], ">>", best[1], checks):
+                              best, tied = key, False
+                          elif satisfies(key[1], "=", best[1], checks):
+                              tied = True
+                      demand(not tied, "DEPENDENCY_AMBIGUOUS")
+                      preferred[name] = best
+                  return preferred[name]
+          
+              def relations(item, fields):
+                  nonlocal edge_count
+                  for field, options in edges(item, fields):
+                      edge_count += len(options)
+                      demand(edge_count <= MAX_EDGES, "GRAPH_EDGE_LIMIT")
+                      yield field, options
+          
+              selected, pending = set(), deque(preferred.values())
+              while pending:
+                  key = pending.popleft()
+                  if key in selected:
+                      continue
+                  demand(len(selected) < MAX_NODES, "GRAPH_NODE_LIMIT")
+                  selected.add(key)
+                  item = inventory[key][0]
+                  for _, options in relations(item, ("Pre-Depends", "Depends")):
+                      target = None
+                      for name, op, required in options:
+                          option = choice(name)
+                          if option is not None and satisfies(option[1], op, required, checks):
+                              target = option
+                              break
+                      demand(target is not None, "DEPENDENCY_UNAVAILABLE")
+                      pending.append(target)
+          
+              # Check negative relations only within the selected set, including names
+              # furnished by Provides. Self-conflict/own virtual identity is exempt.
+              # Missing external installed/Essential baseline remains UNVERIFIED.
+              identities = {}
+              for key in sorted(selected):
+                  identities.setdefault(key[0], []).append((key, key[1]))
+                  for _, options in relations(inventory[key][0], ("Provides",)):
+                      name, _, provided_version = options[0]
+                      identities.setdefault(name, []).append((key, provided_version))
+              for key in sorted(selected):
+                  for _, options in relations(inventory[key][0], ("Conflicts", "Breaks")):
+                      name, op, required = options[0]
+                      for other, actual in identities.get(name, ()):
+                          if other == key:
+                              continue
+                          # An unversioned Provide cannot satisfy a versioned relation.
+                          if actual is None and op is not None:
+                              continue
+                          demand(not satisfies(actual, op, required, checks),
+                                 "SELECTED_PACKAGE_CONFLICT")
+          
+              manifest = [[*key, inventory[key][1],
+                           *[inventory[key][0].get(field, "") for field in
+                             ("Filename", "Size", "SHA256", "Depends", "Pre-Depends",
+                              "Provides", "Conflicts", "Breaks")]]
+                          for key in sorted(selected)]
+              digest = hashlib.sha256(json.dumps(manifest, separators=(",", ":"),
+                                                ensure_ascii=True).encode()).hexdigest()
+              return len(selected), digest
+          
+          def main():
+              ap = argparse.ArgumentParser()
+              ap.add_argument("--main", required=True)
+              ap.add_argument("--security", required=True)
+              args = ap.parse_args()
+              inventory = {}
+              counts = (load(args.main, "main", inventory),
+                        load(args.security, "security", inventory))
+              by_name = {}
+              for key in inventory:
+                  by_name.setdefault(key[0], []).append(key)
+              output = []
+              for version in ("3.11.2-6+deb12u8", "3.11.2-6+deb12u9"):
+                  nodes, digest = graph(inventory, by_name, version)
+                  output.append({"version": version, "candidate_nodes": nodes,
+                                 "graph_sha256": digest})
+              result = json.dumps({"status": "CANDIDATE_ONLY_RUNTIME_UNPROVEN",
+                                   "policy": "FIXED_REAL_MAX_V1",
+                                   "index_stanzas": counts, "candidates": output},
+                                  sort_keys=True, separators=(",", ":"))
+              demand(len(result) <= MAX_REPORT, "REPORT_LIMIT")
+              print("P1M_DEPENDENCY_GRAPH=" + result)
+              print("P1M_RUNTIME_LOAD_PATHS=UNVERIFIED/HOLD")
+          
+          if __name__ == "__main__":
+              try:
+                  main()
+              except (Hold, OSError, EOFError, ValueError, lzma.LZMAError) as exc:
+                  code = str(exc)
+                  # Only known internally generated labels; avoid printing raw paths.
+                  known = ("DECOMPRESSED_LIMIT", "STANZA_LIMIT", "PACKAGE_LIMIT",
+                           "INVALID_UTF8", "UNSUPPORTED_LINE_SEPARATOR",
+                           "MALFORMED_FIELD", "DUPLICATE_OR_OVERSIZE_FIELD",
+                           "MISSING_REQUIRED_FIELD", "INVALID_IDENTITY", "INVALID_ARCH",
+                           "INVALID_FILENAME", "INVALID_SIZE", "INVALID_SHA",
+                           "DUPLICATE_CONFLICT", "EMPTY_INDEX", "DEPENDENCY_LIMIT",
+                           "UNRESOLVED_ALTERNATIVE_OR_PROFILE", "UNSUPPORTED_DEPENDENCY",
+                           "INVALID_CONSTRAINT", "VERSION_CHECK_LIMIT",
+                           "DPKG_COMPARATOR_UNAVAILABLE", "DPKG_COMPARATOR_FAILURE",
+                           "ROOT_MISSING_OR_AMBIGUOUS", "UNAPPROVED_ROOT_VERSION",
+                           "GRAPH_NODE_LIMIT",
+                           "DEPENDENCY_UNAVAILABLE", "DEPENDENCY_AMBIGUOUS",
+                           "DEPENDENCY_VERSION_CONFLICT", "REPORT_LIMIT",
+                           "UNTERMINATED_STANZA", "CONTINUED_SECURITY_FIELD",
+                           "EMPTY_WIRE_RECORD", "NONCANONICAL_SECURITY_FIELD",
+                           "ORPHAN_CONTINUATION", "EMPTY_CONTINUATION",
+                           "INVALID_FIELD_NAME", "DUPLICATE_FIELD",
+                           "INVALID_CONTROL_CHARACTER", "GRAPH_EDGE_LIMIT",
+                           "BASELINE_OR_VIRTUAL_SEMANTICS_UNKNOWN",
+                           "SELECTED_PACKAGE_CONFLICT")
+                  print("P1M_STATUS=STOP/HOLD:" + (code if code in known else "PARSE_ERROR"),
+                        file=sys.stderr)
+                  sys.exit(1)
+          P1M_PYTHON
+          python3 -I -B "$work/p1m_debian_dependency_closure.py" \
+            --main "$work/main.Packages.xz" \
+            --security "$work/security.Packages.xz" \
+            || stop "P1M dependency metadata candidate graph unresolved"
+          echo "P1M_GRAPH_ONLY=YES RUNTIME_DEPENDENCIES=UNVERIFIED"
+
+          echo "P1-H4 METADATA SIGNATURE AND INDEX SHA CHECK COMPLETE"
+          echo "TOTAL_BODY_BYTES=$used MAX_BYTES=$budget"
+          echo "SNAPSHOT_REQUEST=$snapshot RESOLVED_IMPORT_ID=UNVERIFIED"
+          echo "FULL_TRANSITIVE_DEPENDENCY_CLOSURE=UNVERIFIED/HOLD"
+          echo "DEB_FETCH=NONE INSTALL=NONE CONTAINER=NONE"
+          echo "PREPARATION_P1=HOLD SIGNED_B=HOLD PHASE_2B=HOLD"
