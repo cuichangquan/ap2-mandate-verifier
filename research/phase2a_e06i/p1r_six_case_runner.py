@@ -61,7 +61,7 @@ def public_policy(policy, raw):
          type(policy["policy_version"]) is int and policy["policy_version"] == 1,
          "SYNTHETIC_POLICY_ONLY")
     epoch = policy["freeze_epoch"]
-    need(type(epoch) is int and type(policy["not_before"]) is int and type(policy["not_after"]) is int and
+    need(type(epoch) is int and 61 <= epoch <= 4_102_444_800 - 3600 and type(policy["not_before"]) is int and type(policy["not_after"]) is int and
          policy["not_before"] == epoch - 60 and policy["not_after"] == epoch + 1200,
          "POLICY_VALIDITY_SHAPE")
     need(all(type(policy[k]) is str and policy[k] for k in
@@ -83,7 +83,9 @@ def terminal_binding(root, terminal, policy):
     need(len(jws) == 3, "TERMINAL_JWS")
     header = document(decode64(jws[0]), 8192)
     claims = document(decode64(jws[1]), 32768)
-    need(header.get("alg") == "ES256" and header.get("typ") == "kb+sd-jwt" and
+    need(set(header) <= {"alg", "kid", "typ"} and
+         ("kid" not in header or type(header["kid"]) is str) and
+         header.get("alg") == "ES256" and header.get("typ") == "kb+sd-jwt" and
          len(decode64(jws[2])) == 64, "TERMINAL_HEADER_SIGNATURE_SHAPE")
     need(set(claims) <= {"_sd_alg", "aud", "delegate_payload", "iat", "nonce", "sd_hash"} and
          claims.get("_sd_alg") in (None, "sha-256") and
