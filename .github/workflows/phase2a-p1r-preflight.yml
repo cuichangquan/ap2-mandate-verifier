@@ -1,4 +1,4 @@
-name: "Issue 73 P1-R metadata preflight — manual once"
+name: "Issue 73 P1-R inventory metadata — manual once"
 on:
   workflow_dispatch:
     inputs:
@@ -8,7 +8,7 @@ on:
         type: string
 permissions: {}
 concurrency:
-  group: issue73-p1r-preflight-once-20261016
+  group: issue73-p1r-inventory-once-20261016
   cancel-in-progress: false
 jobs:
   metadata-preflight:
@@ -55,8 +55,8 @@ jobs:
             mkdir -p "$(dirname "$path")"
             cp "$tmp/body" "$path"
           }
-          fetch_source research/phase2a_e06i/p1r_preflight.py a7964a2ee85d398777220e4208e268d0359b6dd318be0e24f51f81065e9c21f0
-          fetch_source research/phase2a_e06i/p1r_input_contract.json fb723c22730f1441c85c78a99d73fb73b976b6b0736cce3ce2ab07e966c67e9f
+          fetch_source research/phase2a_e06i/p1r_preflight.py 867f2e715f3999904bcfa3cb5651524c2139f58f3eb8ff78de110d840f9af35b
+          fetch_source research/phase2a_e06i/p1r_input_contract.json 845f27d3b0fb83d31fef0a1e64ec7d90b63692e5dcc167187725f7b445236961
           echo "P1R_BOOTSTRAP_BYTES=$total" >> "$GITHUB_ENV"
           echo "P1R_BOOTSTRAP_VERIFIED BODY_BYTES=$total SHA=$GITHUB_SHA"
       - name: Verify remaining fixed sources, claim once, and report metadata

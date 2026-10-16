@@ -21,7 +21,7 @@
     "additional_cost_jpy": 0
   },
   "body_limit": 16777216,
-  "once_ref": "refs/tags/issue73-p1r-preflight-once-consumed-20261016",
+  "once_ref": "refs/tags/issue73-p1r-inventory-once-consumed-20261016",
   "main_ref_url": "https://api.github.com/repos/cuichangquan/ap2-mandate-verifier/git/ref/heads/main",
   "refs_url": "https://api.github.com/repos/cuichangquan/ap2-mandate-verifier/git/refs",
   "source_blobs": {
@@ -43,7 +43,7 @@
     "expires_at": "2026-10-23T04:33:05Z"
   },
   "artifact_redirect_host_regex": "productionresultssa[0-9]+\\.blob\\.core\\.windows\\.net",
-  "redirect_policy": "Only one GitHub artifact 302 to HTTPS regex host, no credentials forwarded; no other redirects/CDNs",
+  "redirect_policy": "Only the saved GitHub artifact302 to its verified blob host and the fixed OCI config307 single hop to the exact config redirect host/path; no other redirects. No Authorization/Cookie forwarded. Signed queries ephemeral and redacted.",
   "oci": {
     "auth_url": "https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/ruby:pull",
     "index_digest": "sha256:2e32876dfe84913ec84eb4a59617f72dab7c0989d38f8219487491e384543975",
@@ -51,8 +51,18 @@
     "index_url": "https://registry-1.docker.io/v2/library/ruby/manifests/sha256:2e32876dfe84913ec84eb4a59617f72dab7c0989d38f8219487491e384543975",
     "manifest_url": "https://registry-1.docker.io/v2/library/ruby/manifests/sha256:64788045fc5e88016aa060f91b5b25cc0c41aed52accc7625cfca48037b0ec35",
     "config_url_prefix": "https://registry-1.docker.io/v2/library/ruby/blobs/",
-    "config_rule": "Only config descriptor sha256 URL from fixed authenticated manifest; no layer URL requests",
-    "auth_rule": "One anonymous public pull bearer in memory only; no persistent credentials/account/OAuth/PAT"
+    "config_rule": "Exact fixed config digest/size from fixed manifest; first response307, exact CDN host/path one hop, second response200, exact5984 bytes/SHA256; no layers.",
+    "auth_rule": "One anonymous public pull bearer in memory only; no persistent credentials/account/OAuth/PAT",
+    "config_digest": "sha256:5ccbe87603c7e795d75ea8e13115fe4a247c7aeb3f32d8b272162ca0f53b55f3",
+    "config_size": 5984,
+    "config_redirect": {
+      "scheme": "https",
+      "host": "production.cloudfront.docker.com",
+      "path": "/registry-v2/docker/registry/v2/blobs/sha256/5c/5ccbe87603c7e795d75ea8e13115fe4a247c7aeb3f32d8b272162ca0f53b55f3/data",
+      "single_hop": true,
+      "credentials_forwarded": false,
+      "query_policy": "Only use the nonempty bounded signed query returned by the fixed registry endpoint; never persist or log it; no userinfo/fragment/port or path normalization."
+    }
   },
   "upstream_lock": {
     "url": "https://raw.githubusercontent.com/google-agentic-commerce/AP2/b4587ac1d055888a73b4b21750973cffba961793/uv.lock",
@@ -71,7 +81,8 @@
     "OS_INSTALLED_INVENTORY_AND_CPYTHON_IMAGE_CONSISTENCY_UNPROVEN",
     "RUNTIME_ABI_ELF_AND_INSTALLED_FILES_UNPROVEN",
     "FULL_ENVIRONMENT_DOWNLOAD_AND_EXPANDED_SIZE_UNKNOWN",
-    "AP2_E03_E04_E06_AND_PHASE2_GATES_UNPROVEN"
+    "AP2_E03_E04_E06_AND_PHASE2_GATES_UNPROVEN",
+    "RUBYGEMS_HEAD_LENGTHS_ARE_SERVER_ASSERTIONS_NOT_CONTENT_HASH_VERIFIED"
   ],
   "metadata_urls": [
     "https://api.github.com/repos/cuichangquan/ap2-mandate-verifier/git/ref/heads/main",
@@ -102,7 +113,12 @@
     "https://rubygems.org/api/v2/rubygems/json_schemer/versions/2.5.0.json",
     "https://rubygems.org/api/v2/rubygems/hana/versions/1.3.7.json",
     "https://rubygems.org/api/v2/rubygems/regexp_parser/versions/2.13.1.json",
-    "https://rubygems.org/api/v2/rubygems/simpleidn/versions/0.3.0.json"
+    "https://rubygems.org/api/v2/rubygems/simpleidn/versions/0.3.0.json",
+    "https://rubygems.org/gems/jwt-3.3.0.gem",
+    "https://rubygems.org/gems/json_schemer-2.5.0.gem",
+    "https://rubygems.org/gems/hana-1.3.7.gem",
+    "https://rubygems.org/gems/regexp_parser-2.13.1.gem",
+    "https://rubygems.org/gems/simpleidn-0.3.0.gem"
   ],
   "expected_cpython_items": [
     {
@@ -771,5 +787,20 @@
       "sha256": "d7dd1d1411fedf27f5e27650a6eff20ef294077b568f4c8c5e51466dc7c08ce4",
       "prospective_url": "https://snapshot.debian.org/archive/debian/20261014T000000Z/pool/main/z/zlib/zlib1g_1.2.13.dfsg-1_amd64.deb"
     }
-  ]
+  ],
+  "gem_head_urls": {
+    "jwt-3.3.0.gem": "https://rubygems.org/gems/jwt-3.3.0.gem",
+    "json_schemer-2.5.0.gem": "https://rubygems.org/gems/json_schemer-2.5.0.gem",
+    "hana-1.3.7.gem": "https://rubygems.org/gems/hana-1.3.7.gem",
+    "regexp_parser-2.13.1.gem": "https://rubygems.org/gems/regexp_parser-2.13.1.gem",
+    "simpleidn-0.3.0.gem": "https://rubygems.org/gems/simpleidn-0.3.0.gem"
+  },
+  "gem_previous_head_assertions": {
+    "jwt-3.3.0.gem": 57856,
+    "json_schemer-2.5.0.gem": 54272,
+    "hana-1.3.7.gem": 13824,
+    "regexp_parser-2.13.1.gem": 53760,
+    "simpleidn-0.3.0.gem": 44544
+  },
+  "gem_head_evidence": "Server Content-Length assertions observed by one bounded Mac HEAD batch2026-10-16T08:08:18Z; not content SHA256 verification. HEAD only, HTTP200/identity, no redirect or GET fallback."
 }
