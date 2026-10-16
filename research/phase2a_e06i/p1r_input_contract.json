@@ -13,6 +13,7 @@
     "attempt": 1,
     "job_minutes": 8,
     "child_seconds": 420,
+    "internal_seconds": 300,
     "response_seconds": 45,
     "connect_seconds": 5,
     "header_bytes": 8192,
