@@ -1,0 +1,140 @@
+name: "Issue 73 P1-H4 signed metadata — B HOLD / manual one-shot"
+# Owner Approval A only: source + R1 static review, not permission to dispatch.
+# A future explicit Approval B must authorize the named repo-variable gate,
+# exact signed-original retrieval and (separately) any private replay retention.
+on:
+  workflow_dispatch:
+
+permissions: {}
+concurrency:
+  group: issue73-p1h4-authenticated-wire-once
+  cancel-in-progress: false
+
+jobs:
+  verify-one-shot:
+    # New repo variable MUST remain unset until Owner's separate Approval B.
+    # Manual dispatch alone is not sufficient. No PR/push/schedule trigger.
+    if: ${{ github.repository == 'cuichangquan/ap2-mandate-verifier' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && vars.ISSUE73_P1H4_B_READY == 'yes' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: write # Only needed for atomic, persistent one-shot Git tag claim.
+    steps:
+      - name: Obtain precisely reviewed research commit without saved credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: 9e0d627664a28be72da2ef6606f5c4e0abca1451
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Attest immutable source and prepare bounded reviewed script
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          stop() { echo "STOP/HOLD: P1-H4 source preparation failed" >&2; exit 1; }
+          test "$(git rev-parse HEAD)" = 9e0d627664a28be72da2ef6606f5c4e0abca1451 || stop
+          source=.github/workflows/phase2a-p1-h4-metadata.yml
+          test "$(git hash-object "$source")" = d51c79fea9d0ddbee482a6c40ef3fd2760a0175b || stop
+          python3 -I -B - "$source" "$RUNNER_TEMP/p1h4-reviewed.sh" <<'PY'
+          import hashlib
+          from pathlib import Path
+          import sys
+
+          raw = Path(sys.argv[1]).read_bytes()
+          marker = b"        run: |\n"
+          if raw.count(marker) != 1:
+              raise SystemExit("STOP/HOLD: source marker")
+          lines = raw.split(marker, 1)[1].splitlines(keepends=True)
+          if not lines or any(line != b"\n" and not line.startswith(b"          ") for line in lines):
+              raise SystemExit("STOP/HOLD: embedded Bash indentation")
+          original = b"".join(line[10:] if line.startswith(b"          ") else line for line in lines)
+          if hashlib.sha256(original).hexdigest() != "a61cc0d445a7fc294620497abb73400e39f7b594438d8c82cca4c9c15a8cf93d":
+              raise SystemExit("STOP/HOLD: embedded Bash digest")
+          needle = '''  echo "PASS_INRELEASE_SIGNATURE $label sha256=$(sha256sum "$work/$label.InRelease" | awk '{print $1}')"\n'''
+          harden = '''  case "$label" in
+            main) wire_sha=77737fa4b34f2693e982cc9ee35736816c35a7778fc2d326cc1bbf5b301fe1aa ;;
+            security) wire_sha=9e5050b09604010af7190f3e8391739d9fc7dc11616d1a25e90c7e25565e4f92 ;;
+            *) stop "unknown InRelease role" ;;
+          esac
+          printf '%s  %s\\n' "$wire_sha" "$work/$label.InRelease" | sha256sum -c --status \\
+            || stop "InRelease original bytes mismatch frozen SHA256"
+          echo "PASS_INRELEASE_SIGNATURE $label sha256=$wire_sha"
+          '''
+          # Preserve the verified raw files *after* both signed indexes pass,
+          # including if the bounded dependency parser subsequently rejects.
+          before_parser = '''python3 -I -B "$work/p1m_debian_dependency_closure.py" ''' + chr(92) + "\n"
+          archive = '''if [ "${P1H4_PRESERVE_RAW:-no}" = yes ]; then
+            mkdir -m 700 -p "$P1H4_EVIDENCE_DIR" || stop "private evidence directory"
+            for name in main.InRelease security.InRelease main.Packages.xz security.Packages.xz \\
+                        main.asc security.asc stable.asc trixie.asc bullseye_security.asc; do
+              [ -f "$work/$name" ] || stop "missing replay input"
+              cp -- "$work/$name" "$P1H4_EVIDENCE_DIR/$name" || stop "archive raw evidence"
+            done
+            (cd "$P1H4_EVIDENCE_DIR" && sha256sum ./* > SHA256SUMS.txt) \\
+              || stop "evidence digest"
+          fi
+          '''
+          script = original.decode("ascii")
+          if script.count(needle) != 1 or script.count(before_parser) != 1:
+              raise SystemExit("STOP/HOLD: scripted patch anchor")
+          script = script.replace(needle, harden).replace(before_parser, archive + before_parser)
+          out = Path(sys.argv[2])
+          out.write_bytes(script.encode("ascii"))
+          out.chmod(0o600)
+          print("P1H4_PINNED_SOURCE=PASS; INRELEASE_SHA_PIN=ENFORCED")
+          PY
+
+      - name: Consume one-shot GitHub ref BEFORE any Debian request
+        shell: bash
+        env:
+          GH_ONCE_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          set +x
+          stop() { echo "STOP/HOLD: one-shot ref claim failed or already consumed" >&2; exit 1; }
+          [ -n "$GH_ONCE_TOKEN" ] || stop
+          [ "$GITHUB_RUN_ATTEMPT" = 1 ] || stop
+          reply="$(mktemp)"
+          trap 'rm -f "$reply"' EXIT
+          claim='{"ref":"refs/tags/issue73-p1h4-once-consumed-20261016","sha":"9e0d627664a28be72da2ef6606f5c4e0abca1451"}'
+          status="$(curl --disable --silent --show-error --noproxy '*' --proto '=https' \\
+            --connect-timeout 5 --max-time 20 --max-filesize 4096 \\
+            --request POST 'https://api.github.com/repos/cuichangquan/ap2-mandate-verifier/git/refs' \\
+            --header 'Accept: application/vnd.github+json' \\
+            --header 'X-GitHub-Api-Version: 2022-11-28' \\
+            --header "Authorization: Bearer $GH_ONCE_TOKEN" \\
+            --header 'Content-Type: application/json' \\
+            --data "$claim" --output "$reply" --write-out '%{http_code}')" || stop
+          [ "$status" = 201 ] && [ "$(stat -c '%s' "$reply")" -le 4096 ] || stop
+          jq -e --arg ref refs/tags/issue73-p1h4-once-consumed-20261016 \\
+            --arg sha 9e0d627664a28be72da2ef6606f5c4e0abca1451 \\
+            '.ref == $ref and .object.sha == $sha and .object.type == "commit"' "$reply" \\
+            >/dev/null || stop
+          echo "P1H4_ONCE_REF=CONSUMED RUN_ID=$GITHUB_RUN_ID ATTEMPT=$GITHUB_RUN_ATTEMPT"
+
+      - name: Execute signed-wire verifier once, without installing packages
+        shell: bash
+        env:
+          P1H4_EVIDENCE_DIR: ${{ runner.temp }}/p1h4-signed-evidence
+          P1H4_PRESERVE_RAW: ${{ vars.ISSUE73_P1H4_RETAIN_RAW == 'yes' && 'yes' || 'no' }}
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          test -f "$RUNNER_TEMP/p1h4-reviewed.sh" || exit 1
+          # The GitHub job itself is limited to 8 minutes, including checkout.
+          timeout --signal=TERM --kill-after=3s 420s \\
+            bash "$RUNNER_TEMP/p1h4-reviewed.sh"
+          echo "P1H4_OBSERVATION=CANDIDATE_ONLY_RUNTIME_UNPROVEN"
+          echo "P1H4_RUN_URL=https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/$GITHUB_RUN_ID"
+
+      - name: Preserve authenticated raw evidence only when separately authorized
+        if: ${{ always() && vars.ISSUE73_P1H4_RETAIN_RAW == 'yes' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: p1h4-signed-wire-${{ github.run_id }}
+          path: ${{ runner.temp }}/p1h4-signed-evidence/
+          if-no-files-found: ignore
+          retention-days: 7
+          compression-level: 0
