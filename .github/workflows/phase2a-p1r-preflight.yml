@@ -19,23 +19,7 @@ jobs:
       contents: write
       actions: read
     steps:
-      - name: Obtain fixed reviewed sources only
-        timeout-minutes: 1
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-          fetch-depth: 1
-          sparse-checkout: |
-            research/phase2a_e06i/p1r_preflight.py
-            research/phase2a_e06i/p1r_input_contract.json
-            research/phase2a_e06i/a11_pinned_inputs.json
-            research/phase2a_e06i/p1m_saved_artifact_replay.py
-            research/phase2a_e06i/p1m_debian_dependency_closure.py
-            research/phase2a_e06i/p1m_independent_oracle.py
-            .github/workflows/phase2a-p1-h4-metadata.yml
-          sparse-checkout-cone-mode: false
-      - name: Verify new pins and exact main before any claim
+      - name: Bounded exact-SHA source bootstrap; no checkout or git fetch
         timeout-minutes: 1
         shell: bash
         env:
@@ -44,11 +28,38 @@ jobs:
           set -Eeuo pipefail
           [[ "$EXPECTED_MAIN" =~ ^[0-9a-f]{40}$ ]]
           [ "$GITHUB_SHA" = "$EXPECTED_MAIN" ]
-          [ "$(git rev-parse HEAD)" = "$EXPECTED_MAIN" ]
           [ "$GITHUB_RUN_ATTEMPT" = 1 ]
-          [ "$(git hash-object research/phase2a_e06i/p1r_preflight.py)" = d50668adfdbf7c7a7675ecf3d97ebacd528893fd ]
-          [ "$(git hash-object research/phase2a_e06i/p1r_input_contract.json)" = fcba0f1d7c6c2f3a79f9e3ae8c85d82f64658b14 ]
-      - name: Claim once and report metadata inventory; never construct environment
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkfifo "$tmp/headers.fifo"
+          total=0
+          fetch_source() {
+            local path=$1 digest=$2 pid status bytes
+            head -c 8193 < "$tmp/headers.fifo" > "$tmp/headers" &
+            pid=$!
+            status=$(curl --disable --silent --show-error --noproxy '*' --proto '=https' \
+              --max-redirs 0 --retry 0 --connect-timeout 5 --max-time 20 \
+              --max-filesize 131072 --dump-header "$tmp/headers.fifo" \
+              --output "$tmp/body" --write-out '%{http_code}' \
+              "https://raw.githubusercontent.com/cuichangquan/ap2-mandate-verifier/$GITHUB_SHA/$path") || {
+                kill "$pid" 2>/dev/null || :; wait "$pid" 2>/dev/null || :; exit 1;
+              }
+            wait "$pid"
+            [ "$(stat -c '%s' "$tmp/headers")" -le 8192 ]
+            [ "$status" = 200 ]
+            bytes=$(stat -c '%s' "$tmp/body")
+            [ "$bytes" -gt 0 ] && [ "$bytes" -le 131072 ]
+            total=$((total + bytes))
+            [ "$total" -le 262144 ]
+            echo "$digest  $tmp/body" | sha256sum -c --status
+            mkdir -p "$(dirname "$path")"
+            cp "$tmp/body" "$path"
+          }
+          fetch_source research/phase2a_e06i/p1r_preflight.py a7964a2ee85d398777220e4208e268d0359b6dd318be0e24f51f81065e9c21f0
+          fetch_source research/phase2a_e06i/p1r_input_contract.json fb723c22730f1441c85c78a99d73fb73b976b6b0736cce3ce2ab07e966c67e9f
+          echo "P1R_BOOTSTRAP_BYTES=$total" >> "$GITHUB_ENV"
+          echo "P1R_BOOTSTRAP_VERIFIED BODY_BYTES=$total SHA=$GITHUB_SHA"
+      - name: Verify remaining fixed sources, claim once, and report metadata
         shell: bash
         env:
           EXPECTED_MAIN: ${{ inputs.expected_main_sha }}
