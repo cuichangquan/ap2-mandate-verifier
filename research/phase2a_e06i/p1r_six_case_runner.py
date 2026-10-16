@@ -90,6 +90,8 @@ def public_policy(policy, raw):
         need(type(key) is dict and set(key) == {"kty", "crv", "x", "y"} and
              key["kty"] == "EC" and key["crv"] == "P-256" and
              all(type(key[k]) is str and key[k].isascii() and 1 <= len(key[k]) <= 128 for k in key), "PUBLIC_POLICY_KEY_SHAPE")
+        need(all(len(key[k]) == 43 and len(decode64(key[k])) == 32 for k in ("x", "y")),
+             "P256_COORDINATE_ENCODING")
     import hashlib
     need(policy["issuer_thumbprint"] == b64(hashlib.sha256(prepare.wire(policy["issuer_public_jwk"])).digest()),
          "POLICY_THUMBPRINT")
@@ -108,6 +110,8 @@ def public_policy(policy, raw):
          type(policy["expected_total_minor"]) is int and policy["expected_total_minor"] > 0 and
          type(policy["host_checkout_jwt"]) is str and 1 <= len(policy["host_checkout_jwt"]) <= 16384,
          "POLICY_CONTEXT")
+    need(all(policy[k].isascii() and 1 <= len(policy[k]) <= 256
+             for k in ("expected_aud", "expected_nonce")), "POLICY_CHALLENGE_BOUNDS")
     inspect_compact(policy["host_checkout_jwt"], "JWT", 16384)
 
 
@@ -119,7 +123,7 @@ def terminal_binding(root, terminal, policy):
     import hashlib
     parts = terminal.split("~")
     need(len(parts) == 3 and parts[-1] == "" and parts[1], "TERMINAL_PARTS")
-    header, claims = inspect_compact(parts[0], "kb+sd-jwt")
+    header, claims = inspect_compact(parts[0], "kb+sd-jwt", 16384)
     need(type(claims) is dict, "TERMINAL_CLAIM_OBJECT")
     need(set(header) <= {"alg", "kid", "typ"} and
          ("kid" not in header or type(header["kid"]) is str) and
@@ -147,6 +151,10 @@ def qualify_mock_inputs(fixture_raw, policy_raw):
         need(type(case) is dict and set(case) == {"root", "terminal"}, "CASE_WIRE_SHAPE")
         need(all(type(case[k]) is str and case[k].isascii() and 0 < len(case[k]) <= 32768
                  for k in ("root", "terminal")), "CASE_WIRE_LIMIT")
+        need(len(case["root"]) + len(case["terminal"]) + len(policy_raw) +
+             len(prepare.wire(policy["issuer_public_jwk"])) <= 131072 and
+             len(case["root"]) + len(case["terminal"]) + len(policy["host_checkout_jwt"]) <= 131072,
+             "CASE_AGGREGATE_BOUNDS")
         compacts[name] = inspect_wire(case["root"], "example+sd-jwt")
         inspect_wire(case["terminal"], "kb+sd-jwt")
         roots.append(case["root"])
