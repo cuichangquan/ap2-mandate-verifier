@@ -331,7 +331,40 @@ def elf_metadata(source,size=None):
     need(header[:7]==b"\x7fELF\x02\x01\x01" and struct.unpack_from('<I',header,20)[0]==1 and
          struct.unpack_from('<H',header,52)[0]==64,'ELF_FORMAT')
     need(struct.unpack_from('<H',header,18)[0]==62,'ELF_MACHINE')
+    kind=struct.unpack_from('<H',header,16)[0]
+    need(kind in (1,2,3),'ELF_TYPE')
     off=struct.unpack_from('<Q',header,32)[0];width,count=struct.unpack_from('<HH',header,54)
+    if kind==1:
+        # ET_REL is object DATA, not a loadable image. Do not invent DT_NEEDED.
+        need(struct.unpack_from('<Q',header,24)[0]==0 and
+             off==0 and width==0 and count==0,'ELF_REL_PHDR')
+        start=struct.unpack_from('<Q',header,40)[0]
+        stride,number,names=struct.unpack_from('<HHH',header,58)
+        need(stride==64 and 1<=number<=1024 and names<number and
+             64<=start<=size and number*stride<=size-start,'ELF_REL_SHDR')
+        sections=read_at(start,number*stride)
+        need(sections[:64]==bytes(64),'ELF_REL_NULL_SECTION')
+        for i in range(1,number):
+            name,stype,flags,addr,pos,length,link,info,align,entsize=struct.unpack_from('<IIQQQQIIQQ',sections,i*64)
+            need(stype in (1,2,3,4,7,8,9,17,18) and pos<=size and (stype==8 or length<=size-pos) and
+                 length<=SPEC['entry_limit'] and addr==0 and link<number and
+                 (align==0 or align&(align-1)==0) and
+                 (entsize==0 or length%entsize==0),'ELF_REL_SECTION')
+            if names==0:need(name==0,'ELF_REL_SECTION_NAME')
+        if names:
+            strings=struct.unpack_from('<IIQQQQIIQQ',sections,names*64)
+            need(strings[1]==3 and 0<strings[5]<=1048576,'ELF_REL_SHSTRTAB')
+            names_data=read_at(strings[4],strings[5])
+            need(names_data[:1]==b'\0' and names_data[-1:]==b'\0','ELF_REL_SHSTRTAB')
+            for i in range(number):
+                index=struct.unpack_from('<I',sections,i*64)[0]
+                need(index<len(names_data),'ELF_REL_SECTION_NAME')
+                end=names_data.find(b'\0',index,index+4097)
+                need(end>=0 and end-index<=4096,'ELF_REL_SECTION_NAME')
+        return {'class':'ELF64_LE_AMD64','type':'ET_REL','section_count':number,
+                'program_header_count':0,'needed':None,'interpreter':None,
+                'section_payload_semantics':'UNPROVEN_NOT_PARSED',
+                'runtime_dependencies':'NOT_APPLICABLE_RELOCATABLE_OBJECT'}
     need(width==56 and count<=1024 and off<=size and width*count<=size-off,'ELF_PHDR')
     table=read_at(off,width*count);loads=[];dynamic=None;interp=None
     for i in range(count):
