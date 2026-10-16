@@ -125,6 +125,50 @@ def compare_mock_reports(*, fixture_raw, policy_raw, oracle_raw, ruby_raw, recei
             "phase2_gate": "UNPROVEN", "phase2b": "HOLD"}
 
 
+def orchestrate_mock_reports(port, cleanup):
+    """Sequence only injected mock operations; no executable process adapter.
+
+    Caller-supplied timing/reaping claims cannot establish OS enforcement.
+    No retry, live command, signer or external input resolution exists here.
+    """
+    outputs, receipt = {}, {}
+    try:
+        for operation, expected_exit, cap in (("builder", 0, 278528),
+                                              ("oracle", 1, 65536), ("ruby", 1, 65536)):
+            request = {"operation": operation, "inputs": dict(outputs), "retry": 0,
+                       "network": "none", "timeout_seconds": 10, "output_cap": cap}
+            result = port(request)
+            need(type(result) is dict and set(result) ==
+                 {"exit", "seconds", "timed_out", "children_reaped", "outputs"}, "MOCK_PORT_SHAPE")
+            need(type(result["exit"]) is int and result["exit"] == expected_exit and
+                 result["timed_out"] is False and result["children_reaped"] is True and
+                 type(result["seconds"]) in (int, float) and
+                 0 <= result["seconds"] <= 10, "MOCK_PORT_FAILURE")
+            names = {"fixture_raw": 262144, "policy_raw": 16384} if operation == "builder" else {
+                operation + "_raw": cap}
+            need(type(result["outputs"]) is dict and set(result["outputs"]) == set(names),
+                 "MOCK_OUTPUT_SHAPE")
+            for name, limit in names.items():
+                raw = result["outputs"][name]
+                need(type(raw) is bytes and 0 < len(raw) <= limit, "MOCK_OUTPUT_BOUND")
+                document(raw, limit)
+                outputs[name] = raw
+            receipt[operation + "_exit"] = result["exit"]
+            receipt[operation + "_seconds"] = result["seconds"]
+        receipt.update(timed_out=False, children_reaped=True,
+                       batch_seconds=sum(receipt[k + "_seconds"] for k in ("builder", "oracle", "ruby")))
+        report = compare_mock_reports(**outputs, receipt=receipt)
+    except BaseException as primary:
+        try:
+            need(cleanup() is True, "MOCK_CLEANUP_FAILURE")
+        except BaseException:
+            primary.add_note("MOCK_CLEANUP_UNCERTAIN")
+        raise
+    else:
+        need(cleanup() is True, "MOCK_CLEANUP_FAILURE")
+    return report
+
+
 if __name__ == "__main__":
     print('{"status":"STATIC_ONLY_EXECUTION_HOLD","reason":"NO_LIVE_RUNNER_BACKEND"}')
     raise SystemExit(78)
