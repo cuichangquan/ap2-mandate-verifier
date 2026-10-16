@@ -1,0 +1,151 @@
+name: "Issue 73 saved artifact metadata replay — manual once"
+on:
+  workflow_dispatch:
+    inputs:
+      expected_main_sha:
+        description: "Exact audited main SHA; no branch name"
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: issue73-p1m-saved-artifact-once-20261016
+  cancel-in-progress: false
+jobs:
+  replay-once:
+    if: ${{ github.repository == 'cuichangquan/ap2-mandate-verifier' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && vars.ISSUE73_P1H4_B_READY == 'yes' && vars.ISSUE73_P1H4_RETAIN_RAW == 'yes' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Obtain reviewed sources at workflow SHA
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+          sparse-checkout: |
+            research/phase2a_e06i/p1m_debian_dependency_closure.py
+            research/phase2a_e06i/p1m_independent_oracle.py
+            research/phase2a_e06i/p1m_saved_artifact_replay.py
+            .github/workflows/phase2a-p1-h4-metadata.yml
+          sparse-checkout-cone-mode: false
+      - name: Verify exact main and reviewed blobs before claim
+        shell: bash
+        env:
+          EXPECTED_MAIN: ${{ inputs.expected_main_sha }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$EXPECTED_MAIN" =~ ^[0-9a-f]{40}$ ]]
+          [ "$GITHUB_SHA" = "$EXPECTED_MAIN" ]
+          [ "$(git rev-parse HEAD)" = "$EXPECTED_MAIN" ]
+          [ "$GITHUB_RUN_ATTEMPT" = 1 ]
+          [ "$(git hash-object research/phase2a_e06i/p1m_debian_dependency_closure.py)" = 1e3514be72367caed910ad31de9d7a9e4d0f5cb9 ]
+          [ "$(git hash-object research/phase2a_e06i/p1m_independent_oracle.py)" = 4fa800d55753a89addd5447425d9fa1c73f6ef0b ]
+          [ "$(git hash-object .github/workflows/phase2a-p1-h4-metadata.yml)" = a98595437ccd119618fd412337bd3a845f6eda45 ]
+          [ "$(git hash-object research/phase2a_e06i/p1m_saved_artifact_replay.py)" = ccc60c12b0bf8a79421ab3252e0764a8d3b81e3c ]
+          python3 -I -B - <<'PY'
+          from pathlib import Path
+          import runpy
+          code = runpy.run_path("research/phase2a_e06i/p1m_saved_artifact_replay.py")
+          code["signature_script"](Path(".github/workflows/phase2a-p1-h4-metadata.yml"),
+              Path("research/phase2a_e06i/p1m_debian_dependency_closure.py").read_bytes())
+          print("REPLAY_EMBEDDED_EQUALITY_AND_OFFLINE_TRANSPORT=PASS")
+          PY
+          echo "REPLAY_4a776d40172e10fc90ff5beb8a660b0719c13ff8S=PASS SHA=$GITHUB_SHA"
+      - name: Atomically consume separate persistent replay guard
+        shell: bash
+        env:
+          GH_ONCE_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          set +x
+          [ "$GITHUB_RUN_ATTEMPT" = 1 ]
+          reply=$(mktemp)
+          trap 'rm -f "$reply"' EXIT
+          payload=$(jq -nc --arg sha "$GITHUB_SHA" '{ref:"refs/tags/issue73-p1m-replay-once-consumed-20261016",sha:$sha}')
+          status=$(curl --disable --silent --show-error --noproxy '*' --proto '=https' \
+            --connect-timeout 5 --max-time 20 --max-filesize 4096 \
+            --request POST 'https://api.github.com/repos/cuichangquan/ap2-mandate-verifier/git/refs' \
+            --header 'Accept: application/vnd.github+json' \
+            --header "Authorization: Bearer $GH_ONCE_TOKEN" \
+            --header 'Content-Type: application/json' --data "$payload" \
+            --output "$reply" --write-out '%{http_code}')
+          [ "$status" = 201 ]
+          [ "$(stat -c '%s' "$reply")" -le 4096 ]
+          jq -e --arg sha "$GITHUB_SHA" '.ref == "refs/tags/issue73-p1m-replay-once-consumed-20261016" and .object.sha == $sha and .object.type == "commit"' "$reply" >/dev/null
+          echo "REPLAY_ONCE_REF=CONSUMED RUN_ID=$GITHUB_RUN_ID ATTEMPT=$GITHUB_RUN_ATTEMPT"
+      - name: Acquire only saved GitHub artifact and replay offline
+        shell: bash
+        env:
+          GH_REPLAY_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          timeout --signal=TERM --kill-after=3s 420s bash <<'REPLAY' 2>&1 | tee "$RUNNER_TEMP/p1m-replay-result.txt"
+          set -Eeuo pipefail
+          set +x
+          umask 077
+          temp=$(mktemp -d)
+          trap 'rm -rf "$temp"' EXIT
+          mkfifo "$temp/headers.fifo"
+          used=0
+          fetch() {
+            local url=$1 target=$2 cap=$3 auth=${4:-no} pid status bytes
+            : > "$temp/headers"
+            head -c 8193 < "$temp/headers.fifo" > "$temp/headers" &
+            pid=$!
+            args=()
+            if [ "$auth" = yes ]; then
+              args+=(--header "Authorization: Bearer $GH_REPLAY_TOKEN" --header 'Accept: application/vnd.github+json')
+            fi
+            curl --disable --silent --show-error --noproxy '*' --proto '=https' \
+              --max-redirs 0 --retry 0 --connect-timeout 5 --max-time 90 \
+              --max-filesize "$cap" --dump-header "$temp/headers.fifo" \
+              "${args[@]}" --output "$target" --write-out '%{json}\n%{header_json}\n' \
+              "$url" > "$temp/meta" || { kill "$pid" 2>/dev/null || :; wait "$pid" 2>/dev/null || :; exit 1; }
+            wait "$pid"
+            [ "$(stat -c '%s' "$temp/headers")" -le 8192 ]
+            bytes=$(stat -c '%s' "$target")
+            [ "$bytes" -le "$cap" ]
+            used=$((used + bytes))
+            [ "$used" -le 16777216 ]
+            jq -s -e 'length == 2 and (.[0]|type)=="object" and (.[1]|type)=="object"' "$temp/meta" >/dev/null
+            [ "$(jq -sr '.[0].url_effective' "$temp/meta")" = "$url" ]
+          }
+          api='https://api.github.com/repos/cuichangquan/ap2-mandate-verifier/actions/artifacts/12024937989'
+          fetch "$api" "$temp/artifact.json" 4096 yes
+          [ "$(jq -sr '.[0].http_code' "$temp/meta")" = 200 ]
+          jq -e '.id == 12024937989 and .size_in_bytes == 9375348 and .expired == false and .expires_at == "2026-10-23T04:33:05Z" and .digest == "sha256:5e9d3309d65861b90d90bbd39109db0c4493ac37471fd08962c40c3aa6471c37" and .workflow_run.id == 38851173209 and .workflow_run.head_sha == "55dccb98507316044187e48843aef754cd0b5c57"' "$temp/artifact.json" >/dev/null
+          [ "$(date -u +%s)" -lt "$(date -u -d '2026-10-23T04:33:05Z' +%s)" ]
+          fetch "$api/zip" "$temp/redirect-body" 4096 yes
+          [ "$(jq -sr '.[0].http_code' "$temp/meta")" = 302 ]
+          jq -s -e '(.[1].location|type)=="array" and (.[1].location|length)==1 and (.[1].location[0]|type)=="string"' "$temp/meta" >/dev/null
+          jq -sr '.[0].redirect_url' "$temp/meta" > "$temp/url"
+          python3 -I -B - "$temp/url" <<'PY'
+          import pathlib, re, sys, urllib.parse
+          raw = pathlib.Path(sys.argv[1]).read_text().rstrip("\n")
+          u = urllib.parse.urlsplit(raw)
+          assert len(raw) <= 8192 and not any(ord(c) < 32 or ord(c) == 127 for c in raw)
+          assert u.scheme == "https" and u.username is None and u.password is None and u.port is None
+          assert re.fullmatch(r"productionresultssa[0-9]+\.blob\.core\.windows\.net", u.hostname or "")
+          assert not u.fragment
+          PY
+          # Separate request with NO Authorization header to signed blob URL.
+          fetch "$(cat "$temp/url")" "$temp/evidence.zip" 9375348
+          [ "$(jq -sr '.[0].http_code' "$temp/meta")" = 200 ]
+          unset GH_REPLAY_TOKEN
+          python3 -I -B research/phase2a_e06i/p1m_saved_artifact_replay.py "$temp/evidence.zip" "$GITHUB_WORKSPACE"
+          echo "REPLAY_NETWORK_BODY_BYTES=$used MAX=16777216"
+          REPLAY
+      - name: Retain result text only, never original files
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p1m-saved-replay-result-${{ github.run_id }}
+          path: ${{ runner.temp }}/p1m-replay-result.txt
+          if-no-files-found: ignore
+          retention-days: 7
+          compression-level: 6

@@ -6,7 +6,7 @@ No candidate imports: separate line parser, fixed-point graph construction,
 and Debian Policy 5.6.12 version ordering (candidate uses external dpkg).
 Policy: https://www.debian.org/doc/debian-policy/ch-controlfields.html
         https://www.debian.org/doc/debian-policy/ch-relationships.html
-FIXED_REAL_MAX_V1 fixes real-package maxima before selecting ordered ORs.
+FIXED_REAL_MAX_ALIASES_V2 fixes real-package maxima before selecting ordered ORs.
 Selected-set Conflicts/Breaks include provided identities. No virtual-provider
 dependency selection, downgrade/backtracking, selectors or profiles; no
 installed/Essential baseline, unpack/configure ordering or APT equivalence.
@@ -28,7 +28,7 @@ INPUTS = (("main", 8790396,
            "9e0b5aabb2465b3d2e7a7fe27f9913846277833f7a2826e7767acccff5b588c5"),
           ("security", 349200,
            "816aa77b2d8d70c7f17494007692511bc6848598909cff4ee8fc642231c40007"))
-CANDIDATE_BLOB = "b219ce9c54844af813508f009fb2a34724378eae"
+CANDIDATE_BLOB = "1e3514be72367caed910ad31de9d7a9e4d0f5cb9"
 ROOTS = ("python3.11", "python3.11-minimal",
          "libpython3.11-minimal", "libpython3.11-stdlib")
 VERSIONS = (("3.11.2-6+deb12u8", "main"), ("3.11.2-6+deb12u9", "security"))
@@ -180,24 +180,38 @@ def relationship_groups(item, fields):
 def expected_report(paths):
     global STAGE
     STAGE = "ORACLE_INDEX"
-    inventory, names, counts = {}, {}, []
+    inventory, names, counts, locations = {}, {}, [], {}
+    alias_bytes = alias_count = 0
     for path, (origin, _, _) in zip(paths, INPUTS):
         count = 0
         for fields in records(path):
             count += 1
             key = tuple(fields[k] for k in FIELDS[:3])
+            location = (origin, INPUTS[len(counts)][2], fields["filename"])
             if key in inventory:
-                require(inventory[key][0] == fields)
+                require({k: v for k, v in inventory[key].items() if k != "filename"} ==
+                        {k: v for k, v in fields.items() if k != "filename"})
             else:
-                inventory[key] = fields, origin
+                inventory[key] = fields
+                locations[key] = []
                 names.setdefault(key[0], []).append(key)
+            if location not in locations[key]:
+                encoded = len(json.dumps(location, ensure_ascii=True, separators=(",", ":")).encode())
+                require(len(locations[key]) < 4)
+                require(sum(len(json.dumps(a, ensure_ascii=True, separators=(",", ":")).encode())
+                            for a in locations[key]) + encoded <= 4096)
+                alias_bytes += encoded
+                alias_count += 1
+                require(alias_bytes <= 64 * 1024 * 1024 and alias_count <= 240000)
+                locations[key].append(location)
         counts.append(count)
     STAGE = "ORACLE_GRAPH"
     candidates = []
     for version, origin in VERSIONS:
         fixed = {name: (name, version, "amd64") for name in ROOTS}
         selected = set(fixed.values())
-        require(all(k in inventory and inventory[k][1] == origin for k in selected))
+        require(all(k in inventory and any(a[0] == origin for a in locations[k])
+                    for k in selected))
         processed, comparisons, atoms = set(), 0, 0
 
         def order(a, b):
@@ -244,7 +258,7 @@ def expected_report(paths):
             require(len({k[0] for k in selected}) == len(selected))
             additions = set()
             for key in sorted(selected - processed):
-                for group in groups(inventory[key][0], ("pre-depends", "depends")):
+                for group in groups(inventory[key], ("pre-depends", "depends")):
                     found = None
                     for name, op, wanted in group:
                         option = maximum(name)
@@ -260,7 +274,7 @@ def expected_report(paths):
         offered = {}
         for key in sorted(selected):
             offered[key] = [(key[0], key[1])]
-            for group in groups(inventory[key][0], ("provides",)):
+            for group in groups(inventory[key], ("provides",)):
                 name, _, provided = group[0]
                 offered[key].append((name, provided))
         reverse = {}
@@ -268,22 +282,27 @@ def expected_report(paths):
             for name, actual in identities:
                 reverse.setdefault(name, []).append((key, actual))
         for key in sorted(selected):
-            for group in groups(inventory[key][0], ("conflicts", "breaks")):
+            for group in groups(inventory[key], ("conflicts", "breaks")):
                 name, op, wanted = group[0]
                 for other, actual in reverse.get(name, ()):
                     require(other == key or not matches(actual, op, wanted))
 
         manifest = []
         for key in sorted(selected):
-            item, archive = inventory[key]
-            manifest.append([*key, archive, *[item.get(f, "") for f in
-                             ("filename", "size", "sha256", "depends", "pre-depends",
+            item = inventory[key]
+            manifest.append([*key, sorted(locations[key]), *[item.get(f, "") for f in
+                             ("size", "sha256", "depends", "pre-depends",
                               "provides", "conflicts", "breaks")]])
         digest = hashlib.sha256(json.dumps(manifest, ensure_ascii=True,
                                           separators=(",", ":")).encode()).hexdigest()
         candidates.append({"version": version, "candidate_nodes": len(selected),
                            "graph_sha256": digest})
-    return {"status": "CANDIDATE_ONLY_RUNTIME_UNPROVEN", "policy": "FIXED_REAL_MAX_V1",
+    alias_digest = hashlib.sha256()
+    for key in sorted(locations):
+        alias_digest.update(json.dumps([*key, sorted(locations[key])], ensure_ascii=True,
+                                      separators=(",", ":")).encode() + b"\n")
+    return {"status": "CANDIDATE_ONLY_RUNTIME_UNPROVEN", "policy": "FIXED_REAL_MAX_ALIASES_V2",
+            "alias_inventory_sha256": alias_digest.hexdigest(), "alias_count": alias_count,
             "index_stanzas": counts, "candidates": candidates}
 
 

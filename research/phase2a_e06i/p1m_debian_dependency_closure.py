@@ -20,6 +20,13 @@ MAX_PACKAGES = 120000
 MAX_NODES = 512
 MAX_CHECKS = 4096
 MAX_REPORT = 4096
+INDEX_SHA = {
+    "main": "9e0b5aabb2465b3d2e7a7fe27f9913846277833f7a2826e7767acccff5b588c5",
+    "security": "816aa77b2d8d70c7f17494007692511bc6848598909cff4ee8fc642231c40007",
+}
+MAX_ALIASES = 4
+MAX_ALIAS_WIRE = 4096
+MAX_ALL_ALIAS_WIRE = 64 * 1024 * 1024
 # Local resource policy, not Debian syntax maxima.
 MAX_RELATIONS = 1024  # relation atoms per field family / visited node
 MAX_EDGES = 4096  # all visited dependency/provide/conflict atoms
@@ -133,7 +140,12 @@ def record(raw):
     demand(SHA.fullmatch(fields["SHA256"]), "INVALID_SHA")
     return fields
 
-def load(path, origin, inventory):
+def load(path, origin, inventory, alias_state=None):
+    demand(origin in INDEX_SHA, "ALIAS_ORIGIN")
+    if alias_state is None:
+        alias_state = [sum(len(json.dumps(a, separators=(",", ":")).encode())
+                           for _, aliases in inventory.values() for a in aliases),
+                       sum(len(aliases) for _, aliases in inventory.values())]
     n = 0
     for raw in paragraphs(path):
         # Every wire-delimited stanza must be validated. Never strip or skip
@@ -144,12 +156,25 @@ def load(path, origin, inventory):
         item = record(raw)
         key = (item["Package"], item["Version"], item["Architecture"])
         prev = inventory.get(key)
+        alias = (origin, INDEX_SHA[origin], item["Filename"])
         if prev:
-            # Same tuple in two archives must refer to the SAME exact artifact.
-            demand(all(prev[0].get(k) == item.get(k) for k in KEYS),
+            # Only distribution location may differ. Keep every exact source.
+            demand(all(prev[0].get(k) == item.get(k) for k in KEYS - {"Filename"}),
                    "DUPLICATE_CONFLICT")
+            aliases = prev[1]
         else:
-            inventory[key] = (item, origin)
+            aliases = set()
+            inventory[key] = (item, aliases)
+        if alias not in aliases:
+            wire = len(json.dumps(alias, separators=(",", ":")).encode())
+            demand(len(aliases) < MAX_ALIASES and
+                   sum(len(json.dumps(a, separators=(",", ":")).encode())
+                       for a in aliases) + wire <= MAX_ALIAS_WIRE, "ALIAS_LIMIT")
+            alias_state[0] += wire
+            alias_state[1] += 1
+            demand(alias_state[0] <= MAX_ALL_ALIAS_WIRE and
+                   alias_state[1] <= 2 * MAX_PACKAGES, "ALIAS_LIMIT")
+            aliases.add(alias)
     demand(n > 0, "EMPTY_INDEX")
     return n
 
@@ -197,7 +222,7 @@ def satisfies(actual, op, wanted, state):
     return proc.returncode == 0
 
 def graph(inventory, by_name, root_version):
-    # FIXED_REAL_MAX_V1: a deliberately incomplete metadata policy, not APT.
+    # FIXED_REAL_MAX_ALIASES_V2: a deliberately incomplete metadata policy, not APT.
     # Roots are locked; every other real name has one maximum Debian version.
     # OR chooses the first satisfied real name under that fixed assignment.
     # Never downgrade/backtrack, infer installed state or choose virtual providers.
@@ -205,7 +230,7 @@ def graph(inventory, by_name, root_version):
     demand(root_version in ("3.11.2-6+deb12u8", "3.11.2-6+deb12u9"),
            "UNAPPROVED_ROOT_VERSION")
     preferred = {name: (name, root_version, "amd64") for name in ROOTS}
-    demand(all(k in inventory and inventory[k][1] == origin
+    demand(all(k in inventory and any(a[0] == origin for a in inventory[k][1])
                for k in preferred.values()), "ROOT_MISSING_OR_AMBIGUOUS")
     checks, edge_count = [0], 0
 
@@ -267,14 +292,21 @@ def graph(inventory, by_name, root_version):
                 demand(not satisfies(actual, op, required, checks),
                        "SELECTED_PACKAGE_CONFLICT")
 
-    manifest = [[*key, inventory[key][1],
+    manifest = [[*key, sorted(inventory[key][1]),
                  *[inventory[key][0].get(field, "") for field in
-                   ("Filename", "Size", "SHA256", "Depends", "Pre-Depends",
+                   ("Size", "SHA256", "Depends", "Pre-Depends",
                     "Provides", "Conflicts", "Breaks")]]
                 for key in sorted(selected)]
     digest = hashlib.sha256(json.dumps(manifest, separators=(",", ":"),
                                       ensure_ascii=True).encode()).hexdigest()
     return len(selected), digest
+
+def alias_inventory_digest(inventory):
+    digest = hashlib.sha256()
+    for key in sorted(inventory):
+        digest.update(json.dumps([*key, sorted(inventory[key][1])],
+                                 separators=(",", ":"), ensure_ascii=True).encode() + b"\n")
+    return digest.hexdigest()
 
 def main():
     ap = argparse.ArgumentParser()
@@ -282,8 +314,9 @@ def main():
     ap.add_argument("--security", required=True)
     args = ap.parse_args()
     inventory = {}
-    counts = (load(args.main, "main", inventory),
-              load(args.security, "security", inventory))
+    alias_state = [0, 0]
+    counts = (load(args.main, "main", inventory, alias_state),
+              load(args.security, "security", inventory, alias_state))
     by_name = {}
     for key in inventory:
         by_name.setdefault(key[0], []).append(key)
@@ -293,7 +326,9 @@ def main():
         output.append({"version": version, "candidate_nodes": nodes,
                        "graph_sha256": digest})
     result = json.dumps({"status": "CANDIDATE_ONLY_RUNTIME_UNPROVEN",
-                         "policy": "FIXED_REAL_MAX_V1",
+                         "policy": "FIXED_REAL_MAX_ALIASES_V2",
+                         "alias_inventory_sha256": alias_inventory_digest(inventory),
+                         "alias_count": alias_state[1],
                          "index_stanzas": counts, "candidates": output},
                         sort_keys=True, separators=(",", ":"))
     demand(len(result) <= MAX_REPORT, "REPORT_LIMIT")
@@ -325,7 +360,7 @@ if __name__ == "__main__":
                  "INVALID_FIELD_NAME", "DUPLICATE_FIELD",
                  "INVALID_CONTROL_CHARACTER", "GRAPH_EDGE_LIMIT",
                  "BASELINE_OR_VIRTUAL_SEMANTICS_UNKNOWN",
-                 "SELECTED_PACKAGE_CONFLICT")
+                           "SELECTED_PACKAGE_CONFLICT", "ALIAS_ORIGIN", "ALIAS_LIMIT")
         print("P1M_STATUS=STOP/HOLD:" + (code if code in known else "PARSE_ERROR"),
               file=sys.stderr)
         sys.exit(1)
