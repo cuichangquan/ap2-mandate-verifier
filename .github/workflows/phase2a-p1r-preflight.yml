@@ -1,0 +1,57 @@
+name: "Issue 73 P1-R metadata preflight — manual once"
+on:
+  workflow_dispatch:
+    inputs:
+      expected_main_sha:
+        description: "Exact reviewed and audited main SHA"
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: issue73-p1r-preflight-once-20261016
+  cancel-in-progress: false
+jobs:
+  metadata-preflight:
+    if: ${{ github.repository == 'cuichangquan/ap2-mandate-verifier' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Obtain fixed reviewed sources only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+          sparse-checkout: |
+            research/phase2a_e06i/p1r_preflight.py
+            research/phase2a_e06i/p1r_input_contract.json
+            research/phase2a_e06i/a11_pinned_inputs.json
+            research/phase2a_e06i/p1m_saved_artifact_replay.py
+            research/phase2a_e06i/p1m_debian_dependency_closure.py
+            research/phase2a_e06i/p1m_independent_oracle.py
+            .github/workflows/phase2a-p1-h4-metadata.yml
+          sparse-checkout-cone-mode: false
+      - name: Verify new pins and exact main before any claim
+        shell: bash
+        env:
+          EXPECTED_MAIN: ${{ inputs.expected_main_sha }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$EXPECTED_MAIN" =~ ^[0-9a-f]{40}$ ]]
+          [ "$GITHUB_SHA" = "$EXPECTED_MAIN" ]
+          [ "$(git rev-parse HEAD)" = "$EXPECTED_MAIN" ]
+          [ "$GITHUB_RUN_ATTEMPT" = 1 ]
+          [ "$(git hash-object research/phase2a_e06i/p1r_preflight.py)" = fb33f62fc36b2000e08dc25f6a8dea5254a47229 ]
+          [ "$(git hash-object research/phase2a_e06i/p1r_input_contract.json)" = f1968183e69d87d8e39cc80bce5fe77e8986fb1d ]
+      - name: Claim once and report metadata inventory; never construct environment
+        shell: bash
+        env:
+          EXPECTED_MAIN: ${{ inputs.expected_main_sha }}
+          P1R_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          timeout --signal=TERM --kill-after=3s 420s python3 -I -B research/phase2a_e06i/p1r_preflight.py
