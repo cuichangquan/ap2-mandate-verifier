@@ -40,17 +40,47 @@ def decode64(text):
     return raw
 
 
+def bounded_tree(value, depth=0):
+    need(depth <= 24, "JSON_DEPTH")
+    if type(value) in (dict, list):
+        need(len(value) <= (32 if type(value) is dict else 16), "JSON_WIDTH")
+        for child in (value.values() if type(value) is dict else value):
+            bounded_tree(child, depth + 1)
+    return value
+
+
+def strict_value(raw):
+    # Reuse duplicate/nonfinite rejection while permitting disclosure arrays.
+    return bounded_tree(document(b'{"v":' + raw + b'}', 32776)["v"])
+
+
+def inspect_wire(wire, typ):
+    """G0 envelope only, no decoded claim/disclosure truth or signature check."""
+    parts = wire.split("~")
+    need(3 <= len(parts) <= 18 and parts[-1] == "", "SD_SEGMENTS")
+    jws = parts[0].split(".")
+    need(len(jws) == 3 and len(decode64(jws[2])) == 64, "JWS_SHAPE")
+    header, payload = strict_value(decode64(jws[0])), strict_value(decode64(jws[1]))
+    need(type(header) is dict and set(header) <= {"alg", "kid", "typ"} and
+         header.get("alg") == "ES256" and header.get("typ") == typ and
+         (header.get("kid") is None or type(header["kid"]) is str), "JOSE_HEADER")
+    for disclosure in parts[1:-1]:
+        strict_value(decode64(disclosure))
+    return parts[0]
+
+
 def public_policy(policy, raw):
     """Host.load! input shape/digest parity, not Host authority or signature proof."""
     need(set(policy) == POLICY_FIELDS and raw.isascii() and raw.strip() == prepare.wire(policy),
          "POLICY_CANONICAL_FIELDS")
+    bounded_tree(policy)
     unsigned = {k: v for k, v in policy.items() if k != "policy_digest"}
     need(policy["policy_digest"] == sha(prepare.wire(unsigned)), "POLICY_DIGEST")
     for name in ("issuer_public_jwk", "expected_agent_public_jwk", "trusted_merchant_public_jwk"):
         key = policy[name]
         need(type(key) is dict and set(key) == {"kty", "crv", "x", "y"} and
              key["kty"] == "EC" and key["crv"] == "P-256" and
-             all(type(key[k]) is str and key[k] for k in key), "PUBLIC_POLICY_KEY_SHAPE")
+             all(type(key[k]) is str and key[k].isascii() and 1 <= len(key[k]) <= 128 for k in key), "PUBLIC_POLICY_KEY_SHAPE")
     import hashlib
     need(policy["issuer_thumbprint"] == b64(hashlib.sha256(prepare.wire(policy["issuer_public_jwk"])).digest()),
          "POLICY_THUMBPRINT")
@@ -110,7 +140,8 @@ def qualify_mock_inputs(fixture_raw, policy_raw):
         need(type(case) is dict and set(case) == {"root", "terminal"}, "CASE_WIRE_SHAPE")
         need(all(type(case[k]) is str and case[k].isascii() and 0 < len(case[k]) <= 32768
                  for k in ("root", "terminal")), "CASE_WIRE_LIMIT")
-        compacts[name] = case["root"].split("~", 1)[0]
+        compacts[name] = inspect_wire(case["root"], "example+sd-jwt")
+        inspect_wire(case["terminal"], "kb+sd-jwt")
         roots.append(case["root"])
         terminals.append(case["terminal"])
         templates.append(terminal_binding(case["root"], case["terminal"], policy))
