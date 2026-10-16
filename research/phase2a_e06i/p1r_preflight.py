@@ -66,16 +66,34 @@ def url_parts(url):
     return u
 
 
-def request(url, cap, *, token=None, method="GET", data=b"", redirect=False):
+def config_redirect_url(url):
+    u = url_parts(url)
+    rule = CONTRACT["oci"]["config_redirect"]
+    need(u.netloc == rule["host"] and u.path == rule["path"] and u.query,
+         "CONFIG_REDIRECT_TARGET")
+    return url
+
+
+def request(url, cap, *, token=None, method="GET", data=b"", redirect=False,
+            config_redirect=False):
     """Direct TLS HTTP/1.1, no proxy/retry/redirect. Bound header before parsing."""
     global USED
     u = url_parts(url)
-    need(url in CONTRACT["metadata_urls"] or redirect, "UNAPPROVED_URL")
+    head_urls = set(CONTRACT["gem_head_urls"].values())
+    need(method in ("GET", "HEAD", "POST"), "METHOD")
+    need((method == "HEAD") == (url in head_urls), "GEM_HEAD_ONLY")
+    need(method != "POST" or url == CONTRACT["refs_url"], "POST_TARGET")
+    need(url in CONTRACT["metadata_urls"] or redirect or config_redirect, "UNAPPROVED_URL")
+    need(not (redirect and config_redirect), "REDIRECT_ROLE")
+    if config_redirect:
+        config_redirect_url(url)
+        need(token is None and not data and method == "GET", "CONFIG_CREDENTIAL_STRIPPING")
     if redirect:
         need(re.fullmatch(CONTRACT["artifact_redirect_host_regex"], u.hostname) is not None,
              "ARTIFACT_REDIRECT_HOST")
         need(token is None and method == "GET", "CREDENTIAL_REDIRECT")
-    need(0 < cap <= CONTRACT["body_limit"] - USED, "BODY_BUDGET")
+    need(0 <= cap <= CONTRACT["body_limit"] - USED and
+         (method == "HEAD" or cap > 0), "BODY_BUDGET")
     deadline = time.monotonic() + 45
     context = ssl.create_default_context()
     context.minimum_version = ssl.TLSVersion.TLSv1_2
@@ -124,6 +142,12 @@ def request(url, cap, *, token=None, method="GET", data=b"", redirect=False):
                 parsed.setdefault(key, value.strip())
             need(parsed.get("content-encoding", "identity") == "identity", "ENCODING")
             need(not ("content-length" in parsed and "transfer-encoding" in parsed), "FRAMING")
+            if "content-length" in parsed:
+                need(re.fullmatch(r"[0-9]{1,16}", parsed["content-length"]), "CONTENT_LENGTH")
+            if method == "HEAD":
+                # A HEAD Content-Length describes a prospective representation.
+                # Never read it as a response body or fetch a .gem with GET.
+                return status, parsed, b""
             body = bytearray()
 
             def take(n):
@@ -302,8 +326,8 @@ def oci():
          "sha256:" + sha(raw) == spec["manifest_digest"], "OCI_MANIFEST")
     manifest = document(raw)
     config = manifest["config"]
-    need(re.fullmatch(r"sha256:[a-f0-9]{64}", config["digest"]) and
-         positive(config["size"]) and config["size"] <= 131072, "OCI_CONFIG_DESCRIPTOR")
+    need(config["digest"] == spec["config_digest"] and
+         config["size"] == spec["config_size"] == 5984, "OCI_CONFIG_DESCRIPTOR")
     # Content-addressed config endpoint is the only dynamic registry path allowed.
     REPORT["oci"] = {"index_digest": spec["index_digest"], "manifest_digest": spec["manifest_digest"],
                      "config": config, "layers": manifest["layers"],
@@ -315,12 +339,16 @@ def oci():
     REPORT["oci"]["layer_bytes"] = sum(i["size"] for i in manifest["layers"])
     config_url = spec["config_url_prefix"] + config["digest"]
     CONTRACT["metadata_urls"].append(config_url)
-    status, _, config_raw = request(config_url, 131072, token=token)
-    # No registry CDN redirects: unknown transfer host is a concrete STOP.
+    status, headers, _ = request(config_url, 4096, token=token)
+    del token, auth
     REPORT["oci"]["config_http_status"] = status
-    if status != 200:
-        REPORT["missing"].append("OCI_CONFIG_BYTES_NOT_VERIFIED_NO_CDN_REDIRECT_ALLOWED")
-    need(status == 200, "OCI_CONFIG_REDIRECT_OR_HTTP")
+    need(status == 307 and "location" in headers, "OCI_CONFIG_FIRST_HOP")
+    # Single exact host/path, no inherited Authorization or Cookie, no retry.
+    location = config_redirect_url(headers["location"])
+    del headers
+    status, _, config_raw = request(location, spec["config_size"], config_redirect=True)
+    del location
+    need(status == 200, "OCI_CONFIG_SECOND_HOP")
     need(len(config_raw) == config["size"] and "sha256:" + sha(config_raw) == config["digest"],
          "OCI_CONFIG_DIGEST")
     metadata = document(config_raw)
@@ -334,6 +362,12 @@ def oci():
     REPORT["oci"] = {"index_digest": spec["index_digest"], "manifest_digest": spec["manifest_digest"],
                      "config": config, "layers": manifest["layers"],
                      "layer_bytes": sum(i["size"] for i in manifest["layers"]),
+                     "config_status": "EXACT_SIZE_SHA256_AND_PLATFORM_MATCH",
+                     "config_http_status": 307, "config_final_http_status": status,
+                     "ruby_version_env": "3.3.12", "config_redirect_hops": 1,
+                     "config_redirect_host": spec["config_redirect"]["host"],
+                     "config_redirect_path": spec["config_redirect"]["path"],
+                     "signed_query": "REDACTED_NOT_PERSISTED",
                      "payloads_fetched": 0, "installed_inventory": "UNPROVEN"}
 
 
@@ -376,12 +410,25 @@ def packages():
              meta["sha"] == item["sha256"], "GEM_METADATA")
         size = meta.get("size")
         need(size is None or positive(size), "GEM_SIZE")
-        if size is None:
-            REPORT["missing"].append("RUBYGEMS_ARCHIVE_SIZE:" + item["filename"])
         need(meta.get("gem_uri") == "https://rubygems.org/gems/" + item["filename"], "GEM_PROSPECTIVE_URL")
-        gems.append({**item, "size": size, "prospective_url": meta["gem_uri"]})
+        head_url = CONTRACT["gem_head_urls"][item["filename"]]
+        need(meta["gem_uri"] == head_url, "GEM_HEAD_URL")
+        status, headers, body = request(head_url, 0, method="HEAD")
+        need(status == 200 and not body, "GEM_HEAD_STATUS")
+        length = headers.get("content-length")
+        need(length is not None and positive(int(length)), "GEM_HEAD_LENGTH")
+        length = int(length)
+        need(length == CONTRACT["gem_previous_head_assertions"][item["filename"]] and
+             (size is None or size == length), "GEM_HEAD_LENGTH_CHANGED")
+        gems.append({**item, "size": size, "prospective_url": meta["gem_uri"],
+                     "server_reported_head_size": length,
+                     "head_http_status": status, "head_body_bytes": 0,
+                     "size_evidence": "SERVER_HEAD_ASSERTION_NOT_HASH_VERIFIED",
+                     "archive_content_sha256_verified": False})
     REPORT["gems"] = {"items": gems, "bytes": (sum(i["size"] for i in gems)
-                                             if all(i["size"] is not None for i in gems) else None)}
+                                             if all(i["size"] is not None for i in gems) else None),
+                      "server_reported_head_bytes": sum(i["server_reported_head_size"] for i in gems),
+                      "hash_verified_archive_bytes": None}
 
 
 def main():
