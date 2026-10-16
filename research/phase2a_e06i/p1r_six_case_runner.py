@@ -113,8 +113,10 @@ def compare_mock_reports(*, fixture_raw, policy_raw, oracle_raw, ruby_raw, recei
              observed["first_reject_stage"] == (None if name == "FULL" else STAGES[3]) and
              observed["completed_stages"] == (STAGES if name == "FULL" else STAGES[:3]),
              "CAUSAL_STAGE_MISMATCH")
-    need(compacts["HIDDEN"] == compacts["FULL"] and compacts["UNKNOWN"] != compacts["FULL"] and
-         compacts["DECOY"] != compacts["FULL"], "SIGNED_VARIANT_IDENTITY")
+    need(len({fixture["cases"][name]["root"] for name in CASES}) == len(CASES) and
+         compacts["HIDDEN"] == compacts["EXTRA"] == compacts["FULL"] and
+         len({compacts[name] for name in ("FULL", "UNKNOWN", "DUPLICATE", "DECOY")}) == 4,
+         "SIGNED_VARIANT_IDENTITY")
     # This function only compares caller-supplied mock records. It performs
     # no signature check and proves neither execution nor external provenance.
     return {"status": "HOLD", "mock_report_consistency": True,
