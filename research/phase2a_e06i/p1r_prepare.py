@@ -49,7 +49,7 @@ def sha(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
-def document(raw, cap):
+def json_value(raw, cap):
     need(type(raw) is bytes and 0 < len(raw) <= cap, "DOCUMENT_SIZE")
     def pairs(items):
         result = {}
@@ -60,10 +60,15 @@ def document(raw, cap):
     def bad_constant(_):
         raise Hold("NONFINITE_JSON")
     try:
-        result = json.loads(raw, object_pairs_hook=pairs, parse_constant=bad_constant)
+        result = json.loads(raw.decode("utf-8"), object_pairs_hook=pairs, parse_constant=bad_constant)
         wire(result)
     except (UnicodeError, RecursionError, TypeError) as exc:
         raise Hold("DOCUMENT_ENCODING") from exc
+    return result
+
+
+def document(raw, cap):
+    result = json_value(raw, cap)
     need(type(result) is dict, "DOCUMENT_OBJECT")
     return result
 
