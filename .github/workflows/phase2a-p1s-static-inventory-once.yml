@@ -1,0 +1,80 @@
+name: "Issue 73 P1S static contents inventory — manual once"
+on:
+  workflow_dispatch:
+    inputs:
+      expected_main_sha:
+        description: "Exact reviewed and audited main SHA"
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: issue73-p1s-static-inventory-once-20261016
+  cancel-in-progress: false
+jobs:
+  static-inventory:
+    if: ${{ github.repository == 'cuichangquan/ap2-mandate-verifier' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Bounded exact-SHA source bootstrap; no checkout or git fetch
+        timeout-minutes: 1
+        shell: bash
+        env:
+          EXPECTED_MAIN: ${{ inputs.expected_main_sha }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$EXPECTED_MAIN" =~ ^[0-9a-f]{40}$ ]]
+          [ "$GITHUB_SHA" = "$EXPECTED_MAIN" ]
+          [ "$GITHUB_RUN_ATTEMPT" = 1 ]
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkfifo "$tmp/headers.fifo"
+          total=0
+          fetch_source() {
+            local path=$1 digest=$2 pid status bytes
+            head -c 8193 < "$tmp/headers.fifo" > "$tmp/headers" &
+            pid=$!
+            status=$(curl --disable --silent --show-error --noproxy '*' --proto '=https' \
+              --max-redirs 0 --retry 0 --connect-timeout 5 --max-time 20 \
+              --max-filesize 131072 --dump-header "$tmp/headers.fifo" \
+              --output "$tmp/body" --write-out '%{http_code}' \
+              "https://raw.githubusercontent.com/cuichangquan/ap2-mandate-verifier/$GITHUB_SHA/$path") || {
+                kill "$pid" 2>/dev/null || :; wait "$pid" 2>/dev/null || :; exit 1;
+              }
+            wait "$pid"
+            [ "$(stat -c '%s' "$tmp/headers")" -le 8192 ]
+            [ "$status" = 200 ]
+            bytes=$(stat -c '%s' "$tmp/body")
+            [ "$bytes" -gt 0 ] && [ "$bytes" -le 131072 ]
+            total=$((total + bytes))
+            [ "$total" -le 262144 ]
+            echo "$digest  $tmp/body" | sha256sum -c --status
+            mkdir -p "$(dirname "$path")"
+            cp "$tmp/body" "$path"
+          }
+          fetch_source research/phase2a_e06i/p1s_static_inventory.py ea2e0b88dd88881116b45bf0e1a3171fc9d17bcab4e6b5aed45c38e3f929eb73
+          fetch_source research/phase2a_e06i/p1s_input_contract.json e8ca135c32c58295f308e508b060831ff52171255f70b3f1726f7f655f29fe3a
+          echo "P1S_BOOTSTRAP_BYTES=$total" >> "$GITHUB_ENV"
+          echo "P1S_BOOTSTRAP_VERIFIED BODY_BYTES=$total SHA=$GITHUB_SHA"
+      - name: Verify fixed sources, claim once, and inspect target DATA only
+        shell: bash
+        env:
+          EXPECTED_MAIN: ${{ inputs.expected_main_sha }}
+          P1S_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          timeout --signal=TERM --kill-after=3s 420s python3 -I -B research/phase2a_e06i/p1s_static_inventory.py
+      - name: Publish bounded metadata only (no packages or original bytes)
+        if: ${{ always() && hashFiles('p1s-result/inventory.json') != '' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p1s-static-inventory-${{ github.run_id }}
+          path: p1s-result/inventory.json
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
+          overwrite: false

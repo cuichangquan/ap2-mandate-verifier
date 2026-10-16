@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "scope": "STATIC_IMAGE_AND_PIP_CONTENTS_ONLY_RUNTIME_UNPROVEN",
+  "baseline": "017967a96d3f8d2735073e799a77de8eb6fcbba3",
+  "once_ref": "refs/tags/issue73-p1s-static-inventory-once-consumed-20261016",
+  "body_limit": 100663296,
+  "header_limit": 8192,
+  "expanded_limit": 1073741824,
+  "entry_limit": 134217728,
+  "entry_count": 100000,
+  "path_limit": 4096,
+  "memory_limit": 536870912,
+  "managed_write_limit": 2147483648,
+  "output_limit": 1048576,
+  "retention_days": 7,
+  "job_minutes": 8,
+  "outer_seconds": 420,
+  "layers": [
+    {
+      "digest": "sha256:7fd1ebe418b5079d4aa36f416af9b143d127bc75b0155d71cb5fd559b5e04d39",
+      "size": 28249323
+    },
+    {
+      "digest": "sha256:07680062b3373c604a4e017180556fb0c4caba0f3b8427e1ff9a947338686de3",
+      "size": 3332337
+    },
+    {
+      "digest": "sha256:9536b84ae9896a170ce0720730acece483aa7ec6c281b002a5ed2b2754d41e9d",
+      "size": 189
+    },
+    {
+      "digest": "sha256:056ca6352b30b211c2ec7865c2da61bcbaabeef0f0dfb7f1f89bc8bd53866715",
+      "size": 40064920
+    },
+    {
+      "digest": "sha256:ee593747c0f219d6a6bf8d524a965fce4b98c0a41633919994529eb61182c917",
+      "size": 142
+    }
+  ],
+  "oci": {
+    "auth_url": "https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/ruby:pull",
+    "index_digest": "sha256:2e32876dfe84913ec84eb4a59617f72dab7c0989d38f8219487491e384543975",
+    "manifest_digest": "sha256:64788045fc5e88016aa060f91b5b25cc0c41aed52accc7625cfca48037b0ec35",
+    "index_url": "https://registry-1.docker.io/v2/library/ruby/manifests/sha256:2e32876dfe84913ec84eb4a59617f72dab7c0989d38f8219487491e384543975",
+    "manifest_url": "https://registry-1.docker.io/v2/library/ruby/manifests/sha256:64788045fc5e88016aa060f91b5b25cc0c41aed52accc7625cfca48037b0ec35",
+    "config_url_prefix": "https://registry-1.docker.io/v2/library/ruby/blobs/",
+    "config_rule": "Exact fixed config digest/size from fixed manifest; first response307, exact CDN host/path one hop, second response200, exact5984 bytes/SHA256; no layers.",
+    "auth_rule": "One anonymous public pull bearer in memory only; no persistent credentials/account/OAuth/PAT",
+    "config_digest": "sha256:5ccbe87603c7e795d75ea8e13115fe4a247c7aeb3f32d8b272162ca0f53b55f3",
+    "config_size": 5984,
+    "config_redirect": {
+      "scheme": "https",
+      "host": "production.cloudfront.docker.com",
+      "path": "/registry-v2/docker/registry/v2/blobs/sha256/5c/5ccbe87603c7e795d75ea8e13115fe4a247c7aeb3f32d8b272162ca0f53b55f3/data",
+      "single_hop": true,
+      "credentials_forwarded": false,
+      "query_policy": "Only use the nonempty bounded signed query returned by the fixed registry endpoint; never persist or log it; no userinfo/fragment/port or path normalization."
+    }
+  },
+  "saved_artifact": {
+    "url": "https://api.github.com/repos/cuichangquan/ap2-mandate-verifier/actions/artifacts/12024937989",
+    "id": 12024937989,
+    "size_in_bytes": 9375348,
+    "digest": "sha256:5e9d3309d65861b90d90bbd39109db0c4493ac37471fd08962c40c3aa6471c37",
+    "expires_at": "2026-10-23T04:33:05Z"
+  },
+  "artifact_redirect_host_regex": "productionresultssa[0-9]+\\.blob\\.core\\.windows\\.net",
+  "security_valid_until": "2026-10-20T07:32:55Z",
+  "fixed_sources": {
+    "research/phase2a_e06i/a11_pinned_inputs.json": "03c5a22f80aaf9bfe95d94269d4be781b94c79fb",
+    "research/phase2a_e06i/p1m_saved_artifact_replay.py": "ccc60c12b0bf8a79421ab3252e0764a8d3b81e3c",
+    "research/phase2a_e06i/p1m_debian_dependency_closure.py": "1e3514be72367caed910ad31de9d7a9e4d0f5cb9",
+    "research/phase2a_e06i/p1m_independent_oracle.py": "4fa800d55753a89addd5447425d9fa1c73f6ef0b",
+    ".github/workflows/phase2a-p1-h4-metadata.yml": "a98595437ccd119618fd412337bd3a845f6eda45",
+    "research/phase2a_e06i/p1r_input_contract.json": "35f777894f1d4a68db6e6c106beb47bb8da7de10"
+  },
+  "pip_deb": {
+    "url": "https://snapshot.debian.org/archive/debian/20261014T000000Z/pool/main/p/python-pip/python3-pip-whl_23.0.1+dfsg-1_all.deb",
+    "version": "23.0.1+dfsg-1",
+    "size": 1717296,
+    "sha256": "cc373690a1cb469fb301b9fe0125048e3102f2e365d1b2d27cab091ec89fccdc"
+  },
+  "prohibited": [
+    "install",
+    "docker",
+    "target_execution",
+    "gemspec_eval",
+    "maintainer_scripts",
+    "rerun",
+    "other_payloads"
+  ],
+  "notes": [
+    "Registry digest pins are approved content identity, not an OCI publisher signature.",
+    "Managed writer budget is not a runner-wide quota.",
+    "Only metadata result is uploaded, not package/image/original contents."
+  ]
+}
