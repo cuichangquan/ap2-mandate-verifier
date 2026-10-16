@@ -20,6 +20,17 @@ jobs:
     permissions:
       contents: write # Only needed for atomic, persistent one-shot Git tag claim.
     steps:
+      - name: Reject unsupported frozen-root experiment before one-shot consumption
+        shell: bash
+        run: |
+          # R1 review: python3.11 has media-types | mime-support. Both the
+          # frozen candidate and this restricted oracle reject alternatives.
+          # No approved independent selection policy or dpkg baseline exists.
+          # Keep this barrier until that design and the candidate integration
+          # are explicitly scoped and reviewed; B_READY must not bypass it.
+          echo "STOP/HOLD: P1M_FROZEN_ROOT_ALTERNATIVE_POLICY_UNAPPROVED" >&2
+          exit 1
+
       - name: Obtain precisely reviewed research commit without saved credentials
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
