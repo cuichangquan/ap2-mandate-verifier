@@ -20,6 +20,7 @@ jobs:
       actions: read
     steps:
       - name: Obtain fixed reviewed sources only
+        timeout-minutes: 1
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ github.sha }}
@@ -35,6 +36,7 @@ jobs:
             .github/workflows/phase2a-p1-h4-metadata.yml
           sparse-checkout-cone-mode: false
       - name: Verify new pins and exact main before any claim
+        timeout-minutes: 1
         shell: bash
         env:
           EXPECTED_MAIN: ${{ inputs.expected_main_sha }}
@@ -44,8 +46,8 @@ jobs:
           [ "$GITHUB_SHA" = "$EXPECTED_MAIN" ]
           [ "$(git rev-parse HEAD)" = "$EXPECTED_MAIN" ]
           [ "$GITHUB_RUN_ATTEMPT" = 1 ]
-          [ "$(git hash-object research/phase2a_e06i/p1r_preflight.py)" = fb33f62fc36b2000e08dc25f6a8dea5254a47229 ]
-          [ "$(git hash-object research/phase2a_e06i/p1r_input_contract.json)" = f1968183e69d87d8e39cc80bce5fe77e8986fb1d ]
+          [ "$(git hash-object research/phase2a_e06i/p1r_preflight.py)" = d50668adfdbf7c7a7675ecf3d97ebacd528893fd ]
+          [ "$(git hash-object research/phase2a_e06i/p1r_input_contract.json)" = fcba0f1d7c6c2f3a79f9e3ae8c85d82f64658b14 ]
       - name: Claim once and report metadata inventory; never construct environment
         shell: bash
         env:
