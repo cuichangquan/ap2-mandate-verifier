@@ -28,12 +28,13 @@ INPUTS = (("main", 8790396,
            "9e0b5aabb2465b3d2e7a7fe27f9913846277833f7a2826e7767acccff5b588c5"),
           ("security", 349200,
            "816aa77b2d8d70c7f17494007692511bc6848598909cff4ee8fc642231c40007"))
-CANDIDATE_BLOB = "dc23f96b4244dd296dec4dba75e292ebf52812e3"
+CANDIDATE_BLOB = "b219ce9c54844af813508f009fb2a34724378eae"
 ROOTS = ("python3.11", "python3.11-minimal",
          "libpython3.11-minimal", "libpython3.11-stdlib")
 VERSIONS = (("3.11.2-6+deb12u8", "main"), ("3.11.2-6+deb12u9", "security"))
 FIELDS = ("package", "version", "architecture", "filename", "size", "sha256",
           "depends", "pre-depends", "provides", "conflicts", "breaks")
+MAX_STANZA = 128 * 1024
 STAGE = "PREFLIGHT"
 
 
@@ -110,7 +111,7 @@ def records(path):
     fields, seen, current = {}, set(), None
     with lzma.open(path, "rb") as stream:
         while True:
-            line = stream.readline(16385)
+            line = stream.readline(MAX_STANZA + 1)
             if not line:
                 if size:
                     count += 1
@@ -120,7 +121,7 @@ def records(path):
                 return
             total += len(line)
             size += len(line)
-            require(total <= 128 * 1024 * 1024 and size <= 16384)
+            require(total <= 128 * 1024 * 1024 and size <= MAX_STANZA)
             require(line.endswith(b"\n"))
             if line == b"\n":
                 count += 1

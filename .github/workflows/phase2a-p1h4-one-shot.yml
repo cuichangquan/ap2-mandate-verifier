@@ -41,13 +41,13 @@ jobs:
           [ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ] || stop
           oracle=research/phase2a_e06i/p1m_independent_oracle.py
           candidate=research/phase2a_e06i/p1m_debian_dependency_closure.py
-          [ "$(git hash-object "$candidate")" = dc23f96b4244dd296dec4dba75e292ebf52812e3 ] || stop
-          [ "$(git hash-object "$oracle")" = dd90a6bb47672fb99a34877910f38b54f62c201d ] || stop
+          [ "$(git hash-object "$candidate")" = b219ce9c54844af813508f009fb2a34724378eae ] || stop
+          [ "$(git hash-object "$oracle")" = 107355ade5c8c946edcdaf8abf9b72fe708d66c4 ] || stop
           cp -- "$oracle" "$RUNNER_TEMP/p1m-independent-oracle.py"
           chmod 600 "$RUNNER_TEMP/p1m-independent-oracle.py"
           echo "P1M_ORACLE_SOURCE_COMMIT=$GITHUB_SHA"
           source=.github/workflows/phase2a-p1-h4-metadata.yml
-          test "$(git hash-object "$source")" = c0b2e7ff8c44d173eb2f1ca08693cc95f6a69de8 || stop
+          test "$(git hash-object "$source")" = a552df0a45757039532d898c5886f35ac1212f75 || stop
           python3 -I -B - "$source" "$RUNNER_TEMP/p1h4-reviewed.sh" "$candidate" <<'PY'
           import hashlib
           from pathlib import Path
@@ -61,7 +61,7 @@ jobs:
           if not lines or any(line != b"\n" and not line.startswith(b"          ") for line in lines):
               raise SystemExit("STOP/HOLD: embedded Bash indentation")
           original = b"".join(line[10:] if line.startswith(b"          ") else line for line in lines)
-          if hashlib.sha256(original).hexdigest() != "ff4c119610c50aace4bb2476fb5d60da9e1a20888be50afbe4df7cfeb4a32706":
+          if hashlib.sha256(original).hexdigest() != "72f09e2aab609e9ed9a514c26cc5d2fc9b6d76a295074d45c91da98ab841a51d":
               raise SystemExit("STOP/HOLD: embedded Bash digest")
           # Check embedded/standalone equality BEFORE consuming the one-shot.
           begin = b"cat > \"$work/p1m_debian_dependency_closure.py\" <<'P1M_PYTHON'\n"
