@@ -3,6 +3,7 @@
 HTTP transport is preserved from reviewed P1R; new archive scanner never
 extracts a target rootfs. GitHub control/signature tools are runner tools.
 """
+from contextlib import contextmanager
 import datetime as dt
 import gzip
 import hashlib
@@ -199,16 +200,20 @@ def get(url, cap, token=None):
 
 
 class Budget:
-    def __init__(self, spec):
-        self.spec=spec; self.expanded=0; self.entries=0; self.written=0
+    def __init__(self, spec, spool_dir=None):
+        self.spec=spec; self.spool_dir=spool_dir; self.expanded=0; self.entries=0; self.written=0
+        self.record()
+    def record(self):
+        REPORT["resource_counters"]={"expanded_bytes":self.expanded,"entries":self.entries,
+                                     "managed_write_reservations":self.written}
     def expand(self,n):
         need(type(n) is int and n>=0 and self.expanded+n<=self.spec['expanded_limit'],'EXPANSION_LIMIT')
-        self.expanded+=n
+        self.expanded+=n; self.record()
     def entry(self):
-        self.entries+=1; need(self.entries<=self.spec['entry_count'],'ENTRY_COUNT')
+        self.entries+=1; self.record(); need(self.entries<=self.spec['entry_count'],'ENTRY_COUNT')
     def reserve(self,n):
         need(n>=0 and self.written+n<=self.spec['managed_write_limit'],'MANAGED_WRITE_BUDGET')
-        self.written+=n
+        self.written+=n; self.record()
     def write(self,path,raw):
         self.reserve(len(raw))
         path.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
@@ -255,39 +260,115 @@ def pax_fields(raw):
         out[k]=v;offset+=n
     return out
 
-def elf_metadata(raw):
-    need(len(raw)>=64 and raw[:6]==b"\x7fELF\x02\x01", "ELF_FORMAT")
-    need(struct.unpack_from('<H',raw,18)[0]==62,"ELF_MACHINE")
-    off=struct.unpack_from('<Q',raw,32)[0];width,count=struct.unpack_from('<HH',raw,54)
-    need(width==56 and count<=1024 and off+width*count<=len(raw),'ELF_PHDR')
-    loads=[];dynamic=None;interp=None
+def progress(stage, **fields):
+    """Controlled parser labels plus bounded public archive identity, never URLs."""
+    current=REPORT.setdefault('progress',{})
+    current['stage']=stage
+    for key,value in fields.items():
+        need(key in ('entry_path','entry_path_sha256','entry_size','entry_bytes_read',
+                     'compressed_digest_verified','requested_spool_bytes'),'DIAGNOSTIC_FIELD')
+        current[key]=value
+
+
+def entry_identity(name,size):
+    # Canonical tar path only. Do not expose URL-like/query-bearing names.
+    portable=bool(re.fullmatch(r'[A-Za-z0-9_./+@=-]{1,4096}',name))
+    progress('TAR_ENTRY',entry_path=name if portable else '[REDACTED_NONPORTABLE_PATH]',
+             entry_path_sha256=sha(name.encode('utf8')),entry_size=size,entry_bytes_read=0)
+
+
+@contextmanager
+def elf_spool(budget,size,enabled):
+    """One private opaque file, reserved before creation; no rootfs extraction."""
+    if not enabled:
+        yield None
+        return
+    progress('ELF_SPOOL_RESERVE',requested_spool_bytes=size)
+    need(type(size) is int and 64<=size<=budget.spec['entry_limit'],'ELF_FILE_BOUND')
+    soft,_=resource.getrlimit(resource.RLIMIT_FSIZE)
+    need(soft==resource.RLIM_INFINITY or size<=soft,'ELF_SPOOL_OS_LIMIT')
+    budget.reserve(size)
+    stream=None
+    try:
+        stream=tempfile.TemporaryFile(mode='w+b',prefix='p1s-elf-',dir=budget.spool_dir)
+        info=os.fstat(stream.fileno())
+        need(stat.S_ISREG(info.st_mode) and info.st_uid==os.geteuid() and
+             info.st_mode&0o077==0,'ELF_SPOOL_PRIVATE')
+        yield stream
+    except BaseException as primary:
+        if stream is not None:
+            try:stream.close()
+            except BaseException:
+                REPORT.setdefault('progress',{})['cleanup_uncertain']=True
+                primary.add_note('ELF_SPOOL_CLOSE_UNCERTAIN')
+        raise
+    else:
+        progress('ELF_SPOOL_CLOSE')
+        # A close error is STOP, never retry a potentially reused descriptor.
+        try:stream.close()
+        except BaseException:
+            REPORT.setdefault('progress',{})['cleanup_uncertain']=True
+            raise
+
+
+def elf_metadata(source,size=None):
+    """Selective bounded reads from seekable DATA, never load/execute the ELF.
+
+    Input can be a bytes fixture or a private spool. Each read is <=1MiB;
+    PHDR/dynamic/string bounds remain unchanged. Whole-file size <=128MiB.
+    """
+    if type(source) in (bytes,bytearray):
+        need(size is None or size==len(source),'ELF_INPUT_SIZE')
+        size=len(source);source=io.BytesIO(source)
+    need(type(size) is int and 64<=size<=SPEC['entry_limit'],'ELF_FILE_BOUND')
+    def read_at(offset,length):
+        need(type(offset) is int and type(length) is int and 0<=offset<=size and
+             0<=length<=1048576 and length<=size-offset,'ELF_READ_RANGE')
+        source.seek(offset);raw=source.read(length)
+        need(type(raw) is bytes and len(raw)==length,'ELF_TRUNCATED')
+        return raw
+    header=read_at(0,64)
+    need(header[:7]==b"\x7fELF\x02\x01\x01" and struct.unpack_from('<I',header,20)[0]==1 and
+         struct.unpack_from('<H',header,52)[0]==64,'ELF_FORMAT')
+    need(struct.unpack_from('<H',header,18)[0]==62,'ELF_MACHINE')
+    off=struct.unpack_from('<Q',header,32)[0];width,count=struct.unpack_from('<HH',header,54)
+    need(width==56 and count<=1024 and off<=size and width*count<=size-off,'ELF_PHDR')
+    table=read_at(off,width*count);loads=[];dynamic=None;interp=None
     for i in range(count):
-        kind,flags,start,va,pa,size,mem,align=struct.unpack_from('<IIQQQQQQ',raw,off+i*width)
-        need(start+size<=len(raw),'ELF_SEGMENT')
-        if kind==1:loads.append((va,start,size))
+        kind,flags,start,va,pa,length,mem,align=struct.unpack_from('<IIQQQQQQ',table,i*width)
+        need(start<=size and length<=size-start and va+mem<=2**64-1,'ELF_SEGMENT')
+        if kind==1:
+            need(mem>=length,'ELF_LOAD_SIZE');loads.append((va,start,length))
         if kind==2:
-            need(dynamic is None and size<=1048576,'ELF_DYNAMIC');dynamic=(start,size)
+            need(dynamic is None and length<=1048576,'ELF_DYNAMIC');dynamic=(start,length)
         if kind==3:
-            need(interp is None and 0<size<=4096 and raw[start+size-1]==0,'ELF_INTERP')
-            interp=raw[start:start+size-1].decode('ascii')
-    needed=[];strings=None;length=None;labels={};ended=dynamic is None
+            need(interp is None and 1<length<=4096,'ELF_INTERP')
+            text=read_at(start,length)
+            need(text[-1:]==b'\0' and b'\0' not in text[:-1],'ELF_INTERP')
+            interp=text[:-1].decode('ascii')
+            need(all(32<=ord(c)<127 for c in interp),'ELF_INTERP')
+    needed=[];strings=None;labels={};ended=dynamic is None
     if dynamic:
-        start,size=dynamic;need(size%16==0,'ELF_DYNAMIC_SIZE')
-        for i in range(start,start+size,16):
-            tag,val=struct.unpack_from('<qQ',raw,i)
+        start,length=dynamic;need(length%16==0,'ELF_DYNAMIC_SIZE')
+        data=read_at(start,length)
+        for i in range(0,length,16):
+            tag,val=struct.unpack_from('<qQ',data,i)
             if tag==0:ended=True;break
             if tag==1:needed.append(val)
             if tag in (5,10,14,15,29):
                 need(tag not in labels,'ELF_DYNAMIC_DUPLICATE');labels[tag]=val
         need(ended and len(needed)<=256,'ELF_DYNAMIC_TERMINATOR')
-        if needed or any(t in labels for t in (14,15,29)):
-            need(5 in labels and 10 in labels and labels[10]<=1048576,'ELF_STRTAB')
-            matches=[start+labels[5]-va for va,start,size in loads if va<=labels[5] and labels[5]+labels[10]<=va+size]
-            need(len(matches)==1,'ELF_STRTAB_MAPPING');strings=matches[0];length=labels[10]
+        if needed or any(t in labels for t in (5,10,14,15,29)):
+            need(5 in labels and 10 in labels and 0<labels[10]<=1048576 and
+                 labels[5]+labels[10]<=2**64-1,'ELF_STRTAB')
+            matches=[start+labels[5]-va for va,start,length in loads
+                     if va<=labels[5] and labels[5]+labels[10]<=va+length]
+            need(len(matches)==1,'ELF_STRTAB_MAPPING')
+            strings=read_at(matches[0],labels[10])
     def text(index):
-        need(strings is not None and index<length,'ELF_STRING_INDEX')
-        end=raw.find(b'\0',strings+index,strings+length);need(end>=0 and end-strings-index<=4096,'ELF_STRING')
-        value=raw[strings+index:end].decode('ascii');need(all(32<=ord(c)<127 for c in value),'ELF_STRING')
+        need(strings is not None and index<len(strings),'ELF_STRING_INDEX')
+        end=strings.find(b'\0',index);need(end>=0 and end-index<=4096,'ELF_STRING')
+        value=strings[index:end].decode('ascii');need(all(32<=ord(c)<127 for c in value),'ELF_STRING')
         return value
     out={'class':'ELF64_LE_AMD64','needed':[text(x) for x in needed], 'interpreter':interp}
     for tag,key in ((14,'soname'),(15,'rpath'),(29,'runpath')):
@@ -311,6 +392,7 @@ def scan_tar(stream,budget,vfs,contents):
     """
     reader=ExpandedReader(stream,budget); layer={};data={};white=[];opaque=[];pending={}
     while True:
+        progress('TAR_HEADER',entry_path=None,entry_path_sha256=None,entry_size=None,entry_bytes_read=0)
         header=reader.exact(512)
         if header==bytes(512):
             need(reader.exact(512)==bytes(512),'TAR_END')
@@ -322,14 +404,17 @@ def scan_tar(stream,budget,vfs,contents):
         budget.entry()
         need(octal(header[148:156])==sum(header[:148])+8*32+sum(header[156:]),'TAR_CHECKSUM')
         need(header[257:263] in (b'ustar\0',b'ustar '),'TAR_MAGIC')
-        size=octal(header[124:136]);need(size<=SPEC['entry_limit'],'TAR_ENTRY_LIMIT')
+        size=octal(header[124:136])
+        progress('TAR_HEADER_SIZE',entry_size=size)
         kind=header[156:157];name=header[:100].split(b'\0',1)[0]
         if header[257:263]==b'ustar\0':
             prefix=header[345:500].split(b'\0',1)[0]
             if prefix:name=prefix+b'/'+name
         link=header[157:257].split(b'\0',1)[0]
         if kind in (b'x',b'L',b'K'):
-            need(size<=65536,'TAR_EXTENSION_LIMIT')
+            entry_identity(path_name(name.decode('utf8')),size)
+            progress('TAR_EXTENSION')
+            need(size<=min(65536,SPEC['entry_limit']),'TAR_EXTENSION_LIMIT')
             raw=reader.exact(size);reader.exact((-size)%512)
             if kind==b'x':
                 need(not pending,'TAR_EXTENSION_CHAIN');pending=pax_fields(raw)
@@ -340,18 +425,32 @@ def scan_tar(stream,budget,vfs,contents):
             continue
         name=pending.get(b'path',name);link=pending.get(b'linkpath',link);pending={}
         name=path_name(name.decode('utf8'),allow_root=kind==b'5')
+        entry_identity(name,size)
+        need(size<=SPEC['entry_limit'],'TAR_ENTRY_LIMIT')
         need(kind in (b'0',b'\0',b'5',b'1',b'2'),'UNSUPPORTED_TAR_TYPE')
         need(kind in (b'0',b'\0') or size==0,'NONFILE_BODY')
         mode=octal(header[100:108]);need(mode<=0o7777,'TAR_MODE')
         h=hashlib.sha256();kept=bytearray();want=selected(name)
         need(not want or size<=4*1024**2,'SELECTED_DATA_LIMIT')
-        left=size;is_elf=False
-        while left:
-            raw=reader.exact(min(left,65536));h.update(raw)
-            if left==size and raw.startswith(b"\x7fELF"):
-                is_elf=True;need(size<=16*1024**2,"ELF_FILE_LIMIT")
-            if want or is_elf:kept.extend(raw)
-            left-=len(raw)
+        first=reader.exact(min(size,65536)) if size else b''
+        is_elf=first.startswith(b"\x7fELF")
+        elf=None
+        with elf_spool(budget,size,is_elf) as spool:
+            left=size;raw=first
+            while left:
+                progress('ELF_SPOOL_WRITE' if is_elf else 'TAR_ENTRY_READ')
+                h.update(raw)
+                if want:kept.extend(raw)
+                if spool is not None:need(spool.write(raw)==len(raw),'ELF_SPOOL_WRITE')
+                left-=len(raw)
+                progress('TAR_ENTRY_BODY',entry_bytes_read=size-left)
+                if left:raw=reader.exact(min(left,65536))
+            if spool is not None:
+                progress('ELF_PARSE')
+                spool.flush()
+                need(spool.tell()==size,'ELF_SPOOL_SIZE')
+                elf=elf_metadata(spool,size)
+        progress('TAR_ENTRY_PADDING')
         pad=reader.exact((-size)%512);need(not any(pad),'TAR_PADDING')
         basename=name.rsplit('/',1)[-1];parent=name.rpartition('/')[0]
         if basename.startswith('.wh.'):
@@ -366,7 +465,7 @@ def scan_tar(stream,budget,vfs,contents):
                 'size':size,'mode':mode}
         if record['type']=='file':
             record['sha256']=h.hexdigest()
-            if is_elf:record['elf']=elf_metadata(bytes(kept))
+            if is_elf:record['elf']=elf
         if kind in (b'1',b'2'):
             target=link.decode('utf8');need(len(link)<=SPEC['path_limit'] and '\x00' not in target,'LINK_LIMIT')
             if kind==b'1':target=path_name(target)
@@ -416,6 +515,7 @@ def ar_data(raw):
     key=paths[0];return key,members[key]
 
 def pip_metadata(raw,budget):
+    REPORT['progress']={'archive':'PIP_DEB_DATA','stage':'AR_PARSE'}
     key,data=ar_data(raw);vfs={};contents={}
     stream=lzma.LZMAFile(io.BytesIO(data)) if key.endswith('xz') else gzip.GzipFile(fileobj=io.BytesIO(data))
     with stream:scan_tar(stream,budget,vfs,contents)
@@ -476,17 +576,23 @@ def blob_get(digest,size,token):
 
 def readiness(spec):
     need(sys.platform.startswith('linux') and spec['body_limit']==100663296 and
-         spec['expanded_limit']==1073741824 and spec['memory_limit']==536870912 and
+         spec['expanded_limit']==1073741824 and spec['entry_limit']==134217728 and spec['memory_limit']==536870912 and
          spec['managed_write_limit']==2147483648,'LIMIT_CONTRACT')
     for tool in ('bash','curl','timeout','gpg','gpgv','sha256sum','awk','xz','date','stat','head','mkfifo','jq','grep','cp','cat','mktemp','rm'):
         need(shutil.which(tool),'REQUIRED_TOOL')
     resource.setrlimit(resource.RLIMIT_AS,(spec['memory_limit'],spec['memory_limit']))
     need(resource.getrlimit(resource.RLIMIT_AS)==(spec['memory_limit'],)*2,'MEMORY_CONTROL')
-    resource.setrlimit(resource.RLIMIT_FSIZE,(16*1024**2,16*1024**2))
+    resource.setrlimit(resource.RLIMIT_FSIZE,(spec['entry_limit'],spec['entry_limit']))
+    need(resource.getrlimit(resource.RLIMIT_FSIZE)==(spec['entry_limit'],)*2,'FILE_SIZE_CONTROL')
     resource.setrlimit(resource.RLIMIT_CPU,(380,380))
     signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(ValueError('DEADLINE')))
     signal.alarm(390)
     need(dt.datetime.now(dt.timezone.utc)<dt.datetime.fromisoformat(spec['security_valid_until'].replace('Z','+00:00')),'EXPIRED')
+
+def signature_child_limits():
+    # Preserve the original verifier's narrower per-file bound in its child.
+    resource.setrlimit(resource.RLIMIT_FSIZE,(16*1024**2,16*1024**2))
+
 
 def verify_saved(repo,token,work,budget):
     spec=SPEC['saved_artifact'];meta=document(fixed_get(spec['url'],16384,token))
@@ -513,7 +619,7 @@ def verify_saved(repo,token,work,budget):
     (work/'gnupg').mkdir(mode=0o700)
     with tempfile.TemporaryFile(dir=work) as out:
         proc=subprocess.run(['bash',str(scriptpath)],stdin=subprocess.DEVNULL,stdout=out,stderr=out,
-                            env=env,timeout=90,check=False)
+                            env=env,timeout=90,check=False,preexec_fn=signature_child_limits)
         out.seek(0);log=out.read(262145)
     need(proc.returncode==0 and len(log)<=262144,'SAVED_SIGNATURE_OR_EXPIRY')
     # The unchanged script checks both signatures, exact keys, signed index
@@ -548,11 +654,18 @@ def image_inventory(token,budget):
     need(config.get('os')=='linux' and config.get('architecture')=='amd64' and
          config['rootfs']['type']=='layers' and len(config['rootfs']['diff_ids'])==len(SPEC['layers']),'OCI_CONFIG')
     vfs={};contents={};diffs=[]
-    for item,expected in zip(SPEC['layers'],config['rootfs']['diff_ids']):
+    REPORT['verified_layers']=[]
+    for index,(item,expected) in enumerate(zip(SPEC['layers'],config['rootfs']['diff_ids']),1):
+        REPORT['progress']={'archive':'OCI_LAYER','layer_index':index,'layer_digest':item['digest'],
+                            'stage':'LAYER_FETCH','compressed_digest_verified':False}
         need(re.fullmatch(r'sha256:[0-9a-f]{64}',expected),'DIFF_ID')
         raw=blob_get(item['digest'],item['size'],token)
+        progress('LAYER_SCAN',compressed_digest_verified=True)
         with gzip.GzipFile(fileobj=io.BytesIO(raw)) as stream:diff=scan_tar(stream,budget,vfs,contents)
+        progress('LAYER_DIFF_ID')
         need('sha256:'+diff==expected,'LAYER_DIFF_ID');diffs.append('sha256:'+diff)
+        REPORT['verified_layers'].append({'index':index,'digest':item['digest'],
+                                         'compressed_size':item['size'],'diff_id':'sha256:'+diff})
     need('var/lib/dpkg/status' in contents,'DPKG_INVENTORY_MISSING')
     packages=[]
     for stanza in contents['var/lib/dpkg/status'].decode('utf8').split('\n\n'):
@@ -603,7 +716,7 @@ def main():
     need(status==201 and document(raw)['object']['sha']==expected,'CLAIM_UNCERTAIN')
     REPORT.update(guard_consumed=True,once_ref=spec['once_ref'],main_sha=expected,run_id=os.environ['GITHUB_RUN_ID'],attempt=1)
     with tempfile.TemporaryDirectory(prefix='p1s-') as temp:
-        work=Path(temp);REPORT['stage']='SAVED_SIGNATURES';verify_saved(repo,token,work,budget)
+        work=Path(temp);budget.spool_dir=work;REPORT['stage']='SAVED_SIGNATURES';verify_saved(repo,token,work,budget)
         auth=document(fixed_get(spec['oci']['auth_url'],32768))
         registry_token=auth.get('token');need(type(registry_token) is str and 0<auth.get('expires_in',0)<=3600,'REGISTRY_AUTH')
         REPORT['stage']='IMAGE_STATIC_SCAN';REPORT['image']=image_inventory(registry_token,budget)
@@ -615,6 +728,31 @@ def main():
                   missing=['ACTUAL_RUNTIME_IMPORTS_ABI','OFFLINE_INSTALL_RECONCILIATION','GIT_ADDITIONAL_CLOSURE',
                            'AP2_OBJECT_STORE','TRUSTED_SUPERVISOR','E03_E04_E06_GATES'])
 
+def report_bytes(report):
+    """Bound the serialized result while producing it, retain small diagnostics."""
+    limit=1048576-65536;out=bytearray();failed=False
+    encoder=json.JSONEncoder(sort_keys=True,ensure_ascii=True,allow_nan=False,separators=(',',':'))
+    try:
+        for part in encoder.iterencode(report):
+            # ensure_ascii makes character count equal to encoded byte count.
+            if len(part)>limit-len(out):
+                failed=True;break
+            out.extend(part.encode('ascii'))
+    except (MemoryError,ValueError,TypeError,OverflowError):
+        failed=True
+    if not failed:return bytes(out),False
+    out.clear()
+    fallback={'status':'STOP_HOLD','stop_reason':'METADATA_OUTPUT_LIMIT',
+              'controlled_response_body_bytes':report.get('controlled_response_body_bytes',0),
+              'guard_consumed':report.get('guard_consumed',False),'runtime':'UNPROVEN',
+              'stage':report.get('stage'),'progress':report.get('progress'),
+              'verified_layers':report.get('verified_layers',[]),
+              'resource_counters':report.get('resource_counters')}
+    raw=encoded(fallback)
+    need(len(raw)<=32768,'DIAGNOSTIC_OUTPUT_BOUND')
+    return raw,True
+
+
 if __name__=='__main__':
     code=0
     try:main()
@@ -625,10 +763,8 @@ if __name__=='__main__':
         REPORT['stop_reason']=reason if re.fullmatch(r'[A-Z0-9_]{1,80}',reason) else type(exc).__name__
         code=1
     REPORT['controlled_response_body_bytes']=USED
-    raw=encoded(REPORT)
-    if len(raw)>1048576-65536:
-        raw=encoded({'status':'STOP_HOLD','stop_reason':'METADATA_OUTPUT_LIMIT','controlled_response_body_bytes':USED,
-                     'guard_consumed':REPORT.get('guard_consumed',False),'runtime':'UNPROVEN'});code=1
+    raw,output_failed=report_bytes(REPORT)
+    if output_failed:code=1
     out=REPO/'p1s-result';out.mkdir(mode=0o700,exist_ok=True)
     with (out/'inventory.json').open('xb') as stream:stream.write(raw)
     print('P1S_STATUS='+document(raw)['status'])
