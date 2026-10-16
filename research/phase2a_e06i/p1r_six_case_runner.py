@@ -5,6 +5,8 @@ HOLD/exit1 is accepted only with complete, bound, exact report contents.
 No subprocess, socket, Docker, signing, installation or output-file backend.
 Supplied reports and isolation receipts never attest their own provenance.
 """
+import base64
+import re
 import importlib.util
 from pathlib import Path
 
@@ -21,15 +23,101 @@ STAGES = ["G0_PREAUTH_BOUNDS", "G1_HOST_TRUST_SNAPSHOT", "G2_ISSUER_ROOT_AUTHENT
           "G5_OFFICIAL_SCHEMA_AND_LOCAL_SHAPE"]
 
 
-def public_policy(policy):
+POLICY_FIELDS = set("active alg allowed_sd_paths checkout_use_case expected_agent_public_jwk expected_aud expected_checkout_id expected_currency expected_merchant_id expected_nonce expected_total_minor freeze_epoch host_checkout_jwt issuer_public_jwk issuer_ref issuer_thumbprint not_after not_before policy_digest policy_version profile_ref tenant_scope trusted_merchant_public_jwk".split())
+PINNED_PATHS = sorted(["$/delegate_payload/0", "$/delegate_payload/0/disclosed/constraints/1/allowed/0",
+                       "$/delegate_payload/0/disclosed/constraints/0/items/0/acceptable_items/0"])
+
+
+def b64(raw):
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+
+
+def decode64(text):
+    need(type(text) is str and 0 < len(text) <= 32768 and
+         re.fullmatch(r"[A-Za-z0-9_-]+", text), "WIRE_BASE64")
+    raw = base64.b64decode(text + "=" * (-len(text) % 4), altchars=b"-_", validate=True)
+    need(b64(raw) == text, "WIRE_BASE64_CANONICAL")
+    return raw
+
+
+def public_policy(policy, raw):
+    """Host.load! input shape/digest parity, not Host authority or signature proof."""
+    need(set(policy) == POLICY_FIELDS and raw.isascii() and raw.strip() == prepare.wire(policy),
+         "POLICY_CANONICAL_FIELDS")
+    unsigned = {k: v for k, v in policy.items() if k != "policy_digest"}
+    need(policy["policy_digest"] == sha(prepare.wire(unsigned)), "POLICY_DIGEST")
     for name in ("issuer_public_jwk", "expected_agent_public_jwk", "trusted_merchant_public_jwk"):
-        key = policy.get(name)
+        key = policy[name]
         need(type(key) is dict and set(key) == {"kty", "crv", "x", "y"} and
              key["kty"] == "EC" and key["crv"] == "P-256" and
-             all(type(key[k]) is str and 1 <= len(key[k]) <= 128 for k in key),
-             "PUBLIC_POLICY_KEY_SHAPE")
-    need(policy.get("tenant_scope") == "synthetic-e01s" and
-         policy.get("profile_ref") == "e01s-fixed-a-v1", "SYNTHETIC_POLICY_ONLY")
+             all(type(key[k]) is str and key[k] for k in key), "PUBLIC_POLICY_KEY_SHAPE")
+    import hashlib
+    need(policy["issuer_thumbprint"] == b64(hashlib.sha256(prepare.wire(policy["issuer_public_jwk"])).digest()),
+         "POLICY_THUMBPRINT")
+    fixed = {"tenant_scope": "synthetic-e01s", "checkout_use_case": "checkout-research",
+             "issuer_ref": "synthetic-e01s-issuer-A", "profile_ref": "e01s-fixed-a-v1",
+             "alg": "ES256", "allowed_sd_paths": PINNED_PATHS}
+    need(all(policy[k] == v for k, v in fixed.items()) and policy["active"] is True and
+         type(policy["policy_version"]) is int and policy["policy_version"] == 1,
+         "SYNTHETIC_POLICY_ONLY")
+    epoch = policy["freeze_epoch"]
+    need(type(epoch) is int and type(policy["not_before"]) is int and type(policy["not_after"]) is int and
+         policy["not_before"] == epoch - 60 and policy["not_after"] == epoch + 1200,
+         "POLICY_VALIDITY_SHAPE")
+    need(all(type(policy[k]) is str and policy[k] for k in
+             ("expected_aud", "expected_nonce", "expected_checkout_id", "expected_merchant_id", "expected_currency")) and
+         type(policy["expected_total_minor"]) is int and policy["expected_total_minor"] > 0 and
+         type(policy["host_checkout_jwt"]) is str and 1 <= len(policy["host_checkout_jwt"]) <= 16384,
+         "POLICY_CONTEXT")
+
+
+def terminal_binding(root, terminal, policy):
+    """Decode unverified signed claims to reject contradictory mock identities.
+
+    This never verifies a signature, disclosure semantics or crypto eligibility.
+    """
+    import hashlib
+    parts = terminal.split("~")
+    need(len(parts) == 3 and parts[-1] == "" and parts[1], "TERMINAL_PARTS")
+    jws = parts[0].split(".")
+    need(len(jws) == 3, "TERMINAL_JWS")
+    header = document(decode64(jws[0]), 8192)
+    claims = document(decode64(jws[1]), 32768)
+    need(header.get("alg") == "ES256" and header.get("typ") == "kb+sd-jwt" and
+         len(decode64(jws[2])) == 64, "TERMINAL_HEADER_SIGNATURE_SHAPE")
+    need(set(claims) <= {"_sd_alg", "aud", "delegate_payload", "iat", "nonce", "sd_hash"} and
+         claims.get("_sd_alg") in (None, "sha-256") and
+         claims.get("sd_hash") == b64(hashlib.sha256(root.encode("ascii")).digest()) and
+         claims.get("aud") == policy["expected_aud"] and claims.get("nonce") == policy["expected_nonce"] and
+         type(claims.get("iat")) is int and claims["iat"] == policy["freeze_epoch"] and
+         claims.get("delegate_payload") == [{"...": b64(hashlib.sha256(parts[1].encode("ascii")).digest())}],
+         "TERMINAL_ROOT_POLICY_BINDING")
+    decode64(parts[1])
+    return header, {k: v for k, v in claims.items() if k != "sd_hash"}, parts[1]
+
+
+def qualify_mock_inputs(fixture_raw, policy_raw):
+    """Only explicit structural preconditions; crypto/runtime remain UNPROVEN."""
+    fixture, policy = document(fixture_raw, 262144), document(policy_raw, 16384)
+    public_policy(policy, policy_raw)
+    need(set(fixture) == {"ap2_commit", "cases"} and fixture["ap2_commit"] == prepare.AP2 and
+         type(fixture["cases"]) is dict and set(fixture["cases"]) == set(CASES), "SIX_CASE_FIXTURE_SHAPE")
+    templates, compacts, roots, terminals = [], {}, [], []
+    for name in CASES:
+        case = fixture["cases"][name]
+        need(type(case) is dict and set(case) == {"root", "terminal"}, "CASE_WIRE_SHAPE")
+        need(all(type(case[k]) is str and case[k].isascii() and 0 < len(case[k]) <= 32768
+                 for k in ("root", "terminal")), "CASE_WIRE_LIMIT")
+        compacts[name] = case["root"].split("~", 1)[0]
+        roots.append(case["root"])
+        terminals.append(case["terminal"])
+        templates.append(terminal_binding(case["root"], case["terminal"], policy))
+    need(len(set(roots)) == len(CASES) and len(set(terminals)) == len(CASES) and
+         all(t == templates[0] for t in templates) and
+         compacts["HIDDEN"] == compacts["EXTRA"] == compacts["FULL"] and
+         len({compacts[n] for n in ("FULL", "UNKNOWN", "DUPLICATE", "DECOY")}) == 4,
+         "MOCK_CAUSAL_WIRE_IDENTITY")
+    return fixture, policy
 
 
 def statuses(receipt):
@@ -51,14 +139,9 @@ def statuses(receipt):
 
 def compare_mock_reports(*, fixture_raw, policy_raw, oracle_raw, ruby_raw, receipt):
     statuses(receipt)
-    fixture = document(fixture_raw, 262144)
-    policy = document(policy_raw, 16384)
+    fixture, policy = qualify_mock_inputs(fixture_raw, policy_raw)
     oracle = document(oracle_raw, 65536)
     ruby = document(ruby_raw, 65536)
-    public_policy(policy)
-    need(set(fixture) == {"ap2_commit", "cases"} and
-         fixture["ap2_commit"] == prepare.AP2 and type(fixture["cases"]) is dict and
-         set(fixture["cases"]) == set(CASES), "SIX_CASE_FIXTURE_SHAPE")
     need(set(oracle) == {"case_id", "pinned_ap2_sha", "fixture_sha256", "policy_sha256",
          "cases", "oracle_scope", "o2_agent_merchant", "o4_schema", "o5_ruby_stage",
          "host_authority", "e03_e04_exit_gate", "conclusion"}, "ORACLE_REPORT_SHAPE")
@@ -87,7 +170,6 @@ def compare_mock_reports(*, fixture_raw, policy_raw, oracle_raw, ruby_raw, recei
          ruby["conclusion"] == "NOT_A_PAYMENT_OR_PHASE2B_AUTHORIZATION", "RUBY_BINDING_OR_AUTHORITY")
     need(type(oracle["cases"]) is dict and type(ruby["cases"]) is dict and
          set(oracle["cases"]) == set(ruby["cases"]) == set(CASES), "SIX_CASE_REPORT_SET")
-    compacts = {}
     for name in CASES:
         case, expected, observed = fixture["cases"][name], oracle["cases"][name], ruby["cases"][name]
         need(type(case) is dict and set(case) == {"root", "terminal"}, "CASE_WIRE_SHAPE")
@@ -95,7 +177,6 @@ def compare_mock_reports(*, fixture_raw, policy_raw, oracle_raw, ruby_raw, recei
             value = case[key]
             need(type(value) is str and value.isascii() and 0 < len(value) <= 32768, "CASE_WIRE_LIMIT")
         root_hash, term_hash = sha(case["root"].encode()), sha(case["terminal"].encode())
-        compacts[name] = case["root"].split("~", 1)[0]
         need(type(expected) is dict and set(expected) == {
              "issuer_signature", "root_wire_sha256", "terminal_wire_sha256",
              "graph_class", "expected_g3", "g1_authority"}, "ORACLE_CASE_SHAPE")
@@ -113,13 +194,11 @@ def compare_mock_reports(*, fixture_raw, policy_raw, oracle_raw, ruby_raw, recei
              observed["first_reject_stage"] == (None if name == "FULL" else STAGES[3]) and
              observed["completed_stages"] == (STAGES if name == "FULL" else STAGES[:3]),
              "CAUSAL_STAGE_MISMATCH")
-    need(len({fixture["cases"][name]["root"] for name in CASES}) == len(CASES) and
-         compacts["HIDDEN"] == compacts["EXTRA"] == compacts["FULL"] and
-         len({compacts[name] for name in ("FULL", "UNKNOWN", "DUPLICATE", "DECOY")}) == 4,
-         "SIGNED_VARIANT_IDENTITY")
     # This function only compares caller-supplied mock records. It performs
     # no signature check and proves neither execution nor external provenance.
     return {"status": "HOLD", "mock_report_consistency": True,
+            "input_preconditions": "POLICY_SHAPE_DIGEST_AND_UNVERIFIED_TERMINAL_BINDING_ONLY",
+            "cryptographic_eligibility": "UNPROVEN",
             "actual_six_case_execution": False, "source_runtime_attestation": "UNPROVEN",
             "independent_o2_o4": "NOT_CHECKED", "g6_g7": "HOLD_NOT_WIRED",
             "phase2_gate": "UNPROVEN", "phase2b": "HOLD"}
@@ -153,6 +232,8 @@ def orchestrate_mock_reports(port, cleanup):
                 need(type(raw) is bytes and 0 < len(raw) <= limit, "MOCK_OUTPUT_BOUND")
                 document(raw, limit)
                 outputs[name] = raw
+            if operation == "builder":
+                qualify_mock_inputs(outputs["fixture_raw"], outputs["policy_raw"])
             receipt[operation + "_exit"] = result["exit"]
             receipt[operation + "_seconds"] = result["seconds"]
         receipt.update(timed_out=False, children_reaped=True,
