@@ -50,20 +50,28 @@ def bounded_tree(value, depth=0):
 
 
 def strict_value(raw):
-    # Reuse duplicate/nonfinite rejection while permitting disclosure arrays.
-    return bounded_tree(document(b'{"v":' + raw + b'}', 32776)["v"])
+    # Parse one standalone value; never splice untrusted JSON into a wrapper.
+    return bounded_tree(prepare.json_value(raw, 32768))
 
 
-def inspect_wire(wire, typ):
-    """G0 envelope only, no decoded claim/disclosure truth or signature check."""
-    parts = wire.split("~")
-    need(3 <= len(parts) <= 18 and parts[-1] == "", "SD_SEGMENTS")
-    jws = parts[0].split(".")
+def inspect_compact(compact, typ, cap=32768):
+    """Shared standalone JWS envelope for Root, Terminal and checkout."""
+    need(type(compact) is str and compact.isascii() and 0 < len(compact) <= cap, "JWS_SIZE")
+    jws = compact.split(".")
     need(len(jws) == 3 and len(decode64(jws[2])) == 64, "JWS_SHAPE")
     header, payload = strict_value(decode64(jws[0])), strict_value(decode64(jws[1]))
     need(type(header) is dict and set(header) <= {"alg", "kid", "typ"} and
          header.get("alg") == "ES256" and header.get("typ") == typ and
          (header.get("kid") is None or type(header["kid"]) is str), "JOSE_HEADER")
+    return header, payload
+
+
+def inspect_wire(wire, typ):
+    """G0 envelope only, no decoded claim/disclosure truth or signature check."""
+    need(type(wire) is str and wire.isascii() and 0 < len(wire) <= 32768, "SD_SIZE")
+    parts = wire.split("~")
+    need(3 <= len(parts) <= 18 and parts[-1] == "", "SD_SEGMENTS")
+    inspect_compact(parts[0], typ)
     for disclosure in parts[1:-1]:
         strict_value(decode64(disclosure))
     return parts[0]
@@ -99,6 +107,7 @@ def public_policy(policy, raw):
          type(policy["expected_total_minor"]) is int and policy["expected_total_minor"] > 0 and
          type(policy["host_checkout_jwt"]) is str and 1 <= len(policy["host_checkout_jwt"]) <= 16384,
          "POLICY_CONTEXT")
+    inspect_compact(policy["host_checkout_jwt"], "JWT", 16384)
 
 
 def terminal_binding(root, terminal, policy):
@@ -109,14 +118,11 @@ def terminal_binding(root, terminal, policy):
     import hashlib
     parts = terminal.split("~")
     need(len(parts) == 3 and parts[-1] == "" and parts[1], "TERMINAL_PARTS")
-    jws = parts[0].split(".")
-    need(len(jws) == 3, "TERMINAL_JWS")
-    header = document(decode64(jws[0]), 8192)
-    claims = document(decode64(jws[1]), 32768)
+    header, claims = inspect_compact(parts[0], "kb+sd-jwt")
+    need(type(claims) is dict, "TERMINAL_CLAIM_OBJECT")
     need(set(header) <= {"alg", "kid", "typ"} and
          ("kid" not in header or type(header["kid"]) is str) and
-         header.get("alg") == "ES256" and header.get("typ") == "kb+sd-jwt" and
-         len(decode64(jws[2])) == 64, "TERMINAL_HEADER_SIGNATURE_SHAPE")
+         header.get("alg") == "ES256" and header.get("typ") == "kb+sd-jwt", "TERMINAL_HEADER_SIGNATURE_SHAPE")
     need(set(claims) <= {"_sd_alg", "aud", "delegate_payload", "iat", "nonce", "sd_hash"} and
          claims.get("_sd_alg") in (None, "sha-256") and
          claims.get("sd_hash") == b64(hashlib.sha256(root.encode("ascii")).digest()) and
