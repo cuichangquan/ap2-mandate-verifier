@@ -6,8 +6,10 @@ No candidate imports: separate line parser, fixed-point graph construction,
 and Debian Policy 5.6.12 version ordering (candidate uses external dpkg).
 Policy: https://www.debian.org/doc/debian-policy/ch-controlfields.html
         https://www.debian.org/doc/debian-policy/ch-relationships.html
-The deliberately restricted dependency subset excludes alternatives,
-virtual packages, conflicts, breaks, architecture selectors and profiles.
+FIXED_REAL_MAX_V1 fixes real-package maxima before selecting ordered ORs.
+Selected-set Conflicts/Breaks include provided identities. No virtual-provider
+dependency selection, downgrade/backtracking, selectors or profiles; no
+installed/Essential baseline, unpack/configure ordering or APT equivalence.
 Either implementation rejecting is HOLD, even when both reject. This does
 not prove first-reject equivalence or installed/OCI/ELF dependency closure.
 """
@@ -26,7 +28,7 @@ INPUTS = (("main", 8790396,
            "9e0b5aabb2465b3d2e7a7fe27f9913846277833f7a2826e7767acccff5b588c5"),
           ("security", 349200,
            "816aa77b2d8d70c7f17494007692511bc6848598909cff4ee8fc642231c40007"))
-CANDIDATE_BLOB = "8fc9fe8090dd3228fbaf9b75c83d48014bb3c0a9"
+CANDIDATE_BLOB = "dc23f96b4244dd296dec4dba75e292ebf52812e3"
 ROOTS = ("python3.11", "python3.11-minimal",
          "libpython3.11-minimal", "libpython3.11-stdlib")
 VERSIONS = (("3.11.2-6+deb12u8", "main"), ("3.11.2-6+deb12u9", "security"))
@@ -145,6 +147,35 @@ def records(path):
                 fields[current] = value[1:]
 
 
+def relationship_groups(item, fields):
+    count = 0
+    for field in fields:
+        value = item.get(field, "")
+        if not value:
+            continue
+        for text in value.split(","):
+            branches = text.split("|")
+            require(field in ("depends", "pre-depends") or len(branches) == 1)
+            group = []
+            for branch in branches:
+                count += 1
+                require(count <= 1024)
+                # Separate token parser, never candidate's relation regex.
+                parts = branch.strip().split()
+                require(len(parts) in (1, 3))
+                name = parts[0]
+                require(re.fullmatch(r"[a-z0-9][a-z0-9+.-]{1,127}", name) is not None)
+                op = wanted = None
+                if len(parts) == 3:
+                    require(parts[1].startswith("(") and parts[2].endswith(")"))
+                    op, wanted = parts[1][1:], parts[2][:-1]
+                    require(op in ("<<", "<=", "=", ">=", ">>"))
+                    version_parts(wanted)
+                require(field != "provides" or op in (None, "="))
+                group.append((name, op, wanted))
+            yield group
+
+
 def expected_report(paths):
     global STAGE
     STAGE = "ORACLE_INDEX"
@@ -163,61 +194,95 @@ def expected_report(paths):
     STAGE = "ORACLE_GRAPH"
     candidates = []
     for version, origin in VERSIONS:
-        selected = {(name, version, "amd64") for name in ROOTS}
+        fixed = {name: (name, version, "amd64") for name in ROOTS}
+        selected = set(fixed.values())
         require(all(k in inventory and inventory[k][1] == origin for k in selected))
-        processed, constraints, edges = set(), 0, 0
-        # Independent fixed point over sorted frontiers, not candidate BFS.
+        processed, comparisons, atoms = set(), 0, 0
+
+        def order(a, b):
+            nonlocal comparisons
+            comparisons += 1
+            require(comparisons <= 4096)
+            return compare(a, b)
+
+        def matches(actual, op, wanted):
+            nonlocal comparisons
+            if op is None:
+                comparisons += 1
+                require(comparisons <= 4096)
+                return True
+            if actual is None:
+                return False
+            value = order(actual, wanted)
+            return {"<<": value < 0, "<=": value <= 0, "=": value == 0,
+                    ">=": value >= 0, ">>": value > 0}[op]
+
+        def maximum(name):
+            if name not in fixed:
+                # Independent descending insertion; equal maxima must be unique.
+                ordered = []
+                for option in names.get(name, ()):
+                    pos = 0
+                    while pos < len(ordered) and order(option[1], ordered[pos][1]) < 0:
+                        pos += 1
+                    ordered.insert(pos, option)
+                require(len(ordered) < 2 or order(ordered[0][1], ordered[1][1]) != 0)
+                fixed[name] = ordered[0] if ordered else None
+            return fixed[name]
+
+        def groups(item, fields):
+            nonlocal atoms
+            for group in relationship_groups(item, fields):
+                atoms += len(group)
+                require(atoms <= 4096)
+                yield group
+
+        # Sorted fixed-point frontiers, independently of candidate BFS.
         while selected != processed:
             require(len(selected) <= 512)
             require(len({k[0] for k in selected}) == len(selected))
             additions = set()
             for key in sorted(selected - processed):
-                item = inventory[key][0]
-                require(not any(item.get(f) for f in ("provides", "conflicts", "breaks")))
-                relations = []
-                for field in ("pre-depends", "depends"):
-                    if item.get(field):
-                        relations.extend(item[field].split(","))
-                require(len(relations) <= 1024)
-                edges += len(relations)
-                require(edges <= 4096)
-                for relation in relations:
-                    # No OR, multiarch, virtual, profile or implicit choice.
-                    parts = relation.strip().split()
-                    require(len(parts) in (1, 3))
-                    name = parts[0]
-                    require(re.fullmatch(r"[a-z0-9][a-z0-9+.-]{1,127}", name) is not None)
-                    op, wanted = None, None
-                    if len(parts) == 3:
-                        require(parts[1].startswith("(") and parts[2].endswith(")"))
-                        op, wanted = parts[1][1:], parts[2][:-1]
-                        require(op in ("<<", "<=", "=", ">=", ">>"))
-                        version_parts(wanted)
-                    matches = []
-                    for option in names.get(name, ()):
-                        constraints += 1
-                        require(constraints <= 4096)
-                        if op is None:
-                            matches.append(option)
-                        else:
-                            order = compare(option[1], wanted)
-                            if {"<<": order < 0, "<=": order <= 0, "=": order == 0,
-                                ">=": order >= 0, ">>": order > 0}[op]:
-                                matches.append(option)
-                    require(len(matches) == 1)
-                    additions.add(matches[0])
+                for group in groups(inventory[key][0], ("pre-depends", "depends")):
+                    found = None
+                    for name, op, wanted in group:
+                        option = maximum(name)
+                        if option is not None and matches(option[1], op, wanted):
+                            found = option
+                            break
+                    require(found is not None)
+                    additions.add(found)
                 processed.add(key)
             selected.update(additions)
+
+        # Build each selected package's real and virtual identities separately.
+        offered = {}
+        for key in sorted(selected):
+            offered[key] = [(key[0], key[1])]
+            for group in groups(inventory[key][0], ("provides",)):
+                name, _, provided = group[0]
+                offered[key].append((name, provided))
+        reverse = {}
+        for key, identities in offered.items():
+            for name, actual in identities:
+                reverse.setdefault(name, []).append((key, actual))
+        for key in sorted(selected):
+            for group in groups(inventory[key][0], ("conflicts", "breaks")):
+                name, op, wanted = group[0]
+                for other, actual in reverse.get(name, ()):
+                    require(other == key or not matches(actual, op, wanted))
+
         manifest = []
         for key in sorted(selected):
             item, archive = inventory[key]
             manifest.append([*key, archive, *[item.get(f, "") for f in
-                             ("filename", "size", "sha256", "depends", "pre-depends")]])
+                             ("filename", "size", "sha256", "depends", "pre-depends",
+                              "provides", "conflicts", "breaks")]])
         digest = hashlib.sha256(json.dumps(manifest, ensure_ascii=True,
                                           separators=(",", ":")).encode()).hexdigest()
         candidates.append({"version": version, "candidate_nodes": len(selected),
                            "graph_sha256": digest})
-    return {"status": "CANDIDATE_ONLY_RUNTIME_UNPROVEN",
+    return {"status": "CANDIDATE_ONLY_RUNTIME_UNPROVEN", "policy": "FIXED_REAL_MAX_V1",
             "index_stanzas": counts, "candidates": candidates}
 
 

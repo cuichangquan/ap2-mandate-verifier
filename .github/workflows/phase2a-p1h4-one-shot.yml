@@ -20,32 +20,24 @@ jobs:
     permissions:
       contents: write # Only needed for atomic, persistent one-shot Git tag claim.
     steps:
-      - name: Reject unsupported frozen-root experiment before one-shot consumption
+      - name: Keep redesign review barrier before one-shot consumption
         shell: bash
         run: |
-          # R1 review: python3.11 has media-types | mime-support. Both the
-          # frozen candidate and this restricted oracle reject alternatives.
-          # No approved independent selection policy or dpkg baseline exists.
-          # Keep this barrier until that design and the candidate integration
-          # are explicitly scoped and reviewed; B_READY must not bypass it.
-          echo "STOP/HOLD: P1M_FROZEN_ROOT_ALTERNATIVE_POLICY_UNAPPROVED" >&2
+          # D65 redesign is source-only pending latest-HEAD independent review.
+          # Neither activation variable may bypass this temporary barrier.
+          echo "STOP/HOLD: P1M_REDESIGN_REVIEW_PENDING" >&2
           exit 1
 
-      - name: Obtain precisely reviewed research commit without saved credentials
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          ref: 9e0d627664a28be72da2ef6606f5c4e0abca1451
-          persist-credentials: false
-          fetch-depth: 1
-
-      - name: Obtain Oracle from this exact workflow commit
+      - name: Obtain candidate, embedded source and Oracle from exact workflow commit
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ github.sha }}
-          path: oracle-source
           persist-credentials: false
           fetch-depth: 1
-          sparse-checkout: research/phase2a_e06i/p1m_independent_oracle.py
+          sparse-checkout: |
+            research/phase2a_e06i/p1m_independent_oracle.py
+            research/phase2a_e06i/p1m_debian_dependency_closure.py
+            .github/workflows/phase2a-p1-h4-metadata.yml
           sparse-checkout-cone-mode: false
 
       - name: Attest immutable source and prepare bounded reviewed script
@@ -54,16 +46,17 @@ jobs:
           set -Eeuo pipefail
           umask 077
           stop() { echo "STOP/HOLD: P1-H4 source preparation failed" >&2; exit 1; }
-          test "$(git rev-parse HEAD)" = 9e0d627664a28be72da2ef6606f5c4e0abca1451 || stop
-          [ "$(git -C oracle-source rev-parse HEAD)" = "$GITHUB_SHA" ] || stop
-          oracle=oracle-source/research/phase2a_e06i/p1m_independent_oracle.py
-          [ "$(git hash-object "$oracle")" = 7b5039efb4f5066f6f55c470852f5c7205c773b9 ] || stop
+          [ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ] || stop
+          oracle=research/phase2a_e06i/p1m_independent_oracle.py
+          candidate=research/phase2a_e06i/p1m_debian_dependency_closure.py
+          [ "$(git hash-object "$candidate")" = dc23f96b4244dd296dec4dba75e292ebf52812e3 ] || stop
+          [ "$(git hash-object "$oracle")" = dd90a6bb47672fb99a34877910f38b54f62c201d ] || stop
           cp -- "$oracle" "$RUNNER_TEMP/p1m-independent-oracle.py"
           chmod 600 "$RUNNER_TEMP/p1m-independent-oracle.py"
           echo "P1M_ORACLE_SOURCE_COMMIT=$GITHUB_SHA"
           source=.github/workflows/phase2a-p1-h4-metadata.yml
-          test "$(git hash-object "$source")" = d51c79fea9d0ddbee482a6c40ef3fd2760a0175b || stop
-          python3 -I -B - "$source" "$RUNNER_TEMP/p1h4-reviewed.sh" <<'PY'
+          test "$(git hash-object "$source")" = c0b2e7ff8c44d173eb2f1ca08693cc95f6a69de8 || stop
+          python3 -I -B - "$source" "$RUNNER_TEMP/p1h4-reviewed.sh" "$candidate" <<'PY'
           import hashlib
           from pathlib import Path
           import sys
@@ -76,8 +69,16 @@ jobs:
           if not lines or any(line != b"\n" and not line.startswith(b"          ") for line in lines):
               raise SystemExit("STOP/HOLD: embedded Bash indentation")
           original = b"".join(line[10:] if line.startswith(b"          ") else line for line in lines)
-          if hashlib.sha256(original).hexdigest() != "a61cc0d445a7fc294620497abb73400e39f7b594438d8c82cca4c9c15a8cf93d":
+          if hashlib.sha256(original).hexdigest() != "ff4c119610c50aace4bb2476fb5d60da9e1a20888be50afbe4df7cfeb4a32706":
               raise SystemExit("STOP/HOLD: embedded Bash digest")
+          # Check embedded/standalone equality BEFORE consuming the one-shot.
+          begin = b"cat > \"$work/p1m_debian_dependency_closure.py\" <<'P1M_PYTHON'\n"
+          end = b"\nP1M_PYTHON\n"
+          if original.count(begin) != 1 or original.count(end) != 1:
+              raise SystemExit("STOP/HOLD: embedded candidate marker")
+          embedded = original.split(begin, 1)[1].split(end, 1)[0] + b"\n"
+          if embedded != Path(sys.argv[3]).read_bytes():
+              raise SystemExit("STOP/HOLD: embedded candidate differs")
           needle = '''  echo "PASS_INRELEASE_SIGNATURE $label sha256=$(sha256sum "$work/$label.InRelease" | awk '{print $1}')"\n'''
           harden = '''  case "$label" in
             main) wire_sha=77737fa4b34f2693e982cc9ee35736816c35a7778fc2d326cc1bbf5b301fe1aa ;;
