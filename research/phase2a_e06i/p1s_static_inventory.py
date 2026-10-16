@@ -285,6 +285,8 @@ def elf_spool(budget,size,enabled):
         return
     progress('ELF_SPOOL_RESERVE',requested_spool_bytes=size)
     need(type(size) is int and 64<=size<=budget.spec['entry_limit'],'ELF_FILE_BOUND')
+    soft,_=resource.getrlimit(resource.RLIMIT_FSIZE)
+    need(soft==resource.RLIM_INFINITY or size<=soft,'ELF_SPOOL_OS_LIMIT')
     budget.reserve(size)
     stream=None
     try:
@@ -574,17 +576,23 @@ def blob_get(digest,size,token):
 
 def readiness(spec):
     need(sys.platform.startswith('linux') and spec['body_limit']==100663296 and
-         spec['expanded_limit']==1073741824 and spec['memory_limit']==536870912 and
+         spec['expanded_limit']==1073741824 and spec['entry_limit']==134217728 and spec['memory_limit']==536870912 and
          spec['managed_write_limit']==2147483648,'LIMIT_CONTRACT')
     for tool in ('bash','curl','timeout','gpg','gpgv','sha256sum','awk','xz','date','stat','head','mkfifo','jq','grep','cp','cat','mktemp','rm'):
         need(shutil.which(tool),'REQUIRED_TOOL')
     resource.setrlimit(resource.RLIMIT_AS,(spec['memory_limit'],spec['memory_limit']))
     need(resource.getrlimit(resource.RLIMIT_AS)==(spec['memory_limit'],)*2,'MEMORY_CONTROL')
-    resource.setrlimit(resource.RLIMIT_FSIZE,(16*1024**2,16*1024**2))
+    resource.setrlimit(resource.RLIMIT_FSIZE,(spec['entry_limit'],spec['entry_limit']))
+    need(resource.getrlimit(resource.RLIMIT_FSIZE)==(spec['entry_limit'],)*2,'FILE_SIZE_CONTROL')
     resource.setrlimit(resource.RLIMIT_CPU,(380,380))
     signal.signal(signal.SIGALRM,lambda *_:(_ for _ in ()).throw(ValueError('DEADLINE')))
     signal.alarm(390)
     need(dt.datetime.now(dt.timezone.utc)<dt.datetime.fromisoformat(spec['security_valid_until'].replace('Z','+00:00')),'EXPIRED')
+
+def signature_child_limits():
+    # Preserve the original verifier's narrower per-file bound in its child.
+    resource.setrlimit(resource.RLIMIT_FSIZE,(16*1024**2,16*1024**2))
+
 
 def verify_saved(repo,token,work,budget):
     spec=SPEC['saved_artifact'];meta=document(fixed_get(spec['url'],16384,token))
@@ -611,7 +619,7 @@ def verify_saved(repo,token,work,budget):
     (work/'gnupg').mkdir(mode=0o700)
     with tempfile.TemporaryFile(dir=work) as out:
         proc=subprocess.run(['bash',str(scriptpath)],stdin=subprocess.DEVNULL,stdout=out,stderr=out,
-                            env=env,timeout=90,check=False)
+                            env=env,timeout=90,check=False,preexec_fn=signature_child_limits)
         out.seek(0);log=out.read(262145)
     need(proc.returncode==0 and len(log)<=262144,'SAVED_SIGNATURE_OR_EXPIRY')
     # The unchanged script checks both signatures, exact keys, signed index
@@ -720,6 +728,31 @@ def main():
                   missing=['ACTUAL_RUNTIME_IMPORTS_ABI','OFFLINE_INSTALL_RECONCILIATION','GIT_ADDITIONAL_CLOSURE',
                            'AP2_OBJECT_STORE','TRUSTED_SUPERVISOR','E03_E04_E06_GATES'])
 
+def report_bytes(report):
+    """Bound the serialized result while producing it, retain small diagnostics."""
+    limit=1048576-65536;out=bytearray();failed=False
+    encoder=json.JSONEncoder(sort_keys=True,ensure_ascii=True,allow_nan=False,separators=(',',':'))
+    try:
+        for part in encoder.iterencode(report):
+            # ensure_ascii makes character count equal to encoded byte count.
+            if len(part)>limit-len(out):
+                failed=True;break
+            out.extend(part.encode('ascii'))
+    except (MemoryError,ValueError,TypeError,OverflowError):
+        failed=True
+    if not failed:return bytes(out),False
+    out.clear()
+    fallback={'status':'STOP_HOLD','stop_reason':'METADATA_OUTPUT_LIMIT',
+              'controlled_response_body_bytes':report.get('controlled_response_body_bytes',0),
+              'guard_consumed':report.get('guard_consumed',False),'runtime':'UNPROVEN',
+              'stage':report.get('stage'),'progress':report.get('progress'),
+              'verified_layers':report.get('verified_layers',[]),
+              'resource_counters':report.get('resource_counters')}
+    raw=encoded(fallback)
+    need(len(raw)<=32768,'DIAGNOSTIC_OUTPUT_BOUND')
+    return raw,True
+
+
 if __name__=='__main__':
     code=0
     try:main()
@@ -730,13 +763,8 @@ if __name__=='__main__':
         REPORT['stop_reason']=reason if re.fullmatch(r'[A-Z0-9_]{1,80}',reason) else type(exc).__name__
         code=1
     REPORT['controlled_response_body_bytes']=USED
-    raw=encoded(REPORT)
-    if len(raw)>1048576-65536:
-        raw=encoded({'status':'STOP_HOLD','stop_reason':'METADATA_OUTPUT_LIMIT','controlled_response_body_bytes':USED,
-                     'guard_consumed':REPORT.get('guard_consumed',False),'runtime':'UNPROVEN',
-                     'stage':REPORT.get('stage'),'progress':REPORT.get('progress'),
-                     'verified_layers':REPORT.get('verified_layers',[]),
-                     'resource_counters':REPORT.get('resource_counters')});code=1
+    raw,output_failed=report_bytes(REPORT)
+    if output_failed:code=1
     out=REPO/'p1s-result';out.mkdir(mode=0o700,exist_ok=True)
     with (out/'inventory.json').open('xb') as stream:stream.write(raw)
     print('P1S_STATUS='+document(raw)['status'])
