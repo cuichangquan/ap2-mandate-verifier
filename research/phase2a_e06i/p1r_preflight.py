@@ -127,11 +127,13 @@ def request(url, cap, *, token=None, method="GET", data=b"", redirect=False):
             body = bytearray()
 
             def take(n):
+                global USED
                 need(n <= cap - len(body) and USED + n <= CONTRACT["body_limit"], "BODY_LIMIT")
                 result = bytearray()
                 while len(result) < n:
                     piece = receive(min(n - len(result), 65536))
                     need(piece, "BODY_EOF")
+                    USED += len(piece)
                     result.extend(piece)
                 return bytes(result)
 
@@ -163,7 +165,6 @@ def request(url, cap, *, token=None, method="GET", data=b"", redirect=False):
                 body.extend(take(int(parsed["content-length"])))
             else:
                 raise ValueError("UNKNOWN_BODY_LENGTH")
-            USED += len(body)
             need(USED <= CONTRACT["body_limit"], "BODY_BUDGET")
             return status, parsed, bytes(body)
 
@@ -384,7 +385,7 @@ def packages():
 
 
 def main():
-    global CONTRACT
+    global CONTRACT, USED
     CONTRACT = document((BASE / "p1r_input_contract.json").read_bytes())
     need(sys.platform == "linux" and os.environ.get("GITHUB_RUN_ATTEMPT") == "1", "ENVIRONMENT")
     resource.setrlimit(resource.RLIMIT_AS, (1536 * 1024 * 1024,) * 2)
@@ -392,18 +393,29 @@ def main():
     resource.setrlimit(resource.RLIMIT_CPU, (280, 300))
     signal.signal(signal.SIGXCPU, lambda *_: (_ for _ in ()).throw(ValueError("CPU_LIMIT")))
     signal.signal(signal.SIGALRM, lambda *_: (_ for _ in ()).throw(ValueError("TOTAL_TIMEOUT")))
-    # Checkout and pin-check steps each have a one-minute ceiling. Reserve
-    # >60s inside the eight-minute job, and 120s before the outer 420s kill.
+    # Bootstrap has a one-minute ceiling. Reserve >120s inside the
+    # eight-minute job, and 120s before the outer 420s kill.
     signal.alarm(300)
+    USED = int(os.environ["P1R_BOOTSTRAP_BYTES"])
+    need(0 < USED <= 262144, "BOOTSTRAP_BYTES")
     now_before(CONTRACT["security_valid_until"])
     now_before(CONTRACT["saved_artifact"]["expires_at"])
-    for path, blob in CONTRACT["source_blobs"].items():
-        pinned(REPO / path, blob)
     token = os.environ.pop("P1R_GITHUB_TOKEN")
     main_sha = os.environ["GITHUB_SHA"]
     need(main_sha == os.environ["EXPECTED_MAIN"] and re.fullmatch(r"[a-f0-9]{40}", main_sha), "EXACT_MAIN")
     ref = document(get(CONTRACT["main_ref_url"], 4096, token))
     need(ref["object"]["sha"] == main_sha, "CURRENT_MAIN")
+    # No checkout action / git fetch. Every source response is inside the
+    # same body budget, at the exact manual run SHA, then checked by blob.
+    for path, blob in CONTRACT["source_blobs"].items():
+        REPORT["metadata_progress"] = {"role": "fixed_source", "path": path}
+        url = CONTRACT["source_url_prefix"] + main_sha + "/" + path
+        CONTRACT["metadata_urls"].append(url)
+        raw = get(url, 131072)
+        target = REPO / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(raw)
+        pinned(target, blob)
     claim = encoded({"ref": CONTRACT["once_ref"], "sha": main_sha})
     status, _, reply = request(CONTRACT["refs_url"], 4096, token=token, method="POST", data=claim)
     need(status == 201, "ONCE_CLAIM_UNCERTAIN_NO_RETRY")
@@ -430,7 +442,13 @@ if __name__ == "__main__":
         REPORT.update({"status": "STOP_HOLD", "stop_reason": reason,
                        "controlled_response_body_bytes": USED})
     raw = encoded(REPORT)
-    need(len(raw) <= 262000, "RESULT_LIMIT")
+    if len(raw) > 262000:
+        REPORT = {"scope": "METADATA_PREFLIGHT_ONLY_RUNTIME_UNPROVEN",
+                  "status": "STOP_HOLD", "stop_reason": "RESULT_LIMIT",
+                  "controlled_response_body_bytes": USED,
+                  "missing": ["RESULT_TOO_LARGE_INPUT_INVENTORY_INCOMPLETE"],
+                  "full_environment_total_bytes": None}
+        raw = encoded(REPORT)
     print(raw.decode())
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
