@@ -802,5 +802,204 @@
     "regexp_parser-2.13.1.gem": 53760,
     "simpleidn-0.3.0.gem": 44544
   },
-  "gem_head_evidence": "Server Content-Length assertions observed by one bounded Mac HEAD batch2026-10-16T08:08:18Z; not content SHA256 verification. HEAD only, HTTP200/identity, no redirect or GET fallback."
+  "gem_head_evidence": "Server Content-Length assertions observed by one bounded Mac HEAD batch2026-10-16T08:08:18Z; not content SHA256 verification. HEAD only, HTTP200/identity, no redirect or GET fallback.",
+  "six_case_static_plan": {
+    "schema_version": 1,
+    "authority": "STATIC_IMPLEMENTATION_ONLY",
+    "baseline_verifier_sha": "017967a96d3f8d2735073e799a77de8eb6fcbba3",
+    "official_ap2_sha": "b4587ac1d055888a73b4b21750973cffba961793",
+    "cases": [
+      "FULL",
+      "HIDDEN",
+      "UNKNOWN",
+      "DUPLICATE",
+      "EXTRA",
+      "DECOY"
+    ],
+    "proof_scope": "Future bounded G3 causal observations and FULL conditional G0-G5 reachability; not full O1-O5/Gate/Host/runtime closure",
+    "execution_permissions": {
+      "merge": false,
+      "actions": false,
+      "acquire": false,
+      "install": false,
+      "build": false,
+      "docker": false,
+      "signed_fixture": false,
+      "six_case_experiment": false,
+      "cost": false
+    },
+    "unresolved_inputs": {
+      "git_package_closure": {
+        "status": "UNRESOLVED",
+        "version": null,
+        "sha256": null,
+        "size": null,
+        "source": null,
+        "gap": "Git binary, package dependencies, shared libraries, source object reader tools; exact versions and sizes not yet frozen"
+      },
+      "pip_bootstrap_wheel": {
+        "status": "UNRESOLVED",
+        "version": null,
+        "sha256": null,
+        "size": null,
+        "source": null,
+        "gap": "One verified official pip wheel; no pip in existing16 wheels; version/SHA/size unknown"
+      },
+      "ruby_default_native_closure": {
+        "status": "UNRESOLVED",
+        "version": null,
+        "sha256": null,
+        "size": null,
+        "source": null,
+        "gap": "Ruby default/native gems incl base64/bigdecimal, exact versions/files/search paths unknown"
+      },
+      "base_os_installed_inventory": {
+        "status": "UNRESOLVED",
+        "version": null,
+        "sha256": null,
+        "size": null,
+        "source": null,
+        "gap": "Verified OCI layer files and installed package baseline, Essential/maintainer-script environment"
+      },
+      "cpython_install_reconciliation": {
+        "status": "UNRESOLVED",
+        "version": null,
+        "sha256": null,
+        "size": null,
+        "source": null,
+        "gap": "38-node candidate vs full base inventory; installer ordering, conflicts, native ABI still unknown"
+      },
+      "ap2_git_objects_and_import_closure": {
+        "status": "UNRESOLVED",
+        "version": null,
+        "sha256": null,
+        "size": null,
+        "source": null,
+        "gap": "Pinned official commit plus complete required Git objects and all transitive SDK source modules"
+      },
+      "source_schema_manifest": {
+        "status": "UNRESOLVED",
+        "version": null,
+        "sha256": null,
+        "size": null,
+        "source": null,
+        "gap": "External reviewed source/schema hash authority, including new adapter and supervisor"
+      },
+      "runtime_loader_import_manifest": {
+        "status": "UNRESOLVED",
+        "version": null,
+        "sha256": null,
+        "size": null,
+        "source": null,
+        "gap": "Actual Ruby/Python executables, stdlib/native/third-party/load paths/OpenSSL/libc/loader"
+      },
+      "external_bootstrap_and_tools": {
+        "status": "UNRESOLVED",
+        "version": null,
+        "sha256": null,
+        "size": null,
+        "source": null,
+        "gap": "Independent supervisor/runner/build tool identity and externally established isolation"
+      },
+      "bounded_acquisition_and_offline_install_recipe": {
+        "status": "UNRESOLVED",
+        "version": null,
+        "sha256": null,
+        "size": null,
+        "source": null,
+        "gap": "Bounded Git/OCI/package acquisition and offline install/build backend not implemented/authorized"
+      }
+    },
+    "known_reference_source_sha256": {
+      "e03_e04_fixture_builder.py": "822bb130c24ff38df85325858927afd2d375271f2b0556f7aa87663faae96234",
+      "e03_e04_signed_oracle.py": "884900e2c3420ebfc2393413ae0e6010db71b28f8a6ef02eec997defa57b8caf",
+      "e03_e04_stage_observer.rb": "412b34b07058c0a3cac6c88e377851515cb2796cb54a811a41d689d71c6da173",
+      "isolated_a8_runner.py": "0ca9512cb47075f78607628ef43c0da7deb264187ceab571641bef2b28b8b31e"
+    },
+    "known_references_are_not_complete_source_or_runtime_attestation": true,
+    "known_payload_subtotal_bytes": 97505886,
+    "known_subtotal_caveat": "Includes224256B Gem HEAD server assertion; excludes unknown Git/pip/additional deps/source/metadata/expanded size. Not full environment capacity.",
+    "proposed_ceilings": {
+      "body_bytes": 268435456,
+      "header_bytes": 8192,
+      "disk_bytes": 8589934592,
+      "memory_bytes": 2147483648,
+      "scratch_bytes": 67108864,
+      "job_seconds": 600,
+      "child_seconds": 10,
+      "batch_seconds": 90,
+      "artifact_bytes": 1048576,
+      "retention_days": 7,
+      "cost_jpy": 0
+    },
+    "ceilings_are_design_only_not_execution_authority": true,
+    "phases": [
+      "freeze missing inputs and independent expected hashes",
+      "bounded authenticated acquisition after separate approval",
+      "offline preparation without fixture signing",
+      "externally attest and freeze immutable runtime/source",
+      "separate gated offline six-case batch in same job/image",
+      "bounded public evidence and cleanup"
+    ],
+    "planned_commands_not_executable": {
+      "builder": [
+        "PINNED_PYTHON",
+        "-I",
+        "-S",
+        "-B",
+        "TRUSTED_SITE_LAUNCHER",
+        "e03_e04_fixture_builder.py",
+        "--epoch",
+        "FROZEN_SYNTHETIC_EPOCH",
+        "--upstream-root",
+        "READONLY_AP2_GIT_TREE",
+        "--policy",
+        "NEW_PRIVATE_POLICY",
+        "--fixture",
+        "NEW_PRIVATE_FIXTURE"
+      ],
+      "oracle": [
+        "PINNED_PYTHON",
+        "-I",
+        "-S",
+        "-B",
+        "TRUSTED_SITE_LAUNCHER",
+        "e03_e04_signed_oracle.py",
+        "--fixture",
+        "FROZEN_FIXTURE",
+        "--policy",
+        "FROZEN_POLICY",
+        "--report",
+        "NEW_ORACLE"
+      ],
+      "ruby": [
+        "PINNED_RUBY",
+        "e03_e04_stage_observer.rb",
+        "--fixture",
+        "FROZEN_FIXTURE",
+        "--policy",
+        "FROZEN_POLICY",
+        "--oracle",
+        "FROZEN_ORACLE",
+        "--upstream-root",
+        "READONLY_AP2_GIT_TREE",
+        "--report",
+        "NEW_RUBY_REPORT"
+      ]
+    },
+    "future_network_freeze_required": "Exact URLs/digests/redirect roles and byte accounting before acquisition; no generic git clone/docker pull/live resolver",
+    "future_guard_proposal_only": "refs/tags/issue73-p1r-six-case-once-consumed-20261016",
+    "old_guards_must_not_be_deleted_reset_or_reused": true,
+    "retention_unresolved": "Public fixture contains synthetic fixed nonce; explicit reconciliation with older no-raw-nonce output rule required before any experiment/upload",
+    "future_external_isolation": "Nonroot, network/DNS none, readonly source/rootfs, cap-drop ALL, no-new-privileges, bounded scratch/cgroup watchdog and whole-process-tree kill/reap; JSON claims cannot establish these",
+    "old_A8_A9_A10_remain_disabled_and_unchanged": true,
+    "later_authorization_required": [
+      "frozen complete input/installer/source inventory",
+      "reviewed bounded live backend",
+      "independent runtime/bootstrap/isolation evidence",
+      "explicit conditional P1 and B approvals",
+      "merge and one new manual run authorization",
+      "public evidence/nonce retention decision"
+    ]
+  }
 }
