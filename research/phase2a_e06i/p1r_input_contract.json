@@ -31,6 +31,8 @@
     "research/phase2a_e06i/p1m_independent_oracle.py": "4fa800d55753a89addd5447425d9fa1c73f6ef0b",
     ".github/workflows/phase2a-p1-h4-metadata.yml": "a98595437ccd119618fd412337bd3a845f6eda45"
   },
+  "source_url_prefix": "https://raw.githubusercontent.com/cuichangquan/ap2-mandate-verifier/",
+  "source_fetch_rule": "No checkout/git fetch. Bootstrap fetches only the two new script/contract paths at workflow SHA, SHA256-pinned in workflow, <=131072 bytes each. Their exact body counts seed the same 16MiB ledger. Remaining five source paths at that same SHA are blob-pinned and counted before claim.",
   "u9_graph_sha256": "c582fcbdcbbeebe23fcc71fcf34e7a25e91bb47e63ab18e7f1ef907b60ce1102",
   "security_valid_until": "2026-10-20T07:32:55Z",
   "saved_artifact": {
