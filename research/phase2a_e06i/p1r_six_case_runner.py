@@ -60,9 +60,10 @@ def inspect_compact(compact, typ, cap=32768):
     jws = compact.split(".")
     need(len(jws) == 3 and len(decode64(jws[2])) == 64, "JWS_SHAPE")
     header, payload = strict_value(decode64(jws[0])), strict_value(decode64(jws[1]))
+    need(type(payload) is dict, "SIGNED_PAYLOAD_OBJECT")
     need(type(header) is dict and set(header) <= {"alg", "kid", "typ"} and
          header.get("alg") == "ES256" and header.get("typ") == typ and
-         (header.get("kid") is None or type(header["kid"]) is str), "JOSE_HEADER")
+         ("kid" not in header or type(header["kid"]) is str), "JOSE_HEADER")
     return header, payload
 
 
