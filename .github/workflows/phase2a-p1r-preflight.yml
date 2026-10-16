@@ -1,0 +1,70 @@
+name: "Issue 73 P1-R metadata preflight — manual once"
+on:
+  workflow_dispatch:
+    inputs:
+      expected_main_sha:
+        description: "Exact reviewed and audited main SHA"
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: issue73-p1r-preflight-once-20261016
+  cancel-in-progress: false
+jobs:
+  metadata-preflight:
+    if: ${{ github.repository == 'cuichangquan/ap2-mandate-verifier' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Bounded exact-SHA source bootstrap; no checkout or git fetch
+        timeout-minutes: 1
+        shell: bash
+        env:
+          EXPECTED_MAIN: ${{ inputs.expected_main_sha }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$EXPECTED_MAIN" =~ ^[0-9a-f]{40}$ ]]
+          [ "$GITHUB_SHA" = "$EXPECTED_MAIN" ]
+          [ "$GITHUB_RUN_ATTEMPT" = 1 ]
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkfifo "$tmp/headers.fifo"
+          total=0
+          fetch_source() {
+            local path=$1 digest=$2 pid status bytes
+            head -c 8193 < "$tmp/headers.fifo" > "$tmp/headers" &
+            pid=$!
+            status=$(curl --disable --silent --show-error --noproxy '*' --proto '=https' \
+              --max-redirs 0 --retry 0 --connect-timeout 5 --max-time 20 \
+              --max-filesize 131072 --dump-header "$tmp/headers.fifo" \
+              --output "$tmp/body" --write-out '%{http_code}' \
+              "https://raw.githubusercontent.com/cuichangquan/ap2-mandate-verifier/$GITHUB_SHA/$path") || {
+                kill "$pid" 2>/dev/null || :; wait "$pid" 2>/dev/null || :; exit 1;
+              }
+            wait "$pid"
+            [ "$(stat -c '%s' "$tmp/headers")" -le 8192 ]
+            [ "$status" = 200 ]
+            bytes=$(stat -c '%s' "$tmp/body")
+            [ "$bytes" -gt 0 ] && [ "$bytes" -le 131072 ]
+            total=$((total + bytes))
+            [ "$total" -le 262144 ]
+            echo "$digest  $tmp/body" | sha256sum -c --status
+            mkdir -p "$(dirname "$path")"
+            cp "$tmp/body" "$path"
+          }
+          fetch_source research/phase2a_e06i/p1r_preflight.py a7964a2ee85d398777220e4208e268d0359b6dd318be0e24f51f81065e9c21f0
+          fetch_source research/phase2a_e06i/p1r_input_contract.json fb723c22730f1441c85c78a99d73fb73b976b6b0736cce3ce2ab07e966c67e9f
+          echo "P1R_BOOTSTRAP_BYTES=$total" >> "$GITHUB_ENV"
+          echo "P1R_BOOTSTRAP_VERIFIED BODY_BYTES=$total SHA=$GITHUB_SHA"
+      - name: Verify remaining fixed sources, claim once, and report metadata
+        shell: bash
+        env:
+          EXPECTED_MAIN: ${{ inputs.expected_main_sha }}
+          P1R_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          timeout --signal=TERM --kill-after=3s 420s python3 -I -B research/phase2a_e06i/p1r_preflight.py
