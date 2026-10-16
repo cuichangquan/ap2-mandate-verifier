@@ -234,7 +234,7 @@ def stage_verified(dirfd, item, raw):
          parent.st_mode & 0o077 == 0, "STAGE_NAMESPACE")
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
     fd = os.open(item["name"], flags, 0o600, dir_fd=dirfd)
-    created = None
+    created, closed = None, False
     try:
         created = os.fstat(fd)
         need(stat.S_ISREG(created.st_mode) and created.st_nlink == 1, "STAGE_FILE")
@@ -245,10 +245,12 @@ def stage_verified(dirfd, item, raw):
             done += n
         os.fchmod(fd, 0o400)
         os.fsync(fd)
+        # Set before close: a close error must never retry a potentially reused fd.
+        closed = True
+        os.close(fd)
         os.fsync(dirfd)
     except BaseException as primary:
         try:
-            # O_EXCL created this entry in the caller's private namespace.
             current = os.stat(item["name"], dir_fd=dirfd, follow_symlinks=False)
             if created is None or (current.st_dev, current.st_ino) == (created.st_dev, created.st_ino):
                 os.unlink(item["name"], dir_fd=dirfd)
@@ -257,14 +259,12 @@ def stage_verified(dirfd, item, raw):
                 primary.add_note("STAGE_CLEANUP_IDENTITY_CHANGED")
         except BaseException:
             primary.add_note("STAGE_CLEANUP_UNCERTAIN")
-        try:
-            os.close(fd)
-        except BaseException:
-            primary.add_note("STAGE_CLOSE_UNCERTAIN")
+        if not closed:
+            try:
+                os.close(fd)
+            except BaseException:
+                primary.add_note("STAGE_CLOSE_UNCERTAIN")
         raise
-    else:
-        # A close failure is STOP; do not retry a potentially reused fd.
-        os.close(fd)
     return {"name": item["name"], "size": len(raw), "sha256": sha(raw)}
 
 
