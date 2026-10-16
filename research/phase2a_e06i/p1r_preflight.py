@@ -389,9 +389,12 @@ def main():
     need(sys.platform == "linux" and os.environ.get("GITHUB_RUN_ATTEMPT") == "1", "ENVIRONMENT")
     resource.setrlimit(resource.RLIMIT_AS, (1536 * 1024 * 1024,) * 2)
     resource.setrlimit(resource.RLIMIT_FSIZE, (16777216,) * 2)
-    resource.setrlimit(resource.RLIMIT_CPU, (300,) * 2)
+    resource.setrlimit(resource.RLIMIT_CPU, (280, 300))
+    signal.signal(signal.SIGXCPU, lambda *_: (_ for _ in ()).throw(ValueError("CPU_LIMIT")))
     signal.signal(signal.SIGALRM, lambda *_: (_ for _ in ()).throw(ValueError("TOTAL_TIMEOUT")))
-    signal.alarm(420)
+    # Checkout and pin-check steps each have a one-minute ceiling. Reserve
+    # >60s inside the eight-minute job, and 120s before the outer 420s kill.
+    signal.alarm(300)
     now_before(CONTRACT["security_valid_until"])
     now_before(CONTRACT["saved_artifact"]["expires_at"])
     for path, blob in CONTRACT["source_blobs"].items():
