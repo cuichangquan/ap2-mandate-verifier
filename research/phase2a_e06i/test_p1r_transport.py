@@ -1105,6 +1105,36 @@ class TransportTests(unittest.TestCase):
                 self.assertEqual(factory.call_count,count);context.wrap_socket.assert_not_called()
                 for s in sockets[:count]:s.close.assert_called_once()
 
+    def test_cancel_during_socket_creation_or_tls_transfer_closes_new_owner(self):
+        for target in ('constructor', 'tls_transfer'):
+            with self.subTest(target=target):
+                token=m.WallCancellation();plain,wrapped,context=Mock(),Mock(),Mock()
+                held=[]
+                def create(*args):
+                    if target=='constructor':token.request()
+                    return plain
+                def wrap(*args,**kwargs):
+                    self.assertFalse(kwargs['do_handshake_on_connect'])
+                    token.request()  # native return-to-owner registration window
+                    return wrapped
+                context.wrap_socket.side_effect=wrap
+                with fake_tcp(constructor=Mock(side_effect=create)),patch.object(ssl,'SSLContext',return_value=context):
+                    try:m.tls_connect(ORIGIN,1,cancellation=token)
+                    except m.WallDeadline as error:held.append(error)
+                self.assertEqual(len(held),1);self.assertIsNotNone(held[0].__traceback__)
+                (plain if target=='constructor' else wrapped).close.assert_called_once()
+                (wrapped if target=='constructor' else plain).close.assert_not_called()
+                wrapped.do_handshake.assert_not_called()
+                if target=='constructor':plain.connect.assert_not_called()
+                self.assertEqual(token.depth,0);self.assertTrue(token.pending)
+
+    def test_pending_cancellation_blocks_reuse_before_any_socket_construction(self):
+        token=m.WallCancellation()
+        with self.assertRaises(m.WallDeadline):token.request()
+        with fake_tcp() as constructor,patch.object(ssl,'SSLContext',return_value=Mock()):
+            with self.assertRaises(m.WallDeadline):m.tls_connect(ORIGIN,1,cancellation=token)
+        constructor.assert_not_called();self.assertEqual(token.depth,0)
+
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
 

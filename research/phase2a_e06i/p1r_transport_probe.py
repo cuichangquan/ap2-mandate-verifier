@@ -135,6 +135,7 @@ def main():
     """
     alarm_expired = False
     alarm_installed = False
+    cancellation = transport.WallCancellation()
     # Available before arming the timer, including if richer diagnostics are
     # interrupted. It carries no untrusted string or claimed causal phase.
     result = dict(status='SAFE_OUTPUT_STOP_NO_RETRY', reason='FALLBACK_UNAVAILABLE',
@@ -143,13 +144,14 @@ def main():
     def expired(*_):
         nonlocal alarm_expired
         alarm_expired = True
-        raise transport.WallDeadline()
+        cancellation.request()
     try:
         transport.need(sys.argv[1:] == ['--run-approved-public-transport-once'], 'EXPLICIT_APPROVAL_FLAG')
         signal.signal(signal.SIGALRM, expired)
         alarm_installed = True
         signal.alarm(120)  # Attempt clear even if installation raises uncertainly.
-        result = run_once(connect=transport.tls_connect, clock=time.monotonic,
+        result = run_once(connect=lambda url, seconds: transport.tls_connect(
+                              url, seconds, cancellation=cancellation), clock=time.monotonic,
                           utc_now=lambda: dt.datetime.now(dt.timezone.utc))
     except BaseException as error:
         try:

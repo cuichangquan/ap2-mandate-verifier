@@ -11,6 +11,7 @@ acquire, including on failure. No file staging, fsync, commit, installer or
 legacy preparation adapter ships. A partial sink must NEVER be consumed.
 """
 from dataclasses import dataclass, field
+from contextlib import contextmanager
 import hashlib
 import math
 import re
@@ -29,6 +30,33 @@ class WallDeadline(BaseException):
     Only the approved CLI timer raises this. Transport boundaries record and
     rethrow it; this is not proof of an OS-enforced native-call deadline.
     """
+
+
+class WallCancellation:
+    """Single-thread probe token; defer only local socket ownership transfers.
+
+    No connect, handshake, recv or caller close runs inside a handoff.
+    A pending alarm is delivered after the new owner is registered.
+    """
+    def __init__(self):
+        self.depth, self.pending = 0, False
+
+    def request(self):
+        self.pending = True
+        if not self.depth:
+            raise WallDeadline()
+
+    @contextmanager
+    def handoff(self):
+        if self.pending:
+            raise WallDeadline()
+        self.depth += 1
+        try:
+            yield
+        finally:
+            self.depth -= 1
+            if self.pending and not self.depth:
+                raise WallDeadline()
 
 
 ERROR_CODES = frozenset('URL LIMITS SPEC SPEC_ID HOP_POLICY CLOCK DUPLICATE_INPUT '
@@ -289,7 +317,7 @@ def close_once(resource, primary=None):
     return True
 
 
-def tls_connect(url, seconds):
+def tls_connect(url, seconds, *, cancellation=None):
     """Optional connector, deliberately not a default argument to acquire().
 
     No proxy/netrc/auth. Caller must arrange cancellation outside OSError
@@ -297,6 +325,7 @@ def tls_connect(url, seconds):
     hard OS deadline for uninterruptible native calls; that remains unproven.
     """
     phase, owned = 'TLS_VALIDATE', None
+    cancellation = cancellation if cancellation is not None else WallCancellation()
     try:
         u = endpoint(url)
         need(positive(seconds), 'CONNECT_TIMEOUT')
@@ -315,7 +344,8 @@ def tls_connect(url, seconds):
         for family, kind, protocol, _, address in socket.getaddrinfo(
                 u.hostname, 443, 0, socket.SOCK_STREAM):
             try:
-                owned = socket.socket(family, kind, protocol)
+                with cancellation.handoff():
+                    owned = socket.socket(family, kind, protocol)
                 owned.settimeout(min(seconds, 5))
                 owned.connect(address)
                 break
@@ -331,9 +361,10 @@ def tls_connect(url, seconds):
                 raise last_error
             raise OSError('NO_RESOLVED_ADDRESS')
         phase = 'TLS_WRAP'
-        wrapped = context.wrap_socket(owned, server_hostname=u.hostname,
-                                      do_handshake_on_connect=False)
-        owned = wrapped  # wrap_socket takes ownership; never close the old handle too.
+        with cancellation.handoff():
+            owned = context.wrap_socket(owned, server_hostname=u.hostname,
+                                        do_handshake_on_connect=False)
+        wrapped = owned
         phase = 'TLS_TIMEOUT_SETUP'
         wrapped.settimeout(min(seconds, 5))
         phase = 'TLS_HANDSHAKE'
