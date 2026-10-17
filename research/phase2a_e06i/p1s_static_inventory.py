@@ -595,6 +595,23 @@ def allow(url):
 def fixed_get(url,cap,token=None):
     return get(allow(url),cap,token)
 
+def pip_deb_get(spec):
+    # Exact wire Location only: no URL join, decoding, normalization or credentials.
+    status,headers,raw=request(allow(spec['url']),spec['size'])
+    REPORT['pip_transport']={'initial_status':status,'redirect_followed':False}
+    if status==302:
+        location=spec['redirect_location']
+        need(location=='/file/16f057a5587606da86d493f038f66fe016139482/python3-pip-whl_23.0.1%2Bdfsg-1_all.deb' and
+             headers.get('location')==location,'PIP_REDIRECT_TARGET')
+        target='https://snapshot.debian.org'+location
+        status,headers,raw=request(allow(target),spec['size'])
+        REPORT['pip_transport'].update(redirect_followed=True,final_status=status)
+    need(status==200,'PIP_HTTP')
+    need(len(raw)==spec['size'] and sha(raw)==spec['sha256'],'PIP_DEB_HASH')
+    REPORT['pip_transport']['size_sha256_verified']=True
+    return raw
+
+
 def blob_get(digest,size,token):
     url=SPEC['oci']['config_url_prefix']+digest
     status,headers,raw=request(allow(url),max(size,4096),token=token)
@@ -753,7 +770,7 @@ def main():
         auth=document(fixed_get(spec['oci']['auth_url'],32768))
         registry_token=auth.get('token');need(type(registry_token) is str and 0<auth.get('expires_in',0)<=3600,'REGISTRY_AUTH')
         REPORT['stage']='IMAGE_STATIC_SCAN';REPORT['image']=image_inventory(registry_token,budget)
-        REPORT['stage']='PIP_STATIC_SCAN';p=spec['pip_deb'];raw=fixed_get(p['url'],p['size'])
+        REPORT['stage']='PIP_STATIC_SCAN';p=spec['pip_deb'];raw=pip_deb_get(p)
         need(len(raw)==p['size'] and sha(raw)==p['sha256'],'PIP_DEB_HASH')
         REPORT['pip_wheel']=pip_metadata(raw,budget)
     REPORT.update(status='STATIC_CONTENTS_INVENTORIED_RUNTIME_UNPROVEN',controlled_response_body_bytes=USED,
