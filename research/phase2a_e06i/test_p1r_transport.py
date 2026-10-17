@@ -19,6 +19,12 @@ import p1r_transport_probe as probe
 STDLIB_CREATE_CONNECTION = socket.create_connection
 
 
+def tls_for_test(url, seconds, **kwargs):
+    owner = m.SocketOwner()
+    m.tls_connect(url, seconds, owner, **kwargs)
+    return owner.resource
+
+
 @contextmanager
 def fake_tcp(plain=None, constructor=None):
     addresses = [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('192.0.2.1', 443))]
@@ -143,7 +149,7 @@ class TransportTests(unittest.TestCase):
             self.assertLessEqual(len(self.calls), len(self.connections))
             return self.connections[len(self.calls) - 1]
         return m.acquire(item, budget or self.budget, sink or self.sink,
-                         connect=connect or fake, clock=self.clock)
+                         connect=lambda url, seconds, owner: owner.register((connect or fake)(url, seconds)), clock=self.clock)
 
     def rejects(self, code, **kwargs):
         with self.assertRaisesRegex(m.Stop, '^' + code + '$') as cm:
@@ -441,7 +447,7 @@ class TransportTests(unittest.TestCase):
         wrapped.selected_alpn_protocol.return_value='http/1.1'
         context=Mock();context.wrap_socket.return_value=wrapped
         with fake_tcp(plain) as create, patch.object(ssl,'SSLContext',return_value=context), patch.object(ssl,'create_default_context',side_effect=AssertionError('ENV_KEYLOG_CONTEXT_FORBIDDEN')):
-            self.assertIs(m.tls_connect(ORIGIN,2),wrapped)
+            self.assertIs(tls_for_test(ORIGIN,2),wrapped)
             create.assert_called_once_with(socket.AF_INET,socket.SOCK_STREAM,6)
             plain.settimeout.assert_called_once_with(2)
             plain.connect.assert_called_once_with(('192.0.2.1',443))
@@ -463,7 +469,7 @@ class TransportTests(unittest.TestCase):
                 if phase=='handshake':wrapped.do_handshake.side_effect=OSError('handshake failure')
                 owner=plain if phase=='wrap' else wrapped;owner.close.side_effect=OSError('close failure')
                 with fake_tcp(plain),patch.object(ssl,'SSLContext',return_value=context):
-                    with self.assertRaises((OSError,m.Stop)) as cm:m.tls_connect(ORIGIN,1)
+                    with self.assertRaises((OSError,m.Stop)) as cm:tls_for_test(ORIGIN,1)
                 owner.close.assert_called_once();self.assertIn('CLOSE_UNCERTAIN',cm.exception.__notes__)
                 (wrapped if phase=='wrap' else plain).close.assert_not_called()
 
@@ -571,7 +577,7 @@ class TransportTests(unittest.TestCase):
 
     def test_probe_fake_success_discards_body_and_has_no_durable_claim(self):
         connections=[Conn(length()),Conn(length())]
-        def connect(url,seconds):return connections.pop(0)
+        def connect(url,seconds,owner):owner.register(connections.pop(0))
         now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc)
         with patch.object(probe,'plans',return_value=(spec(),spec(identity='second',name='second'))),patch.dict('os.environ',{},clear=True):
             result=probe.run_once(connect=connect,clock=self.clock,utc_now=now)
@@ -651,7 +657,7 @@ class TransportTests(unittest.TestCase):
             raise RuntimeError('unrelated caller exception')
         except RuntimeError as ambient:
             with fake_tcp(plain),patch.object(ssl,'SSLContext',return_value=context):
-                with self.assertRaisesRegex(OSError,'local handshake') as cm:m.tls_connect(ORIGIN,1)
+                with self.assertRaisesRegex(OSError,'local handshake') as cm:tls_for_test(ORIGIN,1)
             self.assertEqual(cm.exception.__notes__.count('CLOSE_UNCERTAIN'),1)
             self.assertFalse(hasattr(ambient,'__notes__'))
 
@@ -688,7 +694,7 @@ class TransportTests(unittest.TestCase):
                  'TLS_TIMEOUT_SETUP':wrapped.settimeout,'TLS_HANDSHAKE':wrapped.do_handshake,
                  'TLS_ALPN':wrapped.selected_alpn_protocol}[phase].side_effect=error
                 with fake_tcp(constructor=create),patch.object(ssl,'SSLContext',constructor):
-                    with self.assertRaises(OSError) as cm:m.tls_connect(ORIGIN,1)
+                    with self.assertRaises(OSError) as cm:tls_for_test(ORIGIN,1)
                 self.assertIs(cm.exception,error)
                 self.assertEqual(m.diagnostic(error)['phase'],phase)
                 self.assertNotIn('secret',json.dumps(m.diagnostic(error)))
@@ -701,7 +707,7 @@ class TransportTests(unittest.TestCase):
         wrapped=Mock();wrapped.selected_alpn_protocol.return_value='h2'
         context=Mock();context.wrap_socket.return_value=wrapped
         with fake_tcp(),patch.object(ssl,'SSLContext',return_value=context):
-            with self.assertRaises(m.Stop) as cm:m.tls_connect(ORIGIN,1)
+            with self.assertRaises(m.Stop) as cm:tls_for_test(ORIGIN,1)
         self.assertEqual(m.safe_reason(cm.exception),'TLS_PROTOCOL')
         self.assertEqual(m.diagnostic(cm.exception)['phase'],'TLS_ALPN')
 
@@ -797,7 +803,7 @@ class TransportTests(unittest.TestCase):
         def completed(*args,**kwargs):
             result=original(*args,**kwargs);clock.broken=True;return result
         with patch.object(m,'hop',side_effect=completed),patch.object(probe,'plans',return_value=(spec(),)),patch.dict('os.environ',{},clear=True):
-            result=probe.run_once(connect=Mock(return_value=Conn(length())),clock=clock,utc_now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc))
+            result=probe.run_once(connect=lambda url,seconds,owner:owner.register(Conn(length())),clock=clock,utc_now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc))
         self.assertEqual(result['failure']['phase'],'TIME_FINALIZATION')
         self.assertEqual(result['records'][0]['failure']['phase'],'TIME_FINALIZATION')
         self.assertEqual(result['used']['content'],len(DATA))
@@ -1061,7 +1067,7 @@ class TransportTests(unittest.TestCase):
                     with patch.object(socket,'getaddrinfo',return_value=addresses), \
                          patch.object(socket,'socket',side_effect=[first,second]) as factory, \
                          patch.object(ssl,'SSLContext',return_value=context):
-                        try:m.tls_connect(ORIGIN,1)
+                        try:tls_for_test(ORIGIN,1)
                         except m.WallDeadline as error:held.append(error)
                     self.assertEqual(held,[cancellation]);self.assertIsNotNone(held[0].__traceback__)
                     first.close.assert_called_once();second.connect.assert_not_called()
@@ -1085,9 +1091,9 @@ class TransportTests(unittest.TestCase):
                      patch.object(socket,'socket',side_effect=[first,second]) as factory, \
                      patch.object(ssl,'SSLContext',return_value=context):
                     if close_fails:
-                        with self.assertRaises(ConnectionRefusedError) as cm:m.tls_connect(ORIGIN,1)
+                        with self.assertRaises(ConnectionRefusedError) as cm:tls_for_test(ORIGIN,1)
                         self.assertTrue(m.diagnostic(cm.exception)['cleanup_uncertain'])
-                    else:self.assertIs(m.tls_connect(ORIGIN,1),wrapped)
+                    else:self.assertIs(tls_for_test(ORIGIN,1),wrapped)
                 self.assertEqual(events,['first_closed'] if close_fails else ['first_closed','second_connect'])
                 self.assertEqual(factory.call_count,1 if close_fails else 2)
                 first.close.assert_called_once();second.close.assert_not_called()
@@ -1101,7 +1107,7 @@ class TransportTests(unittest.TestCase):
                 with patch.object(socket,'getaddrinfo',return_value=addresses), \
                      patch.object(socket,'socket',side_effect=sockets) as factory, \
                      patch.object(ssl,'SSLContext',return_value=context):
-                    with self.assertRaises(OSError):m.tls_connect(ORIGIN,1)
+                    with self.assertRaises(OSError):tls_for_test(ORIGIN,1)
                 self.assertEqual(factory.call_count,count);context.wrap_socket.assert_not_called()
                 for s in sockets[:count]:s.close.assert_called_once()
 
@@ -1119,7 +1125,7 @@ class TransportTests(unittest.TestCase):
                     return wrapped
                 context.wrap_socket.side_effect=wrap
                 with fake_tcp(constructor=Mock(side_effect=create)),patch.object(ssl,'SSLContext',return_value=context):
-                    try:m.tls_connect(ORIGIN,1,cancellation=token)
+                    try:tls_for_test(ORIGIN,1,cancellation=token)
                     except m.WallDeadline as error:held.append(error)
                 self.assertEqual(len(held),1);self.assertIsNotNone(held[0].__traceback__)
                 (plain if target=='constructor' else wrapped).close.assert_called_once()
@@ -1132,8 +1138,45 @@ class TransportTests(unittest.TestCase):
         token=m.WallCancellation()
         with self.assertRaises(m.WallDeadline):token.request()
         with fake_tcp() as constructor,patch.object(ssl,'SSLContext',return_value=Mock()):
-            with self.assertRaises(m.WallDeadline):m.tls_connect(ORIGIN,1,cancellation=token)
+            with self.assertRaises(m.WallDeadline):tls_for_test(ORIGIN,1,cancellation=token)
         constructor.assert_not_called();self.assertEqual(token.depth,0)
+
+    def test_registered_connector_cancel_before_return_closes_from_shared_owner(self):
+        for close_fails in (False,True):
+            with self.subTest(close_fails=close_fails):
+                self.setUp();c=Conn(length(),close_error=close_fails);held=[]
+                def connect(url,seconds,owner):
+                    owner.register(c)
+                    raise m.WallDeadline()  # after registration, before caller resumes
+                try:m.acquire(spec(),self.budget,self.sink,connect=connect,clock=self.clock)
+                except m.WallDeadline as error:held.append(error)
+                self.assertEqual(len(held),1);self.assertIsNotNone(held[0].__traceback__)
+                self.assertEqual(c.closed,1);self.assertEqual(c.sent,[])
+                record=self.budget.records[-1];h=record['hops'][0]
+                self.assertTrue(h['connector_handle_registered'])
+                self.assertFalse(h['connector_returned']);self.assertEqual(h['closed'],not close_fails)
+                self.assertEqual(record['close_uncertain'],close_fails)
+                self.assertEqual(record['failure']['category'],'TIMEOUT')
+                self.assertEqual(record['state'],'STOP');self.assertTrue(record['sink_closed'])
+
+    def test_registered_tls_failure_and_hop_share_one_close_attempt(self):
+        for close_fails in (False,True):
+            with self.subTest(close_fails=close_fails):
+                self.setUp();wrapped,context=Mock(),Mock();wrapped.do_handshake.side_effect=OSError('secret handshake')
+                if close_fails:wrapped.close.side_effect=OSError('secret cleanup')
+                context.wrap_socket.return_value=wrapped
+                with fake_tcp(),patch.object(ssl,'SSLContext',return_value=context):
+                    with self.assertRaises(OSError):
+                        m.acquire(spec(),self.budget,self.sink,connect=m.tls_connect,clock=self.clock)
+                wrapped.close.assert_called_once();h=self.budget.records[-1]['hops'][0]
+                self.assertTrue(h['connector_handle_registered']);self.assertFalse(h['connector_returned'])
+                self.assertEqual(h['closed'],not close_fails)
+                self.assertEqual(self.budget.records[-1]['close_uncertain'],close_fails)
+
+    def test_connector_without_registered_handle_is_rejected(self):
+        with self.assertRaisesRegex(m.Stop,'^CONNECTOR_OWNERSHIP$'):
+            m.acquire(spec(),self.budget,self.sink,connect=Mock(return_value=Conn(length())),clock=self.clock)
+        self.assertEqual(self.budget.records[-1]['state'],'STOP')
 
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])

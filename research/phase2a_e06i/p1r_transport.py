@@ -6,7 +6,7 @@ the caller are not authenticated here. Counts cover returned HTTP plaintext,
 not TLS/TCP/DNS/kernel buffering. Blocking DNS/connect/handshake/sink/close
 need a future external watchdog; local deadlines do not attest OS isolation.
 
-The caller quarantines sink content and transfers handle-close ownership to
+    The caller quarantines sink content and transfers handle-close ownership to
 acquire, including on failure. No file staging, fsync, commit, installer or
 legacy preparation adapter ships. A partial sink must NEVER be consumed.
 """
@@ -67,7 +67,7 @@ ERROR_CODES = frozenset('URL LIMITS SPEC SPEC_ID HOP_POLICY CLOCK DUPLICATE_INPU
                        'TRAILER SINK_WRITE STATUS UNEXPECTED_LOCATION HASH '
                        'CLOSE_UNCERTAIN CONNECT_TIMEOUT TLS_PROTOCOL '
                        'EXPIRED_OR_UNKNOWN_CLOCK TLS_ENV_OVERRIDE EXPLICIT_APPROVAL_FLAG '
-                       'DIAGNOSTIC_LIMIT DIAGNOSTIC_PHASE RUNTIME_IDENTITY_UNAVAILABLE'.split()) | frozenset(
+                       'DIAGNOSTIC_LIMIT DIAGNOSTIC_PHASE RUNTIME_IDENTITY_UNAVAILABLE CONNECTOR_OWNERSHIP'.split()) | frozenset(
     prefix + key for prefix in ('BUDGET_', 'LIMIT_')
     for key in ('HEADER', 'CONTENT', 'WIRE', 'FRAMING'))
 
@@ -317,14 +317,36 @@ def close_once(resource, primary=None):
     return True
 
 
-def tls_connect(url, seconds, *, cancellation=None):
+class SocketOwner:
+    """Shared connector/hop journal, registered before a live handle escapes."""
+    def __init__(self):
+        self.resource, self.attempted, self.closed = None, False, False
+
+    def register(self, resource):
+        self.resource, self.attempted, self.closed = resource, False, False
+
+    def close(self, primary=None):
+        if self.resource is None:
+            return False
+        if not self.attempted:
+            self.attempted = True
+            self.closed = close_once(self.resource, primary)
+            return self.closed
+        if not self.closed and primary is not None:
+            annotate(primary, 'CLOSE_UNCERTAIN')
+        return self.closed
+
+
+def tls_connect(url, seconds, owner, *, cancellation=None):
     """Optional connector, deliberately not a default argument to acquire().
 
+    Registers handles in the supplied SocketOwner; returns no live handle.
+    The approved CLI shares its WallCancellation token with this connector.
     No proxy/netrc/auth. Caller must arrange cancellation outside OSError
     address-fallback catches. A worker watchdog is still needed to attest a
     hard OS deadline for uninterruptible native calls; that remains unproven.
     """
-    phase, owned = 'TLS_VALIDATE', None
+    phase = 'TLS_VALIDATE'
     cancellation = cancellation if cancellation is not None else WallCancellation()
     try:
         u = endpoint(url)
@@ -345,16 +367,16 @@ def tls_connect(url, seconds, *, cancellation=None):
                 u.hostname, 443, 0, socket.SOCK_STREAM):
             try:
                 with cancellation.handoff():
-                    owned = socket.socket(family, kind, protocol)
-                owned.settimeout(min(seconds, 5))
-                owned.connect(address)
+                    owner.register(socket.socket(family, kind, protocol))
+                owner.resource.settimeout(min(seconds, 5))
+                owner.resource.connect(address)
                 break
             except OSError as error:
                 # Ordinary address fallback is allowed only after known close.
                 # Clear ownership before one close attempt; uncertainty stops.
-                failed, owned = owned, None
-                if failed is not None and not close_once(failed, error):
+                if owner.resource is not None and not owner.close(error):
                     raise
+                owner.register(None)
                 last_error = error
         else:
             if last_error is not None:
@@ -362,20 +384,19 @@ def tls_connect(url, seconds, *, cancellation=None):
             raise OSError('NO_RESOLVED_ADDRESS')
         phase = 'TLS_WRAP'
         with cancellation.handoff():
-            owned = context.wrap_socket(owned, server_hostname=u.hostname,
-                                        do_handshake_on_connect=False)
-        wrapped = owned
+            owner.register(context.wrap_socket(owner.resource, server_hostname=u.hostname,
+                                                do_handshake_on_connect=False))
+        wrapped = owner.resource
         phase = 'TLS_TIMEOUT_SETUP'
         wrapped.settimeout(min(seconds, 5))
         phase = 'TLS_HANDSHAKE'
         wrapped.do_handshake()
         phase = 'TLS_ALPN'
         need(wrapped.selected_alpn_protocol() in (None, 'http/1.1'), 'TLS_PROTOCOL')
-        return wrapped
+        return None  # Shared owner, never a return-value, owns the handle.
     except BaseException as error:
         annotate(error, 'U3_PHASE:' + phase)
-        if owned is not None:
-            close_once(owned, error)
+        owner.close(error)
         raise
 
 
@@ -540,9 +561,12 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
                operation['started'] + spec.limits.total_seconds,
                now + min(spec.limits.hop_seconds, budget.limits.hop_seconds)) - now
     need(left > 0, 'DEADLINE')
+    owner = SocketOwner()
     conn, reader, primary = None, None, None
     try:
-        conn = connect(url, min(left, 5))
+        connect(url, min(left, 5), owner)
+        conn = owner.resource
+        need(conn is not None and not owner.attempted, 'CONNECTOR_OWNERSHIP')
         record['connector_returned'] = True
         reader = Reader(conn, spec, budget, operation, record, clock)
         u = endpoint(url)
@@ -571,8 +595,9 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
         raise
     finally:
         try:
-            if conn is not None:
-                record['closed'] = in_phase('CONNECTION_CLOSE', close_once, conn, primary)
+            record['connector_handle_registered'] = owner.resource is not None
+            if owner.resource is not None:
+                record['closed'] = in_phase('CONNECTION_CLOSE', owner.close, primary)
         except BaseException as error:
             primary = error
             raise
@@ -588,7 +613,9 @@ def acquire(spec, budget, sink, *, connect, clock):
     After Budget type/busy/record-cap preconditions, owns sink.close exactly
     once, even for invalid specs. Caller must not use
     partial content on exception. Budget is single-owner, no retry/rollback.
-    Explicit connector is a trust boundary; its fake receipts cannot attest
+    Connector(url, seconds, owner) must register its handle before returning;
+    the shared journal owns failed/pre-return handles too. Explicit connector
+    is a trust boundary; its fake receipts cannot attest
     network/TLS authority. No filesystem sealing or execution follows success.
     """
     need(type(budget) is Budget and not budget.busy, 'BUDGET_BUSY_OR_TYPE')
@@ -628,7 +655,8 @@ def acquire(spec, budget, sink, *, connect, clock):
         operation['reason'] = safe_reason(error)
         operation['failure'] = diagnostic(error, operation['phase'])
         operation['close_uncertain'] = (operation['failure']['cleanup_uncertain'] is not False or
-            any(h['connector_returned'] and not h['closed'] for h in operation['hops']) or
+            any((h['connector_returned'] or h.get('connector_handle_registered')) and not h['closed']
+                for h in operation['hops']) or
             operation['reason'] == 'CLOSE_UNCERTAIN' or not operation['sink_closed'])
         raise
     finally:

@@ -150,8 +150,8 @@ def main():
         signal.signal(signal.SIGALRM, expired)
         alarm_installed = True
         signal.alarm(120)  # Attempt clear even if installation raises uncertainly.
-        result = run_once(connect=lambda url, seconds: transport.tls_connect(
-                              url, seconds, cancellation=cancellation), clock=time.monotonic,
+        result = run_once(connect=lambda url, seconds, owner: transport.tls_connect(
+                              url, seconds, owner, cancellation=cancellation), clock=time.monotonic,
                           utc_now=lambda: dt.datetime.now(dt.timezone.utc))
     except BaseException as error:
         try:
