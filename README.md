@@ -9,7 +9,9 @@
 
 **安全性の最終判定は未完了です。** 署名付き入力・独立した検証結果を揃え、[Phase 2-A の終了条件](docs/PHASE2A_EXIT_GATE_DECISION_CHECKLIST.md)を評価してから、Owner が次段階への移行を判断します。Phase 2-B・Gem 本実装／公開・本番利用は HOLD、実決済は NO-GO です。購入の最終許可や nonce・失効管理はサービス側の別責務です。
 
-![AP2検証Gemへの道のり：準備の一部が完了し、現在はPhase 2-Aの実験環境準備中。次は承認後の6ケース実測で、Gem本実装と最終安全性判定は未完了](docs/assets/ap2-development-progress.png)
+**下図は工程を省略した概念図です。** 図中の「次」は直ちに実行できる意味ではありません。実際は **U3・後処理修正のレビュー → 承認範囲内の実通信・環境確認 → 別途承認後の6ケース実測 → Phase 2-A安全性Gateの評価・OwnerのGO/HOLD判断 → 許可された次段階** の順です。6ケース実測の完了だけではGem本実装へ進めません。
+
+![AP2検証Gemへの道のりの概念図。現在は実験環境準備中。図では実通信確認と安全性Gate・Owner判断を省略しており、正確な順序は直前の本文に記載。6ケース実測・Gem本実装・最終安全性判定は未完了](docs/assets/ap2-development-progress.png)
 
 > 非公式・独立した研究プロジェクトです。Google、AP2 プロジェクト、FIDO Alliance とは関係ありません。
 
