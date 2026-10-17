@@ -2,7 +2,7 @@
   "schema_version": 1,
   "scope": "STATIC_IMAGE_AND_PIP_CONTENTS_ONLY_RUNTIME_UNPROVEN",
   "baseline": "017967a96d3f8d2735073e799a77de8eb6fcbba3",
-  "once_ref": "refs/tags/issue73-p1s-rel-object-once-consumed-20261017",
+  "once_ref": "refs/tags/issue73-p1s-pip-redirect-once-consumed-20261017",
   "body_limit": 100663296,
   "header_limit": 8192,
   "expanded_limit": 1073741824,
@@ -78,7 +78,8 @@
     "url": "https://snapshot.debian.org/archive/debian/20261014T000000Z/pool/main/p/python-pip/python3-pip-whl_23.0.1+dfsg-1_all.deb",
     "version": "23.0.1+dfsg-1",
     "size": 1717296,
-    "sha256": "cc373690a1cb469fb301b9fe0125048e3102f2e365d1b2d27cab091ec89fccdc"
+    "sha256": "cc373690a1cb469fb301b9fe0125048e3102f2e365d1b2d27cab091ec89fccdc",
+    "redirect_location": "/file/16f057a5587606da86d493f038f66fe016139482/python3-pip-whl_23.0.1%2Bdfsg-1_all.deb"
   },
   "prohibited": [
     "install",
