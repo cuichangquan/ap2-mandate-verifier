@@ -790,6 +790,125 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(result['used']['content'],len(DATA))
         self.assertNotIn('secret',json.dumps(result))
 
+    def test_standard_ssl_family_is_classified_without_text(self):
+        for cls in (ssl.SSLError,ssl.SSLEOFError,ssl.SSLZeroReturnError,
+                    ssl.SSLSyscallError,ssl.SSLWantReadError,ssl.SSLWantWriteError):
+            with self.subTest(cls=cls.__name__):
+                error=cls(1,'secret certificate URL')
+                m.annotate(error,'U3_PHASE:TLS_HANDSHAKE')
+                result=m.diagnostic(error)
+                self.assertEqual(result['category'],'TLS_ERROR')
+                self.assertEqual(result['phase'],'TLS_HANDSHAKE')
+                self.assertNotIn('secret',json.dumps(result))
+        error=ssl.CertificateError(1,'secret')
+        m.annotate(error,'U3_PHASE:TLS_HANDSHAKE')
+        result=m.diagnostic(error)
+        self.assertEqual(result['category'],'TLS_CERT_VERIFY_ERROR')
+        self.assertEqual(result['phase'],'TLS_HANDSHAKE')
+        self.assertFalse(result['metadata_uncertain'])
+        class PrivateSubclass(ssl.SSLError):pass
+        self.assertEqual(m.diagnostic(PrivateSubclass('secret'))['category'],'OTHER')
+
+    def test_standard_os_subclasses_use_safe_numeric_domain(self):
+        for cls in (BlockingIOError,InterruptedError,FileNotFoundError,FileExistsError,
+                    IsADirectoryError,NotADirectoryError,ProcessLookupError,ChildProcessError):
+            with self.subTest(cls=cls.__name__):
+                d=m.diagnostic(cls(2,'secret filename'))
+                self.assertEqual(d['category'],'OS_CONNECTION_OR_IO_ERROR')
+                self.assertEqual(d['errno_domain'],'OS');self.assertEqual(d['errno'],2)
+                self.assertNotIn('secret',json.dumps(d))
+
+    def test_connection_close_time_and_clock_errors_have_finalization_owner(self):
+        for kind in ('deadline','invalid_clock','callback'):
+            with self.subTest(kind=kind):
+                self.setUp()
+                class FinalClock(Clock):
+                    broken=False
+                    def __call__(self):
+                        if self.broken:raise OSError('secret clock error')
+                        return self.value
+                clock=FinalClock();self.clock=clock;c=Conn(length())
+                def close():
+                    c.closed+=1
+                    if kind=='callback':clock.broken=True
+                    else:clock.value=11 if kind=='deadline' else float('nan')
+                c.close=close
+                with self.assertRaises((m.Stop,OSError)) as cm:self.run_get(connections=[c])
+                record=self.budget.records[-1]
+                self.assertEqual(record['failure']['phase'],'TIME_FINALIZATION')
+                self.assertTrue(record['hops'][0]['closed'])
+                self.assertTrue(record['sink_closed']);self.assertEqual(c.closed,1)
+                self.assertEqual(record['content'],len(DATA))
+                self.assertNotIn('secret',json.dumps(record))
+
+    def test_finalization_boundary_preserves_more_specific_local_primary(self):
+        self.sink=Sink(close_error=True)
+        c=Conn(length(),fail='recv',close_error=True)
+        with self.assertRaises(OSError) as cm:self.run_get(connections=[c])
+        self.assertEqual(m.diagnostic(cm.exception)['phase'],'HTTP_HEADERS')
+        self.assertEqual(cm.exception.__notes__.count('CLOSE_UNCERTAIN'),2)
+
+    def cli(self,argv,**patches):
+        out,err=io.StringIO(),io.StringIO()
+        defaults=dict(signal=Mock(),alarm=Mock(return_value=0),
+                      run=Mock(return_value={'status':'PINNED_TRANSPORT_PROBE_CONTENT_MATCH_RUNTIME_UNPROVEN',
+                                             'used':{'content':17},'receipts':[],'records':[]}))
+        defaults.update(patches)
+        with patch.object(sys,'argv',['probe']+argv),patch.object(sys,'stdout',out),patch.object(sys,'stderr',err),patch.object(probe.signal,'signal',defaults['signal']),patch.object(probe.signal,'alarm',defaults['alarm']),patch.object(probe,'run_once',defaults['run']):
+            code=probe.main()
+        self.assertEqual(err.getvalue(),'')
+        self.assertLessEqual(len(out.getvalue().encode()),1048576)
+        return code,json.loads(out.getvalue()),defaults
+
+    def test_cli_bad_or_missing_flag_is_safe_json_without_network_or_timer(self):
+        for argv in ([],['--wrong'],['https://private.invalid/?secret=password'],
+                     ['--run-approved-public-transport-once','extra']):
+            with self.subTest(argv=argv):
+                code,d,p=self.cli(argv)
+                self.assertEqual(code,78);self.assertEqual(d['reason'],'EXPLICIT_APPROVAL_FLAG')
+                self.assertEqual(d['failure']['phase'],'PROBE_PRECONDITION')
+                self.assertNotIn('secret',json.dumps(d));self.assertNotIn(sys.executable,json.dumps(d))
+                p['run'].assert_not_called();p['signal'].assert_not_called();p['alarm'].assert_not_called()
+
+    def test_cli_setup_failures_are_redacted_and_clear_uncertain_timer(self):
+        for target in ('signal','alarm'):
+            with self.subTest(target=target):
+                bad=Mock(side_effect=OSError('secret path'))
+                if target=='alarm':
+                    bad=Mock(side_effect=[OSError('secret path'),0])
+                code,d,p=self.cli(['--run-approved-public-transport-once'],**{target:bad})
+                self.assertEqual(code,78);self.assertNotIn('secret',json.dumps(d))
+                p['run'].assert_not_called()
+                if target=='alarm':self.assertEqual(bad.call_args_list[-1].args,(0,))
+
+    def test_cli_alarm_cleanup_keeps_first_failure_or_changes_success_to_stop(self):
+        for prior in (False,True):
+            with self.subTest(prior=prior):
+                data={'status':'PINNED_TRANSPORT_PROBE_CONTENT_MATCH_RUNTIME_UNPROVEN',
+                      'used':{'content':17},'receipts':[],'records':[]}
+                if prior:data.update(status='STOP_NO_RETRY',reason='HASH',failure={'phase':'CONTENT_HASH'})
+                code,d,_=self.cli(['--run-approved-public-transport-once'],run=Mock(return_value=data),alarm=Mock(side_effect=[0,OSError('secret cleanup')]))
+                self.assertEqual(code,78);self.assertEqual(d['used'],{'content':17})
+                self.assertEqual(d['alarm_finalization'],'UNAVAILABLE')
+                self.assertEqual(d['failure']['phase'],'CONTENT_HASH' if prior else 'TIME_FINALIZATION')
+
+    def test_cli_runtime_failure_and_encoding_limits_remain_bounded(self):
+        with patch.object(probe,'runtime_identity',side_effect=OSError('secret path')):
+            code,d,_=self.cli([])
+        self.assertEqual(code,78);self.assertEqual(d['runtime'],{'status':'UNAVAILABLE'})
+        for fault in ('encoding','oversize'):
+            with self.subTest(fault=fault):
+                with patch.object(probe.json,'dumps',side_effect=ValueError('secret') if fault=='encoding' else None,
+                                  return_value='x'*1048577):
+                    code,d,_=self.cli([])
+                self.assertEqual(code,78);self.assertEqual(d['status'],'SAFE_OUTPUT_STOP_NO_RETRY')
+
+    def test_cli_unwritable_stdout_does_not_emit_secondary_traceback(self):
+        out,err=Mock(),io.StringIO();out.write.side_effect=OSError('secret stdout path')
+        with patch.object(sys,'argv',['probe']),patch.object(sys,'stdout',out),patch.object(sys,'stderr',err):
+            self.assertEqual(probe.main(),78)
+        self.assertEqual(err.getvalue(),'')
+
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
 

@@ -116,28 +116,62 @@ def run_once(*, connect, clock, utc_now):
     return result
 
 
+def failure_result(error):
+    result = dict(status='PRECONDITION_OR_TIMEOUT_STOP_NO_RETRY',
+                  reason=transport.safe_reason(error),
+                  failure=transport.diagnostic(error, 'PROBE_PRECONDITION'))
+    try:
+        result['runtime'] = runtime_identity()
+    except BaseException:
+        result['runtime'] = {'status': 'UNAVAILABLE'}
+    return result
+
+
 def main():
-    transport.need(sys.argv[1:] == ['--run-approved-public-transport-once'], 'EXPLICIT_APPROVAL_FLAG')
+    """All controllable CLI rejection paths use one bounded output boundary.
+
+    Interpreter/import bootstrap and an unwritable OS stdout are not claimed
+    to produce a complete JSON document. No exception text is printed here.
+    """
     alarm_expired = False
+    alarm_installed = False
     def expired(*_):
         nonlocal alarm_expired
         alarm_expired = True
         raise TimeoutError('PROBE_DEADLINE')
-    signal.signal(signal.SIGALRM, expired)
-    signal.alarm(120)  # Local bounded probe, not external U6 watchdog attestation.
     try:
+        transport.need(sys.argv[1:] == ['--run-approved-public-transport-once'], 'EXPLICIT_APPROVAL_FLAG')
+        signal.signal(signal.SIGALRM, expired)
+        alarm_installed = True
+        signal.alarm(120)  # Attempt clear even if installation raises uncertainly.
         result = run_once(connect=transport.tls_connect, clock=time.monotonic,
                           utc_now=lambda: dt.datetime.now(dt.timezone.utc))
     except BaseException as error:
-        result = dict(status='PRECONDITION_OR_TIMEOUT_STOP_NO_RETRY',
-                      runtime=runtime_identity(), reason=transport.safe_reason(error),
-                      failure=transport.diagnostic(error, 'PROBE_PRECONDITION'))
+        result = failure_result(error)
     finally:
-        signal.alarm(0)
+        if alarm_installed:
+            try:
+                transport.in_phase('TIME_FINALIZATION', signal.alarm, 0)
+            except BaseException as error:
+                # Preserve any earlier failure, receipts and consumption.
+                if 'failure' not in result:
+                    result.update(status='STOP_NO_RETRY', reason=transport.safe_reason(error),
+                                  failure=transport.diagnostic(error, 'TIME_FINALIZATION'))
+                result['alarm_finalization'] = 'UNAVAILABLE'
     result['local_wall_alarm_expired'] = alarm_expired
-    raw = json.dumps(result, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
-    transport.need(len(raw) <= 1048576, 'DIAGNOSTIC_LIMIT')
-    print(raw.decode())
+    try:
+        raw = json.dumps(result, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
+        transport.need(len(raw) <= 1048576, 'DIAGNOSTIC_LIMIT')
+    except BaseException:
+        raw = b'{"status":"SAFE_OUTPUT_STOP_NO_RETRY","reason":"DIAGNOSTIC_ENCODING_OR_LIMIT"}'
+        result['status'] = 'SAFE_OUTPUT_STOP_NO_RETRY'
+    try:
+        text = raw.decode() + '\n'
+        if sys.stdout.write(text) != len(text):
+            return 78
+        sys.stdout.flush()
+    except BaseException:
+        return 78  # Never print a secondary traceback to stderr.
     return 0 if result['status'] == 'PINNED_TRANSPORT_PROBE_CONTENT_MATCH_RUNTIME_UNPROVEN' else 78
 
 

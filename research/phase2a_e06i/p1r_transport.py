@@ -31,7 +31,7 @@ ERROR_CODES = frozenset('URL LIMITS SPEC SPEC_ID HOP_POLICY CLOCK DUPLICATE_INPU
                        'TRAILER SINK_WRITE STATUS UNEXPECTED_LOCATION HASH '
                        'CLOSE_UNCERTAIN CONNECT_TIMEOUT TLS_PROTOCOL '
                        'EXPIRED_OR_UNKNOWN_CLOCK TLS_ENV_OVERRIDE EXPLICIT_APPROVAL_FLAG '
-                       'DIAGNOSTIC_LIMIT RUNTIME_IDENTITY_UNAVAILABLE'.split()) | frozenset(
+                       'DIAGNOSTIC_LIMIT DIAGNOSTIC_PHASE RUNTIME_IDENTITY_UNAVAILABLE'.split()) | frozenset(
     prefix + key for prefix in ('BUDGET_', 'LIMIT_')
     for key in ('HEADER', 'CONTENT', 'WIRE', 'FRAMING'))
 
@@ -47,6 +47,20 @@ def annotate(error, note):
         BaseException.add_note(error, note)
     except BaseException:
         pass
+
+
+def in_phase(phase, function, *args, **kwargs):
+    """One boundary for failures from finalization primitives and callbacks.
+
+    Inner, more-specific annotations take precedence. Unlike mutable caller
+    state, this boundary also covers exceptions raised after a try's body.
+    """
+    need(phase in PHASES, 'DIAGNOSTIC_PHASE')
+    try:
+        return function(*args, **kwargs)
+    except BaseException as error:
+        annotate(error, 'U3_PHASE:' + phase)
+        raise
 
 
 def safe_reason(error):
@@ -73,17 +87,21 @@ def diagnostic(error, phase='UNKNOWN'):
             result.update(category='DNS_LOOKUP_ERROR', errno_domain='EAI')
         elif kind is ssl.SSLCertVerificationError:
             result['category'] = 'TLS_CERT_VERIFY_ERROR'
-            value = error.verify_code
+            value = getattr(error, 'verify_code', None)
             if type(value) is int and -65535 <= value <= 65535:
                 result['verify_code'] = value
-        elif kind is ssl.SSLError:
+        elif kind in (ssl.SSLError, ssl.SSLZeroReturnError, ssl.SSLWantReadError,
+                      ssl.SSLWantWriteError, ssl.SSLSyscallError, ssl.SSLEOFError):
             result['category'] = 'TLS_ERROR'
         elif kind is PermissionError:
             result.update(category='OS_PERMISSION_ERROR', errno_domain='OS')
         elif kind is TimeoutError:
             result.update(category='TIMEOUT', errno_domain='OS')
         elif kind in (ConnectionError, ConnectionRefusedError, ConnectionResetError,
-                      ConnectionAbortedError, BrokenPipeError, OSError):
+                      ConnectionAbortedError, BrokenPipeError, BlockingIOError,
+                      InterruptedError, FileNotFoundError, FileExistsError,
+                      IsADirectoryError, NotADirectoryError, ProcessLookupError,
+                      ChildProcessError, OSError):
             result.update(category='OS_CONNECTION_OR_IO_ERROR', errno_domain='OS')
         elif kind is Stop:
             result['category'] = 'INTERNAL_POLICY_STOP'
@@ -423,8 +441,12 @@ def finish_time(record, budget, clock, primary=None):
         if primary is not None:
             annotate(primary, 'CLOCK_FINALIZATION_UNCERTAIN')
         else:
-            annotate(error, 'U3_PHASE:TIME_FINALIZATION')
             raise
+
+
+def operation_deadline(budget, operation, spec, clock):
+    need(budget.now(clock) < min(budget.started + budget.limits.total_seconds,
+                                operation['started'] + spec.limits.total_seconds), 'DEADLINE')
 
 
 def hop(url, spec, budget, operation, clock, connect, sink, redirect):
@@ -476,15 +498,14 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
     finally:
         try:
             if conn is not None:
-                record['closed'] = close_once(conn, primary)
+                record['closed'] = in_phase('CONNECTION_CLOSE', close_once, conn, primary)
         except BaseException as error:
-            annotate(error, 'U3_PHASE:CONNECTION_CLOSE')
             primary = error
             raise
         finally:
-            finish_time(record, budget, clock, primary)
+            in_phase('TIME_FINALIZATION', finish_time, record, budget, clock, primary)
         if primary is None and reader is not None:
-            reader.remaining()  # Includes close time without masking a primary error.
+            in_phase('TIME_FINALIZATION', reader.remaining)
 
 
 def acquire(spec, budget, sink, *, connect, clock):
@@ -511,27 +532,22 @@ def acquire(spec, budget, sink, *, connect, clock):
             budget.identities.add(spec.identity)
             budget.names.add(spec.name)
             operation['phase'] = 'OPERATION_CLOCK'
-            operation.update(identity=spec.identity, started=budget.now(clock), state='REQUESTING')
+            operation.update(identity=spec.identity,
+                             started=in_phase('OPERATION_CLOCK', budget.now, clock), state='REQUESTING')
             operation['phase'] = 'CONNECTOR'
             hop(spec.origin, spec, budget, operation, clock, connect, sink, spec.final is not None)
             if spec.final is not None:
                 hop(spec.final, spec, budget, operation, clock, connect, sink, False)
             operation['phase'] = 'TIME_FINALIZATION'
-            need(budget.now(clock) < min(budget.started + budget.limits.total_seconds,
-                                        operation['started'] + spec.limits.total_seconds), 'DEADLINE')
+            in_phase('TIME_FINALIZATION', operation_deadline, budget, operation, spec, clock)
         except BaseException as error:
             primary = error
             raise
         finally:
-            try:
-                operation['sink_closed'] = close_once(sink, primary)
-            except BaseException as error:
-                annotate(error, 'U3_PHASE:SINK_CLOSE')
-                raise
+            operation['sink_closed'] = in_phase('SINK_CLOSE', close_once, sink, primary)
         # Close time counts too; no successful receipt if close exhausted deadline.
         operation['phase'] = 'TIME_FINALIZATION'
-        need(budget.now(clock) < min(budget.started + budget.limits.total_seconds,
-                                    operation['started'] + spec.limits.total_seconds), 'DEADLINE')
+        in_phase('TIME_FINALIZATION', operation_deadline, budget, operation, spec, clock)
     except BaseException as error:
         annotate(error, 'U3_PHASE:' + operation['phase'])
         operation['state'] = 'STOP'
