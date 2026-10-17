@@ -1526,6 +1526,51 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(len(held),1);self.assertEqual(self.sink.closed,1)
         self.assertFalse(self.budget.busy);self.assertEqual(self.calls,[])
 
+    def test_outer_cleanup_setup_cancellation_recovers_one_close(self):
+        for constructor_fails in (False,True):
+            for close_fails in (False,True):
+                with self.subTest(constructor_fails=constructor_fails,close_fails=close_fails):
+                    self.setUp();token=self.budget.cancellation;injected=False;held=[]
+                    if close_fails:
+                        def close():
+                            self.sink.closed+=1
+                            raise OSError('synthetic close failure')
+                        self.sink.close=close
+                    def trace(frame,event,arg):
+                        nonlocal injected
+                        if (not injected and event=='line' and frame.f_code is m.owned_sink.__code__ and
+                            linecache.getline(frame.f_code.co_filename,frame.f_lineno).strip()=='if accepted:'):
+                            injected=True;token.request()
+                        return trace
+                    failure=RuntimeError('synthetic setup error')
+                    target='CloseOwner' if constructor_fails else 'acquire_owned'
+                    prior=sys.gettrace()
+                    try:
+                        sys.settrace(trace)
+                        with patch.object(m,target,side_effect=failure):
+                            try:self.run_get()
+                            except m.WallDeadline as error:held.append(error)
+                    finally:sys.settrace(prior)
+                    self.assertTrue(injected);self.assertEqual(len(held),1)
+                    self.assertEqual(self.sink.closed,1);self.assertFalse(self.budget.busy)
+                    self.assertEqual(self.calls,[])
+                    self.assertEqual(m.diagnostic(held[0])['cleanup_uncertain'],close_fails)
+
+    def test_failed_constructor_cleanup_alarm_never_retries_close(self):
+        for close_fails in (False,True):
+            with self.subTest(close_fails=close_fails):
+                self.setUp();token=self.budget.cancellation;held=[]
+                def close():
+                    self.sink.closed+=1;token.request()
+                    if close_fails:raise OSError('synthetic uncertain close')
+                self.sink.close=close
+                with patch.object(m,'CloseOwner',side_effect=RuntimeError('synthetic constructor')):
+                    try:self.run_get()
+                    except m.WallDeadline as error:held.append(error)
+                self.assertEqual(len(held),1);self.assertEqual(self.sink.closed,1)
+                self.assertEqual(m.diagnostic(held[0])['cleanup_uncertain'],close_fails)
+                self.assertFalse(self.budget.busy);self.assertEqual(self.calls,[])
+
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
 
