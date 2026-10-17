@@ -1,5 +1,6 @@
 """Fake HTTP plaintext only. No DNS/TLS/network, SDK or installation proof."""
 from dataclasses import replace
+import datetime as dt
 import hashlib
 import io
 import math
@@ -10,6 +11,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 import p1r_transport as m
+import p1r_transport_probe as probe
 
 
 DATA = b'\x00synthetic\xff content\n'
@@ -541,6 +543,102 @@ class TransportTests(unittest.TestCase):
         with self.assertRaisesRegex(m.Stop,'^OPERATION_LIMIT$'):self.run_get()
         self.assertEqual(len(self.budget.records),1)
         self.assertEqual(previous.closed,1);self.assertEqual(self.sink.closed,0)
+
+    def test_probe_frozen_plans_and_global_bounds(self):
+        ap2,deb=probe.plans()
+        for item in (ap2,deb):item.checked()
+        self.assertEqual(ap2.size,1776074)
+        self.assertEqual(ap2.sha256,'526288baea429019db3f4a7ccb8aad15d629b8c760db3f30ec511d32a53b0d47')
+        self.assertEqual(deb.size,8808)
+        self.assertEqual(deb.sha256,'cfac89e6a7a54ff3c6a4f843310e25efeddaa771baeae470bd98bd588c373563')
+        self.assertEqual(deb.final,'https://snapshot.debian.org'+deb.location)
+        self.assertEqual(sum(x.limits.requests for x in (ap2,deb)),3)
+        self.assertLess(sum(x.limits.wire for x in (ap2,deb)),96*1024*1024)
+
+    def test_probe_fake_success_discards_body_and_has_no_durable_claim(self):
+        connections=[Conn(length()),Conn(length())]
+        def connect(url,seconds):return connections.pop(0)
+        now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc)
+        with patch.object(probe,'plans',return_value=(spec(),spec(identity='second',name='second'))),patch.dict('os.environ',{},clear=True):
+            result=probe.run_once(connect=connect,clock=self.clock,utc_now=now)
+        self.assertEqual(result['status'],'PINNED_TRANSPORT_PROBE_CONTENT_MATCH_RUNTIME_UNPROVEN')
+        self.assertEqual(result['used']['requests'],2)
+        self.assertFalse(result['raw_payload_saved'])
+        self.assertFalse(result['diagnostic_artifact_saved'])
+        self.assertTrue(all(not x['durable_or_sealed'] for x in result['receipts']))
+
+    def test_probe_first_failure_stops_without_following_target(self):
+        connect=Mock(side_effect=OSError('synthetic failed connect'))
+        with patch.dict('os.environ',{},clear=True):
+            result=probe.run_once(connect=connect,clock=self.clock,utc_now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc))
+        self.assertEqual(result['status'],'STOP_NO_RETRY')
+        self.assertEqual(result['used']['requests'],1)
+        connect.assert_called_once()
+
+    def test_probe_expired_or_overridden_tls_stops_before_connector(self):
+        connect=Mock(side_effect=AssertionError('must not connect'))
+        for now in (dt.datetime(2026,10,20,7,32,55,tzinfo=dt.timezone.utc),dt.datetime(2026,10,17)):
+            with self.subTest(now=str(now)),patch.dict('os.environ',{},clear=True):
+                with self.assertRaisesRegex(m.Stop,'EXPIRED_OR_UNKNOWN_CLOCK'):
+                    probe.run_once(connect=connect,clock=self.clock,utc_now=lambda:now)
+        for name in ('SSL_CERT_FILE','SSL_CERT_DIR','SSLKEYLOGFILE'):
+            with self.subTest(name=name),patch.dict('os.environ',{name:'synthetic'},clear=True):
+                with self.assertRaisesRegex(m.Stop,'TLS_ENV_OVERRIDE'):
+                    probe.run_once(connect=connect,clock=self.clock,utc_now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc))
+        connect.assert_not_called()
+
+    def test_caller_active_except_does_not_suppress_close_failure(self):
+        for which in ('connection','sink','both'):
+            with self.subTest(which=which):
+                self.setUp()
+                try:
+                    raise RuntimeError('unrelated caller exception')
+                except RuntimeError as ambient:
+                    c=Conn(length(),close_error=which!='sink')
+                    self.sink=Sink(close_error=which!='connection')
+                    self.rejects('CLOSE_UNCERTAIN',connections=[c])
+                    self.assertFalse(hasattr(ambient,'__notes__'))
+                    self.assertEqual(c.closed,1);self.assertEqual(self.sink.closed,1)
+
+    def test_caller_active_except_does_not_skip_hop_deadline(self):
+        try:
+            raise RuntimeError('unrelated caller exception')
+        except RuntimeError as ambient:
+            self.rejects('DEADLINE',connections=[Conn(length(),clock=self.clock)])
+            self.assertFalse(hasattr(ambient,'__notes__'))
+
+    def test_caller_active_except_clock_failure_is_not_suppressed(self):
+        c=Conn(length())
+        def close():c.closed+=1;self.clock.value=float('nan')
+        c.close=close
+        try:
+            raise RuntimeError('unrelated caller exception')
+        except RuntimeError as ambient:
+            self.rejects('CLOCK',connections=[c])
+            self.assertFalse(hasattr(ambient,'__notes__'))
+
+    def test_caller_active_except_local_primary_keeps_only_local_notes(self):
+        try:
+            raise RuntimeError('unrelated caller exception')
+        except RuntimeError as ambient:
+            self.sink=Sink(close_error=True)
+            c=Conn(length(),fail='recv',close_error=True)
+            with self.assertRaisesRegex(OSError,'synthetic read') as cm:
+                self.run_get(connections=[c])
+            self.assertEqual(cm.exception.__notes__,['CLOSE_UNCERTAIN','CLOSE_UNCERTAIN'])
+            self.assertFalse(hasattr(ambient,'__notes__'))
+
+    def test_tls_local_primary_is_explicit_inside_caller_except(self):
+        plain,wrapped=Mock(),Mock();context=Mock();context.wrap_socket.return_value=wrapped
+        wrapped.do_handshake.side_effect=OSError('local handshake')
+        wrapped.close.side_effect=OSError('local close')
+        try:
+            raise RuntimeError('unrelated caller exception')
+        except RuntimeError as ambient:
+            with patch.object(socket,'create_connection',return_value=plain),patch.object(ssl,'SSLContext',return_value=context):
+                with self.assertRaisesRegex(OSError,'local handshake') as cm:m.tls_connect(ORIGIN,1)
+            self.assertEqual(cm.exception.__notes__,['CLOSE_UNCERTAIN'])
+            self.assertFalse(hasattr(ambient,'__notes__'))
 
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])

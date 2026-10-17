@@ -16,7 +16,6 @@ import math
 import re
 import socket
 import ssl
-import sys
 from urllib.parse import unquote, urlsplit
 
 
@@ -166,9 +165,8 @@ class Budget:
         return now
 
 
-def close_once(resource):
+def close_once(resource, primary=None):
     """One attempt; never mask a primary exception or retry an uncertain FD."""
-    primary = sys.exception()
     try:
         resource.close()
     except BaseException as error:
@@ -206,8 +204,8 @@ def tls_connect(url, seconds):
         wrapped.do_handshake()
         need(wrapped.selected_alpn_protocol() in (None, 'http/1.1'), 'TLS_PROTOCOL')
         return wrapped
-    except BaseException:
-        close_once(owned)
+    except BaseException as error:
+        close_once(owned, error)
         raise
 
 
@@ -337,8 +335,7 @@ def body(reader, fields, *, expected=None, sink=None):
     return digest.hexdigest()
 
 
-def finish_time(record, budget, clock):
-    primary = sys.exception()
+def finish_time(record, budget, clock, primary=None):
     try:
         record['finished'] = budget.now(clock)
         record['seconds'] = record['finished'] - record['started']
@@ -364,7 +361,7 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
                operation['started'] + spec.limits.total_seconds,
                now + min(spec.limits.hop_seconds, budget.limits.hop_seconds)) - now
     need(left > 0, 'DEADLINE')
-    conn, reader = None, None
+    conn, reader, primary = None, None, None
     try:
         conn = connect(url, min(left, 5))
         reader = Reader(conn, spec, budget, operation, record, clock)
@@ -383,13 +380,19 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
         record.update(observed_sha256=observed, hash_match=observed == spec.sha256)
         need(record['hash_match'], 'HASH')
         return observed
+    except BaseException as error:
+        primary = error
+        raise
     finally:
         try:
             if conn is not None:
-                record['closed'] = close_once(conn)
+                record['closed'] = close_once(conn, primary)
+        except BaseException as error:
+            primary = error
+            raise
         finally:
-            finish_time(record, budget, clock)
-        if sys.exception() is None and reader is not None:
+            finish_time(record, budget, clock, primary)
+        if primary is None and reader is not None:
             reader.remaining()  # Includes close time without masking a primary error.
 
 
@@ -409,6 +412,7 @@ def acquire(spec, budget, sink, *, connect, clock):
                      wire=0, framing=0, requests=0, hops=[])
     budget.records.append(operation)
     try:
+        primary = None
         try:
             need(type(spec) is TransferSpec, 'SPEC')
             spec.checked()
@@ -421,8 +425,11 @@ def acquire(spec, budget, sink, *, connect, clock):
                 hop(spec.final, spec, budget, operation, clock, connect, sink, False)
             need(budget.now(clock) < min(budget.started + budget.limits.total_seconds,
                                         operation['started'] + spec.limits.total_seconds), 'DEADLINE')
+        except BaseException as error:
+            primary = error
+            raise
         finally:
-            close_once(sink)
+            close_once(sink, primary)
         # Close time counts too; no successful receipt if close exhausted deadline.
         need(budget.now(clock) < min(budget.started + budget.limits.total_seconds,
                                     operation['started'] + spec.limits.total_seconds), 'DEADLINE')
