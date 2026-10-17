@@ -143,7 +143,7 @@ def main():
     def expired(*_):
         nonlocal alarm_expired
         alarm_expired = True
-        raise TimeoutError('PROBE_DEADLINE')
+        raise transport.WallDeadline()
     try:
         transport.need(sys.argv[1:] == ['--run-approved-public-transport-once'], 'EXPLICIT_APPROVAL_FLAG')
         signal.signal(signal.SIGALRM, expired)
@@ -167,6 +167,13 @@ def main():
                                   failure=transport.diagnostic(error, 'TIME_FINALIZATION'))
                 result['alarm_finalization'] = 'UNAVAILABLE'
     result['local_wall_alarm_expired'] = alarm_expired
+    if alarm_expired:
+        # Even a defensive metadata/cleanup handler that absorbed cancellation
+        # cannot turn an expired invocation into a successful probe result.
+        result['status'] = 'STOP_NO_RETRY'
+        if 'failure' not in result:
+            result.update(reason='PROBE_DEADLINE',
+                          failure=transport.diagnostic(transport.WallDeadline()))
     try:
         raw = json.dumps(result, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
         transport.need(len(raw) <= 1048576, 'DIAGNOSTIC_LIMIT')

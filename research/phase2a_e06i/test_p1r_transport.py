@@ -15,6 +15,7 @@ import p1r_transport as m
 import p1r_transport_probe as probe
 
 
+STDLIB_CREATE_CONNECTION = socket.create_connection
 DATA = b'\x00synthetic\xff content\n'
 ORIGIN = 'https://snapshot.example.invalid/archive/fixed/payload.deb'
 FINAL = 'https://snapshot.example.invalid/file/abcdef/payload.deb'
@@ -931,6 +932,70 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(code,78);self.assertEqual(d['reason'],'FALLBACK_UNAVAILABLE')
         self.assertEqual(d['alarm_finalization'],'UNAVAILABLE')
         self.assertNotIn('secret',json.dumps(d))
+
+    def test_stdlib_address_loop_reproduces_old_oserror_alarm_swallow(self):
+        # Exercise the installed CPython loop itself, not a copied model.
+        first, second = Mock(), Mock()
+        first.connect.side_effect = TimeoutError('synthetic old wall alarm')
+        addresses = [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('192.0.2.1', 443)),
+                     (socket.AF_INET, socket.SOCK_STREAM, 6, '', ('192.0.2.2', 443))]
+        with patch.object(socket, 'getaddrinfo', return_value=addresses), \
+             patch.object(socket, 'socket', side_effect=[first, second]) as factory:
+            self.assertIs(STDLIB_CREATE_CONNECTION(('fake.invalid', 443), timeout=1), second)
+        self.assertEqual(factory.call_count, 2)
+        first.close.assert_called_once(); second.connect.assert_called_once()
+
+    def test_wall_cancellation_escapes_stdlib_address_loop_and_stops_probe(self):
+        for where in ('resolve', 'connect', 'handshake'):
+            with self.subTest(where=where):
+                handlers = []
+                first, second, wrapped, context = Mock(), Mock(), Mock(), Mock()
+                context.wrap_socket.return_value = wrapped
+                addresses = [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('192.0.2.1', 443)),
+                             (socket.AF_INET, socket.SOCK_STREAM, 6, '', ('192.0.2.2', 443))]
+                def expired(*args, **kwargs): handlers[0](probe.signal.SIGALRM, None)
+                def install(sig, handler): handlers.append(handler)
+                if where == 'connect': first.connect.side_effect = expired
+                if where == 'handshake': wrapped.do_handshake.side_effect = expired
+                original = probe.run_once
+                with patch.object(socket, 'getaddrinfo', side_effect=expired if where == 'resolve' else None,
+                                  return_value=addresses) as resolve, \
+                     patch.object(socket, 'socket', side_effect=[first, second]) as factory, \
+                     patch.object(ssl, 'SSLContext', return_value=context), \
+                     patch.object(socket, 'create_connection', STDLIB_CREATE_CONNECTION), \
+                     patch.dict('os.environ', {}, clear=True):
+                    def run(**kwargs):
+                        return original(connect=m.tls_connect, clock=self.clock,
+                                        utc_now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc))
+                    code, d, p = self.cli(['--run-approved-public-transport-once'],
+                                         signal=Mock(side_effect=install), run=Mock(side_effect=run))
+                self.assertEqual(code, 78); self.assertTrue(d['local_wall_alarm_expired'])
+                self.assertEqual(d['reason'], 'PROBE_DEADLINE')
+                self.assertEqual(d['failure']['category'], 'TIMEOUT')
+                self.assertEqual(d['failure']['phase'], 'TLS_HANDSHAKE' if where == 'handshake' else 'DNS_OR_TCP_CONNECT')
+                self.assertEqual(len(d['records']), 1); self.assertEqual(d['receipts'], [])
+                self.assertEqual(d['used']['requests'], 1)
+                self.assertFalse(d['records'][0]['hops'][0]['connector_returned'])
+                self.assertFalse(d['records'][0]['hops'][0]['http_send_started'])
+                self.assertEqual(factory.call_count, 0 if where == 'resolve' else 1)
+                second.connect.assert_not_called(); resolve.assert_called_once()
+                if where == 'handshake': wrapped.close.assert_called_once()
+                self.assertEqual(p['alarm'].call_args_list[-1].args, (0,))
+                self.assertNotIn('192.0.2', json.dumps(d))
+
+    def test_expired_alarm_cannot_be_reported_as_success_even_if_absorbed(self):
+        handlers = []
+        def run(**kwargs):
+            try: handlers[0](probe.signal.SIGALRM, None)
+            except BaseException: pass
+            return dict(status='PINNED_TRANSPORT_PROBE_CONTENT_MATCH_RUNTIME_UNPROVEN',
+                        used={'content':17}, receipts=[], records=[])
+        code, d, _ = self.cli(['--run-approved-public-transport-once'],
+                              signal=Mock(side_effect=lambda sig,h:handlers.append(h)),
+                              run=Mock(side_effect=run))
+        self.assertEqual(code, 78); self.assertEqual(d['status'], 'STOP_NO_RETRY')
+        self.assertEqual(d['reason'], 'PROBE_DEADLINE'); self.assertEqual(d['used']['content'],17)
+        self.assertFalse(issubclass(m.WallDeadline, (OSError, Exception)))
 
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])

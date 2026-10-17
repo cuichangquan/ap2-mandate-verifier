@@ -23,6 +23,14 @@ class Stop(ValueError):
     pass
 
 
+class WallDeadline(BaseException):
+    """Probe cancellation, outside OSError/Exception address-fallback catches.
+
+    Only the approved CLI timer raises this. Transport boundaries record and
+    rethrow it; this is not proof of an OS-enforced native-call deadline.
+    """
+
+
 ERROR_CODES = frozenset('URL LIMITS SPEC SPEC_ID HOP_POLICY CLOCK DUPLICATE_INPUT '
                        'DEADLINE REQUEST_LIMIT READ_SIZE RECV_TYPE RECV_CONTRACT '
                        'HEADER_EOF BODY_EOF HEADER_LIMIT LINE_LIMIT HEADERS '
@@ -64,6 +72,8 @@ def in_phase(phase, function, *args, **kwargs):
 
 
 def safe_reason(error):
+    if type(error) is WallDeadline:
+        return 'PROBE_DEADLINE'
     if type(error) is Stop and type(error.args) is tuple and len(error.args) == 1:
         value = error.args[0]
         if type(value) is str and value in ERROR_CODES:
@@ -95,6 +105,8 @@ def diagnostic(error, phase='UNKNOWN'):
             result['category'] = 'TLS_ERROR'
         elif kind is PermissionError:
             result.update(category='OS_PERMISSION_ERROR', errno_domain='OS')
+        elif kind is WallDeadline:
+            result['category'] = 'TIMEOUT'
         elif kind is TimeoutError:
             result.update(category='TIMEOUT', errno_domain='OS')
         elif kind in (ConnectionError, ConnectionRefusedError, ConnectionResetError,
@@ -272,8 +284,9 @@ def close_once(resource, primary=None):
 def tls_connect(url, seconds):
     """Optional connector, deliberately not a default argument to acquire().
 
-    No proxy/netrc/auth. OS resolver may outlive socket timeout: caller MUST
-    arrange an external worker watchdog before any separately approved use.
+    No proxy/netrc/auth. Caller must arrange cancellation outside OSError
+    address-fallback catches. A worker watchdog is still needed to attest a
+    hard OS deadline for uninterruptible native calls; that remains unproven.
     """
     phase, owned = 'TLS_VALIDATE', None
     try:
