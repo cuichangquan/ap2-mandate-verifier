@@ -661,8 +661,7 @@ def record_operation_failure(operation, error):
         operation['reason'] == 'CLOSE_UNCERTAIN' or not operation['sink_closed'])
 
 
-@contextmanager
-def owned_sink(budget, sink):
+def owned_sink(spec, budget, sink, *, connect, clock):
     """Accept the sink inside a protected local handoff, before any setup.
 
     Rejected budget preconditions leave ownership with the caller. Once
@@ -677,7 +676,10 @@ def owned_sink(budget, sink):
             accepted = True
             owner = CloseOwner(cancellation=budget.cancellation)
             owner.register(sink)
-        yield owner
+        # Keep accepted ownership in this ordinary function's try/finally.
+        # A generator context-manager __enter__ could be interrupted after
+        # yielding the owner but before its caller installs __exit__.
+        return acquire_owned(spec, budget, sink, owner, connect=connect, clock=clock)
     except BaseException as error:
         primary = error
         annotate(error, 'U3_PHASE:SPEC_CHECK')
@@ -704,8 +706,7 @@ def acquire(spec, budget, sink, *, connect, clock):
     is a trust boundary; its fake receipts cannot attest
     network/TLS authority. No filesystem sealing or execution follows success.
     """
-    with owned_sink(budget, sink) as sink_owner:
-        return acquire_owned(spec, budget, sink, sink_owner, connect=connect, clock=clock)
+    return owned_sink(spec, budget, sink, connect=connect, clock=clock)
 
 
 def acquire_owned(spec, budget, sink, sink_owner, *, connect, clock):

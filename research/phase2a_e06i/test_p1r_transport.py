@@ -1465,8 +1465,7 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(self.calls,[]);self.assertEqual(self.budget.used['requests'],0)
 
     def test_preoperation_setup_cancellation_closes_sink_before_network(self):
-        targets=((m.owned_sink.__wrapped__.__code__, 'yield owner'),
-                 (m.acquire.__code__, 'return acquire_owned('),
+        targets=((m.owned_sink.__code__, 'return acquire_owned('),
                  (m.acquire_owned.__code__, 'operation = dict('),
                  (m.acquire_owned.__code__, 'primary = None'))
         for code,prefix in targets:
@@ -1502,6 +1501,30 @@ class TransportTests(unittest.TestCase):
                 self.assertIs(cm.exception,failure);self.assertEqual(self.sink.closed,1)
                 self.assertEqual(m.diagnostic(failure)['cleanup_uncertain'],close_fails)
                 self.assertFalse(self.budget.busy);self.assertEqual(self.calls,[])
+
+    def test_sink_owner_never_crosses_generator_context_entry(self):
+        import contextlib
+        called=False;injected=False;held=[]
+        token=self.budget.cancellation
+        def run(*args,**kwargs):
+            nonlocal called
+            called=True;token.request()
+        def trace(frame,event,arg):
+            nonlocal injected
+            if (event=='return' and frame.f_code is contextlib._GeneratorContextManager.__enter__.__code__ and
+                type(arg) is m.CloseOwner and arg.resource is self.sink):
+                injected=True;token.request()
+            return trace
+        prior=sys.gettrace()
+        try:
+            sys.settrace(trace)
+            with patch.object(m,'acquire_owned',run):
+                try:self.run_get()
+                except m.WallDeadline as error:held.append(error)
+        finally:sys.settrace(prior)
+        self.assertFalse(injected);self.assertTrue(called)
+        self.assertEqual(len(held),1);self.assertEqual(self.sink.closed,1)
+        self.assertFalse(self.budget.busy);self.assertEqual(self.calls,[])
 
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
