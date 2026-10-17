@@ -139,7 +139,13 @@ def request(url, cap, *, token=None, method="GET", data=b"", redirect=False,
                 need(not any(ord(c) < 32 for c in value.strip()), "HEADER_SYNTAX")
                 need(key not in parsed or key not in ("location", "content-length",
                      "transfer-encoding", "content-encoding"), "HEADER_DUPLICATE")
-                parsed.setdefault(key, value.strip())
+                if key=='location':
+                    # Permit only the conventional single SP after ':', not OWS normalization.
+                    value=value[1:] if value.startswith(' ') else value
+                    need(value and all(32<ord(c)<127 for c in value),'LOCATION_WIRE')
+                    parsed.setdefault(key,value)
+                else:
+                    parsed.setdefault(key,value.strip())
             need(parsed.get("content-encoding", "identity") == "identity", "ENCODING")
             need(not ("content-length" in parsed and "transfer-encoding" in parsed), "FRAMING")
             if "content-length" in parsed:
