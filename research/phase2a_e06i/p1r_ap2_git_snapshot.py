@@ -15,7 +15,6 @@ import selectors
 import signal
 import stat
 import subprocess
-import sys
 import time
 import zlib
 
@@ -27,9 +26,9 @@ MAX_OUTPUT = 2 * 1024 * 1024
 MAX_WRITES = 32 * 1024 * 1024
 
 
-def finish_fds(fds, sync_fd=None):
-    """Attempt each finalization once; do not mask a primary operation error."""
-    primary, failures = sys.exception(), []
+def finish_fds(fds, sync_fd=None, *, primary=None):
+    """Finalize once with an explicit operation-local primary, never caller state."""
+    failures = []
     if sync_fd is not None:
         try:
             os.fsync(sync_fd)
@@ -51,18 +50,23 @@ def finish_fds(fds, sync_fd=None):
 @contextmanager
 def directory_chain(root_fd, parts):
     fds = []
+    primary = None
     try:
         fds.append(os.dup(root_fd))
         for part in parts:
             fds.append(os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fds[-1]))
         yield fds[-1]
+    except BaseException as error:
+        primary = error
+        raise
     finally:
-        finish_fds(reversed(fds))
+        finish_fds(reversed(fds), primary=primary)
 
 
 def read_regular(path, cap):
     flags = os.O_RDONLY | os.O_NOFOLLOW
     fd = os.open(path, flags)
+    primary = None
     try:
         before = os.fstat(fd)
         need(stat.S_ISREG(before.st_mode) and before.st_nlink == 1 and
@@ -78,8 +82,11 @@ def read_regular(path, cap):
         need((before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns) ==
              (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns), "FILE_CHANGED")
         return bytes(raw)
+    except BaseException as error:
+        primary = error
+        raise
     finally:
-        finish_fds((fd,))
+        finish_fds((fd,), primary=primary)
 
 
 def _process(argv, env, timeout=5, cap=MAX_OUTPUT, *, git_tool=None):
@@ -92,9 +99,10 @@ def _process(argv, env, timeout=5, cap=MAX_OUTPUT, *, git_tool=None):
     p = subprocess.Popen(argv, env=env, stdin=subprocess.DEVNULL,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          close_fds=True, start_new_session=True)
-    output = [bytearray(), bytearray()]
-    end = time.monotonic() + timeout
+    primary = None
     try:
+        output = [bytearray(), bytearray()]
+        end = time.monotonic() + timeout
         with selectors.DefaultSelector() as selector:
             selector.register(p.stdout, selectors.EVENT_READ, 0)
             selector.register(p.stderr, selectors.EVENT_READ, 1)
@@ -113,10 +121,19 @@ def _process(argv, env, timeout=5, cap=MAX_OUTPUT, *, git_tool=None):
             code = p.wait(timeout=max(0.001, end - time.monotonic()))
         return code, bytes(output[0]), bytes(output[1])
     except subprocess.TimeoutExpired:
-        raise Stop("GIT_TIMEOUT") from None
+        primary = Stop("GIT_TIMEOUT")
+        raise primary from None
+    except BaseException as error:
+        primary = error
+        raise
     finally:
-        primary, failures = sys.exception(), []
-        if p.poll() is None:
+        failures = []
+        try:
+            running = p.poll() is None
+        except BaseException as error:
+            failures.append(error)
+            running = True
+        if running:
             try:
                 os.killpg(p.pid, signal.SIGKILL)
             except ProcessLookupError:
@@ -234,6 +251,7 @@ def open_private_parent(parent):
     need(ancestor.st_uid == os.geteuid() and stat.S_IMODE(ancestor.st_mode) == 0o700, "PARENT_PRIVATE")
     fd = os.open(parent, flags)
     owned = [fd]
+    primary = None
     try:
         leaf, current = os.fstat(fd), parent.lstat()
         need(stat.S_ISDIR(leaf.st_mode) and leaf.st_uid == os.geteuid() and
@@ -242,8 +260,11 @@ def open_private_parent(parent):
              (current.st_dev, current.st_ino), "PARENT_ENTRY_CHANGED")
         owned = []  # Caller owns the one validated descriptor, even on close error.
         return parent, fd
+    except BaseException as error:
+        primary = error
+        raise
     finally:
-        finish_fds(reversed(owned))
+        finish_fds(reversed(owned), primary=primary)
 
 
 def private_parent(parent):
@@ -265,6 +286,7 @@ def write_at(root_fd, relative, raw, mode):
     with directory_chain(root_fd, parts[:-1]) as directory:
         fd = os.open(parts[-1], os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
                      0o600, dir_fd=directory)
+        primary = None
         try:
             st = os.fstat(fd)
             need(stat.S_ISREG(st.st_mode) and st.st_nlink == 1 and st.st_uid == os.geteuid(), "WRITE_FILE")
@@ -275,8 +297,11 @@ def write_at(root_fd, relative, raw, mode):
                 offset += n
             os.fchmod(fd, mode)
             os.fsync(fd)
+        except BaseException as error:
+            primary = error
+            raise
         finally:
-            finish_fds((fd,))
+            finish_fds((fd,), primary=primary)
         os.fsync(directory)
 
 
@@ -384,6 +409,7 @@ def materialize(archive, spec, parent, name, tool, write_cap=MAX_WRITES):
     need(sum(len(raw) for raw, _ in contents.values()) + MAX_OUTPUT <= write_cap, "WRITE_RESERVATION")
     parent, parent_fd = open_private_parent(parent)
     root_fd = control_fd = None
+    primary = None
     try:
         root_fd = mkdir_at(parent_fd, name)
         control_fd = mkdir_at(parent_fd, name + ".control")
@@ -408,8 +434,11 @@ def materialize(archive, spec, parent, name, tool, write_cap=MAX_WRITES):
         repo = Repository(root, control, tool, spec, data, expected, tuple(sorted(directories)))
         audit(repo)
         return repo
+    except BaseException as error:
+        primary = error
+        raise
     finally:
-        finish_fds((root_fd, control_fd, parent_fd), sync_fd=parent_fd)
+        finish_fds((root_fd, control_fd, parent_fd), sync_fd=parent_fd, primary=primary)
 
 
 def audit(repo):
