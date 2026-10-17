@@ -8,7 +8,7 @@ on:
         type: string
 permissions: {}
 concurrency:
-  group: issue73-p1s-bounded-elf-once-20261016
+  group: issue73-p1s-rel-object-once-20261017
   cancel-in-progress: false
 jobs:
   static-inventory:
@@ -55,8 +55,8 @@ jobs:
             mkdir -p "$(dirname "$path")"
             cp "$tmp/body" "$path"
           }
-          fetch_source research/phase2a_e06i/p1s_static_inventory.py 82e2b9ade4d9f594095bddf30ce02ba832a6da8a6d8a7b39eac7ef69f7f16e62
-          fetch_source research/phase2a_e06i/p1s_input_contract.json 942027c91fe3fafe5c201e2e391322b668aaac952a979ebf9e81e3289c80b7a1
+          fetch_source research/phase2a_e06i/p1s_static_inventory.py fcfc9df6b86fd80c4d44e3d827de72849b54a08e3b298a8af1cb92a2f2170253
+          fetch_source research/phase2a_e06i/p1s_input_contract.json ab22569eb73b8dd08d1ed71ae0f47e7cb86d4ecae78d4e554721a3a75b1e71d1
           echo "P1S_BOOTSTRAP_BYTES=$total" >> "$GITHUB_ENV"
           echo "P1S_BOOTSTRAP_VERIFIED BODY_BYTES=$total SHA=$GITHUB_SHA"
       - name: Verify fixed sources, claim once, and inspect target DATA only
