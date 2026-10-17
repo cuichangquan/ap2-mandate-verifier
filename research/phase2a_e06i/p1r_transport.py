@@ -86,8 +86,8 @@ def safe_reason(error):
 def diagnostic(error, phase='UNKNOWN'):
     """Closed enum/numeric metadata; no exception text, URL, IP or traceback.
 
-    DNS_OR_TCP_CONNECT is deliberately combined: create_connection may try
-    several resolved addresses and retain only the last error. No DNS/TCP
+    DNS_OR_TCP_CONNECT is deliberately combined: the owned address loop may
+    try several resolved addresses and retain only the last error. No DNS/TCP
     packet counts or one-TCP-attempt guarantee are inferred from this label.
     """
     result = dict(phase=phase if phase in PHASES else 'UNKNOWN', category='OTHER',
@@ -276,8 +276,9 @@ def close_once(resource, primary=None):
     """One attempt; never mask a primary exception or retry an uncertain FD."""
     try:
         resource.close()
-    except WallDeadline:
+    except WallDeadline as error:
         # Cancellation supersedes ordinary cleanup-primary precedence.
+        annotate(error, 'CLOSE_UNCERTAIN')
         raise
     except BaseException as error:
         if primary is not None:
@@ -308,7 +309,27 @@ def tls_connect(url, seconds):
         context.minimum_version = ssl.TLSVersion.TLSv1_2
         context.set_alpn_protocols(['http/1.1'])
         phase = 'DNS_OR_TCP_CONNECT'
-        owned = socket.create_connection((u.hostname, 443), timeout=min(seconds, 5))
+        # Keep the current socket in this frame before connect begins. There is
+        # no helper-return/assignment gap and no OSError-only hidden cleanup.
+        last_error = None
+        for family, kind, protocol, _, address in socket.getaddrinfo(
+                u.hostname, 443, 0, socket.SOCK_STREAM):
+            try:
+                owned = socket.socket(family, kind, protocol)
+                owned.settimeout(min(seconds, 5))
+                owned.connect(address)
+                break
+            except OSError as error:
+                # Ordinary address fallback is allowed only after known close.
+                # Clear ownership before one close attempt; uncertainty stops.
+                failed, owned = owned, None
+                if failed is not None and not close_once(failed, error):
+                    raise
+                last_error = error
+        else:
+            if last_error is not None:
+                raise last_error
+            raise OSError('NO_RESOLVED_ADDRESS')
         phase = 'TLS_WRAP'
         wrapped = context.wrap_socket(owned, server_hostname=u.hostname,
                                       do_handshake_on_connect=False)

@@ -75,7 +75,7 @@ def run_once(*, connect, clock, utc_now):
                   raw_payload_saved=False, raw_headers_saved=False, diagnostic_artifact_saved=False,
                   installed_or_executed_payload=False, retry=0,
                   physical_tls_tcp_dns_wire_bytes='UNMEASURED',
-                  dns_and_tcp_attempts='UNKNOWN_CREATE_CONNECTION_MAY_TRY_MULTIPLE_ADDRESSES',
+                  dns_and_tcp_attempts='UNKNOWN_MULTIPLE_RESOLVED_ADDRESSES_POSSIBLE',
                   independent_signature_key_clock_and_isolation='UNPROVEN')
     try:
         transport.need(result['runtime']['status'] == 'COMPLETE', 'RUNTIME_IDENTITY_UNAVAILABLE')

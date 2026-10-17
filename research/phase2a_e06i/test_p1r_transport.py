@@ -1,5 +1,6 @@
 """Fake HTTP plaintext only. No DNS/TLS/network, SDK or installation proof."""
 from dataclasses import replace
+from contextlib import contextmanager
 import datetime as dt
 import hashlib
 import io
@@ -16,6 +17,15 @@ import p1r_transport_probe as probe
 
 
 STDLIB_CREATE_CONNECTION = socket.create_connection
+
+
+@contextmanager
+def fake_tcp(plain=None, constructor=None):
+    addresses = [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('192.0.2.1', 443))]
+    constructor = constructor or Mock(return_value=plain or Mock())
+    with patch.object(socket, 'getaddrinfo', return_value=addresses), \
+         patch.object(socket, 'socket', constructor):
+        yield constructor
 DATA = b'\x00synthetic\xff content\n'
 ORIGIN = 'https://snapshot.example.invalid/archive/fixed/payload.deb'
 FINAL = 'https://snapshot.example.invalid/file/abcdef/payload.deb'
@@ -430,9 +440,11 @@ class TransportTests(unittest.TestCase):
         plain,wrapped=Mock(),Mock()
         wrapped.selected_alpn_protocol.return_value='http/1.1'
         context=Mock();context.wrap_socket.return_value=wrapped
-        with patch.object(socket,'create_connection',return_value=plain) as create, patch.object(ssl,'SSLContext',return_value=context), patch.object(ssl,'create_default_context',side_effect=AssertionError('ENV_KEYLOG_CONTEXT_FORBIDDEN')):
+        with fake_tcp(plain) as create, patch.object(ssl,'SSLContext',return_value=context), patch.object(ssl,'create_default_context',side_effect=AssertionError('ENV_KEYLOG_CONTEXT_FORBIDDEN')):
             self.assertIs(m.tls_connect(ORIGIN,2),wrapped)
-            create.assert_called_once_with(('snapshot.example.invalid',443),timeout=2)
+            create.assert_called_once_with(socket.AF_INET,socket.SOCK_STREAM,6)
+            plain.settimeout.assert_called_once_with(2)
+            plain.connect.assert_called_once_with(('192.0.2.1',443))
             context.wrap_socket.assert_called_once_with(plain,server_hostname='snapshot.example.invalid',do_handshake_on_connect=False)
             context.set_alpn_protocols.assert_called_once_with(['http/1.1'])
             self.assertEqual(context.minimum_version,ssl.TLSVersion.TLSv1_2)
@@ -450,7 +462,7 @@ class TransportTests(unittest.TestCase):
                 if phase=='wrap':context.wrap_socket.side_effect=OSError('wrap failure')
                 if phase=='handshake':wrapped.do_handshake.side_effect=OSError('handshake failure')
                 owner=plain if phase=='wrap' else wrapped;owner.close.side_effect=OSError('close failure')
-                with patch.object(socket,'create_connection',return_value=plain),patch.object(ssl,'SSLContext',return_value=context):
+                with fake_tcp(plain),patch.object(ssl,'SSLContext',return_value=context):
                     with self.assertRaises((OSError,m.Stop)) as cm:m.tls_connect(ORIGIN,1)
                 owner.close.assert_called_once();self.assertIn('CLOSE_UNCERTAIN',cm.exception.__notes__)
                 (wrapped if phase=='wrap' else plain).close.assert_not_called()
@@ -638,7 +650,7 @@ class TransportTests(unittest.TestCase):
         try:
             raise RuntimeError('unrelated caller exception')
         except RuntimeError as ambient:
-            with patch.object(socket,'create_connection',return_value=plain),patch.object(ssl,'SSLContext',return_value=context):
+            with fake_tcp(plain),patch.object(ssl,'SSLContext',return_value=context):
                 with self.assertRaisesRegex(OSError,'local handshake') as cm:m.tls_connect(ORIGIN,1)
             self.assertEqual(cm.exception.__notes__.count('CLOSE_UNCERTAIN'),1)
             self.assertFalse(hasattr(ambient,'__notes__'))
@@ -675,7 +687,7 @@ class TransportTests(unittest.TestCase):
                  'DNS_OR_TCP_CONNECT':create,'TLS_WRAP':context.wrap_socket,
                  'TLS_TIMEOUT_SETUP':wrapped.settimeout,'TLS_HANDSHAKE':wrapped.do_handshake,
                  'TLS_ALPN':wrapped.selected_alpn_protocol}[phase].side_effect=error
-                with patch.object(socket,'create_connection',create),patch.object(ssl,'SSLContext',constructor):
+                with fake_tcp(constructor=create),patch.object(ssl,'SSLContext',constructor):
                     with self.assertRaises(OSError) as cm:m.tls_connect(ORIGIN,1)
                 self.assertIs(cm.exception,error)
                 self.assertEqual(m.diagnostic(error)['phase'],phase)
@@ -688,7 +700,7 @@ class TransportTests(unittest.TestCase):
     def test_tls_alpn_policy_stop_survives_safe_reason_filter(self):
         wrapped=Mock();wrapped.selected_alpn_protocol.return_value='h2'
         context=Mock();context.wrap_socket.return_value=wrapped
-        with patch.object(socket,'create_connection',return_value=Mock()),patch.object(ssl,'SSLContext',return_value=context):
+        with fake_tcp(),patch.object(ssl,'SSLContext',return_value=context):
             with self.assertRaises(m.Stop) as cm:m.tls_connect(ORIGIN,1)
         self.assertEqual(m.safe_reason(cm.exception),'TLS_PROTOCOL')
         self.assertEqual(m.diagnostic(cm.exception)['phase'],'TLS_ALPN')
@@ -730,7 +742,7 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(set(identity['source_sha256']),{'transport','probe'})
         self.assertTrue(all(len(x)==64 for x in identity['source_sha256'].values()))
         self.assertEqual(result['failure']['category'],'DNS_LOOKUP_ERROR')
-        self.assertEqual(result['dns_and_tcp_attempts'],'UNKNOWN_CREATE_CONNECTION_MAY_TRY_MULTIPLE_ADDRESSES')
+        self.assertEqual(result['dns_and_tcp_attempts'],'UNKNOWN_MULTIPLE_RESOLVED_ADDRESSES_POSSIBLE')
         self.assertNotIn('secret',json.dumps(result))
         self.assertNotIn(sys.executable,json.dumps(result))
         self.assertLess(len(json.dumps(result).encode()),1048576)
@@ -962,7 +974,6 @@ class TransportTests(unittest.TestCase):
                                   return_value=addresses) as resolve, \
                      patch.object(socket, 'socket', side_effect=[first, second]) as factory, \
                      patch.object(ssl, 'SSLContext', return_value=context), \
-                     patch.object(socket, 'create_connection', STDLIB_CREATE_CONNECTION), \
                      patch.dict('os.environ', {}, clear=True):
                     def run(**kwargs):
                         return original(connect=m.tls_connect, clock=self.clock,
@@ -980,6 +991,7 @@ class TransportTests(unittest.TestCase):
                 self.assertEqual(factory.call_count, 0 if where == 'resolve' else 1)
                 second.connect.assert_not_called(); resolve.assert_called_once()
                 if where == 'handshake': wrapped.close.assert_called_once()
+                if where == 'connect': first.close.assert_called_once()
                 self.assertEqual(p['alarm'].call_args_list[-1].args, (0,))
                 self.assertNotIn('192.0.2', json.dumps(d))
 
@@ -1035,6 +1047,63 @@ class TransportTests(unittest.TestCase):
             @property
             def __notes__(self): raise m.WallDeadline()
         with self.assertRaises(m.WallDeadline):m.diagnostic(InterruptedErrorMetadata())
+
+    def test_owned_connect_cancellation_closes_before_retained_exception_escapes(self):
+        for where in ('timeout_setup', 'connect'):
+            for close_fails in (False, True):
+                with self.subTest(where=where, close_fails=close_fails):
+                    first, second, context = Mock(), Mock(), Mock()
+                    cancellation = m.WallDeadline(); held = []
+                    getattr(first, 'settimeout' if where == 'timeout_setup' else 'connect').side_effect = cancellation
+                    if close_fails:first.close.side_effect=OSError('secret close')
+                    addresses=[(socket.AF_INET,socket.SOCK_STREAM,6,'',('192.0.2.1',443)),
+                               (socket.AF_INET,socket.SOCK_STREAM,6,'',('192.0.2.2',443))]
+                    with patch.object(socket,'getaddrinfo',return_value=addresses), \
+                         patch.object(socket,'socket',side_effect=[first,second]) as factory, \
+                         patch.object(ssl,'SSLContext',return_value=context):
+                        try:m.tls_connect(ORIGIN,1)
+                        except m.WallDeadline as error:held.append(error)
+                    self.assertEqual(held,[cancellation]);self.assertIsNotNone(held[0].__traceback__)
+                    first.close.assert_called_once();second.connect.assert_not_called()
+                    self.assertEqual(factory.call_count,1);context.wrap_socket.assert_not_called()
+                    self.assertEqual(m.diagnostic(held[0])['cleanup_uncertain'],close_fails)
+
+    def test_owned_connect_ordinary_fallback_only_after_known_close(self):
+        for close_fails in (False,True):
+            with self.subTest(close_fails=close_fails):
+                first,second,wrapped,context=Mock(),Mock(),Mock(),Mock()
+                events=[];first.connect.side_effect=ConnectionRefusedError(61,'secret')
+                def close():
+                    events.append('first_closed')
+                    if close_fails:raise OSError('secret cleanup')
+                first.close.side_effect=close
+                second.connect.side_effect=lambda address:events.append('second_connect')
+                wrapped.selected_alpn_protocol.return_value='http/1.1';context.wrap_socket.return_value=wrapped
+                addresses=[(socket.AF_INET,socket.SOCK_STREAM,6,'',('192.0.2.1',443)),
+                           (socket.AF_INET,socket.SOCK_STREAM,6,'',('192.0.2.2',443))]
+                with patch.object(socket,'getaddrinfo',return_value=addresses), \
+                     patch.object(socket,'socket',side_effect=[first,second]) as factory, \
+                     patch.object(ssl,'SSLContext',return_value=context):
+                    if close_fails:
+                        with self.assertRaises(ConnectionRefusedError) as cm:m.tls_connect(ORIGIN,1)
+                        self.assertTrue(m.diagnostic(cm.exception)['cleanup_uncertain'])
+                    else:self.assertIs(m.tls_connect(ORIGIN,1),wrapped)
+                self.assertEqual(events,['first_closed'] if close_fails else ['first_closed','second_connect'])
+                self.assertEqual(factory.call_count,1 if close_fails else 2)
+                first.close.assert_called_once();second.close.assert_not_called()
+
+    def test_owned_connect_empty_or_exhausted_addresses_stop_without_tls(self):
+        for count in (0,2):
+            with self.subTest(count=count):
+                sockets=[Mock(),Mock()];context=Mock()
+                for s in sockets:s.connect.side_effect=ConnectionRefusedError(61,'secret')
+                addresses=[(socket.AF_INET,socket.SOCK_STREAM,6,'',('192.0.2.1',443))]*count
+                with patch.object(socket,'getaddrinfo',return_value=addresses), \
+                     patch.object(socket,'socket',side_effect=sockets) as factory, \
+                     patch.object(ssl,'SSLContext',return_value=context):
+                    with self.assertRaises(OSError):m.tls_connect(ORIGIN,1)
+                self.assertEqual(factory.call_count,count);context.wrap_socket.assert_not_called()
+                for s in sockets[:count]:s.close.assert_called_once()
 
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
