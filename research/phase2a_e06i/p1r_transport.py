@@ -43,23 +43,24 @@ class WallCancellation:
     """
     def __init__(self):
         self.depth, self.pending = 0, False
+        self.error = WallDeadline()
 
     def request(self):
         self.pending = True
         if not self.depth:
-            raise WallDeadline()
+            raise self.error
 
     @contextmanager
     def handoff(self, *, cleanup=False):
         if self.pending and not cleanup:
-            raise WallDeadline()
+            raise self.error
         self.depth += 1
         try:
             yield
         finally:
             self.depth -= 1
             if self.pending and not self.depth:
-                raise WallDeadline()
+                raise self.error
 
 
 ERROR_CODES = frozenset('URL LIMITS SPEC SPEC_ID HOP_POLICY CLOCK DUPLICATE_INPUT '
@@ -698,11 +699,18 @@ def acquire(spec, budget, sink, *, connect, clock):
                 raise
             finally:
                 try:
-                    in_phase('SINK_CLOSE', sink_owner.close, primary)
+                    with budget.cancellation.handoff(cleanup=True):
+                        if sink_owner.resource is None:
+                            sink_owner.register(sink)
+                        in_phase('SINK_CLOSE', sink_owner.close, primary)
                 except BaseException as error:
+                    annotate(error, 'U3_PHASE:SINK_CLOSE')
                     try:
                         if not sink_owner.attempted:
-                            in_phase('SINK_CLOSE', sink_owner.close, error)
+                            with budget.cancellation.handoff(cleanup=True):
+                                if sink_owner.resource is None:
+                                    sink_owner.register(sink)
+                                in_phase('SINK_CLOSE', sink_owner.close, error)
                     finally:
                         operation['sink_closed'] = sink_owner.closed
                     raise

@@ -25,11 +25,37 @@ import os
 from pathlib import Path
 import signal
 import time
+import types
 
-# -I omits the script directory: use the explicitly verified sibling source,
-# not cwd/PYTHONPATH/user site. The caller must hash-bind these files first.
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import p1r_transport as transport
+TRANSPORT_SHA256 = 'f98116769765fa5ce17e9bd010c0aa4078f898f52795abd5c4cd954f01aaa9f5'
+
+
+def load_bound_transport(path):
+    """Compile exact hash-bound bytes; never resolve a module name or pycache."""
+    with open(path, 'rb') as stream:
+        raw = stream.read(131073)
+    if not (0 < len(raw) <= 131072 and hashlib.sha256(raw).hexdigest() == TRANSPORT_SHA256):
+        raise ValueError('TRANSPORT_SOURCE_UNVERIFIED')
+    module = types.ModuleType('p1r_transport_bound')
+    module.__file__ = str(path)
+    sys.modules[module.__name__] = module  # Required by dataclasses, no search-path change.
+    try:
+        exec(compile(raw, str(path), 'exec'), module.__dict__)
+    except BaseException:
+        sys.modules.pop(module.__name__, None)
+        raise
+    return module
+
+
+try:
+    transport = load_bound_transport(Path(__file__).resolve().with_name('p1r_transport.py'))
+except BaseException:
+    try:
+        sys.stdout.write('{"status":"PRECONDITION_STOP_NO_RETRY","reason":"TRANSPORT_SOURCE_UNVERIFIED"}\n')
+        sys.stdout.flush()
+    except BaseException:
+        pass
+    raise SystemExit(78)
 
 
 def plans():

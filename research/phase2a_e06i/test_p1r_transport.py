@@ -13,9 +13,10 @@ import sys
 import unittest
 from unittest.mock import Mock, patch
 from types import SimpleNamespace
+from importlib.machinery import SourceFileLoader
 
-import p1r_transport as m
 import p1r_transport_probe as probe
+m = probe.transport
 
 
 STDLIB_CREATE_CONNECTION = socket.create_connection
@@ -989,7 +990,7 @@ class TransportTests(unittest.TestCase):
                      patch.object(ssl, 'SSLContext', return_value=context), \
                      patch.dict('os.environ', {}, clear=True):
                     def run(**kwargs):
-                        return original(connect=m.tls_connect, clock=self.clock,
+                        return original(connect=kwargs['connect'], cancellation=kwargs['cancellation'], clock=self.clock,
                                         utc_now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc))
                     code, d, p = self.cli(['--run-approved-public-transport-once'],
                                          signal=Mock(side_effect=install), run=Mock(side_effect=run))
@@ -1395,6 +1396,40 @@ class TransportTests(unittest.TestCase):
                 self.assertEqual(d['runtime'],{'status':'UNAVAILABLE'})
                 self.assertEqual(identity.call_count,0 if type(original) is m.WallDeadline else 1)
                 self.assertNotIn('secret',json.dumps(d))
+
+    def test_bound_loader_rejects_unverified_source_before_compile(self):
+        for raw in (b'',b'unverified synthetic source',b'x'*131073):
+            with self.subTest(size=len(raw)):
+                stream=Mock();stream.__enter__=Mock(return_value=stream);stream.__exit__=Mock(return_value=False)
+                stream.read.return_value=raw
+                with patch('builtins.open',return_value=stream),patch('builtins.compile') as compile_source:
+                    with self.assertRaisesRegex(ValueError,'^TRANSPORT_SOURCE_UNVERIFIED$'):
+                        probe.load_bound_transport('synthetic-only-path')
+                stream.read.assert_called_once_with(131073);compile_source.assert_not_called()
+
+    def test_bound_loader_ignores_named_cache_and_never_extends_module_search(self):
+        before=tuple(sys.path);cached=SimpleNamespace(marker='unverified-name-cache')
+        with patch.dict(sys.modules,{'p1r_transport':cached}), \
+             patch.object(SourceFileLoader,'get_code',side_effect=AssertionError('BYTECODE_LOADER_FORBIDDEN')):
+            bound=probe.load_bound_transport(m.__file__)
+            self.assertEqual(bound.__file__,m.__file__)
+            self.assertIsNot(bound,cached);self.assertIs(bound.ssl,m.ssl)
+            self.assertEqual(tuple(sys.path),before)
+            self.assertEqual(hashlib.sha256(__import__('pathlib').Path(bound.__file__).read_bytes()).hexdigest(),probe.TRANSPORT_SHA256)
+
+    def test_cancel_before_sink_registration_recovers_registration_and_close(self):
+        token=self.budget.cancellation;original=m.CloseOwner.register;injected=False;held=[]
+        def register(owner,resource):
+            nonlocal injected
+            if resource is self.sink and not injected:
+                injected=True;token.request()  # no sink resource stored yet
+            return original(owner,resource)
+        with patch.object(m.CloseOwner,'register',register):
+            try:self.run_get()
+            except m.WallDeadline as error:held.append(error)
+        self.assertEqual(len(held),1);self.assertEqual(self.sink.closed,1)
+        self.assertFalse(self.budget.busy);self.assertEqual(self.budget.used['requests'],0)
+        self.assertEqual(self.calls,[])
 
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
