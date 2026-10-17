@@ -35,7 +35,7 @@ ERROR_CODES = frozenset('URL LIMITS SPEC SPEC_ID HOP_POLICY CLOCK DUPLICATE_INPU
     prefix + key for prefix in ('BUDGET_', 'LIMIT_')
     for key in ('HEADER', 'CONTENT', 'WIRE', 'FRAMING'))
 
-PHASES = frozenset('UNKNOWN SPEC_CHECK CONNECTOR TLS_VALIDATE TLS_CONTEXT '
+PHASES = frozenset('UNKNOWN SPEC_CHECK OPERATION_CLOCK CONNECTOR TLS_VALIDATE TLS_CONTEXT '
                    'DNS_OR_TCP_CONNECT TLS_WRAP TLS_TIMEOUT_SETUP TLS_HANDSHAKE TLS_ALPN '
                    'HTTP_TIMEOUT_SETUP HTTP_SEND HTTP_HEADERS HTTP_BODY CONTENT_HASH '
                    'CONNECTION_CLOSE SINK_CLOSE TIME_FINALIZATION PROBE_PRECONDITION'.split())
@@ -500,7 +500,7 @@ def acquire(spec, budget, sink, *, connect, clock):
     need(len(budget.records) < budget.limits.requests, 'OPERATION_LIMIT')
     budget.busy = True
     operation = dict(identity=None, state='SPEC_CHECKING', header=0, content=0,
-                     wire=0, framing=0, requests=0, hops=[], sink_closed=False)
+                     wire=0, framing=0, requests=0, hops=[], sink_closed=False, phase='SPEC_CHECK')
     budget.records.append(operation)
     try:
         primary = None
@@ -510,10 +510,13 @@ def acquire(spec, budget, sink, *, connect, clock):
             need(spec.identity not in budget.identities and spec.name not in budget.names, 'DUPLICATE_INPUT')
             budget.identities.add(spec.identity)
             budget.names.add(spec.name)
+            operation['phase'] = 'OPERATION_CLOCK'
             operation.update(identity=spec.identity, started=budget.now(clock), state='REQUESTING')
+            operation['phase'] = 'CONNECTOR'
             hop(spec.origin, spec, budget, operation, clock, connect, sink, spec.final is not None)
             if spec.final is not None:
                 hop(spec.final, spec, budget, operation, clock, connect, sink, False)
+            operation['phase'] = 'TIME_FINALIZATION'
             need(budget.now(clock) < min(budget.started + budget.limits.total_seconds,
                                         operation['started'] + spec.limits.total_seconds), 'DEADLINE')
         except BaseException as error:
@@ -526,12 +529,14 @@ def acquire(spec, budget, sink, *, connect, clock):
                 annotate(error, 'U3_PHASE:SINK_CLOSE')
                 raise
         # Close time counts too; no successful receipt if close exhausted deadline.
+        operation['phase'] = 'TIME_FINALIZATION'
         need(budget.now(clock) < min(budget.started + budget.limits.total_seconds,
                                     operation['started'] + spec.limits.total_seconds), 'DEADLINE')
     except BaseException as error:
+        annotate(error, 'U3_PHASE:' + operation['phase'])
         operation['state'] = 'STOP'
         operation['reason'] = safe_reason(error)
-        operation['failure'] = diagnostic(error, 'SPEC_CHECK')
+        operation['failure'] = diagnostic(error, operation['phase'])
         operation['close_uncertain'] = (operation['failure']['cleanup_uncertain'] is not False or
             any(h['connector_returned'] and not h['closed'] for h in operation['hops']) or
             operation['reason'] == 'CLOSE_UNCERTAIN' or not operation['sink_closed'])

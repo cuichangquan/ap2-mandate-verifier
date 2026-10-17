@@ -748,6 +748,48 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(result['failure']['category'],'OS_PERMISSION_ERROR')
         self.assertEqual(result['clock_finalization'],'UNAVAILABLE')
 
+    def test_post_hop_deadline_has_finalization_phase_after_real_fake_transfer(self):
+        original=m.hop
+        def completed(*args,**kwargs):
+            result=original(*args,**kwargs)
+            self.clock.value=31
+            return result
+        with patch.object(m,'hop',side_effect=completed):self.rejects('DEADLINE')
+        record=self.budget.records[-1]
+        self.assertEqual(record['failure']['phase'],'TIME_FINALIZATION')
+        self.assertEqual(record['content'],len(DATA))
+        self.assertTrue(record['hops'][0]['closed']);self.assertTrue(record['sink_closed'])
+
+    def test_post_sink_deadline_and_clock_failures_keep_phase_and_counts(self):
+        for kind in ('deadline','invalid_clock'):
+            with self.subTest(kind=kind):
+                self.setUp()
+                def close():
+                    self.sink.closed+=1
+                    self.clock.value=31 if kind=='deadline' else float('nan')
+                self.sink.close=close
+                self.rejects('DEADLINE' if kind=='deadline' else 'CLOCK')
+                record=self.budget.records[-1]
+                self.assertEqual(record['failure']['phase'],'TIME_FINALIZATION')
+                self.assertTrue(record['hops'][0]['http_send_complete'])
+                self.assertEqual(record['content'],len(DATA))
+
+    def test_post_hop_clock_callback_exception_reaches_probe_with_phase(self):
+        class BrokenClock(Clock):
+            broken=False
+            def __call__(self):
+                if self.broken:raise OSError('secret clock failure')
+                return self.value
+        clock=BrokenClock();original=m.hop
+        def completed(*args,**kwargs):
+            result=original(*args,**kwargs);clock.broken=True;return result
+        with patch.object(m,'hop',side_effect=completed),patch.object(probe,'plans',return_value=(spec(),)),patch.dict('os.environ',{},clear=True):
+            result=probe.run_once(connect=Mock(return_value=Conn(length())),clock=clock,utc_now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc))
+        self.assertEqual(result['failure']['phase'],'TIME_FINALIZATION')
+        self.assertEqual(result['records'][0]['failure']['phase'],'TIME_FINALIZATION')
+        self.assertEqual(result['used']['content'],len(DATA))
+        self.assertNotIn('secret',json.dumps(result))
+
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
 
