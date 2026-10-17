@@ -1223,6 +1223,40 @@ class TransportTests(unittest.TestCase):
                 if stage=='dns':factory.assert_not_called();context.wrap_socket.assert_not_called()
                 else:wrapped.close.assert_called_once();wrapped.sendall.assert_not_called()
 
+    def test_cancel_preempts_finally_before_close_but_shared_owner_still_closes(self):
+        for close_fails in (False,True):
+            with self.subTest(close_fails=close_fails):
+                self.setUp();c=Conn(length(),close_error=close_fails);token=m.WallCancellation();held=[]
+                def connect(url,seconds,owner):owner.cancellation=token;owner.register(c)
+                original=m.in_phase;injected=False
+                def boundary(phase,function,*args,**kwargs):
+                    nonlocal injected
+                    if phase=='CONNECTION_CLOSE' and not injected:
+                        injected=True;token.request()  # before owner.close starts
+                    return original(phase,function,*args,**kwargs)
+                with patch.object(m,'in_phase',side_effect=boundary):
+                    try:m.acquire(spec(),self.budget,self.sink,connect=connect,clock=self.clock)
+                    except m.WallDeadline as error:held.append(error)
+                self.assertEqual(len(held),1);self.assertIsNotNone(held[0].__traceback__)
+                self.assertEqual(c.closed,1);h=self.budget.records[-1]['hops'][0]
+                self.assertTrue(h['connector_handle_registered']);self.assertEqual(h['closed'],not close_fails)
+                self.assertEqual(self.budget.records[-1]['close_uncertain'],close_fails)
+                self.assertEqual(self.budget.records[-1]['failure']['phase'],'CONNECTION_CLOSE')
+                self.assertEqual(self.budget.records[-1]['state'],'STOP')
+
+    def test_alarm_during_local_descriptor_close_delivers_after_completion_record(self):
+        for close_fails in (False,True):
+            with self.subTest(close_fails=close_fails):
+                owner=m.SocketOwner();resource=Mock();owner.register(resource)
+                def close():
+                    owner.cancellation.request()
+                    if close_fails:raise OSError('secret cleanup')
+                resource.close.side_effect=close
+                with self.assertRaises(m.WallDeadline) as cm:owner.close(OSError('secret primary'))
+                self.assertTrue(owner.attempted);self.assertEqual(owner.closed,not close_fails)
+                self.assertEqual(m.diagnostic(cm.exception)['cleanup_uncertain'],close_fails)
+                owner.close(cm.exception);resource.close.assert_called_once()
+
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
 

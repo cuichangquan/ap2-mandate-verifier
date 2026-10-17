@@ -36,7 +36,7 @@ class WallDeadline(BaseException):
 class WallCancellation:
     """Single-thread probe token; defer only local socket ownership transfers.
 
-    No connect, handshake, recv or caller close runs inside a handoff.
+    No connect, handshake, recv or sink callback runs inside a handoff.
     A pending alarm is delivered after the new owner is registered.
     """
     def __init__(self):
@@ -48,8 +48,8 @@ class WallCancellation:
             raise WallDeadline()
 
     @contextmanager
-    def handoff(self):
-        if self.pending:
+    def handoff(self, *, cleanup=False):
+        if self.pending and not cleanup:
             raise WallDeadline()
         self.depth += 1
         try:
@@ -323,6 +323,7 @@ class SocketOwner:
     def __init__(self, remaining=None):
         self.resource, self.attempted, self.closed = None, False, False
         self.remaining = remaining
+        self.cancellation = WallCancellation()
 
     def register(self, resource):
         self.resource, self.attempted, self.closed = resource, False, False
@@ -331,8 +332,17 @@ class SocketOwner:
         if self.resource is None:
             return False
         if not self.attempted:
-            self.attempted = True
-            self.closed = close_once(self.resource, primary)
+            # Default socket/SSLSocket.close is local descriptor release, not
+            # TLS shutdown or a sink callback. Record completion before a
+            # deferred alarm can escape; never retry an uncertain close.
+            try:
+                with self.cancellation.handoff(cleanup=True):
+                    self.attempted = True
+                    self.closed = close_once(self.resource, primary)
+            except WallDeadline as error:
+                if not self.closed:
+                    annotate(error, 'CLOSE_UNCERTAIN')
+                raise
             return self.closed
         if not self.closed and primary is not None:
             annotate(primary, 'CLOSE_UNCERTAIN')
@@ -350,6 +360,7 @@ def tls_connect(url, seconds, owner, *, cancellation=None):
     """
     phase = 'TLS_VALIDATE'
     cancellation = cancellation if cancellation is not None else WallCancellation()
+    owner.cancellation = cancellation
     try:
         u = endpoint(url)
         need(positive(seconds), 'CONNECT_TIMEOUT')
@@ -614,6 +625,12 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
                 record['closed'] = in_phase('CONNECTION_CLOSE', owner.close, primary)
         except BaseException as error:
             primary = error
+            try:
+                if not owner.attempted:
+                    in_phase('CONNECTION_CLOSE', owner.close, error)
+            finally:
+                record['connector_handle_registered'] = owner.resource is not None
+                record['closed'] = owner.closed
             raise
         finally:
             in_phase('TIME_FINALIZATION', finish_time, record, budget, clock, primary)
