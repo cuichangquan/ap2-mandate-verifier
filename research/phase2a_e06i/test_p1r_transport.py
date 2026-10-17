@@ -5,6 +5,7 @@ import datetime as dt
 import hashlib
 import io
 import json
+import linecache
 import math
 import socket
 import ssl
@@ -930,16 +931,19 @@ class TransportTests(unittest.TestCase):
             self.assertEqual(probe.main(),78)
         self.assertEqual(err.getvalue(),'')
 
-    def test_cli_alarm_interrupts_fallback_without_unbound_result_or_traceback(self):
+    def test_cli_late_alarm_latches_without_interrupting_fallback_or_traceback(self):
         handlers=[]
         def signal_setup(sig,handler):handlers.append(handler)
-        def interrupted_fallback(error):handlers[0](probe.signal.SIGALRM,None)
+        original=probe.failure_result
+        def interrupted_fallback(error):
+            handlers[0](probe.signal.SIGALRM,None)
+            return original(error)
         with patch.object(probe,'failure_result',side_effect=interrupted_fallback):
             code,d,p=self.cli(['--run-approved-public-transport-once'],
                              signal=Mock(side_effect=signal_setup),
                              run=Mock(side_effect=OSError('secret original')))
-        self.assertEqual(code,78);self.assertEqual(d['reason'],'FALLBACK_UNAVAILABLE')
-        self.assertEqual(d['failure']['phase'],'UNKNOWN')
+        self.assertEqual(code,78);self.assertEqual(d['reason'],'IO_OR_CALLBACK_FAILURE')
+        self.assertEqual(d['failure']['phase'],'PROBE_PRECONDITION')
         self.assertTrue(d['local_wall_alarm_expired'])
         self.assertNotIn('secret',json.dumps(d))
         self.assertEqual(p['alarm'].call_args_list[-1].args,(0,))
@@ -1256,6 +1260,34 @@ class TransportTests(unittest.TestCase):
                 self.assertTrue(owner.attempted);self.assertEqual(owner.closed,not close_fails)
                 self.assertEqual(m.diagnostic(cm.exception)['cleanup_uncertain'],close_fails)
                 owner.close(cm.exception);resource.close.assert_called_once()
+
+    def test_cli_alarm_before_disarm_condition_and_during_disarm_is_safe_stop(self):
+        for when in ('condition','disarm'):
+            with self.subTest(when=when):
+                handlers=[];injected=False
+                def install(sig,handler):handlers.append(handler)
+                def alarm(seconds):
+                    nonlocal injected
+                    if seconds==0 and when=='disarm':
+                        injected=True;handlers[0](probe.signal.SIGALRM,None)
+                    return 0
+                def trace(frame,event,arg):
+                    nonlocal injected
+                    if (when=='condition' and not injected and event=='line' and
+                        frame.f_code is probe.main.__code__ and
+                        linecache.getline(frame.f_code.co_filename,frame.f_lineno).strip()=='if alarm_installed:'):
+                        injected=True
+                        handlers[0](probe.signal.SIGALRM,None)
+                    return trace
+                prior=sys.gettrace()
+                try:
+                    sys.settrace(trace)
+                    code,d,p=self.cli(['--run-approved-public-transport-once'],
+                                      signal=Mock(side_effect=install),alarm=Mock(side_effect=alarm))
+                finally:sys.settrace(prior)
+                self.assertTrue(injected);self.assertEqual(code,78)
+                self.assertEqual(d['reason'],'PROBE_DEADLINE');self.assertTrue(d['local_wall_alarm_expired'])
+                self.assertEqual(p['alarm'].call_args_list[-1].args,(0,))
 
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])

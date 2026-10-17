@@ -135,6 +135,7 @@ def main():
     """
     alarm_expired = False
     alarm_installed = False
+    raise_on_alarm = True
     cancellation = transport.WallCancellation()
     # Available before arming the timer, including if richer diagnostics are
     # interrupted. It carries no untrusted string or claimed causal phase.
@@ -144,15 +145,22 @@ def main():
     def expired(*_):
         nonlocal alarm_expired
         alarm_expired = True
-        cancellation.request()
+        if raise_on_alarm:
+            cancellation.request()
     try:
-        transport.need(sys.argv[1:] == ['--run-approved-public-transport-once'], 'EXPLICIT_APPROVAL_FLAG')
-        signal.signal(signal.SIGALRM, expired)
-        alarm_installed = True
-        signal.alarm(120)  # Attempt clear even if installation raises uncertainly.
-        result = run_once(connect=lambda url, seconds, owner: transport.tls_connect(
-                              url, seconds, owner, cancellation=cancellation), clock=time.monotonic,
-                          utc_now=lambda: dt.datetime.now(dt.timezone.utc))
+        try:
+            transport.need(sys.argv[1:] == ['--run-approved-public-transport-once'], 'EXPLICIT_APPROVAL_FLAG')
+            signal.signal(signal.SIGALRM, expired)
+            alarm_installed = True
+            signal.alarm(120)  # Attempt clear even if installation raises uncertainly.
+            result = run_once(connect=lambda url, seconds, owner: transport.tls_connect(
+                                  url, seconds, owner, cancellation=cancellation), clock=time.monotonic,
+                              utc_now=lambda: dt.datetime.now(dt.timezone.utc))
+        finally:
+            # This transition is inside the outer exception boundary. After it,
+            # a late one-shot alarm only latches expiry; it cannot escape from
+            # fallback construction, pre-disarm condition or output handling.
+            raise_on_alarm = False
     except BaseException as error:
         try:
             result = failure_result(error)
