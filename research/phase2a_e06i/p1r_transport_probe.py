@@ -135,6 +135,11 @@ def main():
     """
     alarm_expired = False
     alarm_installed = False
+    # Available before arming the timer, including if richer diagnostics are
+    # interrupted. It carries no untrusted string or claimed causal phase.
+    result = dict(status='SAFE_OUTPUT_STOP_NO_RETRY', reason='FALLBACK_UNAVAILABLE',
+                  runtime={'status': 'UNAVAILABLE'},
+                  failure={'phase': 'UNKNOWN', 'category': 'OTHER', 'metadata_uncertain': True})
     def expired(*_):
         nonlocal alarm_expired
         alarm_expired = True
@@ -147,7 +152,10 @@ def main():
         result = run_once(connect=transport.tls_connect, clock=time.monotonic,
                           utc_now=lambda: dt.datetime.now(dt.timezone.utc))
     except BaseException as error:
-        result = failure_result(error)
+        try:
+            result = failure_result(error)
+        except BaseException:
+            pass  # Preserve the initialized bounded fallback, even on SIGALRM.
     finally:
         if alarm_installed:
             try:

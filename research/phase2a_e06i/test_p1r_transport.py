@@ -909,6 +909,29 @@ class TransportTests(unittest.TestCase):
             self.assertEqual(probe.main(),78)
         self.assertEqual(err.getvalue(),'')
 
+    def test_cli_alarm_interrupts_fallback_without_unbound_result_or_traceback(self):
+        handlers=[]
+        def signal_setup(sig,handler):handlers.append(handler)
+        def interrupted_fallback(error):handlers[0](probe.signal.SIGALRM,None)
+        with patch.object(probe,'failure_result',side_effect=interrupted_fallback):
+            code,d,p=self.cli(['--run-approved-public-transport-once'],
+                             signal=Mock(side_effect=signal_setup),
+                             run=Mock(side_effect=OSError('secret original')))
+        self.assertEqual(code,78);self.assertEqual(d['reason'],'FALLBACK_UNAVAILABLE')
+        self.assertEqual(d['failure']['phase'],'UNKNOWN')
+        self.assertTrue(d['local_wall_alarm_expired'])
+        self.assertNotIn('secret',json.dumps(d))
+        self.assertEqual(p['alarm'].call_args_list[-1].args,(0,))
+
+    def test_cli_fallback_failure_and_timer_cleanup_failure_still_emit_safe_result(self):
+        with patch.object(probe,'failure_result',side_effect=RuntimeError('secret fallback')):
+            code,d,_=self.cli(['--run-approved-public-transport-once'],
+                             run=Mock(side_effect=OSError('secret original')),
+                             alarm=Mock(side_effect=[0,OSError('secret cleanup')]))
+        self.assertEqual(code,78);self.assertEqual(d['reason'],'FALLBACK_UNAVAILABLE')
+        self.assertEqual(d['alarm_finalization'],'UNAVAILABLE')
+        self.assertNotIn('secret',json.dumps(d))
+
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
 
