@@ -661,6 +661,38 @@ def record_operation_failure(operation, error):
         operation['reason'] == 'CLOSE_UNCERTAIN' or not operation['sink_closed'])
 
 
+@contextmanager
+def owned_sink(budget, sink):
+    """Accept the sink inside a protected local handoff, before any setup.
+
+    Rejected budget preconditions leave ownership with the caller. Once
+    accepted, even owner construction or operation-record allocation failure
+    has a cleanup boundary. No network operation is deferred by this handoff.
+    """
+    need(type(budget) is Budget and not budget.busy, 'BUDGET_BUSY_OR_TYPE')
+    accepted, owner, primary = False, None, None
+    try:
+        with budget.cancellation.handoff():
+            need(len(budget.records) < budget.limits.requests, 'OPERATION_LIMIT')
+            accepted = True
+            owner = CloseOwner(cancellation=budget.cancellation)
+            owner.register(sink)
+        yield owner
+    except BaseException as error:
+        primary = error
+        annotate(error, 'U3_PHASE:SPEC_CHECK')
+        raise
+    finally:
+        if accepted and (owner is None or not owner.attempted):
+            with budget.cancellation.handoff(cleanup=True):
+                if owner is None:
+                    in_phase('SINK_CLOSE', close_once, sink, primary)
+                else:
+                    if owner.resource is None:
+                        owner.register(sink)
+                    in_phase('SINK_CLOSE', owner.close, primary)
+
+
 def acquire(spec, budget, sink, *, connect, clock):
     """Return a content-only receipt after ALL owned handles close successfully.
 
@@ -672,9 +704,12 @@ def acquire(spec, budget, sink, *, connect, clock):
     is a trust boundary; its fake receipts cannot attest
     network/TLS authority. No filesystem sealing or execution follows success.
     """
-    need(type(budget) is Budget and not budget.busy, 'BUDGET_BUSY_OR_TYPE')
-    need(len(budget.records) < budget.limits.requests, 'OPERATION_LIMIT')
-    sink_owner = CloseOwner(cancellation=budget.cancellation)
+    with owned_sink(budget, sink) as sink_owner:
+        return acquire_owned(spec, budget, sink, sink_owner, connect=connect, clock=clock)
+
+
+def acquire_owned(spec, budget, sink, sink_owner, *, connect, clock):
+    """Operation setup and transfer while the outer sink journal is active."""
     operation = dict(identity=None, state='SPEC_CHECKING', header=0, content=0,
                      wire=0, framing=0, requests=0, hops=[], sink_closed=False, phase='SPEC_CHECK')
     primary = None

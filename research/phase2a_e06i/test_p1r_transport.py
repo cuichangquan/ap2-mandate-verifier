@@ -1452,6 +1452,57 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(record['content'],len(DATA));self.assertTrue(record['sink_closed'])
         self.assertTrue(record['hops'][0]['closed']);self.assertFalse(self.budget.busy)
 
+    def test_sink_owner_constructor_cancellation_is_deferred_until_owned(self):
+        token=self.budget.cancellation;original=m.CloseOwner.__init__;held=[]
+        def initialize(owner,*args,**kwargs):
+            token.request()
+            original(owner,*args,**kwargs)
+        with patch.object(m.CloseOwner,'__init__',initialize):
+            try:self.run_get()
+            except m.WallDeadline as error:held.append(error)
+        self.assertEqual(len(held),1);self.assertEqual(self.sink.closed,1)
+        self.assertFalse(self.budget.busy);self.assertEqual(self.budget.records,[])
+        self.assertEqual(self.calls,[]);self.assertEqual(self.budget.used['requests'],0)
+
+    def test_preoperation_setup_cancellation_closes_sink_before_network(self):
+        targets=((m.owned_sink.__wrapped__.__code__, 'yield owner'),
+                 (m.acquire.__code__, 'return acquire_owned('),
+                 (m.acquire_owned.__code__, 'operation = dict('),
+                 (m.acquire_owned.__code__, 'primary = None'))
+        for code,prefix in targets:
+            with self.subTest(boundary=prefix):
+                self.setUp();token=self.budget.cancellation;injected=False;held=[]
+                def trace(frame,event,arg):
+                    nonlocal injected
+                    if (not injected and event=='line' and frame.f_code is code and
+                        linecache.getline(frame.f_code.co_filename,frame.f_lineno).strip().startswith(prefix)):
+                        injected=True;token.request()
+                    return trace
+                prior=sys.gettrace()
+                try:
+                    sys.settrace(trace)
+                    try:self.run_get()
+                    except m.WallDeadline as error:held.append(error)
+                finally:sys.settrace(prior)
+                self.assertTrue(injected);self.assertEqual(len(held),1)
+                self.assertEqual(self.sink.closed,1);self.assertFalse(self.budget.busy)
+                self.assertEqual(self.calls,[]);self.assertEqual(self.budget.used['requests'],0)
+
+    def test_owner_setup_error_closes_once_and_preserves_primary(self):
+        for close_fails in (False,True):
+            with self.subTest(close_fails=close_fails):
+                self.setUp();failure=RuntimeError('synthetic setup failure')
+                if close_fails:
+                    def close():
+                        self.sink.closed+=1
+                        raise OSError('synthetic close failure')
+                    self.sink.close=close
+                with patch.object(m.CloseOwner,'__init__',side_effect=failure):
+                    with self.assertRaises(RuntimeError) as cm:self.run_get()
+                self.assertIs(cm.exception,failure);self.assertEqual(self.sink.closed,1)
+                self.assertEqual(m.diagnostic(failure)['cleanup_uncertain'],close_fails)
+                self.assertFalse(self.budget.busy);self.assertEqual(self.calls,[])
+
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
 
