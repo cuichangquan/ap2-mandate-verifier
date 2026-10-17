@@ -55,7 +55,7 @@ jobs:
             mkdir -p "$(dirname "$path")"
             cp "$tmp/body" "$path"
           }
-          fetch_source research/phase2a_e06i/p1s_static_inventory.py 5559e8a44eabcb216feca41aa99d56258fd220d91abfd65c45f7b1d87c0f5ef9
+          fetch_source research/phase2a_e06i/p1s_static_inventory.py d740a185a0f4cc91dae27b3c71cd5aebf6fbfd80d6c05fb99eef343f9db6f54d
           fetch_source research/phase2a_e06i/p1s_input_contract.json 8d8cbf30f165d3321f4396f5681df0532cf8e90fa8f1aec9b2d8fe6ce07f621d
           echo "P1S_BOOTSTRAP_BYTES=$total" >> "$GITHUB_ENV"
           echo "P1S_BOOTSTRAP_VERIFIED BODY_BYTES=$total SHA=$GITHUB_SHA"
