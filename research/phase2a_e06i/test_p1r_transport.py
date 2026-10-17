@@ -919,10 +919,10 @@ class TransportTests(unittest.TestCase):
         with patch.object(probe,'runtime_identity',side_effect=OSError('secret path')):
             code,d,_=self.cli([])
         self.assertEqual(code,78);self.assertEqual(d['runtime'],{'status':'UNAVAILABLE'})
-        for fault in ('encoding','oversize'):
+        for fault in ('encoding','oversize','newline_boundary'):
             with self.subTest(fault=fault):
                 with patch.object(probe.json,'dumps',side_effect=ValueError('secret') if fault=='encoding' else None,
-                                  return_value='x'*1048577):
+                                  return_value='x'*(1048576 if fault=='newline_boundary' else 1048577)):
                     code,d,_=self.cli([])
                 self.assertEqual(code,78);self.assertEqual(d['status'],'SAFE_OUTPUT_STOP_NO_RETRY')
 
@@ -1372,6 +1372,29 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(record['failure']['phase'],'TIME_FINALIZATION')
         self.assertEqual(record['content'],len(DATA));self.assertTrue(record['sink_closed'])
         self.assertTrue(record['hops'][0]['closed']);self.assertEqual(self.sink.closed,1)
+
+    def test_runtime_metadata_cancellation_propagates_and_is_not_retried(self):
+        cancellation=m.WallDeadline()
+        with patch('builtins.open',side_effect=cancellation):
+            with self.assertRaises(m.WallDeadline) as cm:probe.runtime_identity()
+        self.assertIs(cm.exception,cancellation)
+        with patch.object(probe,'runtime_identity',side_effect=cancellation) as identity:
+            d=probe.failure_result(cancellation)
+            identity.assert_not_called()
+        self.assertEqual(d['reason'],'PROBE_DEADLINE');self.assertEqual(d['failure']['category'],'TIMEOUT')
+        with patch.object(probe,'runtime_identity',side_effect=cancellation):
+            with self.assertRaises(m.WallDeadline):probe.failure_result(OSError('secret primary'))
+
+    def test_cli_runtime_metadata_timeout_keeps_causal_timeout_and_safe_output(self):
+        for original in (m.WallDeadline(),OSError('secret primary')):
+            with self.subTest(original=type(original).__name__):
+                with patch.object(probe,'runtime_identity',side_effect=m.WallDeadline()) as identity:
+                    code,d,p=self.cli(['--run-approved-public-transport-once'],run=Mock(side_effect=original))
+                self.assertEqual(code,78);self.assertEqual(d['reason'],'PROBE_DEADLINE')
+                self.assertEqual(d['failure']['category'],'TIMEOUT')
+                self.assertEqual(d['runtime'],{'status':'UNAVAILABLE'})
+                self.assertEqual(identity.call_count,0 if type(original) is m.WallDeadline else 1)
+                self.assertNotIn('secret',json.dumps(d))
 
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])

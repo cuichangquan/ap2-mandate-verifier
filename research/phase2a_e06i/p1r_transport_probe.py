@@ -75,6 +75,8 @@ def runtime_identity():
                 raw = stream.read(131073)
             transport.need(0 < len(raw) <= 131072, 'RUNTIME_IDENTITY_UNAVAILABLE')
             identity['source_sha256'][key] = hashlib.sha256(raw).hexdigest()
+    except transport.WallDeadline:
+        raise
     except BaseException:
         identity['status'] = 'INCOMPLETE'
     return identity
@@ -135,8 +137,13 @@ def failure_result(error):
     result = dict(status='PRECONDITION_OR_TIMEOUT_STOP_NO_RETRY',
                   reason=transport.safe_reason(error),
                   failure=transport.diagnostic(error, 'PROBE_PRECONDITION'))
+    if type(error) is transport.WallDeadline:
+        result['runtime'] = {'status': 'UNAVAILABLE'}
+        return result  # Do not repeat file metadata work after the wall alarm.
     try:
         result['runtime'] = runtime_identity()
+    except transport.WallDeadline:
+        raise
     except BaseException:
         result['runtime'] = {'status': 'UNAVAILABLE'}
     return result
@@ -179,6 +186,10 @@ def main():
     except BaseException as error:
         try:
             result = failure_result(error)
+        except transport.WallDeadline as cancellation_error:
+            result.update(status='STOP_NO_RETRY', reason='PROBE_DEADLINE',
+                          runtime={'status': 'UNAVAILABLE'},
+                          failure=transport.diagnostic(cancellation_error, 'PROBE_PRECONDITION'))
         except BaseException:
             pass  # Preserve the initialized bounded fallback, even on SIGALRM.
     finally:
@@ -201,7 +212,7 @@ def main():
                           failure=transport.diagnostic(transport.WallDeadline()))
     try:
         raw = json.dumps(result, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
-        transport.need(len(raw) <= 1048576, 'DIAGNOSTIC_LIMIT')
+        transport.need(len(raw) + 1 <= 1048576, 'DIAGNOSTIC_LIMIT')
     except BaseException:
         raw = b'{"status":"SAFE_OUTPUT_STOP_NO_RETRY","reason":"DIAGNOSTIC_ENCODING_OR_LIMIT"}'
         result['status'] = 'SAFE_OUTPUT_STOP_NO_RETRY'
