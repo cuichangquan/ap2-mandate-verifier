@@ -11,7 +11,7 @@ from pathlib import Path
 import shlex
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 import uuid
 
 import p1r_ap2_git_snapshot as m
@@ -293,7 +293,7 @@ class GitSnapshotTests(unittest.TestCase):
                 try:
                     raise primary
                 finally:
-                    m.finish_fds((101, 102, None), sync_fd=103)
+                    m.finish_fds((101, 102, None), sync_fd=103, primary=primary)
         except ValueError as error:
             self.assertIs(error, primary)
             self.assertIn('FD_FINALIZATION_UNCERTAIN', error.__notes__)
@@ -390,6 +390,50 @@ class GitSnapshotTests(unittest.TestCase):
                 self.assertTrue((self.directory / ('close-' + selected)).is_dir())
                 self.assertTrue((self.directory / ('close-' + selected + '.control') / selected).is_dir())
 
+    def test_materialize_final_sync_and_close_under_ambient_exception(self):
+        for fault in ('fsync', 'close'):
+            with self.subTest(fault=fault):
+                parent_fd, final_closes = [], []
+                real_parent, real_sync, real_close = m.open_private_parent, os.fsync, os.close
+                def parent(path):
+                    result = real_parent(path)
+                    if not parent_fd:
+                        parent_fd.append(result[1])
+                    return result
+                def sync(fd):
+                    if fault == 'fsync' and parent_fd and fd == parent_fd[0]:
+                        raise OSError('final sync')
+                    real_sync(fd)
+                def close(fd):
+                    real_close(fd)
+                    if parent_fd and fd == parent_fd[0]:
+                        final_closes.append(fd)
+                        if fault == 'close':
+                            raise OSError('final close')
+                ambient = ValueError('caller')
+                try:
+                    raise ambient
+                except ValueError:
+                    with patch.object(m, 'open_private_parent', side_effect=parent), patch.object(m.os, 'fsync', side_effect=sync), patch.object(m.os, 'close', side_effect=close):
+                        with self.assertRaisesRegex(m.Stop, '^FD_FINALIZATION_UNCERTAIN$'):
+                            self.create('final-' + fault)
+                    self.assertFalse(hasattr(ambient, '__notes__'))
+                self.assertEqual(final_closes, parent_fd)
+                self.assertTrue((self.directory / ('final-' + fault) / '.git/index').is_file())
+
+    def test_open_private_parent_local_error_with_close_failure(self):
+        primary = KeyboardInterrupt('local stat')
+        real_close = os.close
+        def close(fd):
+            real_close(fd)
+            raise OSError('close')
+        with patch.object(m.os, 'fstat', side_effect=primary), patch.object(m.os, 'close', side_effect=close) as closes:
+            with self.assertRaises(KeyboardInterrupt) as caught:
+                m.open_private_parent(self.directory)
+        self.assertIs(caught.exception, primary)
+        self.assertIn('FD_FINALIZATION_UNCERTAIN', primary.__notes__)
+        self.assertEqual(closes.call_count, 1)
+
     def synthetic_tool(self):
         home = self.directory / 'synthetic-tool'
         home.mkdir(mode=0o700)
@@ -459,6 +503,114 @@ class GitSnapshotTests(unittest.TestCase):
         with patch.object(m, '_process', side_effect=AssertionError('unsafe tool must not run')):
             with self.assertRaisesRegex(m.Stop, '^GIT_TOOL_NAMESPACE$'):
                 m.inspect_git(path)
+
+
+class CleanupTests(unittest.TestCase):
+    """Faults use fake descriptors/processes; never launch a child or network."""
+
+    def ambient_call(self, operation):
+        ambient = ValueError('caller exception is not an operation failure')
+        try:
+            raise ambient
+        except ValueError:
+            try:
+                return operation()
+            finally:
+                self.assertFalse(hasattr(ambient, '__notes__'))
+
+    def test_fd_finalization_ignores_ambient_and_attempts_all_once(self):
+        for fault in ('close', 'fsync', 'both'):
+            with self.subTest(fault=fault), patch.object(m.os, 'close') as close, patch.object(m.os, 'fsync') as sync:
+                if fault in ('close', 'both'):
+                    close.side_effect = OSError('close')
+                if fault in ('fsync', 'both'):
+                    sync.side_effect = OSError('sync')
+                with self.assertRaisesRegex(m.Stop, '^FD_FINALIZATION_UNCERTAIN$'):
+                    self.ambient_call(lambda: m.finish_fds((101, None, 102), sync_fd=103))
+                self.assertEqual(close.call_args_list, [unittest.mock.call(101), unittest.mock.call(102)])
+                sync.assert_called_once_with(103)
+        self.ambient_call(lambda: m.finish_fds(()))
+
+    def test_read_success_and_local_primary_are_distinct_from_ambient(self):
+        for fault in ('none', 'close', 'read_and_close'):
+            with self.subTest(fault=fault), patch.object(m.os, 'open', return_value=101), patch.object(m.os, 'fstat') as st, patch.object(m.os, 'read') as read, patch.object(m.os, 'close') as close:
+                st.return_value = Mock(st_mode=0o100600, st_nlink=1, st_size=2, st_dev=1, st_ino=2, st_mtime_ns=3)
+                primary = KeyboardInterrupt('local read')
+                read.side_effect = primary if fault == 'read_and_close' else [b'ok', b'']
+                if fault != 'none':
+                    close.side_effect = OSError('close')
+                if fault == 'none':
+                    self.assertEqual(self.ambient_call(lambda: m.read_regular('fake', 8)), b'ok')
+                elif fault == 'close':
+                    with self.assertRaisesRegex(m.Stop, '^FD_FINALIZATION_UNCERTAIN$'):
+                        self.ambient_call(lambda: m.read_regular('fake', 8))
+                else:
+                    with self.assertRaises(KeyboardInterrupt) as caught:
+                        self.ambient_call(lambda: m.read_regular('fake', 8))
+                    self.assertIs(caught.exception, primary)
+                    self.assertIn('FD_FINALIZATION_UNCERTAIN', primary.__notes__)
+                close.assert_called_once_with(101)
+
+    def test_directory_chain_body_acquisition_and_success_cleanup(self):
+        for fault in ('none', 'body', 'open'):
+            with self.subTest(fault=fault), patch.object(m.os, 'dup', return_value=101), patch.object(m.os, 'open', return_value=102) as op, patch.object(m.os, 'close', side_effect=OSError('close')) as close:
+                primary = ValueError('local directory')
+                if fault == 'open':
+                    op.side_effect = primary
+                def operation():
+                    with m.directory_chain(100, ('part',)):
+                        if fault == 'body':
+                            raise primary
+                with self.assertRaises(m.Stop if fault == 'none' else ValueError) as caught:
+                    self.ambient_call(operation)
+                if fault != 'none':
+                    self.assertIs(caught.exception, primary)
+                    self.assertIn('FD_FINALIZATION_UNCERTAIN', primary.__notes__)
+                expected = [101] if fault == 'open' else [102, 101]
+                self.assertEqual([c.args[0] for c in close.call_args_list], expected)
+
+    def test_process_success_close_and_local_errors_with_fake_popen(self):
+        for fault in ('none', 'close', 'body', 'timeout', 'poll'):
+            with self.subTest(fault=fault), patch.object(m.subprocess, 'Popen') as popen, patch.object(m.selectors, 'DefaultSelector') as selector, patch.object(m.os, 'killpg') as kill:
+                p = popen.return_value
+                p.poll.return_value = 0
+                p.wait.return_value = 0
+                selector.return_value.__enter__.return_value.get_map.return_value = {}
+                primary = KeyboardInterrupt('local process')
+                if fault == 'body':
+                    selector.return_value.__enter__.side_effect = primary
+                elif fault == 'timeout':
+                    p.wait.side_effect = m.subprocess.TimeoutExpired('fake', 1)
+                elif fault == 'poll':
+                    p.poll.side_effect = OSError('poll')
+                if fault != 'none':
+                    p.stdout.close.side_effect = OSError('close')
+                if fault == 'none':
+                    self.assertEqual(self.ambient_call(lambda: m._process(['fake'], {})), (0, b'', b''))
+                else:
+                    with self.assertRaises(KeyboardInterrupt if fault == 'body' else m.Stop) as caught:
+                        self.ambient_call(lambda: m._process(['fake'], {}))
+                    if fault == 'body':
+                        self.assertIs(caught.exception, primary)
+                    self.assertEqual(str(caught.exception), 'GIT_TIMEOUT' if fault == 'timeout' else 'local process' if fault == 'body' else 'GIT_FINALIZATION_UNCERTAIN')
+                    if fault in ('body', 'timeout'):
+                        self.assertIn('GIT_FINALIZATION_UNCERTAIN', caught.exception.__notes__)
+                p.stdout.close.assert_called_once()
+                p.stderr.close.assert_called_once()
+                self.assertEqual(kill.call_count, int(fault == 'poll'))
+
+    def test_write_nested_cleanup_preserves_local_error(self):
+        for fault in ('close', 'write'):
+            with self.subTest(fault=fault), patch.object(m.os, 'dup', return_value=101), patch.object(m.os, 'open', return_value=102), patch.object(m.os, 'fstat', return_value=Mock(st_mode=0o100600, st_nlink=1, st_uid=os.geteuid())), patch.object(m.os, 'write', return_value=2) as write, patch.object(m.os, 'fchmod'), patch.object(m.os, 'fsync'), patch.object(m.os, 'close', side_effect=OSError('close')) as close:
+                primary = ValueError('write')
+                if fault == 'write':
+                    write.side_effect = primary
+                with self.assertRaises(m.Stop if fault == 'close' else ValueError) as caught:
+                    self.ambient_call(lambda: m.write_at(100, 'file', b'ok', 0o600))
+                if fault == 'write':
+                    self.assertIs(caught.exception, primary)
+                self.assertIn('FD_FINALIZATION_UNCERTAIN', caught.exception.__notes__)
+                self.assertEqual([c.args[0] for c in close.call_args_list], [102, 101])
 
 
 if __name__ == '__main__':
