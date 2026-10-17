@@ -70,7 +70,7 @@ ERROR_CODES = frozenset('URL LIMITS SPEC SPEC_ID HOP_POLICY CLOCK DUPLICATE_INPU
                        'TRAILER SINK_WRITE STATUS UNEXPECTED_LOCATION HASH '
                        'CLOSE_UNCERTAIN CONNECT_TIMEOUT TLS_PROTOCOL '
                        'EXPIRED_OR_UNKNOWN_CLOCK TLS_ENV_OVERRIDE EXPLICIT_APPROVAL_FLAG '
-                       'DIAGNOSTIC_LIMIT DIAGNOSTIC_PHASE RUNTIME_IDENTITY_UNAVAILABLE CONNECTOR_OWNERSHIP'.split()) | frozenset(
+                       'DIAGNOSTIC_LIMIT DIAGNOSTIC_PHASE RUNTIME_IDENTITY_UNAVAILABLE CONNECTOR_OWNERSHIP INTERPRETER_FLAGS'.split()) | frozenset(
     prefix + key for prefix in ('BUDGET_', 'LIMIT_')
     for key in ('HEADER', 'CONTENT', 'WIRE', 'FRAMING'))
 
@@ -645,6 +645,17 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
             in_phase('TIME_FINALIZATION', reader.remaining)
 
 
+def record_operation_failure(operation, error):
+    annotate(error, 'U3_PHASE:' + operation['phase'])
+    operation['state'] = 'STOP'
+    operation['reason'] = safe_reason(error)
+    operation['failure'] = diagnostic(error, operation['phase'])
+    operation['close_uncertain'] = (operation['failure']['cleanup_uncertain'] is not False or
+        any((h['connector_returned'] or h.get('connector_handle_registered')) and not h['closed']
+            for h in operation['hops']) or
+        operation['reason'] == 'CLOSE_UNCERTAIN' or not operation['sink_closed'])
+
+
 def acquire(spec, budget, sink, *, connect, clock):
     """Return a content-only receipt after ALL owned handles close successfully.
 
@@ -664,54 +675,54 @@ def acquire(spec, budget, sink, *, connect, clock):
     primary = None
     try:
         try:
-            sink_owner.register(sink)
-            budget.busy = True
-            budget.records.append(operation)
-            need(type(spec) is TransferSpec, 'SPEC')
-            spec.checked()
-            need(spec.identity not in budget.identities and spec.name not in budget.names, 'DUPLICATE_INPUT')
-            budget.identities.add(spec.identity)
-            budget.names.add(spec.name)
-            operation['phase'] = 'OPERATION_CLOCK'
-            operation.update(identity=spec.identity,
-                             started=in_phase('OPERATION_CLOCK', budget.now, clock), state='REQUESTING')
-            operation['phase'] = 'CONNECTOR'
-            hop(spec.origin, spec, budget, operation, clock, connect, sink, spec.final is not None)
-            if spec.final is not None:
-                hop(spec.final, spec, budget, operation, clock, connect, sink, False)
+            try:
+                sink_owner.register(sink)
+                budget.busy = True
+                budget.records.append(operation)
+                need(type(spec) is TransferSpec, 'SPEC')
+                spec.checked()
+                need(spec.identity not in budget.identities and spec.name not in budget.names, 'DUPLICATE_INPUT')
+                budget.identities.add(spec.identity)
+                budget.names.add(spec.name)
+                operation['phase'] = 'OPERATION_CLOCK'
+                operation.update(identity=spec.identity,
+                                 started=in_phase('OPERATION_CLOCK', budget.now, clock), state='REQUESTING')
+                operation['phase'] = 'CONNECTOR'
+                hop(spec.origin, spec, budget, operation, clock, connect, sink, spec.final is not None)
+                if spec.final is not None:
+                    hop(spec.final, spec, budget, operation, clock, connect, sink, False)
+                operation['phase'] = 'TIME_FINALIZATION'
+                in_phase('TIME_FINALIZATION', operation_deadline, budget, operation, spec, clock)
+            except BaseException as error:
+                primary = error
+                raise
+            finally:
+                try:
+                    in_phase('SINK_CLOSE', sink_owner.close, primary)
+                except BaseException as error:
+                    try:
+                        if not sink_owner.attempted:
+                            in_phase('SINK_CLOSE', sink_owner.close, error)
+                    finally:
+                        operation['sink_closed'] = sink_owner.closed
+                    raise
+                finally:
+                    operation['sink_closed'] = sink_owner.closed
+            # Close time counts too; no successful receipt if close exhausted deadline.
             operation['phase'] = 'TIME_FINALIZATION'
             in_phase('TIME_FINALIZATION', operation_deadline, budget, operation, spec, clock)
         except BaseException as error:
-            primary = error
+            record_operation_failure(operation, error)
             raise
         finally:
-            try:
-                in_phase('SINK_CLOSE', sink_owner.close, primary)
-            except BaseException as error:
-                try:
-                    if not sink_owner.attempted:
-                        in_phase('SINK_CLOSE', sink_owner.close, error)
-                finally:
-                    operation['sink_closed'] = sink_owner.closed
-                raise
-            finally:
-                operation['sink_closed'] = sink_owner.closed
-        # Close time counts too; no successful receipt if close exhausted deadline.
-        operation['phase'] = 'TIME_FINALIZATION'
-        in_phase('TIME_FINALIZATION', operation_deadline, budget, operation, spec, clock)
-    except BaseException as error:
-        annotate(error, 'U3_PHASE:' + operation['phase'])
-        operation['state'] = 'STOP'
-        operation['reason'] = safe_reason(error)
-        operation['failure'] = diagnostic(error, operation['phase'])
-        operation['close_uncertain'] = (operation['failure']['cleanup_uncertain'] is not False or
-            any((h['connector_returned'] or h.get('connector_handle_registered')) and not h['closed']
-                for h in operation['hops']) or
-            operation['reason'] == 'CLOSE_UNCERTAIN' or not operation['sink_closed'])
-        raise
-    finally:
+            budget.busy = False
+        operation['state'] = 'CONTENT_VERIFIED'
+        return dict(status='CONTENT_HASH_SIZE_MATCH_NOT_NETWORK_ATTESTATION', identity=spec.identity,
+                    size=spec.size, sha256=spec.sha256, durable_or_sealed=False,
+                    runtime_validated=False, execution_authorized=False)
+    except WallDeadline as error:
+        # A one-shot cancellation from terminal finally/return bookkeeping
+        # must reset the lease and turn this operation into a recorded stop.
         budget.busy = False
-    operation['state'] = 'CONTENT_VERIFIED'
-    return dict(status='CONTENT_HASH_SIZE_MATCH_NOT_NETWORK_ATTESTATION', identity=spec.identity,
-                size=spec.size, sha256=spec.sha256, durable_or_sealed=False,
-                runtime_validated=False, execution_authorized=False)
+        record_operation_failure(operation, error)
+        raise

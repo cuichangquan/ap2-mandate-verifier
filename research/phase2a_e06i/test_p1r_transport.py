@@ -12,6 +12,7 @@ import ssl
 import sys
 import unittest
 from unittest.mock import Mock, patch
+from types import SimpleNamespace
 
 import p1r_transport as m
 import p1r_transport_probe as probe
@@ -1327,6 +1328,50 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(self.sink.closed,1);self.assertFalse(self.budget.busy)
         self.assertEqual(self.budget.used['requests'],0)
         self.assertEqual(self.calls,[])
+
+    def test_probe_nonisolated_runtime_flags_reject_before_any_connector(self):
+        for key in ('isolated','no_site','dont_write_bytecode'):
+            for value in (False,None):
+                with self.subTest(key=key,value=value):
+                    identity=dict(status='COMPLETE',isolated=True,no_site=True,dont_write_bytecode=True)
+                    identity[key]=value;connect=Mock(side_effect=AssertionError('must not connect'))
+                    with patch.object(probe,'runtime_identity',return_value=identity):
+                        d=probe.run_once(connect=connect,clock=self.clock,
+                                         utc_now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc))
+                    self.assertEqual(d['reason'],'INTERPRETER_FLAGS');self.assertEqual(d['used'],{})
+                    connect.assert_not_called()
+
+    def test_unsafe_cli_bootstrap_rejects_before_nonbuiltin_or_sibling_import(self):
+        prefix=__import__('pathlib').Path(probe.__file__).read_text().split('import datetime as dt',1)[0]
+        for key in ('isolated','no_site','dont_write_bytecode'):
+            with self.subTest(key=key):
+                flags=dict(isolated=1,no_site=1,dont_write_bytecode=1);flags[key]=0
+                out=io.StringIO();fake=SimpleNamespace(flags=SimpleNamespace(**flags),stdout=out)
+                imports=[]
+                def import_only_sys(name,*args,**kwargs):
+                    imports.append(name);self.assertEqual(name,'sys');return fake
+                builtins={'__import__':import_only_sys,'SystemExit':SystemExit,'BaseException':BaseException}
+                with self.assertRaises(SystemExit) as cm:
+                    exec(compile(prefix,'<synthetic-cli-prefix>','exec'),{'__name__':'__main__','__builtins__':builtins})
+                self.assertEqual(cm.exception.code,78);self.assertEqual(imports,['sys'])
+                self.assertEqual(json.loads(out.getvalue())['reason'],'INTERPRETER_FLAGS')
+
+    def test_terminal_busy_release_cancellation_is_recorded_and_lease_cleared(self):
+        token=self.budget.cancellation;original=m.Budget.__setattr__;injected=False;held=[]
+        def assign(instance,name,value):
+            nonlocal injected
+            if instance is self.budget and name=='busy' and value is False and not injected:
+                injected=True;token.request()
+            return original(instance,name,value)
+        with patch.object(m.Budget,'__setattr__',assign):
+            try:self.run_get()
+            except m.WallDeadline as error:held.append(error)
+        self.assertEqual(len(held),1);self.assertFalse(self.budget.busy)
+        record=self.budget.records[-1]
+        self.assertEqual(record['state'],'STOP');self.assertEqual(record['reason'],'PROBE_DEADLINE')
+        self.assertEqual(record['failure']['phase'],'TIME_FINALIZATION')
+        self.assertEqual(record['content'],len(DATA));self.assertTrue(record['sink_closed'])
+        self.assertTrue(record['hops'][0]['closed']);self.assertEqual(self.sink.closed,1)
 
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])

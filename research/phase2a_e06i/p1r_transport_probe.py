@@ -5,13 +5,25 @@ raw header or diagnostic artifact is saved; only a bounded summary is printed.
 Platform TLS/clock trust and OS isolation remain unproven. Stop on first error;
 never repeat this command after an uncertain/failed attempt without reporting.
 """
+import sys
+
+# Reject an unsafe CLI before importing sibling code or non-builtin modules.
+# Startup/sitecustomize effects before this file starts cannot be undone here.
+if __name__ == '__main__' and not (sys.flags.isolated and sys.flags.no_site and
+                                  sys.flags.dont_write_bytecode):
+    try:
+        sys.stdout.write('{"status":"PRECONDITION_STOP_NO_RETRY","reason":"INTERPRETER_FLAGS"}\n')
+        sys.stdout.flush()
+    except BaseException:
+        pass
+    raise SystemExit(78)
+
 import datetime as dt
 import hashlib
 import json
 import os
 from pathlib import Path
 import signal
-import sys
 import time
 
 # -I omits the script directory: use the explicitly verified sibling source,
@@ -79,6 +91,8 @@ def run_once(*, connect, clock, utc_now, cancellation=None):
                   independent_signature_key_clock_and_isolation='UNPROVEN')
     try:
         transport.need(result['runtime']['status'] == 'COMPLETE', 'RUNTIME_IDENTITY_UNAVAILABLE')
+        transport.need(all(result['runtime'].get(key) is True for key in
+                           ('isolated', 'no_site', 'dont_write_bytecode')), 'INTERPRETER_FLAGS')
         now = utc_now()
         transport.need(type(now) is dt.datetime and now.tzinfo is not None and
                        now < dt.datetime(2026, 10, 20, 7, 32, 55, tzinfo=dt.timezone.utc),
