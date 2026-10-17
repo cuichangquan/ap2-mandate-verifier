@@ -36,7 +36,9 @@ class WallDeadline(BaseException):
 class WallCancellation:
     """Single-thread probe token; defer only local socket ownership transfers.
 
-    No connect, handshake, recv or sink callback runs inside a handoff.
+    No connect, handshake, recv or sink write runs inside a handoff.
+    Close callbacks must be trusted local cleanup; blocking callbacks still
+    require the external OS watchdog, not this cooperative token.
     A pending alarm is delivered after the new owner is registered.
     """
     def __init__(self):
@@ -278,6 +280,7 @@ class Budget:
     """Shared counters are monotonic, including failed operations. Not thread-safe."""
     limits: Limits
     started: float
+    cancellation: WallCancellation = field(default_factory=WallCancellation)
     used: dict = field(init=False)
     records: list = field(default_factory=list, init=False)
     identities: set = field(default_factory=set, init=False)
@@ -318,12 +321,12 @@ def close_once(resource, primary=None):
     return True
 
 
-class SocketOwner:
-    """Shared connector/hop journal, registered before a live handle escapes."""
-    def __init__(self, remaining=None):
+class CloseOwner:
+    """One trusted close callback and its single-attempt completion journal."""
+    def __init__(self, remaining=None, cancellation=None):
         self.resource, self.attempted, self.closed = None, False, False
         self.remaining = remaining
-        self.cancellation = WallCancellation()
+        self.cancellation = cancellation if cancellation is not None else WallCancellation()
 
     def register(self, resource):
         self.resource, self.attempted, self.closed = resource, False, False
@@ -332,8 +335,8 @@ class SocketOwner:
         if self.resource is None:
             return False
         if not self.attempted:
-            # Default socket/SSLSocket.close is local descriptor release, not
-            # TLS shutdown or a sink callback. Record completion before a
+            # The approved sockets and discard sink use trusted local close,
+            # not TLS shutdown. Record completion before a
             # deferred alarm can escape; never retry an uncertain close.
             try:
                 with self.cancellation.handoff(cleanup=True):
@@ -349,6 +352,10 @@ class SocketOwner:
         return self.closed
 
 
+class SocketOwner(CloseOwner):
+    """Shared connector/hop journal, registered before a live handle escapes."""
+
+
 def tls_connect(url, seconds, owner, *, cancellation=None):
     """Optional connector, deliberately not a default argument to acquire().
 
@@ -359,7 +366,7 @@ def tls_connect(url, seconds, owner, *, cancellation=None):
     hard OS deadline for uninterruptible native calls; that remains unproven.
     """
     phase = 'TLS_VALIDATE'
-    cancellation = cancellation if cancellation is not None else WallCancellation()
+    cancellation = cancellation if cancellation is not None else owner.cancellation
     owner.cancellation = cancellation
     try:
         u = endpoint(url)
@@ -586,7 +593,7 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
                now + min(spec.limits.hop_seconds, budget.limits.hop_seconds)) - now
     need(left > 0, 'DEADLINE')
     reader = Reader(None, spec, budget, operation, record, clock)
-    owner = SocketOwner(remaining=reader.remaining)
+    owner = SocketOwner(remaining=reader.remaining, cancellation=budget.cancellation)
     conn, primary = None, None
     try:
         connect(url, min(left, 5), owner)
@@ -641,8 +648,8 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
 def acquire(spec, budget, sink, *, connect, clock):
     """Return a content-only receipt after ALL owned handles close successfully.
 
-    After Budget type/busy/record-cap preconditions, owns sink.close exactly
-    once, even for invalid specs. Caller must not use
+    After Budget type/busy/record-cap preconditions, guarded journal registration
+    transfers sink.close ownership, even for invalid specs. Caller must not use
     partial content on exception. Budget is single-owner, no retry/rollback.
     Connector(url, seconds, owner) must register its handle before returning;
     the shared journal owns failed/pre-return handles too. Explicit connector
@@ -651,13 +658,15 @@ def acquire(spec, budget, sink, *, connect, clock):
     """
     need(type(budget) is Budget and not budget.busy, 'BUDGET_BUSY_OR_TYPE')
     need(len(budget.records) < budget.limits.requests, 'OPERATION_LIMIT')
-    budget.busy = True
+    sink_owner = CloseOwner(cancellation=budget.cancellation)
     operation = dict(identity=None, state='SPEC_CHECKING', header=0, content=0,
                      wire=0, framing=0, requests=0, hops=[], sink_closed=False, phase='SPEC_CHECK')
-    budget.records.append(operation)
+    primary = None
     try:
-        primary = None
         try:
+            sink_owner.register(sink)
+            budget.busy = True
+            budget.records.append(operation)
             need(type(spec) is TransferSpec, 'SPEC')
             spec.checked()
             need(spec.identity not in budget.identities and spec.name not in budget.names, 'DUPLICATE_INPUT')
@@ -676,7 +685,17 @@ def acquire(spec, budget, sink, *, connect, clock):
             primary = error
             raise
         finally:
-            operation['sink_closed'] = in_phase('SINK_CLOSE', close_once, sink, primary)
+            try:
+                in_phase('SINK_CLOSE', sink_owner.close, primary)
+            except BaseException as error:
+                try:
+                    if not sink_owner.attempted:
+                        in_phase('SINK_CLOSE', sink_owner.close, error)
+                finally:
+                    operation['sink_closed'] = sink_owner.closed
+                raise
+            finally:
+                operation['sink_closed'] = sink_owner.closed
         # Close time counts too; no successful receipt if close exhausted deadline.
         operation['phase'] = 'TIME_FINALIZATION'
         in_phase('TIME_FINALIZATION', operation_deadline, budget, operation, spec, clock)

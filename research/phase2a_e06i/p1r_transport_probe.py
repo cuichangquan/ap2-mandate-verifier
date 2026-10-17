@@ -68,7 +68,7 @@ def runtime_identity():
     return identity
 
 
-def run_once(*, connect, clock, utc_now):
+def run_once(*, connect, clock, utc_now, cancellation=None):
     budget = None
     result = dict(status='STOP', started_at=None, completed_at=None, receipts=[], records=[],
                   runtime=runtime_identity(),
@@ -90,7 +90,8 @@ def run_once(*, connect, clock, utc_now):
         for spec in specs:
             spec.checked()
         budget = transport.Budget(transport.Limits(24576, 1800000, 2097152, 65536,
-                                                  3, 120, 45, 4096), clock())
+                                                  3, 120, 45, 4096), clock(),
+                                  cancellation=cancellation if cancellation is not None else transport.WallCancellation())
         result['records'] = budget.records
         for spec in specs:
             # Recheck actual UTC at each payload; never extend the frozen deadline.
@@ -154,7 +155,7 @@ def main():
             alarm_installed = True
             signal.alarm(120)  # Attempt clear even if installation raises uncertainly.
             result = run_once(connect=lambda url, seconds, owner: transport.tls_connect(
-                                  url, seconds, owner, cancellation=cancellation), clock=time.monotonic,
+                                  url, seconds, owner, cancellation=cancellation), cancellation=cancellation, clock=time.monotonic,
                               utc_now=lambda: dt.datetime.now(dt.timezone.utc))
         finally:
             # This transition is inside the outer exception boundary. After it,

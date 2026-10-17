@@ -1289,6 +1289,45 @@ class TransportTests(unittest.TestCase):
                 self.assertEqual(d['reason'],'PROBE_DEADLINE');self.assertTrue(d['local_wall_alarm_expired'])
                 self.assertEqual(p['alarm'].call_args_list[-1].args,(0,))
 
+    def test_sink_cancel_before_close_or_inside_close_preserves_one_attempt(self):
+        for when in ('before','inside'):
+            for close_fails in (False,True):
+                with self.subTest(when=when,close_fails=close_fails):
+                    self.setUp();token=self.budget.cancellation;held=[];injected=False
+                    original_close=self.sink.close
+                    def close():
+                        if when=='inside':token.request()
+                        original_close()
+                        if close_fails:raise OSError('secret sink close')
+                    self.sink.close=close
+                    original=m.in_phase
+                    def boundary(phase,function,*args,**kwargs):
+                        nonlocal injected
+                        if when=='before' and phase=='SINK_CLOSE' and not injected:
+                            injected=True;token.request()
+                        return original(phase,function,*args,**kwargs)
+                    with patch.object(m,'in_phase',side_effect=boundary):
+                        try:self.run_get()
+                        except m.WallDeadline as error:held.append(error)
+                    self.assertEqual(len(held),1);self.assertIsNotNone(held[0].__traceback__)
+                    self.assertEqual(self.sink.closed,1);self.assertEqual(self.connections[0].closed,1)
+                    record=self.budget.records[-1]
+                    self.assertEqual(record['sink_closed'],not close_fails)
+                    self.assertEqual(record['close_uncertain'],close_fails)
+                    self.assertEqual(record['failure']['phase'],'SINK_CLOSE')
+                    self.assertEqual(record['state'],'STOP');self.assertFalse(self.budget.busy)
+
+    def test_cancellation_in_initial_busy_setup_still_closes_registered_sink(self):
+        token=self.budget.cancellation;original=m.Budget.__setattr__
+        def assign(instance,name,value):
+            if instance is self.budget and name=='busy' and value is True:token.request()
+            return original(instance,name,value)
+        with patch.object(m.Budget,'__setattr__',assign):
+            with self.assertRaises(m.WallDeadline):self.run_get()
+        self.assertEqual(self.sink.closed,1);self.assertFalse(self.budget.busy)
+        self.assertEqual(self.budget.used['requests'],0)
+        self.assertEqual(self.calls,[])
+
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
 
