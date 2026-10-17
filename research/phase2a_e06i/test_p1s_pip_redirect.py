@@ -15,6 +15,30 @@ BODY=b'synthetic package bytes'
 
 
 class Redirect(unittest.TestCase):
+    def test_actual_header_parser_keeps_exact_location(self):
+        class Wire:
+            def __init__(self,data):self.data=data
+            def __enter__(self):return self
+            def __exit__(self,*args):pass
+            def settimeout(self,*args):pass
+            def sendall(self,*args):pass
+            def recv(self,n):
+                out,self.data=self.data[:n],self.data[n:]
+                return out
+        class Context:
+            def __init__(self,wire):self.wire=wire
+            def wrap_socket(self,*args,**kwargs):return self.wire
+        def parse(value):
+            M['configure'](SPEC,1)
+            url=M['allow'](SPEC['pip_deb']['url'])
+            wire=Wire(b'HTTP/1.1 302 Found\r\nLocation:'+value+b'\r\nContent-Length: 0\r\n\r\n')
+            with patch('socket.create_connection',return_value=wire),patch('ssl.create_default_context',return_value=Context(wire)):
+                return M['request'](url,4096)[1]['location']
+        raw=LOCATION.encode('ascii')
+        for good in (raw,b' '+raw):self.assertEqual(parse(good),LOCATION)
+        for bad in (b'  '+raw,b'\t'+raw,b' '+raw+b' ',raw+b'\t',b' \t'+raw):
+            with self.assertRaisesRegex(ValueError,'LOCATION_WIRE'):parse(bad)
+
     def attempt(self,replies):
         spec=dict(SPEC['pip_deb'],size=len(BODY),sha256=hashlib.sha256(BODY).hexdigest())
         M['configure'](SPEC,1)
