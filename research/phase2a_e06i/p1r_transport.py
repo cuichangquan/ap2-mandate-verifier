@@ -17,6 +17,7 @@ import math
 import re
 import socket
 import ssl
+import time
 from urllib.parse import unquote, urlsplit
 
 
@@ -319,8 +320,9 @@ def close_once(resource, primary=None):
 
 class SocketOwner:
     """Shared connector/hop journal, registered before a live handle escapes."""
-    def __init__(self):
+    def __init__(self, remaining=None):
         self.resource, self.attempted, self.closed = None, False, False
+        self.remaining = remaining
 
     def register(self, resource):
         self.resource, self.attempted, self.closed = resource, False, False
@@ -351,6 +353,12 @@ def tls_connect(url, seconds, owner, *, cancellation=None):
     try:
         u = endpoint(url)
         need(positive(seconds), 'CONNECT_TIMEOUT')
+        local_deadline = time.monotonic() + seconds
+        def timeout():
+            left = (owner.remaining() if owner.remaining is not None else
+                    local_deadline - time.monotonic())
+            need(positive(left), 'DEADLINE')
+            return min(left, 5)
         phase = 'TLS_CONTEXT'
         # Avoid SSLKEYLOGFILE side effects; platform CA trust is still external.
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -360,15 +368,17 @@ def tls_connect(url, seconds, owner, *, cancellation=None):
         context.minimum_version = ssl.TLSVersion.TLSv1_2
         context.set_alpn_protocols(['http/1.1'])
         phase = 'DNS_OR_TCP_CONNECT'
+        timeout()
         # Keep the current socket in this frame before connect begins. There is
         # no helper-return/assignment gap and no OSError-only hidden cleanup.
         last_error = None
         for family, kind, protocol, _, address in socket.getaddrinfo(
                 u.hostname, 443, 0, socket.SOCK_STREAM):
+            left = timeout()  # Recompute after DNS and every earlier address.
             try:
                 with cancellation.handoff():
                     owner.register(socket.socket(family, kind, protocol))
-                owner.resource.settimeout(min(seconds, 5))
+                owner.resource.settimeout(timeout())
                 owner.resource.connect(address)
                 break
             except OSError as error:
@@ -378,19 +388,22 @@ def tls_connect(url, seconds, owner, *, cancellation=None):
                     raise
                 owner.register(None)
                 last_error = error
+            timeout()
         else:
             if last_error is not None:
                 raise last_error
             raise OSError('NO_RESOLVED_ADDRESS')
         phase = 'TLS_WRAP'
+        timeout()
         with cancellation.handoff():
             owner.register(context.wrap_socket(owner.resource, server_hostname=u.hostname,
                                                 do_handshake_on_connect=False))
         wrapped = owner.resource
         phase = 'TLS_TIMEOUT_SETUP'
-        wrapped.settimeout(min(seconds, 5))
+        wrapped.settimeout(timeout())
         phase = 'TLS_HANDSHAKE'
         wrapped.do_handshake()
+        timeout()
         phase = 'TLS_ALPN'
         need(wrapped.selected_alpn_protocol() in (None, 'http/1.1'), 'TLS_PROTOCOL')
         return None  # Shared owner, never a return-value, owns the handle.
@@ -561,14 +574,15 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
                operation['started'] + spec.limits.total_seconds,
                now + min(spec.limits.hop_seconds, budget.limits.hop_seconds)) - now
     need(left > 0, 'DEADLINE')
-    owner = SocketOwner()
-    conn, reader, primary = None, None, None
+    reader = Reader(None, spec, budget, operation, record, clock)
+    owner = SocketOwner(remaining=reader.remaining)
+    conn, primary = None, None
     try:
         connect(url, min(left, 5), owner)
         conn = owner.resource
         need(conn is not None and not owner.attempted, 'CONNECTOR_OWNERSHIP')
         record['connector_returned'] = True
-        reader = Reader(conn, spec, budget, operation, record, clock)
+        reader.conn = conn
         u = endpoint(url)
         record['phase'] = 'HTTP_TIMEOUT_SETUP'
         conn.settimeout(reader.remaining())

@@ -449,7 +449,9 @@ class TransportTests(unittest.TestCase):
         with fake_tcp(plain) as create, patch.object(ssl,'SSLContext',return_value=context), patch.object(ssl,'create_default_context',side_effect=AssertionError('ENV_KEYLOG_CONTEXT_FORBIDDEN')):
             self.assertIs(tls_for_test(ORIGIN,2),wrapped)
             create.assert_called_once_with(socket.AF_INET,socket.SOCK_STREAM,6)
-            plain.settimeout.assert_called_once_with(2)
+            plain.settimeout.assert_called_once()
+            self.assertGreater(plain.settimeout.call_args.args[0],0)
+            self.assertLessEqual(plain.settimeout.call_args.args[0],2)
             plain.connect.assert_called_once_with(('192.0.2.1',443))
             context.wrap_socket.assert_called_once_with(plain,server_hostname='snapshot.example.invalid',do_handshake_on_connect=False)
             context.set_alpn_protocols.assert_called_once_with(['http/1.1'])
@@ -1177,6 +1179,49 @@ class TransportTests(unittest.TestCase):
         with self.assertRaisesRegex(m.Stop,'^CONNECTOR_OWNERSHIP$'):
             m.acquire(spec(),self.budget,self.sink,connect=Mock(return_value=Conn(length())),clock=self.clock)
         self.assertEqual(self.budget.records[-1]['state'],'STOP')
+
+    def test_owned_address_attempts_recompute_hop_operation_and_global_deadlines(self):
+        for bound in ('hop','operation','global'):
+            with self.subTest(bound=bound):
+                self.setUp();clock=self.clock;context=Mock();sockets=[Mock() for _ in range(8)]
+                item=spec(limits=limits(hop_seconds=20,total_seconds=7 if bound=='operation' else 60))
+                self.budget=m.Budget(limits(header=16384,requests=20,hop_seconds=20,
+                                           total_seconds=7 if bound=='global' else 60),0)
+                seen=[]
+                for s in sockets:
+                    def connect(address,s=s):
+                        used=s.settimeout.call_args.args[0];seen.append(used);clock.value+=used
+                        raise TimeoutError('synthetic address timeout')
+                    s.connect.side_effect=connect
+                addresses=[(socket.AF_INET,socket.SOCK_STREAM,6,'',('192.0.2.1',443))]*8
+                with patch.object(socket,'getaddrinfo',return_value=addresses), \
+                     patch.object(socket,'socket',side_effect=sockets) as factory, \
+                     patch.object(ssl,'SSLContext',return_value=context):
+                    with self.assertRaisesRegex(m.Stop,'^DEADLINE$'):
+                        m.acquire(item,self.budget,self.sink,connect=m.tls_connect,clock=clock)
+                self.assertEqual(seen,[5,5,5,5] if bound=='hop' else [5,2])
+                self.assertEqual(factory.call_count,len(seen))
+                for s in sockets[:len(seen)]:s.close.assert_called_once()
+                for s in sockets[len(seen):]:s.connect.assert_not_called()
+                context.wrap_socket.assert_not_called();self.assertEqual(self.budget.used['requests'],1)
+
+    def test_dns_or_handshake_time_consumption_blocks_following_network_stage(self):
+        for stage in ('dns','handshake'):
+            with self.subTest(stage=stage):
+                self.setUp();plain,wrapped,context=Mock(),Mock(),Mock();context.wrap_socket.return_value=wrapped
+                addresses=[(socket.AF_INET,socket.SOCK_STREAM,6,'',('192.0.2.1',443))]
+                def resolve(*args):
+                    if stage=='dns':self.clock.value=11
+                    return addresses
+                def handshake():self.clock.value=11
+                wrapped.do_handshake.side_effect=handshake
+                with patch.object(socket,'getaddrinfo',side_effect=resolve), \
+                     patch.object(socket,'socket',return_value=plain) as factory, \
+                     patch.object(ssl,'SSLContext',return_value=context):
+                    with self.assertRaisesRegex(m.Stop,'^DEADLINE$'):
+                        m.acquire(spec(),self.budget,self.sink,connect=m.tls_connect,clock=self.clock)
+                if stage=='dns':factory.assert_not_called();context.wrap_socket.assert_not_called()
+                else:wrapped.close.assert_called_once();wrapped.sendall.assert_not_called()
 
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
