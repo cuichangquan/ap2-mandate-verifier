@@ -2,7 +2,7 @@
   "schema_version": 1,
   "scope": "STATIC_IMAGE_AND_PIP_CONTENTS_ONLY_RUNTIME_UNPROVEN",
   "baseline": "017967a96d3f8d2735073e799a77de8eb6fcbba3",
-  "once_ref": "refs/tags/issue73-p1s-bounded-elf-once-consumed-20261016",
+  "once_ref": "refs/tags/issue73-p1s-rel-object-once-consumed-20261017",
   "body_limit": 100663296,
   "header_limit": 8192,
   "expanded_limit": 1073741824,
