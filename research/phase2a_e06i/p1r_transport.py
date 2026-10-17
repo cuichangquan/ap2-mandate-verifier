@@ -53,6 +53,8 @@ def annotate(error, note):
     """Fixed notes only; diagnostic failure must never replace a primary."""
     try:
         BaseException.add_note(error, note)
+    except WallDeadline:
+        raise
     except BaseException:
         pass
 
@@ -132,6 +134,8 @@ def diagnostic(error, phase='UNKNOWN'):
             if type(note) is str and len(note) <= 64 and note.startswith('U3_PHASE:') and note[9:] in PHASES:
                 result['phase'] = note[9:]
                 break
+    except WallDeadline:
+        raise
     except BaseException:
         result['metadata_uncertain'] = True
     return result
@@ -272,6 +276,9 @@ def close_once(resource, primary=None):
     """One attempt; never mask a primary exception or retry an uncertain FD."""
     try:
         resource.close()
+    except WallDeadline:
+        # Cancellation supersedes ordinary cleanup-primary precedence.
+        raise
     except BaseException as error:
         if primary is not None:
             annotate(primary, 'CLOSE_UNCERTAIN')
@@ -450,6 +457,8 @@ def finish_time(record, budget, clock, primary=None):
     try:
         record['finished'] = budget.now(clock)
         record['seconds'] = record['finished'] - record['started']
+    except WallDeadline:
+        raise
     except BaseException as error:
         if primary is not None:
             annotate(primary, 'CLOCK_FINALIZATION_UNCERTAIN')

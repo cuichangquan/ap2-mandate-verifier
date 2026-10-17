@@ -997,6 +997,45 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(d['reason'], 'PROBE_DEADLINE'); self.assertEqual(d['used']['content'],17)
         self.assertFalse(issubclass(m.WallDeadline, (OSError, Exception)))
 
+    def test_wall_cancellation_preempts_cleanup_primary_and_clock_suppression(self):
+        for primary in (None, OSError('secret primary'), m.WallDeadline()):
+            with self.subTest(primary=type(primary).__name__):
+                deadline = m.WallDeadline(); resource = Mock()
+                resource.close.side_effect = deadline
+                with self.assertRaises(m.WallDeadline) as cm: m.close_once(resource, primary)
+                self.assertIs(cm.exception, deadline); resource.close.assert_called_once()
+                clock = Mock(side_effect=deadline)
+                with self.assertRaises(m.WallDeadline) as cm:
+                    m.finish_time({'started':0}, self.budget, clock, primary)
+                self.assertIs(cm.exception, deadline)
+
+    def test_wall_cancellation_during_failed_http_cleanup_keeps_stop_and_ledger(self):
+        for target in ('connection', 'sink', 'finish_clock'):
+            with self.subTest(target=target):
+                self.setUp(); deadline = m.WallDeadline(); c = Conn(length(), fail='recv')
+                if target == 'connection': c.close = Mock(side_effect=deadline)
+                if target == 'sink': self.sink.close = Mock(side_effect=deadline)
+                original = m.finish_time
+                def finish(*args, **kwargs):
+                    if target == 'finish_clock':
+                        return original(args[0], args[1], Mock(side_effect=deadline), args[4] if len(args)>4 else None)
+                    return original(*args, **kwargs)
+                with patch.object(m, 'finish_time', side_effect=finish):
+                    with self.assertRaises(m.WallDeadline) as cm:self.run_get(connections=[c])
+                self.assertIs(cm.exception, deadline)
+                record = self.budget.records[-1]
+                self.assertEqual(record['state'], 'STOP')
+                self.assertEqual(record['reason'], 'PROBE_DEADLINE')
+                self.assertEqual(record['failure']['category'], 'TIMEOUT')
+                self.assertEqual(record['requests'], 1); self.assertFalse(self.budget.busy)
+                self.assertNotIn('secret', json.dumps(record))
+
+    def test_wall_cancellation_is_not_swallowed_by_diagnostic_metadata_guard(self):
+        class InterruptedErrorMetadata(OSError):
+            @property
+            def __notes__(self): raise m.WallDeadline()
+        with self.assertRaises(m.WallDeadline):m.diagnostic(InterruptedErrorMetadata())
+
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
 
