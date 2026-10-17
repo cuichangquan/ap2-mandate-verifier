@@ -1431,6 +1431,27 @@ class TransportTests(unittest.TestCase):
         self.assertFalse(self.budget.busy);self.assertEqual(self.budget.used['requests'],0)
         self.assertEqual(self.calls,[])
 
+    def test_postclose_condition_cancellation_records_time_not_later_sink_phase(self):
+        token=self.budget.cancellation;injected=False;held=[]
+        def trace(frame,event,arg):
+            nonlocal injected
+            if (not injected and event=='line' and frame.f_code is m.hop.__code__ and
+                linecache.getline(frame.f_code.co_filename,frame.f_lineno).strip()==
+                    'if primary is None and reader is not None:'):
+                injected=True;token.request()
+            return trace
+        prior=sys.gettrace()
+        try:
+            sys.settrace(trace)
+            try:self.run_get()
+            except m.WallDeadline as error:held.append(error)
+        finally:sys.settrace(prior)
+        self.assertTrue(injected);self.assertEqual(len(held),1)
+        record=self.budget.records[-1]
+        self.assertEqual(record['failure']['phase'],'TIME_FINALIZATION')
+        self.assertEqual(record['content'],len(DATA));self.assertTrue(record['sink_closed'])
+        self.assertTrue(record['hops'][0]['closed']);self.assertFalse(self.budget.busy)
+
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])
 

@@ -642,8 +642,12 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
             raise
         finally:
             in_phase('TIME_FINALIZATION', finish_time, record, budget, clock, primary)
-        if primary is None and reader is not None:
-            in_phase('TIME_FINALIZATION', reader.remaining)
+        try:
+            if primary is None and reader is not None:
+                in_phase('TIME_FINALIZATION', reader.remaining)
+        except BaseException as error:
+            annotate(error, 'U3_PHASE:TIME_FINALIZATION')
+            raise
 
 
 def record_operation_failure(operation, error):

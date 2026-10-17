@@ -27,7 +27,7 @@ import signal
 import time
 import types
 
-TRANSPORT_SHA256 = 'f98116769765fa5ce17e9bd010c0aa4078f898f52795abd5c4cd954f01aaa9f5'
+TRANSPORT_SHA256 = 'ea3d19de48e97b283988a540caadf330e4ba435d07f67ea18541908ebc322de3'
 
 
 def load_bound_transport(path):
