@@ -3,6 +3,7 @@ from dataclasses import replace
 import datetime as dt
 import hashlib
 import io
+import json
 import math
 import socket
 import ssl
@@ -372,7 +373,7 @@ class TransportTests(unittest.TestCase):
                 self.assertTrue(self.budget.records[-1]['close_uncertain'])
         self.setUp();c=Conn(length(),fail='recv',close_error=True);self.sink=Sink(close_error=True)
         with self.assertRaisesRegex(OSError,'synthetic read') as cm:self.run_get(connections=[c])
-        self.assertEqual(cm.exception.__notes__,['CLOSE_UNCERTAIN','CLOSE_UNCERTAIN'])
+        self.assertEqual(cm.exception.__notes__.count('CLOSE_UNCERTAIN'),2)
         self.assertFalse(self.budget.records[-1]['hops'][0]['closed'])
 
     def test_request_caps_duplicates_failed_consumption_and_budget_reuse(self):
@@ -492,7 +493,7 @@ class TransportTests(unittest.TestCase):
     def test_primary_hash_error_survives_all_close_failures(self):
         c=Conn(length(),close_error=True);self.sink=Sink(close_error=True)
         error=self.rejects('HASH',item=spec(sha256='0'*64),connections=[c])
-        self.assertEqual(error.__notes__,['CLOSE_UNCERTAIN','CLOSE_UNCERTAIN'])
+        self.assertEqual(error.__notes__.count('CLOSE_UNCERTAIN'),2)
         self.assertEqual(self.budget.used['content'],len(DATA))
 
     def test_deadline_while_sending_and_no_extra_read(self):
@@ -579,12 +580,13 @@ class TransportTests(unittest.TestCase):
         connect=Mock(side_effect=AssertionError('must not connect'))
         for now in (dt.datetime(2026,10,20,7,32,55,tzinfo=dt.timezone.utc),dt.datetime(2026,10,17)):
             with self.subTest(now=str(now)),patch.dict('os.environ',{},clear=True):
-                with self.assertRaisesRegex(m.Stop,'EXPIRED_OR_UNKNOWN_CLOCK'):
-                    probe.run_once(connect=connect,clock=self.clock,utc_now=lambda:now)
+                result=probe.run_once(connect=connect,clock=self.clock,utc_now=lambda:now)
+                self.assertEqual(result['reason'],'EXPIRED_OR_UNKNOWN_CLOCK')
+                self.assertEqual(result['status'],'STOP_NO_RETRY')
         for name in ('SSL_CERT_FILE','SSL_CERT_DIR','SSLKEYLOGFILE'):
             with self.subTest(name=name),patch.dict('os.environ',{name:'synthetic'},clear=True):
-                with self.assertRaisesRegex(m.Stop,'TLS_ENV_OVERRIDE'):
-                    probe.run_once(connect=connect,clock=self.clock,utc_now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc))
+                result=probe.run_once(connect=connect,clock=self.clock,utc_now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc))
+                self.assertEqual(result['reason'],'TLS_ENV_OVERRIDE')
         connect.assert_not_called()
 
     def test_caller_active_except_does_not_suppress_close_failure(self):
@@ -625,7 +627,7 @@ class TransportTests(unittest.TestCase):
             c=Conn(length(),fail='recv',close_error=True)
             with self.assertRaisesRegex(OSError,'synthetic read') as cm:
                 self.run_get(connections=[c])
-            self.assertEqual(cm.exception.__notes__,['CLOSE_UNCERTAIN','CLOSE_UNCERTAIN'])
+            self.assertEqual(cm.exception.__notes__.count('CLOSE_UNCERTAIN'),2)
             self.assertFalse(hasattr(ambient,'__notes__'))
 
     def test_tls_local_primary_is_explicit_inside_caller_except(self):
@@ -637,8 +639,114 @@ class TransportTests(unittest.TestCase):
         except RuntimeError as ambient:
             with patch.object(socket,'create_connection',return_value=plain),patch.object(ssl,'SSLContext',return_value=context):
                 with self.assertRaisesRegex(OSError,'local handshake') as cm:m.tls_connect(ORIGIN,1)
-            self.assertEqual(cm.exception.__notes__,['CLOSE_UNCERTAIN'])
+            self.assertEqual(cm.exception.__notes__.count('CLOSE_UNCERTAIN'),1)
             self.assertFalse(hasattr(ambient,'__notes__'))
+
+    def test_safe_exception_categories_and_no_secret_text(self):
+        secret='secret https://user:password@private.invalid/?token=secret'
+        errors=[(socket.gaierror(-2,secret),'DNS_LOOKUP_ERROR','EAI'),
+                (PermissionError(1,secret),'OS_PERMISSION_ERROR','OS'),
+                (ConnectionRefusedError(61,secret),'OS_CONNECTION_OR_IO_ERROR','OS'),
+                (TimeoutError(secret),'TIMEOUT','OS'),
+                (ssl.SSLError(1,secret),'TLS_ERROR','NONE'),
+                (m.Stop('TLS_PROTOCOL'),'INTERNAL_POLICY_STOP','NONE'),
+                (ValueError(secret),'OTHER','NONE')]
+        certificate=ssl.SSLCertVerificationError(1,secret);certificate.verify_code=20
+        errors.append((certificate,'TLS_CERT_VERIFY_ERROR','NONE'))
+        for error,category,domain in errors:
+            with self.subTest(category=category):
+                d=m.diagnostic(error,'DNS_OR_TCP_CONNECT')
+                self.assertEqual(d['category'],category);self.assertEqual(d['errno_domain'],domain)
+                self.assertNotIn('secret',json.dumps(d))
+        self.assertEqual(m.diagnostic(certificate)['verify_code'],20)
+        self.assertEqual(m.safe_reason(m.Stop('TLS_PROTOCOL')),'TLS_PROTOCOL')
+
+    def test_tls_failure_phase_is_recorded_and_original_error_rethrown(self):
+        phases=['TLS_CONTEXT','DNS_OR_TCP_CONNECT','TLS_WRAP','TLS_TIMEOUT_SETUP','TLS_HANDSHAKE','TLS_ALPN']
+        for phase in phases:
+            with self.subTest(phase=phase):
+                error=OSError(1,'secret url credentials')
+                plain,wrapped,context=Mock(),Mock(),Mock()
+                context.wrap_socket.return_value=wrapped
+                wrapped.selected_alpn_protocol.return_value='http/1.1'
+                create=Mock(return_value=plain);constructor=Mock(return_value=context)
+                {'TLS_CONTEXT':context.load_default_certs,
+                 'DNS_OR_TCP_CONNECT':create,'TLS_WRAP':context.wrap_socket,
+                 'TLS_TIMEOUT_SETUP':wrapped.settimeout,'TLS_HANDSHAKE':wrapped.do_handshake,
+                 'TLS_ALPN':wrapped.selected_alpn_protocol}[phase].side_effect=error
+                with patch.object(socket,'create_connection',create),patch.object(ssl,'SSLContext',constructor):
+                    with self.assertRaises(OSError) as cm:m.tls_connect(ORIGIN,1)
+                self.assertIs(cm.exception,error)
+                self.assertEqual(m.diagnostic(error)['phase'],phase)
+                self.assertNotIn('secret',json.dumps(m.diagnostic(error)))
+                if phase in ('TLS_CONTEXT','DNS_OR_TCP_CONNECT'):
+                    plain.close.assert_not_called();wrapped.close.assert_not_called()
+                elif phase=='TLS_WRAP':plain.close.assert_called_once();wrapped.close.assert_not_called()
+                else:wrapped.close.assert_called_once();plain.close.assert_not_called()
+
+    def test_tls_alpn_policy_stop_survives_safe_reason_filter(self):
+        wrapped=Mock();wrapped.selected_alpn_protocol.return_value='h2'
+        context=Mock();context.wrap_socket.return_value=wrapped
+        with patch.object(socket,'create_connection',return_value=Mock()),patch.object(ssl,'SSLContext',return_value=context):
+            with self.assertRaises(m.Stop) as cm:m.tls_connect(ORIGIN,1)
+        self.assertEqual(m.safe_reason(cm.exception),'TLS_PROTOCOL')
+        self.assertEqual(m.diagnostic(cm.exception)['phase'],'TLS_ALPN')
+
+    def test_connector_and_http_send_are_distinct_diagnostic_facts(self):
+        error=socket.gaierror(-2,'secret')
+        m.annotate(error,'U3_PHASE:DNS_OR_TCP_CONNECT')
+        with self.assertRaises(socket.gaierror):self.run_get(connect=Mock(side_effect=error))
+        record=self.budget.records[-1];h=record['hops'][0]
+        self.assertFalse(h['connector_returned']);self.assertFalse(h['http_send_started'])
+        self.assertFalse(h['http_send_complete']);self.assertEqual(record['failure']['category'],'DNS_LOOKUP_ERROR')
+        self.assertEqual(record['failure']['phase'],'DNS_OR_TCP_CONNECT')
+        self.setUp()
+        with self.assertRaises(OSError):self.run_get(connections=[Conn(length(),fail='send')])
+        record=self.budget.records[-1];h=record['hops'][0]
+        self.assertTrue(h['connector_returned']);self.assertTrue(h['http_send_started'])
+        self.assertFalse(h['http_send_complete']);self.assertEqual(record['failure']['phase'],'HTTP_SEND')
+
+    def test_diagnostic_faults_and_malformed_notes_do_not_mask_primary(self):
+        error=OSError('secret')
+        error.__notes__='malformed'
+        c=Conn(length());c.recv=Mock(side_effect=error);self.sink=Sink(close_error=True)
+        with self.assertRaises(OSError) as cm:self.run_get(connections=[c])
+        self.assertIs(cm.exception,error)
+        self.assertTrue(self.budget.records[-1]['failure']['metadata_uncertain'])
+        self.assertTrue(self.budget.records[-1]['close_uncertain'])
+        self.assertNotIn('secret',json.dumps(self.budget.records))
+        class UnsafeText:
+            def __str__(self):raise AssertionError('must not format')
+        self.assertEqual(m.safe_reason(m.Stop(UnsafeText())),'IO_OR_CALLBACK_FAILURE')
+
+    def test_probe_records_its_own_runtime_before_connect(self):
+        connect=Mock(side_effect=socket.gaierror(-2,'secret credentials URL'))
+        with patch.dict('os.environ',{},clear=True):
+            result=probe.run_once(connect=connect,clock=self.clock,utc_now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc))
+        identity=result['runtime']
+        self.assertEqual(identity['python_version'],list(sys.version_info[:3]))
+        self.assertEqual(identity['openssl_version'],list(ssl.OPENSSL_VERSION_INFO))
+        self.assertEqual(set(identity['source_sha256']),{'transport','probe'})
+        self.assertTrue(all(len(x)==64 for x in identity['source_sha256'].values()))
+        self.assertEqual(result['failure']['category'],'DNS_LOOKUP_ERROR')
+        self.assertEqual(result['dns_and_tcp_attempts'],'UNKNOWN_CREATE_CONNECTION_MAY_TRY_MULTIPLE_ADDRESSES')
+        self.assertNotIn('secret',json.dumps(result))
+        self.assertNotIn(sys.executable,json.dumps(result))
+        self.assertLess(len(json.dumps(result).encode()),1048576)
+
+    def test_probe_incomplete_identity_blocks_before_network(self):
+        connect=Mock(side_effect=AssertionError('must not connect'))
+        with patch.object(probe,'runtime_identity',return_value={'status':'INCOMPLETE'}):
+            result=probe.run_once(connect=connect,clock=self.clock,utc_now=lambda:dt.datetime(2026,10,17,tzinfo=dt.timezone.utc))
+        connect.assert_not_called();self.assertEqual(result['reason'],'RUNTIME_IDENTITY_UNAVAILABLE')
+
+    def test_probe_clock_finalization_preserves_original_safe_failure(self):
+        times=iter([dt.datetime(2026,10,17,tzinfo=dt.timezone.utc),
+                    dt.datetime(2026,10,17,tzinfo=dt.timezone.utc),None])
+        with patch.dict('os.environ',{},clear=True):
+            result=probe.run_once(connect=Mock(side_effect=PermissionError(1,'secret')),clock=self.clock,utc_now=lambda:next(times))
+        self.assertEqual(result['failure']['category'],'OS_PERMISSION_ERROR')
+        self.assertEqual(result['clock_finalization'],'UNAVAILABLE')
 
     def test_no_actual_network_events(self):
         self.assertEqual(self.network_events,[])

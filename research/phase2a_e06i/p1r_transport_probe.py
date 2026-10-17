@@ -6,6 +6,7 @@ Platform TLS/clock trust and OS isolation remain unproven. Stop on first error;
 never repeat this command after an uncertain/failed attempt without reporting.
 """
 import datetime as dt
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -43,24 +44,54 @@ class Discard:
         pass
 
 
+def runtime_identity():
+    """This process's bounded numeric/digest identity, no raw filesystem paths."""
+    identity = dict(python_version=list(sys.version_info[:3]),
+                    implementation='CPYTHON' if sys.implementation.name == 'cpython' else 'OTHER',
+                    openssl_version=list(transport.ssl.OPENSSL_VERSION_INFO),
+                    platform=sys.platform if sys.platform in ('darwin', 'linux') else 'OTHER',
+                    isolated=bool(sys.flags.isolated), no_site=bool(sys.flags.no_site),
+                    dont_write_bytecode=bool(sys.flags.dont_write_bytecode),
+                    source_sha256={}, status='COMPLETE')
+    try:
+        for key, path in (('executable', sys.executable), ('socket_module', transport.socket.__file__),
+                          ('ssl_module', transport.ssl.__file__)):
+            transport.need(type(path) is str and 0 < len(path) <= 8192, 'RUNTIME_IDENTITY_UNAVAILABLE')
+            identity[key + '_path_sha256'] = hashlib.sha256(os.fsencode(path)).hexdigest()
+        for key, path in (('transport', transport.__file__), ('probe', __file__)):
+            with open(path, 'rb') as stream:
+                raw = stream.read(131073)
+            transport.need(0 < len(raw) <= 131072, 'RUNTIME_IDENTITY_UNAVAILABLE')
+            identity['source_sha256'][key] = hashlib.sha256(raw).hexdigest()
+    except BaseException:
+        identity['status'] = 'INCOMPLETE'
+    return identity
+
+
 def run_once(*, connect, clock, utc_now):
-    now = utc_now()
-    transport.need(type(now) is dt.datetime and now.tzinfo is not None and
-                   now < dt.datetime(2026, 10, 20, 7, 32, 55, tzinfo=dt.timezone.utc),
-                   'EXPIRED_OR_UNKNOWN_CLOCK')
-    transport.need(not any(k in os.environ for k in ('SSL_CERT_FILE', 'SSL_CERT_DIR', 'SSLKEYLOGFILE')),
-                   'TLS_ENV_OVERRIDE')
-    specs = plans()
-    for spec in specs:
-        spec.checked()
-    budget = transport.Budget(transport.Limits(24576, 1800000, 2097152, 65536,
-                                              3, 120, 45, 4096), clock())
-    result = dict(status='STOP', started_at=now.isoformat(), receipts=[], records=budget.records,
+    budget = None
+    result = dict(status='STOP', started_at=None, completed_at=None, receipts=[], records=[],
+                  runtime=runtime_identity(),
                   raw_payload_saved=False, raw_headers_saved=False, diagnostic_artifact_saved=False,
                   installed_or_executed_payload=False, retry=0,
                   physical_tls_tcp_dns_wire_bytes='UNMEASURED',
+                  dns_and_tcp_attempts='UNKNOWN_CREATE_CONNECTION_MAY_TRY_MULTIPLE_ADDRESSES',
                   independent_signature_key_clock_and_isolation='UNPROVEN')
     try:
+        transport.need(result['runtime']['status'] == 'COMPLETE', 'RUNTIME_IDENTITY_UNAVAILABLE')
+        now = utc_now()
+        transport.need(type(now) is dt.datetime and now.tzinfo is not None and
+                       now < dt.datetime(2026, 10, 20, 7, 32, 55, tzinfo=dt.timezone.utc),
+                       'EXPIRED_OR_UNKNOWN_CLOCK')
+        result['started_at'] = now.isoformat()
+        transport.need(not any(k in os.environ for k in ('SSL_CERT_FILE', 'SSL_CERT_DIR', 'SSLKEYLOGFILE')),
+                       'TLS_ENV_OVERRIDE')
+        specs = plans()
+        for spec in specs:
+            spec.checked()
+        budget = transport.Budget(transport.Limits(24576, 1800000, 2097152, 65536,
+                                                  3, 120, 45, 4096), clock())
+        result['records'] = budget.records
         for spec in specs:
             # Recheck actual UTC at each payload; never extend the frozen deadline.
             transport.need(utc_now() < dt.datetime(2026, 10, 20, 7, 32, 55,
@@ -68,27 +99,42 @@ def run_once(*, connect, clock, utc_now):
             result['receipts'].append(transport.acquire(spec, budget, Discard(),
                                                        connect=connect, clock=clock))
         result['status'] = 'PINNED_TRANSPORT_PROBE_CONTENT_MATCH_RUNTIME_UNPROVEN'
-    except BaseException:
-        # Ledger contains only fixed reason codes, not raw callback errors/headers.
+    except BaseException as error:
+        result['reason'] = transport.safe_reason(error)
+        result['failure'] = transport.diagnostic(error, 'PROBE_PRECONDITION')
         result['status'] = 'STOP_NO_RETRY'
-    result['used'] = dict(budget.used)
-    result['completed_at'] = utc_now().isoformat()
+    result['used'] = dict(budget.used) if budget is not None else {}
+    try:
+        finished = utc_now()
+        transport.need(type(finished) is dt.datetime and finished.tzinfo is not None, 'CLOCK')
+        result['completed_at'] = finished.isoformat()
+    except BaseException as error:
+        result['clock_finalization'] = 'UNAVAILABLE'
+        if 'failure' not in result:
+            result.update(status='STOP_NO_RETRY', reason=transport.safe_reason(error),
+                          failure=transport.diagnostic(error, 'TIME_FINALIZATION'))
     return result
 
 
 def main():
     transport.need(sys.argv[1:] == ['--run-approved-public-transport-once'], 'EXPLICIT_APPROVAL_FLAG')
+    alarm_expired = False
     def expired(*_):
+        nonlocal alarm_expired
+        alarm_expired = True
         raise TimeoutError('PROBE_DEADLINE')
     signal.signal(signal.SIGALRM, expired)
     signal.alarm(120)  # Local bounded probe, not external U6 watchdog attestation.
     try:
         result = run_once(connect=transport.tls_connect, clock=time.monotonic,
                           utc_now=lambda: dt.datetime.now(dt.timezone.utc))
-    except BaseException:
-        result = dict(status='PRECONDITION_OR_TIMEOUT_STOP_NO_RETRY')
+    except BaseException as error:
+        result = dict(status='PRECONDITION_OR_TIMEOUT_STOP_NO_RETRY',
+                      runtime=runtime_identity(), reason=transport.safe_reason(error),
+                      failure=transport.diagnostic(error, 'PROBE_PRECONDITION'))
     finally:
         signal.alarm(0)
+    result['local_wall_alarm_expired'] = alarm_expired
     raw = json.dumps(result, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
     transport.need(len(raw) <= 1048576, 'DIAGNOSTIC_LIMIT')
     print(raw.decode())

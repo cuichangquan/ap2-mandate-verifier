@@ -29,9 +29,82 @@ ERROR_CODES = frozenset('URL LIMITS SPEC SPEC_ID HOP_POLICY CLOCK DUPLICATE_INPU
                        'DUPLICATE_HEADER LOCATION ENCODING FRAMING BODY_SIZE '
                        'CONTENT_LENGTH FRAMING_POLICY CHUNK CHUNK_COUNT CHUNK_CRLF '
                        'TRAILER SINK_WRITE STATUS UNEXPECTED_LOCATION HASH '
-                       'CLOSE_UNCERTAIN'.split()) | frozenset(
+                       'CLOSE_UNCERTAIN CONNECT_TIMEOUT TLS_PROTOCOL '
+                       'EXPIRED_OR_UNKNOWN_CLOCK TLS_ENV_OVERRIDE EXPLICIT_APPROVAL_FLAG '
+                       'DIAGNOSTIC_LIMIT RUNTIME_IDENTITY_UNAVAILABLE'.split()) | frozenset(
     prefix + key for prefix in ('BUDGET_', 'LIMIT_')
     for key in ('HEADER', 'CONTENT', 'WIRE', 'FRAMING'))
+
+PHASES = frozenset('UNKNOWN SPEC_CHECK CONNECTOR TLS_VALIDATE TLS_CONTEXT '
+                   'DNS_OR_TCP_CONNECT TLS_WRAP TLS_TIMEOUT_SETUP TLS_HANDSHAKE TLS_ALPN '
+                   'HTTP_TIMEOUT_SETUP HTTP_SEND HTTP_HEADERS HTTP_BODY CONTENT_HASH '
+                   'CONNECTION_CLOSE SINK_CLOSE TIME_FINALIZATION PROBE_PRECONDITION'.split())
+
+
+def annotate(error, note):
+    """Fixed notes only; diagnostic failure must never replace a primary."""
+    try:
+        BaseException.add_note(error, note)
+    except BaseException:
+        pass
+
+
+def safe_reason(error):
+    if type(error) is Stop and type(error.args) is tuple and len(error.args) == 1:
+        value = error.args[0]
+        if type(value) is str and value in ERROR_CODES:
+            return value
+    return 'IO_OR_CALLBACK_FAILURE'
+
+
+def diagnostic(error, phase='UNKNOWN'):
+    """Closed enum/numeric metadata; no exception text, URL, IP or traceback.
+
+    DNS_OR_TCP_CONNECT is deliberately combined: create_connection may try
+    several resolved addresses and retain only the last error. No DNS/TCP
+    packet counts or one-TCP-attempt guarantee are inferred from this label.
+    """
+    result = dict(phase=phase if phase in PHASES else 'UNKNOWN', category='OTHER',
+                  errno=None, errno_domain='NONE', verify_code=None,
+                  cleanup_uncertain=None, metadata_uncertain=False)
+    try:
+        kind = type(error)
+        if kind is socket.gaierror:
+            result.update(category='DNS_LOOKUP_ERROR', errno_domain='EAI')
+        elif kind is ssl.SSLCertVerificationError:
+            result['category'] = 'TLS_CERT_VERIFY_ERROR'
+            value = error.verify_code
+            if type(value) is int and -65535 <= value <= 65535:
+                result['verify_code'] = value
+        elif kind is ssl.SSLError:
+            result['category'] = 'TLS_ERROR'
+        elif kind is PermissionError:
+            result.update(category='OS_PERMISSION_ERROR', errno_domain='OS')
+        elif kind is TimeoutError:
+            result.update(category='TIMEOUT', errno_domain='OS')
+        elif kind in (ConnectionError, ConnectionRefusedError, ConnectionResetError,
+                      ConnectionAbortedError, BrokenPipeError, OSError):
+            result.update(category='OS_CONNECTION_OR_IO_ERROR', errno_domain='OS')
+        elif kind is Stop:
+            result['category'] = 'INTERNAL_POLICY_STOP'
+        elif kind in (KeyboardInterrupt, SystemExit):
+            result['category'] = 'CANCELLED'
+        if result['errno_domain'] != 'NONE':
+            value = error.errno
+            if type(value) is int and -65535 <= value <= 65535:
+                result['errno'] = value
+        notes = getattr(error, '__notes__', [])
+        if type(notes) is not list or len(notes) > 16:
+            result['metadata_uncertain'] = True
+            return result
+        result['cleanup_uncertain'] = any(type(n) is str and n == 'CLOSE_UNCERTAIN' for n in notes)
+        for note in notes:
+            if type(note) is str and len(note) <= 64 and note.startswith('U3_PHASE:') and note[9:] in PHASES:
+                result['phase'] = note[9:]
+                break
+    except BaseException:
+        result['metadata_uncertain'] = True
+    return result
 
 
 def need(ok, reason):
@@ -171,7 +244,7 @@ def close_once(resource, primary=None):
         resource.close()
     except BaseException as error:
         if primary is not None:
-            primary.add_note('CLOSE_UNCERTAIN')
+            annotate(primary, 'CLOSE_UNCERTAIN')
             return False
         else:
             raise Stop('CLOSE_UNCERTAIN') from error
@@ -184,28 +257,35 @@ def tls_connect(url, seconds):
     No proxy/netrc/auth. OS resolver may outlive socket timeout: caller MUST
     arrange an external worker watchdog before any separately approved use.
     """
-    u = endpoint(url)
-    need(positive(seconds), 'CONNECT_TIMEOUT')
-    # SSLContext avoids create_default_context's SSLKEYLOGFILE file side
-    # effect. Platform CA loading (including SSL_CERT_* overrides) remains
-    # an explicit future controller trust/sanitization requirement.
-    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    context.check_hostname = True
-    context.verify_mode = ssl.CERT_REQUIRED
-    context.load_default_certs()
-    context.minimum_version = ssl.TLSVersion.TLSv1_2
-    context.set_alpn_protocols(['http/1.1'])
-    owned = socket.create_connection((u.hostname, 443), timeout=min(seconds, 5))
+    phase, owned = 'TLS_VALIDATE', None
     try:
+        u = endpoint(url)
+        need(positive(seconds), 'CONNECT_TIMEOUT')
+        phase = 'TLS_CONTEXT'
+        # Avoid SSLKEYLOGFILE side effects; platform CA trust is still external.
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = True
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.load_default_certs()
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
+        context.set_alpn_protocols(['http/1.1'])
+        phase = 'DNS_OR_TCP_CONNECT'
+        owned = socket.create_connection((u.hostname, 443), timeout=min(seconds, 5))
+        phase = 'TLS_WRAP'
         wrapped = context.wrap_socket(owned, server_hostname=u.hostname,
                                       do_handshake_on_connect=False)
         owned = wrapped  # wrap_socket takes ownership; never close the old handle too.
+        phase = 'TLS_TIMEOUT_SETUP'
         wrapped.settimeout(min(seconds, 5))
+        phase = 'TLS_HANDSHAKE'
         wrapped.do_handshake()
+        phase = 'TLS_ALPN'
         need(wrapped.selected_alpn_protocol() in (None, 'http/1.1'), 'TLS_PROTOCOL')
         return wrapped
     except BaseException as error:
-        close_once(owned, error)
+        annotate(error, 'U3_PHASE:' + phase)
+        if owned is not None:
+            close_once(owned, error)
         raise
 
 
@@ -339,10 +419,11 @@ def finish_time(record, budget, clock, primary=None):
     try:
         record['finished'] = budget.now(clock)
         record['seconds'] = record['finished'] - record['started']
-    except BaseException:
+    except BaseException as error:
         if primary is not None:
-            primary.add_note('CLOCK_FINALIZATION_UNCERTAIN')
+            annotate(primary, 'CLOCK_FINALIZATION_UNCERTAIN')
         else:
+            annotate(error, 'U3_PHASE:TIME_FINALIZATION')
             raise
 
 
@@ -352,7 +433,9 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
     now = budget.now(clock)
     record = dict(endpoint='origin' if not operation['hops'] else 'final', started=now,
                   header=0, content=0, wire=0, framing=0, status=None, closed=False,
-                  finished=None, seconds=None, observed_sha256=None, hash_match=None)
+                  finished=None, seconds=None, observed_sha256=None, hash_match=None,
+                  phase='CONNECTOR', connector_returned=False,
+                  http_send_started=False, http_send_complete=False)
     operation['hops'].append(record)
     budget.used['requests'] += 1
     operation['requests'] += 1
@@ -364,12 +447,17 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
     conn, reader, primary = None, None, None
     try:
         conn = connect(url, min(left, 5))
+        record['connector_returned'] = True
         reader = Reader(conn, spec, budget, operation, record, clock)
         u = endpoint(url)
+        record['phase'] = 'HTTP_TIMEOUT_SETUP'
         conn.settimeout(reader.remaining())
+        record.update(phase='HTTP_SEND', http_send_started=True)
         conn.sendall(('GET ' + u.path + ' HTTP/1.1\r\nHost: ' + u.hostname +
                       '\r\nAccept-Encoding: identity\r\nConnection: close\r\n\r\n').encode('ascii'))
+        record.update(phase='HTTP_HEADERS', http_send_complete=True)
         fields = reader.headers()
+        record['phase'] = 'HTTP_BODY'
         if record['status'] != 200 or redirect:
             body(reader, fields)  # Include bounded 302/error bytes; never hash them as payload.
             need(redirect and record['status'] == 302, 'STATUS')
@@ -377,10 +465,12 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
             return None
         need(b'location' not in fields, 'UNEXPECTED_LOCATION')
         observed = body(reader, fields, expected=spec.size, sink=sink)
+        record['phase'] = 'CONTENT_HASH'
         record.update(observed_sha256=observed, hash_match=observed == spec.sha256)
         need(record['hash_match'], 'HASH')
         return observed
     except BaseException as error:
+        annotate(error, 'U3_PHASE:' + record['phase'])
         primary = error
         raise
     finally:
@@ -388,6 +478,7 @@ def hop(url, spec, budget, operation, clock, connect, sink, redirect):
             if conn is not None:
                 record['closed'] = close_once(conn, primary)
         except BaseException as error:
+            annotate(error, 'U3_PHASE:CONNECTION_CLOSE')
             primary = error
             raise
         finally:
@@ -409,7 +500,7 @@ def acquire(spec, budget, sink, *, connect, clock):
     need(len(budget.records) < budget.limits.requests, 'OPERATION_LIMIT')
     budget.busy = True
     operation = dict(identity=None, state='SPEC_CHECKING', header=0, content=0,
-                     wire=0, framing=0, requests=0, hops=[])
+                     wire=0, framing=0, requests=0, hops=[], sink_closed=False)
     budget.records.append(operation)
     try:
         primary = None
@@ -429,16 +520,21 @@ def acquire(spec, budget, sink, *, connect, clock):
             primary = error
             raise
         finally:
-            close_once(sink, primary)
+            try:
+                operation['sink_closed'] = close_once(sink, primary)
+            except BaseException as error:
+                annotate(error, 'U3_PHASE:SINK_CLOSE')
+                raise
         # Close time counts too; no successful receipt if close exhausted deadline.
         need(budget.now(clock) < min(budget.started + budget.limits.total_seconds,
                                     operation['started'] + spec.limits.total_seconds), 'DEADLINE')
     except BaseException as error:
         operation['state'] = 'STOP'
-        operation['reason'] = (str(error) if type(error) is Stop and str(error) in ERROR_CODES
-                               else 'IO_OR_CALLBACK_FAILURE')
-        operation['close_uncertain'] = 'CLOSE_UNCERTAIN' in getattr(error, '__notes__', []) or (
-            type(error) is Stop and str(error) == 'CLOSE_UNCERTAIN')
+        operation['reason'] = safe_reason(error)
+        operation['failure'] = diagnostic(error, 'SPEC_CHECK')
+        operation['close_uncertain'] = (operation['failure']['cleanup_uncertain'] is not False or
+            any(h['connector_returned'] and not h['closed'] for h in operation['hops']) or
+            operation['reason'] == 'CLOSE_UNCERTAIN' or not operation['sink_closed'])
         raise
     finally:
         budget.busy = False
