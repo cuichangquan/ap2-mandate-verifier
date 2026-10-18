@@ -197,11 +197,11 @@ class Management:
     def __init__(self, report, deadline):
         self.report, self.deadline = report, deadline
         self.calls = 0
-        self.bytes = 0
+        self.bytes = 2  # JSON array brackets; each entry reserves its separator too.
         self.case_deadline = None
 
     def record(self, entry, cleanup):
-        size = len(json.dumps(entry).encode())
+        size = len(json.dumps(entry).encode())+2
         if self.bytes+size > 65536:
             self.report['management_truncated'] = True
             need(cleanup, 'CAPTURE_LIMIT_MANAGEMENT_LEDGER')

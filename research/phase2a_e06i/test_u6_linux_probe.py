@@ -102,6 +102,7 @@ class FakeTests(unittest.TestCase):
             manager.record({'stdout':'y'*1000},False)
         manager.record({'stdout':'y'*1000},True)
         self.assertLessEqual(manager.bytes,65536)
+        self.assertLessEqual(len(json.dumps(rep['management']).encode()),65536)
         self.assertEqual(len(rep['management']),1)
         self.assertTrue(rep['management_truncated'])
         manager.calls=140
@@ -182,11 +183,14 @@ class FakeTests(unittest.TestCase):
                 read.assert_not_called()
 
     def test_full_fake_controller_nine_cases_handshake_and_reap_order(self):
-        for index,case in enumerate(u6.CASES):
-            with self.subTest(case=case):
+        for index,case in list(enumerate(u6.CASES))+[(0,'network')]:
+            late = index==0 and case=='network' and getattr(self,'_network_seen',False)
+            if case=='network': self._network_seen=True
+            with self.subTest(case=case,late_cleanup=late):
                 lab,unit=self.make_lab(); lab.units={}
                 lab.management.deadline=100
                 events=[]; go=[False]; stopped=[False]
+                clock=[0]
                 ready={'pid':42,'uid':65534,'net':'n','mnt':'m','cgroup':'/system.slice/'+unit,'fs_bytes':33554432,'inodes':256}
                 prefix=('U6_READY '+json.dumps(ready)+'\n').encode()
                 body=(b'x'*131072 if case=='output' else u6.TOKENS[case].encode()+b'\n')
@@ -204,7 +208,9 @@ class FakeTests(unittest.TestCase):
                     def poll(self):
                         if len(eof)==2: self.returncode=0
                         return self.returncode
-                    def wait(self,timeout): events.append('REAP'); self.returncode=-9
+                    def wait(self,timeout):
+                        events.append('REAP'); self.returncode=-9
+                        if late: clock[0]=6.1
                 class Selector:
                     def __init__(self): self.items={}
                     def __enter__(self): return self
@@ -229,10 +235,12 @@ class FakeTests(unittest.TestCase):
                     return query()
                 self_test=self
                 lab.show=show; lab.management.run=command
-                with patch.object(u6.time,'monotonic',return_value=0), patch.object(u6.subprocess,'Popen',return_value=Proc()), patch.object(u6.selectors,'DefaultSelector',Selector), patch.object(u6.os,'read',side_effect=read), patch.object(u6,'baseline',return_value='/system.slice/'+unit), patch.object(u6,'read_file',return_value='42\n43\n'), patch.object(Path,'exists',return_value=False), patch.object(u6._capture,'kill_query',side_effect=lambda p:events.append('KILL')):
-                    lab.run(case,index)
+                with patch.object(u6.time,'monotonic',side_effect=lambda:clock[0]), patch.object(u6.subprocess,'Popen',return_value=Proc()), patch.object(u6.selectors,'DefaultSelector',Selector), patch.object(u6.os,'read',side_effect=read), patch.object(u6,'baseline',return_value='/system.slice/'+unit), patch.object(u6,'read_file',return_value='42\n43\n'), patch.object(Path,'exists',return_value=False), patch.object(u6._capture,'kill_query',side_effect=lambda p:events.append('KILL')):
+                    if late:
+                        with self.assertRaisesRegex(u6.Stop,'DEADLINE_CASE_INCLUDING_CLEANUP'): lab.run(case,index)
+                    else: lab.run(case,index)
                 row=lab.report['cases'][index]
-                self.assertEqual(row['status'],'PASS')
+                self.assertEqual(row['status'],'FAIL' if late else 'PASS')
                 self.assertTrue(row['cleanup']['clean'])
                 self.assertTrue(stopped[0] and go[0])
                 self.assertLess(events.index('REAP'),events.index('STOP'))
