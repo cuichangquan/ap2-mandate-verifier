@@ -27,7 +27,7 @@ def kill_query(proc):
 
 
 def capture(proc, *, clock=time.monotonic, selector_factory=selectors.DefaultSelector,
-            read=os.read, terminate=kill_query):
+            read=os.read, terminate=kill_query, deadline_seconds=QUERY_SECONDS):
     kept = {"stdout": bytearray(), "stderr": bytearray()}
     seen = {"stdout": 0, "stderr": 0}
     reason = None
@@ -38,7 +38,7 @@ def capture(proc, *, clock=time.monotonic, selector_factory=selectors.DefaultSel
             for name in kept:
                 sel.register(getattr(proc, name), selectors.EVENT_READ, name)
             while sel.get_map() or proc.poll() is None:
-                if clock()-start >= QUERY_SECONDS:
+                if clock()-start >= deadline_seconds:
                     reason = "COMMAND_TIMEOUT"
                     break
                 for key, _ in sel.select(0.05):

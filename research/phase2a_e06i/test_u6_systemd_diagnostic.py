@@ -59,6 +59,19 @@ def fake_capture(stdout=b'degraded\n', stderr=b'', code=1, clock=lambda:0):
 
 
 class FakeTests(unittest.TestCase):
+    def test_explicit_deadline_and_default_unchanged(self):
+        for bound in (1, 20):
+            times=iter((0,bound,bound))
+            proc=Process()
+            killed=[]
+            row=diag.capture(proc, clock=lambda:next(times), selector_factory=Selector,
+                             read=lambda *args:b'', terminate=lambda p:killed.append(p.pid),
+                             deadline_seconds=bound)
+            self.assertEqual(row['failure'],'COMMAND_TIMEOUT')
+            self.assertEqual(row['seconds'],bound)
+            self.assertEqual(killed,[12345])
+        self.assertEqual(diag.QUERY_SECONDS,4)
+
     def test_nonzero_keeps_both_streams_and_actual_code(self):
         row, proc, killed=fake_capture(stderr=b'fixed error\n', code=3)
         self.assertEqual(row['returncode'], 3)
