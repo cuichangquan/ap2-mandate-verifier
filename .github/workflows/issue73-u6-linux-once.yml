@@ -55,7 +55,7 @@ jobs:
           set -Eeuo pipefail
           sudo -n env -i PATH=/usr/bin:/bin GITHUB_SHA="$GITHUB_SHA" \
             GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
-            /usr/bin/timeout --signal=TERM --kill-after=5s 120s \
+            /usr/bin/timeout --signal=TERM --kill-after=5s 115s \
             /usr/bin/python3 -I -S -B research/phase2a_e06i/u6_linux_probe.py
       - name: Verify bounded result
         if: always()
