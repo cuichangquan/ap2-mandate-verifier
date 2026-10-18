@@ -1,0 +1,74 @@
+name: Issue 73 U6 read only systemd diagnostic once
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact reviewed and merged main SHA
+        required: true
+        type: string
+      zero_cost_confirmed:
+        description: Confirm zero incremental cost including 64KiB artifact for seven days (yes)
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: issue73-u6-systemd-diagnostic-once-20261018
+  cancel-in-progress: false
+jobs:
+  diagnostic:
+    if: github.repository == 'cuichangquan/ap2-mandate-verifier' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            research/phase2a_e06i/u6_systemd_diagnostic.py
+      - name: Check exact main and zero cost, atomically claim NEW diagnostic guard
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          ZERO_COST: ${{ inputs.zero_cost_confirmed }}
+        run: |
+          set -Eeuo pipefail
+          [ "$GITHUB_RUN_ATTEMPT" = 1 ]
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [ "$GITHUB_SHA" = "$EXPECTED_SHA" ]
+          [ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ]
+          [ "$ZERO_COST" = yes ]
+          [ "$(gh api repos/$GITHUB_REPOSITORY --jq '.visibility')" = public ]
+          [ "$(gh api repos/$GITHUB_REPOSITORY/git/ref/heads/main --jq '.object.sha')" = "$GITHUB_SHA" ]
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref=refs/tags/issue73-u6-systemd-diagnostic-once-consumed-20261018 \
+            -f sha="$GITHUB_SHA" --jq '{ref,sha:.object.sha}'
+      - name: ONE read only query; never import or run original nine cases
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sudo -n env -i PATH=/usr/bin:/bin GITHUB_SHA="$GITHUB_SHA" \
+            GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
+            /usr/bin/timeout --signal=TERM --kill-after=2s 10s \
+            /usr/bin/python3 -I -S -B research/phase2a_e06i/u6_systemd_diagnostic.py
+      - name: Retain bounded diagnostics even on STOP
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -f u6-diagnostic-result.json
+          test "$(stat -c '%s' u6-diagnostic-result.json)" -le 65536
+          cat u6-diagnostic-result.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always() && hashFiles('u6-diagnostic-result.json') != ''
+        with:
+          name: u6-systemd-diagnostic-${{ github.run_id }}
+          path: u6-diagnostic-result.json
+          retention-days: 7
+          if-no-files-found: error
