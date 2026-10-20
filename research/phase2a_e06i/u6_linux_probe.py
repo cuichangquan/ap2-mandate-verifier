@@ -248,7 +248,7 @@ def unit_command(unit, root, netns, mntns, case):
             '--expand-environment=no', '--unit='+unit]
     args += ['--property='+k+'='+v for k, v in props.items()]
     return args+['/usr/bin/python3', '-I', '-S', '-B', '-c', code,
-                 work, str(root/'ro'), netns, mntns], props
+                 work, str(root/'ro'), netns, mntns], props, code
 
 
 def baseline(ready, props, unit, root, parent_net, parent_mnt):
@@ -342,7 +342,7 @@ class Lab:
 
     def run(self, case, index):
         need(self.management.deadline-time.monotonic() >= 21, 'INSUFFICIENT_CASE_AND_CLEANUP_TIME')
-        unit = 'u6-v2-'+self.report['run']+'-'+str(index)+'.service'
+        unit = 'u6-v3-'+self.report['run']+'-'+str(index)+'.service'
         owned = self.units[unit] = {'admitted':False,'clean':False,'empty_after_stop':False,
                                     'observed_cgroup':False,'submitter_reaped':False}
         row = self.report['cases'][index]
@@ -350,8 +350,8 @@ class Lab:
         started = time.monotonic()
         self.management.case_deadline = started+6
         data, errors, admitted, exceeded, proc = bytearray(), bytearray(), False, False, None
-        args, config = unit_command(unit, self.root, self.parent_net, self.parent_mnt, case)
-        row['source_sha256'] = hashlib.sha256((COMMON+WORK[case]).encode()).hexdigest()
+        args, config, code = unit_command(unit, self.root, self.parent_net, self.parent_mnt, case)
+        row['source_sha256'] = hashlib.sha256(code.encode('utf-8')).hexdigest()
         row['requested_properties'] = config
         try:
             proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -439,15 +439,16 @@ def preflight(management, report):
         if not os.access(tool, os.X_OK):
             raise Stop("MISSING_TOOL")
     need(platform.machine() == 'x86_64', 'UNREVIEWED_ARCHITECTURE')
-    row = management.run(['/usr/bin/systemctl','--system','--wait','is-system-running'],
-                         stage='GLOBAL_READINESS',seconds=20,check=False)
-    report['global_state'] = row['stdout'].strip()
-    need(row['returncode'] == 0 and row['stdout'] == 'running\n', 'GLOBAL_NOT_READY_OR_STATE_HOLD')
+    # Global boot completion is not a sandbox capability. A responsive supported
+    # manager may only advance to per-unit READY/readback; no workload before GO.
     row = management.run(['/usr/bin/systemctl','--system','show','--property=Version','--property=SystemState'],
                          stage='MANAGER',seconds=4)
     props = pairs(row['stdout'])
     report['manager'] = props
-    need(set(props) == {'Version','SystemState'} and props['SystemState'] == 'running', 'MANAGER_UNAVAILABLE')
+    need(set(props) == {'Version','SystemState'} and
+         props['SystemState'] in ('running','starting'), 'MANAGER_UNAVAILABLE')
+    report['global_state'] = props['SystemState']
+    report['capability_admission'] = 'REQUIRED_BEFORE_EACH_GO'
     need(re.fullmatch(r'255(?:[. -][0-9A-Za-z.+:~ -]{1,200})?',props['Version']) is not None,
          'UNSUPPORTED_VERSION')
 
