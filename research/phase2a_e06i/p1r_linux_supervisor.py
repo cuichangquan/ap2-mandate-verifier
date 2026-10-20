@@ -20,6 +20,7 @@ import math
 import re
 import time
 from typing import Protocol
+import p1r_execution_contract as contract
 
 RUNTIME = '/opt/ap2-runtime'
 SOURCE = '/opt/ap2-source/research/phase2a_e06i'
@@ -36,9 +37,9 @@ INODES = 256
 TASKS = 16
 STDOUT = 65536
 STDERR = 4096
-WORK_SECONDS = 3
-TOTAL_SECONDS = 6
-CLEANUP_RESERVE = 2
+WORK_SECONDS = contract.WORK_SECONDS
+TOTAL_SECONDS = contract.TOTAL_SECONDS
+CLEANUP_RESERVE = contract.CLEANUP_RESERVE
 MAX_EVENTS = 256
 MAX_FILES = 512
 MAX_FILE_BYTES = 16777216
@@ -208,9 +209,10 @@ def admission(plan, observed):
 
 
 class Supervisor:
-    def __init__(self, port=None, *, clock=time.monotonic):
+    def __init__(self, port=None, *, clock=time.monotonic, allocated_at=None):
         self.port, self.clock, self.used = port, clock, False
         self.last = None
+        self.allocated_at = allocated_at
 
     def now(self):
         value = self.clock()
@@ -287,9 +289,12 @@ class Supervisor:
         self.used = True
         need(self.port is not None and self.port.mode == mode, 'LIVE_BACKEND_UNIMPLEMENTED')
         plan = plan_for(operation, run_id, manifest)
-        started = self.now()
-        total_end = started + TOTAL_SECONDS
-        work_end = min(started + WORK_SECONDS, total_end - CLEANUP_RESERVE)
+        now = self.now()
+        started = now if self.allocated_at is None else self.allocated_at
+        need(type(started) in (int,float) and math.isfinite(started) and 0 <= started <= now, 'ALLOCATION_CLOCK')
+        work_end,total_end,_,_ = contract.time_bounds(started)
+        # Native watchdog supplies the origin before setup; never reset it.
+        work_end = min(work_end,total_end-CLEANUP_RESERVE)
         # All bytes are verified before a unit can be submitted. A future OS
         # port must keep those same files sealed through exec, not reopen names.
         for pin in plan.pins:
@@ -360,7 +365,6 @@ class Supervisor:
                 'artifacts': artifacts, 'actual_execution': mode == 'LINUX', 'runtime_attestation': 'UNPROVEN',
                 'source_closure_authority': 'UNPROVEN', 'report_comparison': 'NOT_IMPLEMENTED',
                 'ap2_six_cases': 'NOT_RUN', 'phase2_gate': 'HOLD'}
-        import p1r_execution_contract as contract
         contract.encode_result(result)
         return result
 

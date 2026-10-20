@@ -23,7 +23,7 @@ PROPERTIES = {'Type':'exec', 'PrivateNetwork':'yes', 'PrivateDevices':'yes',
     'CapabilityBoundingSet':'', 'AmbientCapabilities':'', 'RestrictSUIDSGID':'yes',
     'RestrictNamespaces':'yes', 'ProtectControlGroups':'yes', 'KillMode':'control-group',
     'Restart':'no', 'LimitNOFILE':'1024', 'Delegate':'no', 'SendSIGKILL':'yes', 'TimeoutStopSec':'1s',
-    'RuntimeMaxSec':'3s', 'MemoryMax':'67108864', 'MemorySwapMax':'0', 'TasksMax':'16',
+    'RuntimeMaxSec':str(c.OWNER_SECONDS)+'s', 'MemoryMax':'67108864', 'MemorySwapMax':'0', 'TasksMax':'16',
     'InaccessiblePaths':'/tmp /var/tmp /dev/shm',
     'SystemCallFilter':'~@network-io', 'SystemCallArchitectures':'native',
     'RootDirectory':c.ROOT, 'MountAPIVFS':'yes'}
@@ -430,7 +430,8 @@ class NativeOps:
                 '--expand-environment=no','--unit='+row.unit]
         argv += ['--property='+key+'='+value for key,value in props.items()]
         argv += ['/usr/bin/python3','-I','-S','-B',eo.SOURCE+'/p1r_exec_owner.py',
-                 '--owner',profile.name,plan.operation,self.run,epoch]
+                 '--owner',profile.name,plan.operation,self.run,epoch,
+                 repr(float(deadline)),repr(float(deadline+(c.TOTAL_SECONDS-c.WORK_SECONDS)))]
         self.requested = props
         row.submitter = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, close_fds=True, start_new_session=True, env=ENV)

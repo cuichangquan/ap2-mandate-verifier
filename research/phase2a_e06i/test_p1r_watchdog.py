@@ -81,7 +81,7 @@ class Tests(unittest.TestCase):
                 libc.return_value.prctl.return_value=0
                 with self.subTest(status=status,raw=raw),self.assertRaises(c.Stop):
                     watch.run('builder','123',ops.manifest)
-                watch._fallback.assert_called_once_with(port,6)
+                watch._fallback.assert_called_once_with(port,9)
 
     def test_native_worker_success_requires_exact_fixed_result(self):
         from unittest.mock import Mock,patch
@@ -129,7 +129,7 @@ class Tests(unittest.TestCase):
                  patch.object(w.time,'monotonic',side_effect=[0,7]):
                 libc.return_value.prctl.return_value=0
                 with self.subTest(stage=stage),self.assertRaises(c.Stop):watch.run('builder','123',ops.manifest)
-                watch._fallback.assert_called_once_with(port,6)
+                watch._fallback.assert_called_once_with(port,9)
                 self.assertLessEqual(closed.count(102),1)
                 if stage!='pipe':self.assertIn(101,closed)
                 if stage=='pidfd':kill.assert_called_once_with(42,w.signal.SIGKILL)
@@ -147,3 +147,43 @@ class Tests(unittest.TestCase):
             with self.assertRaises(c.Stop):w._write_result(10,raw,4)
             write.assert_not_called()
         with self.assertRaises(c.Stop):w._write_result(10,b'x'*(c.MAX_RESULT+1),4)
+
+    def test_native_result_transfer_after_six_before_seven_and_timeout_fallback_nine(self):
+        from unittest.mock import Mock,patch
+        import ctypes
+        import p1r_linux_port as lp
+        from test_p1r_linux_port import Ops,execute
+        for arrival in (6.001,6.999,7.0):
+            watch=w.NativeWatchdog.__new__(w.NativeWatchdog);watch.profile_name='offline-fixture'
+            watch._fallback=Mock();port=Mock();ops=Ops();now=[0.]
+            result,_=execute(Ops());result=dict(result,status='SUPERVISOR_LIFECYCLE_COMPLETE',actual_execution=True,seconds=5.999)
+            wire=c.encode_result(result);reads=[wire,b'']
+            def read(fd,cap):
+                now[0]=arrival
+                return reads.pop(0)
+            def reserve(plan):now[0]=0.75 # setup consumes same T0, not fresh budget
+            port.reserve.side_effect=reserve
+            with patch.object(w,'__name__','__main__'),patch.object(ctypes,'CDLL') as libc,\
+                 patch.object(lp.LinuxPort,'native',return_value=port),\
+                 patch.object(w.os,'pipe',return_value=(101,102)),patch.object(w.os,'fork',return_value=42),\
+                 patch.object(w.os,'pidfd_open',return_value=103,create=True),patch.object(w.os,'set_blocking'),\
+                 patch.object(w.signal,'signal'),patch.object(w.os,'close'),patch.object(w.os,'read',side_effect=read),\
+                 patch.object(w.select,'select',return_value=([],[],[])),patch.object(w.os,'waitpid',return_value=(42,0)),\
+                 patch.object(w.time,'monotonic',side_effect=lambda:now[0]):
+                libc.return_value.prctl.return_value=0
+                if arrival<7:
+                    self.assertEqual(watch.run('builder','123',ops.manifest),result)
+                    watch._fallback.assert_not_called()
+                else:
+                    with self.assertRaises(c.Stop):watch.run('builder','123',ops.manifest)
+                    watch._fallback.assert_called_once_with(port,9)
+
+    def test_result_writer_uses_transport_reserve_not_controller_cleanup(self):
+        from unittest.mock import patch
+        for now in (6.5,7.0):
+            with patch.object(w.os,'set_blocking'),patch.object(w.select,'select',return_value=([],[10],[])),\
+                 patch.object(w.os,'write',return_value=2) as write,patch.object(w.time,'monotonic',return_value=now):
+                if now<7:w._write_result(10,b'{}',7);write.assert_called_once()
+                else:
+                    with self.assertRaises(c.Stop):w._write_result(10,b'{}',7)
+                    write.assert_not_called()

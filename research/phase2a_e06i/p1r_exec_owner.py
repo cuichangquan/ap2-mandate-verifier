@@ -478,15 +478,14 @@ def _entry(args):
         import runpy
         runpy.run_path(script, run_name='__main__')
         return
-    c.need(len(args) == 5 and args[0] == '--owner', 'OWNER_ENTRY')
-    _, name, role, run, epoch_text = args
+    c.need(len(args) == 7 and args[0] == '--owner', 'OWNER_ENTRY')
+    _, name, role, run, epoch_text,work_text,lifecycle_text = args
     profile = c.select_native(name)
     c.need(epoch_text.isascii() and epoch_text.isdigit(), 'EPOCH')
+    work_end,cleanup_end = c.owner_deadlines(work_text,lifecycle_text,time.monotonic())
     kernel = NativeKernel(name, role, run, int(epoch_text))
     kernel.env = dict(c.environment(profile), AP2_PROFILE=name, AP2_EPOCH=epoch_text)
     owner = Owner(kernel, run, role)
-    work_end = time.monotonic()+3
-    cleanup_end = work_end+2
     _write(owner.prepare(work_end), work_end)
     command = _control(work_end)
     try:
@@ -496,7 +495,9 @@ def _entry(args):
                 packet = owner.step(work_end)
                 if packet:
                     _write(packet, work_end)
-            c.need(_control(work_end) == b'FINISH\n', 'OWNER_CONTROL')
+            # Payload completion is work-bounded; the trusted FINISH handshake
+            # and collection/RETIRE belong to the full cleanup lifecycle.
+            c.need(_control(cleanup_end) == b'FINISH\n', 'OWNER_CONTROL')
         else:
             c.need(command == b'FINISH\n', 'OWNER_CONTROL')
         _write(owner.finish(cleanup_end), cleanup_end)

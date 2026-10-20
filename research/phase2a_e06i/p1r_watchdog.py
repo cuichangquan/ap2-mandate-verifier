@@ -119,6 +119,8 @@ class NativeWatchdog:
         c.need(role in c.ROLES and type(run) is str and run.isascii() and run.isdigit() and len(run) <= 20, 'IDENTITY')
         c.need(__name__ == '__main__', 'WATCHDOG_DEDICATED_ENTRY_REQUIRED')
         c.frozen_inputs(role,{} if inputs is None else inputs)
+        started = time.monotonic()
+        _,_,result_end,deadline = c.time_bounds(started)
         port = lp.LinuxPort.native(self.profile_name,role,run,inputs)
         plan = supervisor.plan_for(role,run,manifest)
         # Reservation query cannot submit a target. All subsequent allocation,
@@ -131,7 +133,6 @@ class NativeWatchdog:
         result = None
         primary = None
         errors = []
-        deadline = time.monotonic()+6
         def close_owned(name):
             handle,handles[name] = handles[name],None
             if handle is not None:
@@ -145,9 +146,9 @@ class NativeWatchdog:
             if child == 0:
                 try:
                     close_owned('read')
-                    result = supervisor.Supervisor(port).run_native(role,run,manifest)
+                    result = supervisor.Supervisor(port,allocated_at=started).run_native(role,run,manifest)
                     raw = c.encode_result(result)
-                    _write_result(handles['write'],raw,deadline-2)
+                    _write_result(handles['write'],raw,result_end)
                     os._exit(0)
                 except BaseException:
                     os._exit(78)
@@ -156,7 +157,7 @@ class NativeWatchdog:
             os.set_blocking(handles['read'],False)
             data = bytearray()
             eof = False
-            while time.monotonic() < deadline-2:
+            while time.monotonic() < result_end:
                 if not eof:
                     try:
                         chunk = os.read(handles['read'],min(65536,c.MAX_RESULT+1-len(data)))
@@ -177,6 +178,7 @@ class NativeWatchdog:
                               ([handles['read']] if not eof else []),[],[],0.01)
             if status is not None and os.waitstatus_to_exitcode(status) == 0 and eof:
                 result = c.decode_result(bytes(data),role,run,manifest)
+                c.need(time.monotonic() < result_end, 'WATCHDOG_RESULT_DEADLINE')
                 success = True
             c.need(success, 'WATCHDOG_WORKER_OR_RESULT')
         except BaseException as error:

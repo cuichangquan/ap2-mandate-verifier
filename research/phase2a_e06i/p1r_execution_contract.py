@@ -19,12 +19,48 @@ MAX_RESULT = 1048576
 MAX_INVENTORY = 512
 MAX_BYTES = 33554432
 MAX_FILE = 16777216
+# One monotonic allocation origin, including native setup/reservation.
+# Payload/work is NOT extended. Owner/controller cleanup ends before transport;
+# independent outer fallback has its own reserve instead of stealing work time.
+WORK_SECONDS = 3
+TOTAL_SECONDS = 6
+CLEANUP_RESERVE = 2
+RESULT_SECONDS = 1
+FALLBACK_SECONDS = 2
+OWNER_SECONDS = TOTAL_SECONDS
+
 class Stop(RuntimeError):
     pass
 
 def need(ok, why):
     if not ok:
         raise Stop(why)
+
+def time_bounds(start):
+    need(type(start) in (int,float) and math.isfinite(start) and start >= 0, 'ALLOCATION_CLOCK')
+    work = start+WORK_SECONDS
+    lifecycle = start+TOTAL_SECONDS
+    result = lifecycle+RESULT_SECONDS
+    fallback = result+FALLBACK_SECONDS
+    need(start < work < lifecycle < result < fallback, 'ALLOCATION_CLOCK')
+    return work,lifecycle,result,fallback
+
+
+def owner_deadlines(work_text,lifecycle_text,now):
+    need(type(work_text) is str and type(lifecycle_text) is str and
+         len(work_text) <= 32 and len(lifecycle_text) <= 32, 'OWNER_DEADLINES')
+    try:
+        work,lifecycle = float(work_text),float(lifecycle_text)
+    except ValueError as exc:
+        raise Stop('OWNER_DEADLINES') from exc
+    need(type(now) in (int,float) and math.isfinite(now) and now >= 0 and
+         math.isfinite(work) and math.isfinite(lifecycle) and
+         repr(work) == work_text and repr(lifecycle) == lifecycle_text and
+         now < work <= now+WORK_SECONDS and
+         lifecycle == work+(TOTAL_SECONDS-WORK_SECONDS) and
+         work < lifecycle <= now+TOTAL_SECONDS, 'OWNER_DEADLINES')
+    return work,lifecycle
+
 
 def canonical(value):
     return json.dumps(value, sort_keys=True, separators=(',', ':'),

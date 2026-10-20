@@ -132,3 +132,16 @@ class Tests(unittest.TestCase):
         for change in ({'stdout':b'x'*65537},{'stderr':b'x'*4097},{'argv':('x'*c.MAX_RESULT,)},
                        {'artifacts':{'policy.json':b'x'*16385,'fixture.json':b'{}'}}):
             with self.assertRaises(c.Stop):c.encode_result(dict(value,**change))
+
+    def test_shared_absolute_timing_no_reset_or_payload_extension(self):
+        self.assertEqual(c.time_bounds(10),(13,16,17,19))
+        self.assertEqual((c.WORK_SECONDS,c.TOTAL_SECONDS,c.OWNER_SECONDS),(3,6,6))
+        self.assertEqual(c.owner_deadlines('13.0','16.0',12.99),(13,16))
+        for start in (True,-1,float('inf'),float('nan'),1e30):
+            with self.subTest(start=start),self.assertRaises(c.Stop):c.time_bounds(start)
+        for work,life,now in (('13','16.0',12),('13.0','16',12),('nan','nan',12),
+            ('inf','inf',12),('13.0','17.0',12),('13.0','16.0',13),
+            ('13.0','16.0',9),('13.0','16.0',True),('13.00','16.0',12),
+            ('13.0','16.0',float('nan'))):
+            with self.subTest(work=work,life=life,now=now),self.assertRaises(c.Stop):
+                c.owner_deadlines(work,life,now)

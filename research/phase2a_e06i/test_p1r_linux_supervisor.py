@@ -474,6 +474,37 @@ class Tests(unittest.TestCase):
             supervisor.run_mock('builder', '123', port.manifest)
         self.assertNotIn('submit', port.calls)
 
+    def test_native_allocation_setup_consumes_work_budget_without_reset(self):
+        port=FakePort();port.time=2.5
+        result=s.Supervisor(port,clock=lambda:port.time,allocated_at=0).run_mock('builder','123',port.manifest)
+        self.assertEqual(result['seconds'],2.5)
+        for start in (True,-1,float('inf'),float('nan'),3):
+            port=FakePort();port.time=2.5
+            with self.subTest(start=start),self.assertRaises(s.Stop):
+                s.Supervisor(port,clock=lambda:port.time,allocated_at=start).run_mock('builder','123',port.manifest)
+            self.assertNotIn('submit',port.calls)
+        for now in (3,3.01,6):
+            port=FakePort();port.time=now
+            with self.subTest(now=now),self.assertRaises(s.Stop):
+                s.Supervisor(port,clock=lambda:port.time,allocated_at=0).run_mock('builder','123',port.manifest)
+            self.assertNotIn('submit',port.calls)
+
+    def test_work_before_three_cleanup_may_finish_just_before_six(self):
+        for end in (5.999,6.0):
+            port=FakePort();original=port.tick
+            def tick(stage):
+                original(stage)
+                if stage=='event':port.time=2.999
+                if stage=='children':port.time=3.001
+                if stage=='stopped':port.time=end
+            port.tick=tick
+            if end<6:
+                result=s.Supervisor(port,clock=lambda:port.time,allocated_at=0).run_mock('builder','123',port.manifest)
+                self.assertEqual(result['seconds'],end);self.assertTrue(result['cleanup'])
+            else:
+                with self.assertRaises(s.Stop):s.Supervisor(port,clock=lambda:port.time,allocated_at=0).run_mock('builder','123',port.manifest)
+            self.assertEqual(port.calls[-4:],['reap','stop','finalize','stopped'])
+
 
 if __name__ == '__main__':
     def audit(event, args):

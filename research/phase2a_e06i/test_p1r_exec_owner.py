@@ -259,3 +259,36 @@ class Tests(unittest.TestCase):
                 self.assertEqual(calls[:2],['close','sandbox'])
                 if fail:execute.assert_not_called()
                 else:execute.assert_called_once()
+
+    def test_owner_absolute_work_and_lifecycle_FINISH_after_work(self):
+        from test_p1r_execution_contract import profile
+        from unittest.mock import Mock
+        kernel=Kernel();deadlines=[];now=[12.5]
+        original_prepare=kernel.prepare;original_spawn=kernel.spawn;original_reap=kernel.terminate_reap
+        def prepare(deadline):deadlines.append(('prepare',deadline));original_prepare(deadline)
+        def spawn(deadline):deadlines.append(('GO',deadline));original_spawn(deadline)
+        def reap(deadline):deadlines.append(('reap',deadline));return original_reap(deadline)
+        kernel.prepare=prepare;kernel.spawn=spawn;kernel.terminate_reap=reap
+        controls=iter((b'GO\n',b'FINISH\n',b'RETIRE\n'));control_deadlines=[]
+        def control(deadline):
+            value=next(controls);control_deadlines.append(deadline)
+            if value==b'FINISH\n':now[0]=13.001
+            if value==b'RETIRE\n':now[0]=15.999
+            self.assertLess(now[0],deadline)
+            return value
+        with patch.object(c,'select_native',return_value=profile()[0]),\
+             patch.object(e,'NativeKernel',return_value=kernel),patch.object(e,'_write'),\
+             patch.object(e,'_control',side_effect=control),patch.object(e.time,'monotonic',side_effect=lambda:now[0]):
+            e._entry(['--owner','offline-fixture','builder','123','1700000000','13.0','16.0'])
+        self.assertEqual(control_deadlines,[13,16,16])
+        self.assertEqual(deadlines,[('prepare',13),('GO',13),('reap',16)])
+
+    def test_owner_expired_startup_or_extended_pair_never_READY_or_exec(self):
+        from test_p1r_execution_contract import profile
+        for now,work,life in ((13,'13.0','16.0'),(12,'13.0','17.0'),(12,'nan','nan'),(9,'13.0','16.0')):
+            with patch.object(c,'select_native',return_value=profile()[0]),\
+                 patch.object(e,'NativeKernel') as kernel,patch.object(e,'_write') as write,\
+                 patch.object(e.time,'monotonic',return_value=now):
+                with self.subTest(now=now,work=work,life=life),self.assertRaises(c.Stop):
+                    e._entry(['--owner','offline-fixture','builder','123','1700000000',work,life])
+                kernel.assert_not_called();write.assert_not_called()
