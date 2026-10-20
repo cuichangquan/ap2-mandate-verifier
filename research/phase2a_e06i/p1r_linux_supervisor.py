@@ -189,9 +189,10 @@ def admission(plan, observed):
                        ('network_routes', 0), ('inherited_sockets', 0)):
         need(type(observed[key]) is int and observed[key] == value, 'ADMISSION_LIMIT_OR_CHANNEL')
     members = observed['cgroup_pids']
-    need(type(members) is tuple and 1 <= len(members) <= TASKS and
-         all(type(pid) is int and pid > 1 for pid in members) and
-         len(set(members)) == len(members) and observed['pid'] in members, 'ADMISSION_MEMBERSHIP')
+    # Singular credentials/gate observations attest only this PID. No helper
+    # may already be running before GO; descendants are allowed only afterwards.
+    need(type(members) is tuple and len(members) == 1 and
+         type(members[0]) is int and members[0] == observed['pid'], 'ADMISSION_MEMBERSHIP')
     need(observed['socket_families'] == () and observed['inaccessible'] == ('/tmp', '/var/tmp', '/dev/shm') and
          observed['private_devices'] is True and observed['protected_cgroup'] is True and
          observed['suid_sgid'] is False and observed['new_namespaces'] is False and

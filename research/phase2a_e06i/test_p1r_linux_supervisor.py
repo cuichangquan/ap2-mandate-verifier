@@ -252,6 +252,15 @@ class Tests(unittest.TestCase):
                 run(port)
             self.assertNotIn('GO', port.calls)
 
+    def test_extra_pre_GO_member_is_not_attested_by_main_PID_credentials(self):
+        for members in ((42, 43), (43, 42)):
+            port = FakePort()
+            port.change = lambda data, members=members: data.update(cgroup_pids=members)
+            with self.subTest(members=members), self.assertRaisesRegex(s.Stop, 'ADMISSION_MEMBERSHIP'):
+                run(port)
+            self.assertNotIn('GO', port.calls)
+            self.assertEqual(port.calls[-4:], ['reap', 'stop', 'finalize', 'stopped'])
+
     def test_output_and_exit_order_requires_both_EOFs(self):
         port = FakePort()
         port.events = [('exit', 0), ('data', 'stderr', b'bounded'), ('eof', 'stderr'), ('data', 'stdout', b'log'), ('eof', 'stdout')]
