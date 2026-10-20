@@ -138,3 +138,124 @@ class Tests(unittest.TestCase):
                 with self.assertRaises(c.Stop):native.terminate_reap(5)
                 self.assertEqual(native.fds['stdout-read'],None)
                 close.assert_called_once_with(10)
+
+    def test_seccomp_default_deny_arch_x32_and_indirect_signal_routes(self):
+        # Pure classic-BPF interpreter, no kernel operation. Tests the exact
+        # emitted instructions rather than a separate syscall membership model.
+        def evaluate(nr,arch=0xc000003e,args=()):
+            data={0:nr,4:arch}
+            for i,v in enumerate(args):
+                data[16+8*i]=v & 0xffffffff
+                data[20+8*i]=(v >> 32) & 0xffffffff
+            code=e.payload_filter();pc=0;acc=0
+            while pc<len(code):
+                op,jt,jf,k=code[pc]
+                if op==0x20:acc=data.get(k,0)
+                elif op==0x15:pc+=jt if acc==k else jf
+                elif op==0x45:pc+=jt if acc&k else jf
+                elif op==0x54:acc &= k
+                elif op==0x06:return k
+                else:self.fail('unknown BPF instruction')
+                pc+=1
+            self.fail('no terminal verdict')
+        for nr in e.ALLOW_SYSCALLS:
+            self.assertEqual(evaluate(nr),e.ALLOW)
+            self.assertEqual(evaluate(nr|0x40000000),e.KILL)
+            self.assertEqual(evaluate(nr,arch=0x40000003),e.KILL)
+        # Direct/queued signals, ptrace/memory/pidfd, foreign resource controls,
+        # networking/IPC/keyring/uring/perf and future unknown calls are denied.
+        blocked=(29,30,31,41,53,62,64,65,66,67,68,69,70,71,101,129,141,
+                 142,144,157,200,203,220,234,240,241,242,243,244,245,
+                 248,249,250,251,297,298,310,311,314,317,321,424,425,
+                 426,427,434,435,438,440,448,999)
+        for nr in blocked:
+            with self.subTest(nr=nr):self.assertEqual(evaluate(nr),e.DENY)
+        for cmd in (8,9,10,15,16):self.assertEqual(evaluate(72,args=(1,cmd,0)),e.DENY)
+        self.assertEqual(evaluate(72,args=(1,4,0x2000)),e.DENY)
+        self.assertEqual(evaluate(72,args=(1,4,0x800)),e.ALLOW)
+        for cmd in (0,1,2,3,5,6,7,1030):self.assertEqual(evaluate(72,args=(1,cmd,0)),e.ALLOW)
+        self.assertEqual(evaluate(16,args=(1,0x5412,0)),e.DENY) # TIOCSTI
+        for req in (0x5401,0x5413,0x541b):self.assertEqual(evaluate(16,args=(1,req)),e.ALLOW)
+        self.assertEqual(evaluate(302,args=(42,0)),e.DENY)
+        self.assertEqual(evaluate(302,args=(0,0)),e.ALLOW)
+        for flags in (0x8000|17,0x2000|17,0x20000|17,0x10000000|17,0x100000000|17,10):
+            self.assertEqual(evaluate(56,args=(flags,)),e.DENY)
+        for flags in (17,0x10f00):self.assertEqual(evaluate(56,args=(flags,)),e.ALLOW)
+
+    def test_landlock_file_leaves_and_output_only_writes(self):
+        from test_p1r_execution_contract import profile
+        from dataclasses import replace
+        p,_=profile()
+        for role in c.ROLES:
+            rules=dict(e.payload_paths(p,role))
+            self.assertEqual(rules['/'],e.LL_DIR)
+            self.assertFalse(rules['/'] & (e.LL_READ|e.LL_EXEC|e.LL_WRITE))
+            self.assertEqual(rules[e.OUTPUT],e.LL_OUTPUT)
+            self.assertFalse(rules[e.OUTPUT]&e.LL_EXEC)
+            for item in p.inventory:self.assertEqual(rules[item.path],e.LL_READ)
+            for name,_ in c.INPUTS[role]:self.assertEqual(rules['/run/ap2-supervisor/input/'+name],e.LL_READ)
+            self.assertFalse(any(path.startswith(('/proc/','/sys/')) for path in rules))
+        for pseudo in ('/proc/owner/fd','/sys/file','/dev/other','/run/ambient'):
+            entry=replace(p.inventory[0],path=pseudo)
+            with self.assertRaises(c.Stop):e.payload_paths(replace(p,inventory=(entry,)+p.inventory[1:]),'builder')
+
+    def test_landlock_and_seccomp_each_failure_stop_and_close_all_rule_fds(self):
+        from unittest.mock import Mock
+        from types import SimpleNamespace
+        from test_p1r_execution_contract import profile
+        p,_=profile()
+        for failure in ('arch','abi','create','open','add','nnp','restrict','seccomp','device','none'):
+            libc=Mock();opened=[];closed=[];sequence=[]
+            def syscall(nr,*args):
+                sequence.append(nr)
+                if nr==444 and args[0]==0:return 2 if failure=='abi' else 3
+                if nr==444:return -1 if failure=='create' else 10
+                if nr==445:return -1 if failure=='add' else 0
+                if nr==446:return -1 if failure=='restrict' else 0
+                self.fail('unexpected syscall')
+            def prctl(cmd,*args):
+                sequence.append(cmd)
+                return -1 if (cmd==38 and failure=='nnp') or (cmd==22 and failure=='seccomp') else 0
+            libc.syscall.side_effect=syscall;libc.prctl.side_effect=prctl
+            def opened_fd(path,*args):
+                if failure=='open':raise OSError('open')
+                opened.append(path);return 11
+            def info(fd):
+                path=opened[-1]
+                mode=0o20666 if path.startswith('/dev/') else 0o40700 if path in ('/',e.OUTPUT) else 0o100444
+                return SimpleNamespace(st_mode=mode,st_nlink=1,st_rdev=e.os.makedev(1,
+                    99 if failure=='device' else {'/dev/null':3,'/dev/random':8,'/dev/urandom':9}.get(path,0)))
+            with patch.object(e.platform,'system',return_value='Darwin' if failure=='arch' else 'Linux'),\
+                 patch.object(e.platform,'machine',return_value='x86_64'),patch.object(e.ctypes,'CDLL',return_value=libc),\
+                 patch.object(e.os,'open',side_effect=opened_fd),patch.object(e.os,'fstat',side_effect=info),\
+                 patch.object(e.os,'close',side_effect=closed.append):
+                if failure=='none':e.restrict_payload(p,'builder');self.assertEqual(sequence[-1],22)
+                else:
+                    with self.assertRaises((c.Stop,OSError)):e.restrict_payload(p,'builder')
+                self.assertEqual(closed.count(11),len(opened))
+                self.assertEqual(closed.count(10),0 if failure in ('arch','abi','create') else 1)
+
+    def test_child_sandbox_after_FD_close_before_exec_and_failure_blocks_exec(self):
+        from unittest.mock import Mock
+        from test_p1r_execution_contract import profile
+        class Exit(BaseException):pass
+        for fail in (False,True):
+            native=e.NativeKernel.__new__(e.NativeKernel)
+            native.fds={};native.profile=profile()[0];native.role='builder'
+            native.argv=c.payload_argv('builder',1700000000);native.env={};native._before=lambda _:None
+            calls=[]
+            def sandbox(*args):
+                calls.append('sandbox')
+                if fail:raise c.Stop('sandbox')
+            with patch.object(e.os,'pipe',side_effect=[(10,11),(12,13)]),patch.object(e.os,'open',return_value=14),\
+                 patch.object(e.os,'fork',return_value=0),patch.object(e.os,'dup2'),\
+                 patch.object(e.os,'closerange',side_effect=lambda *a:calls.append('close')),\
+                 patch.object(e,'restrict_payload',side_effect=sandbox),\
+                 patch.object(e.os,'execve',side_effect=lambda *a:calls.append('exec')) as execute,\
+                 patch.object(e.os,'_exit',side_effect=Exit):
+                # exec mock returns, so force a fake exit before parent branch.
+                if not fail:execute.side_effect=Exit
+                with self.assertRaises(Exit):native.spawn(3)
+                self.assertEqual(calls[:2],['close','sandbox'])
+                if fail:execute.assert_not_called()
+                else:execute.assert_called_once()

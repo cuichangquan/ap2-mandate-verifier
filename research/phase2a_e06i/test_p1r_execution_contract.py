@@ -99,3 +99,36 @@ class Tests(unittest.TestCase):
             with self.subTest(bad=type(bad)),self.assertRaises(c.Stop):c.frozen_inputs('oracle',bad)
         for paths in (('/run/ap2-supervisor/output',),('/tmp',),('/opt/ap2-source',)):
             with self.assertRaises(c.Stop):c.validate(replace(ops.profile,python_paths=paths))
+
+    def test_full_worker_result_roundtrip_handoff_and_binding(self):
+        from test_p1r_linux_port import Ops,execute
+        for role in c.ROLES:
+            ops = Ops(role);value,_ = execute(ops)
+            value = dict(value,status='SUPERVISOR_LIFECYCLE_COMPLETE',actual_execution=True)
+            wire = c.encode_result(value)
+            self.assertEqual(c.decode_result(wire,role,'123',ops.manifest),value)
+            for other in ('124','0'):
+                with self.subTest(role=role,run=other),self.assertRaises(c.Stop):
+                    c.decode_result(wire,role,other,ops.manifest)
+            value['actual_execution'] = False
+            value['status'] = 'MOCK_SUPERVISOR_LIFECYCLE_COMPLETE'
+            with self.assertRaises(c.Stop):c.decode_result(c.encode_result(value),role,'123',ops.manifest)
+
+    def test_worker_packet_mutation_limits_and_no_gate_promotion(self):
+        import json
+        from test_p1r_linux_port import Ops,execute
+        ops=Ops();value,_=execute(ops)
+        value=dict(value,status='SUPERVISOR_LIFECYCLE_COMPLETE',actual_execution=True)
+        wire=c.encode_result(value)
+        for field,wrong in (('phase2_gate','PASS'),('cleanup',1),('actual_execution',1),
+                            ('seconds',True),('exit',True),('argv',['/bin/sh']),
+                            ('stdout','!'),('artifacts',{})):
+            packet=json.loads(wire);packet['result'][field]=wrong
+            with self.subTest(field=field),self.assertRaises(c.Stop):
+                c.decode_result(c.canonical(packet),'builder','123',ops.manifest)
+        packet=json.loads(wire);packet['artifact_sha256']['policy.json']='0'*64
+        for raw in (c.canonical(packet),wire+b' ',wire[:-1],b'{"x":0,"x":1}',b'x'*(c.MAX_RESULT+1)):
+            with self.assertRaises(c.Stop):c.decode_result(raw,'builder','123',ops.manifest)
+        for change in ({'stdout':b'x'*65537},{'stderr':b'x'*4097},{'argv':('x'*c.MAX_RESULT,)},
+                       {'artifacts':{'policy.json':b'x'*16385,'fixture.json':b'{}'}}):
+            with self.assertRaises(c.Stop):c.encode_result(dict(value,**change))

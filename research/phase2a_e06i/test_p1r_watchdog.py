@@ -77,7 +77,7 @@ class Tests(unittest.TestCase):
                  patch.object(w.os,'pipe',return_value=(101,102)),patch.object(w.os,'fork',return_value=42),\
                  patch.object(w.os,'pidfd_open',return_value=103,create=True),patch.object(w.os,'set_blocking'),\
                  patch.object(w.signal,'signal'),patch.object(w.os,'close'),patch.object(w.os,'read',side_effect=[raw,b'']),\
-                 patch.object(w.os,'waitpid',return_value=(42,status)),patch.object(w.time,'monotonic',return_value=0):
+                 patch.object(w.select,'select',return_value=([],[],[])),patch.object(w.os,'waitpid',return_value=(42,status)),patch.object(w.time,'monotonic',return_value=0):
                 libc.return_value.prctl.return_value=0
                 with self.subTest(status=status,raw=raw),self.assertRaises(c.Stop):
                     watch.run('builder','123',ops.manifest)
@@ -90,13 +90,18 @@ class Tests(unittest.TestCase):
         from test_p1r_linux_port import Ops
         watch=w.NativeWatchdog.__new__(w.NativeWatchdog);watch.profile_name='offline-fixture'
         watch._fallback=Mock();port=Mock();ops=Ops()
-        value={'status':'SUPERVISOR_LIFECYCLE_COMPLETE','cleanup':True,'phase2_gate':'HOLD'}
+        from test_p1r_linux_port import execute
+        value,_=execute(Ops())
+        value=dict(value,status='SUPERVISOR_LIFECYCLE_COMPLETE',actual_execution=True,
+                   artifacts={'policy.json':b'p'*16384,'fixture.json':b'f'*262144})
+        wire=c.encode_result(value)
+        chunks=[wire[i:i+16384] for i in range(0,len(wire),16384)]+[b'']
         with patch.object(w,'__name__','__main__'),patch.object(ctypes,'CDLL') as libc,\
              patch.object(port_module.LinuxPort,'native',return_value=port),\
              patch.object(w.os,'pipe',return_value=(101,102)),patch.object(w.os,'fork',return_value=42),\
              patch.object(w.os,'pidfd_open',return_value=103,create=True),patch.object(w.os,'set_blocking'),\
-             patch.object(w.signal,'signal'),patch.object(w.os,'close'),patch.object(w.os,'read',side_effect=[json.dumps(value).encode(),b'']),\
-             patch.object(w.os,'waitpid',return_value=(42,0)),patch.object(w.time,'monotonic',return_value=0):
+             patch.object(w.signal,'signal'),patch.object(w.os,'close'),patch.object(w.os,'read',side_effect=chunks),\
+             patch.object(w.select,'select',return_value=([],[],[])),patch.object(w.os,'waitpid',return_value=(42,0)),patch.object(w.time,'monotonic',return_value=0):
             libc.return_value.prctl.return_value=0
             self.assertEqual(watch.run('builder','123',ops.manifest),value)
             watch._fallback.assert_not_called()
@@ -128,3 +133,17 @@ class Tests(unittest.TestCase):
                 self.assertLessEqual(closed.count(102),1)
                 if stage!='pipe':self.assertIn(101,closed)
                 if stage=='pidfd':kill.assert_called_once_with(42,w.signal.SIGKILL)
+
+    def test_bounded_result_writer_handles_short_writes_and_deadline(self):
+        from unittest.mock import patch
+        raw = b'x'*20000
+        with patch.object(w.os,'set_blocking'),patch.object(w.select,'select',return_value=([],[10],[])),\
+             patch.object(w.os,'write',side_effect=[BlockingIOError(),10000,10000]) as write,\
+             patch.object(w.time,'monotonic',return_value=0):
+            w._write_result(10,raw,4)
+            self.assertEqual(write.call_count,3)
+        with patch.object(w.os,'set_blocking'),patch.object(w.time,'monotonic',return_value=4),\
+             patch.object(w.os,'write') as write:
+            with self.assertRaises(c.Stop):w._write_result(10,raw,4)
+            write.assert_not_called()
+        with self.assertRaises(c.Stop):w._write_result(10,b'x'*(c.MAX_RESULT+1),4)

@@ -9,6 +9,7 @@ import re
 import os
 import signal
 import time
+import select
 from dataclasses import dataclass, field
 import p1r_execution_contract as c
 
@@ -84,6 +85,21 @@ class Watchdog:
             raise c.Stop('CONTROLLER_LOST_CLEANUP_UNCERTAIN')
 
 
+def _write_result(fd, raw, deadline):
+    c.need(type(raw) is bytes and 0 < len(raw) <= c.MAX_RESULT, 'WATCHDOG_RESULT')
+    os.set_blocking(fd,False)
+    view = memoryview(raw)
+    while view:
+        c.need(time.monotonic() < deadline, 'WATCHDOG_RESULT_DEADLINE')
+        if select.select([], [fd], [], 0.01)[1]:
+            try:
+                count = os.write(fd,view[:16384])
+            except BlockingIOError:
+                continue
+            c.need(0 < count <= len(view), 'WATCHDOG_RESULT_WRITE')
+            view = view[count:]
+
+
 class NativeWatchdog:
     """Dedicated OS parent of the fixed controller; not a PID/callback API.
 
@@ -130,10 +146,8 @@ class NativeWatchdog:
                 try:
                     close_owned('read')
                     result = supervisor.Supervisor(port).run_native(role,run,manifest)
-                    raw = json.dumps({'status':result['status'],'cleanup':result['cleanup'],
-                                      'phase2_gate':'HOLD'}).encode('ascii')
-                    c.need(len(raw) <= 4096, 'WATCHDOG_RESULT')
-                    c.need(os.write(handles['write'],raw) == len(raw), 'WATCHDOG_RESULT_WRITE')
+                    raw = c.encode_result(result)
+                    _write_result(handles['write'],raw,deadline-2)
                     os._exit(0)
                 except BaseException:
                     os._exit(78)
@@ -141,28 +155,29 @@ class NativeWatchdog:
             handles['pid'] = os.pidfd_open(child,0)
             os.set_blocking(handles['read'],False)
             data = bytearray()
+            eof = False
             while time.monotonic() < deadline-2:
-                try:
-                    chunk = os.read(handles['read'],4097-len(data))
-                except BlockingIOError:
-                    chunk = b''
-                data.extend(chunk)
-                c.need(len(data) <= 4096, 'WATCHDOG_RESULT')
-                pid,value = os.waitpid(child,os.WNOHANG)
-                if pid:
-                    status = value
+                if not eof:
+                    try:
+                        chunk = os.read(handles['read'],min(65536,c.MAX_RESULT+1-len(data)))
+                    except BlockingIOError:
+                        chunk = None
+                    if chunk == b'':
+                        eof = True
+                    elif chunk is not None:
+                        data.extend(chunk)
+                        c.need(len(data) <= c.MAX_RESULT, 'WATCHDOG_RESULT')
+                if status is None:
+                    pid,value = os.waitpid(child,os.WNOHANG)
+                    if pid:
+                        status = value
+                if status is not None and eof:
                     break
-                import select
-                select.select([handles['pid'],handles['read']],[],[],0.01)
-            if status is not None and os.waitstatus_to_exitcode(status) == 0:
-                try:
-                    data.extend(os.read(handles['read'],4097-len(data)))
-                    result = json.loads(data)
-                    success = (type(result) is dict and set(result) == {'status','cleanup','phase2_gate'} and
-                        result['status'] == 'SUPERVISOR_LIFECYCLE_COMPLETE' and result['cleanup'] is True and
-                        result['phase2_gate'] == 'HOLD')
-                except (ValueError,BlockingIOError):
-                    pass
+                select.select(([handles['pid']] if status is None else [])+
+                              ([handles['read']] if not eof else []),[],[],0.01)
+            if status is not None and os.waitstatus_to_exitcode(status) == 0 and eof:
+                result = c.decode_result(bytes(data),role,run,manifest)
+                success = True
             c.need(success, 'WATCHDOG_WORKER_OR_RESULT')
         except BaseException as error:
             primary = error
@@ -256,7 +271,7 @@ if __name__ == '__main__':
         c.frozen_inputs(role,inputs)
         manifest = c.manifest_for(profile,role,int(epoch),inputs)
         result = NativeWatchdog(name).run(role,run,manifest,inputs)
-        print(json.dumps(result,sort_keys=True))
+        print(c.encode_result(result).decode('ascii'))
     except (c.Stop,ValueError,OSError):
         print('{"status":"HOLD","reason":"NATIVE_PROFILE_OR_INPUT_REJECTED"}')
         raise SystemExit(78)

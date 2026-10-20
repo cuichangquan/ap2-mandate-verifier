@@ -8,6 +8,8 @@ import base64
 import ctypes
 import json
 import os
+import platform
+import stat
 import selectors
 import signal
 import struct
@@ -140,6 +142,133 @@ class Owner:
         self.state = 'RETIRED'
 
 
+# Linux v6.8 x86 syscall_64.tbl and include/uapi/linux/landlock.h.
+# Payload-only restrictions: owner stays outside the Landlock domain and keeps
+# its reaping syscalls. New/unsupported calls fail closed, never auto-expanded.
+# Actual kernel/runtime compatibility remains UNPROVEN until separate approval.
+ALLOW_SYSCALLS = frozenset((
+    0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,18,19,20,21,22,23,24,
+    25,26,27,28,32,33,34,35,36,37,38,39,40,57,58,59,60,61,63,
+    73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,
+    95,96,97,98,99,100,102,104,107,108,109,110,111,112,115,118,120,
+    121,124,125,127,128,130,131,132,137,138,140,143,145,146,147,148,
+    158,186,187,191,192,193,194,195,196,201,202,204,213,217,218,219,
+    221,228,229,230,231,232,233,235,247,257,258,261,262,263,264,265,
+    266,267,268,269,270,271,273,275,276,277,278,280,281,283,284,285,
+    286,287,290,291,292,293,295,296,309,316,318,324,326,327,328,332,
+    334,436,437,439,441,449))
+ALLOW = 0x7fff0000
+DENY = 0x00050001  # SECCOMP_RET_ERRNO|EPERM
+KILL = 0x80000000  # SECCOMP_RET_KILL_PROCESS
+
+
+def payload_filter():
+    # sock_filter tuples (code,jt,jf,k), seccomp_data arch4/nr0/args16.
+    code = [(0x20,0,0,4),(0x15,1,0,0xc000003e),(0x06,0,0,KILL),
+            (0x20,0,0,0),(0x45,0,1,0x40000000),(0x06,0,0,KILL)]
+    for nr in sorted(ALLOW_SYSCALLS):
+        code += [(0x15,0,1,nr),(0x06,0,0,ALLOW)]
+    def restricted(nr, body):
+        code.append((0x15,0,len(body),nr))
+        code.extend(body)
+    # No F_SETOWN/F_SETSIG/O_ASYNC -> cannot signal host through async pipe IO.
+    fcntl = [(0x20,0,0,24)]
+    for cmd in (0,1,2,3,5,6,7,1030):
+        fcntl += [(0x15,0,1,cmd),(0x06,0,0,ALLOW)]
+    fcntl += [(0x15,1,0,4),(0x06,0,0,DENY),(0x20,0,0,32),
+              (0x45,0,1,0x2000),(0x06,0,0,DENY),(0x06,0,0,ALLOW)]
+    restricted(72,fcntl)
+    ioctl = [(0x20,0,0,24)]
+    for request in (0x5401,0x5413,0x541b):  # TCGETS,TIOCGWINSZ,FIONREAD only
+        ioctl += [(0x15,0,1,request),(0x06,0,0,ALLOW)]
+    restricted(16,ioctl+[(0x06,0,0,DENY)])
+    # pid==0 means own task; no foreign-process resource limit manipulation.
+    restricted(302,[(0x20,0,0,16),(0x15,0,1,0),(0x06,0,0,ALLOW),(0x06,0,0,DENY)])
+    # No alternate parent/tracer/namespaces or non-SIGCHLD exit notification.
+    restricted(56,[(0x20,0,0,20),(0x15,1,0,0),(0x06,0,0,DENY),(0x20,0,0,16),(0x45,0,1,0x7e82a000),(0x06,0,0,DENY),
+                   (0x54,0,0,0xff),(0x15,0,1,0),(0x06,0,0,ALLOW),
+                   (0x15,0,1,17),(0x06,0,0,ALLOW),(0x06,0,0,DENY)])
+    code.append((0x06,0,0,DENY))
+    return tuple(code)
+
+
+class _Filter(ctypes.Structure):
+    _fields_ = [('code',ctypes.c_ushort),('jt',ctypes.c_ubyte),
+                ('jf',ctypes.c_ubyte),('k',ctypes.c_uint)]
+class _Program(ctypes.Structure):
+    _fields_ = [('length',ctypes.c_ushort),('filter',ctypes.POINTER(_Filter))]
+class _LandlockRule(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('access',ctypes.c_uint64),('parent_fd',ctypes.c_int32)]
+
+LL_EXEC,LL_WRITE,LL_READ,LL_DIR = 1,2,4,8
+LL_ALL = (1 << 15)-1  # ABI3: includes REFER and TRUNCATE, no silent downgrade
+LL_OUTPUT = sum(1 << n for n in (1,2,3,4,5,7,8,13,14))
+
+
+def payload_paths(profile,role):
+    c.validate(profile)
+    c.need(role in c.ROLES, 'SANDBOX_ROLE')
+    # Directory enumeration/traversal (builder opens '/' and each ancestor)
+    # grants NO file read/execute. Landlock rights form an allow-union.
+    rules = {'/':LL_DIR}
+    for item in profile.inventory:
+        if not item.directory:
+            c.need(not any(item.path == x or item.path.startswith(x+'/')
+                   for x in ('/proc','/sys','/dev')), 'SANDBOX_PSEUDO_INVENTORY')
+            c.need(not item.path.startswith('/run/'), 'SANDBOX_AMBIENT_INPUT')
+            rules[item.path] = LL_READ | (LL_EXEC if item.mode & 0o111 else 0)
+    for name,_ in c.INPUTS[role]:
+        rules['/run/ap2-supervisor/input/'+name] = LL_READ
+    rules[OUTPUT] = LL_OUTPUT
+    rules.update({'/dev/null':LL_READ|LL_WRITE,'/dev/random':LL_READ,'/dev/urandom':LL_READ})
+    return tuple(sorted(rules.items()))
+
+
+def restrict_payload(profile,role):
+    """Called only in forked payload after all nonstdio inherited FDs close.
+
+    No proc regular-file allow. Proc special-FD access is also constrained by
+    Landlock's ptrace-domain hierarchy (owner outside), owner nondumpable, no
+    inherited owner FDs, and no ptrace/process_vm/pidfd_getfd syscalls.
+    Filesystem policy alone is not claimed to mediate proc pipe/socket objects.
+    """
+    c.need(platform.system() == 'Linux' and platform.machine() == 'x86_64', 'SANDBOX_ARCH')
+    paths = payload_paths(profile,role)
+    libc = ctypes.CDLL(None,use_errno=True)
+    libc.syscall.restype = ctypes.c_long
+    c.need(libc.syscall(444,0,0,1) >= 3, 'LANDLOCK_ABI')
+    access = ctypes.c_uint64(LL_ALL)
+    ruleset = libc.syscall(444,ctypes.byref(access),ctypes.sizeof(access),0)
+    c.need(ruleset >= 0, 'LANDLOCK_CREATE')
+    try:
+        for path,rights in paths:
+            fd = os.open(path,0x200000|os.O_NOFOLLOW|os.O_CLOEXEC)  # Linux O_PATH
+            try:
+                info = os.fstat(fd)
+                kind = stat.S_IFMT(info.st_mode)
+                c.need(not stat.S_ISLNK(info.st_mode), 'LANDLOCK_PATH')
+                if path.startswith('/dev/'):
+                    expected = {'/dev/null':(1,3),'/dev/random':(1,8),'/dev/urandom':(1,9)}[path]
+                    c.need(kind == stat.S_IFCHR and (os.major(info.st_rdev),os.minor(info.st_rdev)) == expected, 'LANDLOCK_DEVICE')
+                elif path in ('/',OUTPUT):
+                    c.need(kind == stat.S_IFDIR, 'LANDLOCK_DIRECTORY')
+                else:
+                    c.need(kind == stat.S_IFREG and info.st_nlink == 1, 'LANDLOCK_FILE')
+                rule = _LandlockRule(rights,fd)
+                c.need(libc.syscall(445,ruleset,1,ctypes.byref(rule),0) == 0, 'LANDLOCK_ADD')
+            finally:
+                os.close(fd)
+        c.need(libc.prctl(38,1,0,0,0) == 0, 'PAYLOAD_NNP')
+        c.need(libc.syscall(446,ruleset,0) == 0, 'LANDLOCK_RESTRICT')
+    finally:
+        os.close(ruleset)
+    instructions = payload_filter()
+    array = (_Filter*len(instructions))(*(_Filter(*row) for row in instructions))
+    program = _Program(len(instructions),array)
+    c.need(libc.prctl(22,2,ctypes.byref(program),0,0) == 0, 'PAYLOAD_SECCOMP')
+
+
 class NativeKernel:
     """Concrete Linux primitives, unreachable with the empty profile registry.
 
@@ -151,6 +280,7 @@ class NativeKernel:
         self.profile = c.select_native(profile_name)
         c.need(role in c.ROLES and type(run) is str and run.isascii() and run.isdigit(), 'IDENTITY')
         c.need(type(epoch) is int and 61 <= epoch <= 4102441200, 'EPOCH')
+        self.role = role
         self.argv = c.payload_argv(role, epoch)
         self.unit = 'ap2-sup-'+run+'-'+role+'.service'
         self.payload_pid, self.selector = None, None
@@ -198,6 +328,7 @@ class NativeKernel:
                 os.dup2(self.fds['stdout-write'],1)
                 os.dup2(self.fds['stderr-write'],2)
                 os.closerange(3,1024)  # all control/owner FDs absent in target
+                restrict_payload(self.profile,self.role)
                 os.execve(self.argv[0],self.argv,self.env)
             except BaseException:
                 os._exit(78)

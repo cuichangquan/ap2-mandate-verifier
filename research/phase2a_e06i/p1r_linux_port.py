@@ -6,6 +6,7 @@ No arbitrary command API or caller supplied argv is accepted.
 """
 import base64
 import hashlib
+import re
 import os
 import secrets
 import selectors
@@ -27,6 +28,20 @@ PROPERTIES = {'Type':'exec', 'PrivateNetwork':'yes', 'PrivateDevices':'yes',
     'SystemCallFilter':'~@network-io', 'SystemCallArchitectures':'native',
     'RootDirectory':c.ROOT, 'MountAPIVFS':'yes'}
 ENV = {'PATH':'/usr/bin:/bin', 'LANG':'C', 'LC_ALL':'C', 'SYSTEMD_COLORS':'0'}
+
+
+def harmless_ipv6(raw):
+    # Private netns can retain kernel loopback/unreachable rows. No external
+    # interface or nonzero next hop is admissible; malformed rows fail closed.
+    for line in raw.splitlines():
+        fields = line.split()
+        if (len(fields) != 10 or fields[9] != 'lo' or
+            not all(re.fullmatch(r'[0-9A-Fa-f]{32}',fields[i]) for i in (0,2,4)) or
+            not all(re.fullmatch(r'[0-9A-Fa-f]{2}',fields[i]) for i in (1,3)) or
+            not all(re.fullmatch(r'[0-9A-Fa-f]{8}',fields[i]) for i in (5,6,7,8)) or
+            fields[4] != '0'*32):
+            return False
+    return True
 
 
 def unchanged(before, after):
@@ -356,6 +371,7 @@ class NativeOps:
                 for name,raw in self.inputs.items():
                     fd = os.open(name,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o444,dir_fd=directory)
                     try:
+                        os.fchmod(fd,0o444)  # exact readonly mode, independent of umask
                         view = memoryview(raw)
                         while view:
                             size = os.write(fd,view)
@@ -498,7 +514,7 @@ class NativeOps:
         c.need(not any(p.startswith('socket:') for p in fds) and
                all(os.readlink(proc+'/fd/'+str(n)).startswith('pipe:') for n in (0,1,2)), 'OWNER_FDS')
         routes = self._text(proc+'/net/route',8192).splitlines()[1:]
-        c.need(not routes and not self._text(proc+'/net/ipv6_route',8192).strip(), 'OWNER_ROUTES')
+        c.need(not routes and harmless_ipv6(self._text(proc+'/net/ipv6_route',8192)), 'OWNER_ROUTES')
         # Recheck exact immutable tree immediately before GO; host root is TCB.
         self.verify_tree(profile)
         self._verify_owner_pins(plan,profile)

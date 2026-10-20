@@ -5,6 +5,8 @@ those require external review before insertion. Fake profiles never arm Linux.
 """
 from dataclasses import dataclass
 import hashlib
+import base64
+import math
 import json
 import re
 from types import MappingProxyType
@@ -160,3 +162,75 @@ def manifest_for(profile, role, epoch, inputs):
             and not e.path.startswith(s.INPUT+'/')]
     pins += [s.Pin(s.INPUT+'/'+name,len(raw),hashlib.sha256(raw).hexdigest()) for name,raw in frozen]
     return s.Manifest(tuple(pins),epoch)
+
+
+RESULT_KEYS = {'status','operation','unit','argv','files','stdout','stderr','exit',
+    'seconds','cleanup','artifacts','actual_execution','runtime_attestation',
+    'source_closure_authority','report_comparison','ap2_six_cases','phase2_gate'}
+
+def encode_result(result):
+    """Bounded lossless worker transport; no evidence field is dropped."""
+    import p1r_linux_supervisor as s
+    need(type(result) is dict and set(result) == RESULT_KEYS, 'RESULT_SCHEMA')
+    role = result['operation']
+    need(role in ROLES and type(result['actual_execution']) is bool, 'RESULT_ROLE')
+    native = result['actual_execution']
+    need(result['status'] == ('SUPERVISOR_LIFECYCLE_COMPLETE' if native else
+         'MOCK_SUPERVISOR_LIFECYCLE_COMPLETE') and result['cleanup'] is True and
+         result['runtime_attestation'] == result['source_closure_authority'] == 'UNPROVEN' and
+         result['report_comparison'] == 'NOT_IMPLEMENTED' and
+         result['ap2_six_cases'] == 'NOT_RUN' and result['phase2_gate'] == 'HOLD', 'RESULT_CLAIMS')
+    need(type(result['unit']) is str and re.fullmatch(r'ap2-sup-[0-9]{1,20}-'+role+r'\.service',result['unit']), 'RESULT_IDENTITY')
+    need(type(result['argv']) is tuple and all(type(x) is str for x in result['argv']) and
+         type(result['files']) is tuple and 0 < len(result['files']) <= MAX_INVENTORY and
+         all(type(x) is s.Pin for x in result['files']), 'RESULT_EVIDENCE')
+    need(type(result['exit']) is int and result['exit'] == (0 if role == 'builder' else 1) and
+         type(result['seconds']) in (int,float) and math.isfinite(result['seconds']) and
+         0 <= result['seconds'] < s.TOTAL_SECONDS, 'RESULT_COMPLETION')
+    for name,cap in (('stdout',s.STDOUT),('stderr',s.STDERR)):
+        need(type(result[name]) is bytes and len(result[name]) <= cap, 'RESULT_STREAM')
+    hashes = check_artifacts(role,result['artifacts'])
+    wire = dict(result,files=[(x.path,x.size,x.sha256) for x in result['files']],
+        argv=list(result['argv']),stdout=base64.b64encode(result['stdout']).decode('ascii'),
+        stderr=base64.b64encode(result['stderr']).decode('ascii'),
+        artifacts={k:base64.b64encode(v).decode('ascii') for k,v in result['artifacts'].items()})
+    raw = canonical({'version':1,'result':wire,'artifact_sha256':hashes})
+    need(len(raw) <= MAX_RESULT, 'RESULT_LIMIT')
+    return raw
+
+def decode_result(raw, role, run, manifest):
+    import p1r_linux_supervisor as s
+    def unique(pairs):
+        out = {}
+        for k,v in pairs:
+            need(k not in out, 'RESULT_DUPLICATE')
+            out[k] = v
+        return out
+    need(type(raw) is bytes and 0 < len(raw) <= MAX_RESULT, 'RESULT_LIMIT')
+    try:
+        packet = json.loads(raw,object_pairs_hook=unique)
+        need(type(packet) is dict and set(packet) == {'version','result','artifact_sha256'} and
+             type(packet['version']) is int and packet['version'] == 1, 'RESULT_PACKET')
+        row = packet['result']
+        need(type(row) is dict and set(row) == RESULT_KEYS and type(row['artifacts']) is dict and
+             type(row['argv']) is list and type(row['files']) is list, 'RESULT_SCHEMA')
+        def binary(value):
+            need(type(value) is str, 'RESULT_ENCODING')
+            data = base64.b64decode(value,validate=True)
+            need(base64.b64encode(data).decode('ascii') == value, 'RESULT_ENCODING')
+            return data
+        pins = []
+        for item in row['files']:
+            need(type(item) is list and len(item) == 3, 'RESULT_PIN')
+            pins.append(s.Pin(*item))
+        result = dict(row,files=tuple(pins),argv=tuple(row['argv']),
+            stdout=binary(row['stdout']),stderr=binary(row['stderr']),
+            artifacts={k:binary(v) for k,v in row['artifacts'].items()})
+        plan = s.plan_for(role,run,manifest)
+        need(result['operation'] == role and result['unit'] == plan.unit and
+             result['argv'] == plan.argv and result['files'] == plan.pins and
+             result['actual_execution'] is True, 'RESULT_BINDING')
+        need(encode_result(result) == raw, 'RESULT_CANONICAL_OR_HASH')
+        return result
+    except (ValueError,TypeError,KeyError,UnicodeError) as exc:
+        raise Stop('RESULT_DECODE') from exc

@@ -360,13 +360,8 @@ class Supervisor:
                 'artifacts': artifacts, 'actual_execution': mode == 'LINUX', 'runtime_attestation': 'UNPROVEN',
                 'source_closure_authority': 'UNPROVEN', 'report_comparison': 'NOT_IMPLEMENTED',
                 'ap2_six_cases': 'NOT_RUN', 'phase2_gate': 'HOLD'}
-        import base64
         import p1r_execution_contract as contract
-        encoded = dict(result, files=[(p.path,p.size,p.sha256) for p in plan.pins],
-            stdout=base64.b64encode(result['stdout']).decode('ascii'),
-            stderr=base64.b64encode(result['stderr']).decode('ascii'),
-            artifacts={name:base64.b64encode(raw).decode('ascii') for name,raw in artifacts.items()})
-        need(len(contract.canonical(encoded)) <= contract.MAX_RESULT, 'RESULT_LIMIT')
+        contract.encode_result(result)
         return result
 
 

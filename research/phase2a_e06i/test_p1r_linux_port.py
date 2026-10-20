@@ -269,3 +269,42 @@ class Tests(unittest.TestCase):
         with patch.object(p.os,'open',side_effect=[10,11]),patch.object(p.os,'read',return_value=b'foreign'),patch.object(p.os,'close'),patch.object(p.os,'unlink') as unlink:
             with self.assertRaises(c.Stop):native._clean_inputs()
             unlink.assert_not_called()
+
+    def test_ipv6_kernel_loopback_is_not_external_route(self):
+        row = '0'*32+' 00 '+'0'*32+' 00 '+'0'*32+' ffffffff 00000001 00000000 00200200 lo'
+        for good in ('',row,row+'\n'+row):
+            self.assertTrue(p.harmless_ipv6(good))
+        for bad in (row.replace(' lo',' eth0'),row.replace(' lo',' veth0'),
+                    row.replace('0'*32+' ffffffff','1'*32+' ffffffff'),
+                    row.replace(' 00 ',' zz ',1),row+' extra','malformed'):
+            with self.subTest(bad=bad):self.assertFalse(p.harmless_ipv6(bad))
+
+    def test_staged_input_fchmod_ignores_restrictive_umask_and_failure_closes(self):
+        from types import SimpleNamespace
+        native=p.NativeOps.__new__(p.NativeOps)
+        native.snapshot='/run/ap2-controller/fixed';native.token='a'*32
+        native.inputs={'fixture.json':b'{}','policy.json':b'{}'}
+        for fail in (False,True):
+            modes={};written=[]
+            def chmod(fd,mode):
+                modes[fd]=mode
+                if fail and fd==13:raise OSError('chmod')
+            def opened(path,flags,mode=0,**kwargs):
+                fd={'owner':11,'input':12,'fixture.json':13,'policy.json':14}.get(path,10)
+                # Simulated umask077: open0444 becomes0400, then fchmod must fix.
+                if path.endswith('.json'):modes[fd]=mode & ~0o077
+                return fd
+            def write(fd,raw):
+                if fd in (13,14):
+                    self.assertEqual(modes[fd],0o444);written.append(fd)
+                return len(raw)
+            with patch.object(p.os,'lstat',return_value=SimpleNamespace(st_mode=0o40755,st_uid=0)),\
+                 patch.object(p.os,'mkdir'),patch.object(p.os,'open',side_effect=opened),\
+                 patch.object(p.os,'fchmod',side_effect=chmod),patch.object(p.os,'write',side_effect=write),\
+                 patch.object(p.os,'close') as close:
+                if fail:
+                    with self.assertRaises(OSError):native._stage_inputs()
+                    self.assertEqual(written,[])
+                else:
+                    native._stage_inputs();self.assertEqual(written,[13,14]);self.assertEqual(modes[12],0o555)
+                self.assertIn(13,[call.args[0] for call in close.call_args_list])
