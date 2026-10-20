@@ -1,0 +1,75 @@
+name: Issue 73 U6 capability v3 capability admission and nine synthetic cases once
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact reviewed and merged main SHA
+        required: true
+        type: string
+      zero_cost_confirmed:
+        description: Confirm zero incremental cost including 1MiB result retained seven days (yes)
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: issue73-u6-capability-v3-once-20261020
+  cancel-in-progress: false
+jobs:
+  capability:
+    if: github.repository == 'cuichangquan/ap2-mandate-verifier' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            research/phase2a_e06i/u6_linux_probe.py
+            research/phase2a_e06i/u6_systemd_diagnostic.py
+      - name: Verify exact main and zero cost then claim NEW v3 guard atomically
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          ZERO_COST: ${{ inputs.zero_cost_confirmed }}
+        run: |
+          set -Eeuo pipefail
+          [ "$GITHUB_RUN_ATTEMPT" = 1 ]
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [ "$EXPECTED_SHA" = "$GITHUB_SHA" ]
+          [ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ]
+          [ "$ZERO_COST" = yes ]
+          [ "$(gh api repos/$GITHUB_REPOSITORY --jq '.visibility')" = public ]
+          [ "$(gh api repos/$GITHUB_REPOSITORY/git/ref/heads/main --jq '.object.sha')" = "$GITHUB_SHA" ]
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref=refs/tags/issue73-u6-capability-v3-once-consumed-20261020 \
+            -f sha="$GITHUB_SHA" --jq '{ref,sha:.object.sha}'
+      - name: Bounded manager query then admitted synthetic cases only; never retry
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sudo -n env -i PATH=/usr/bin:/bin GITHUB_SHA="$GITHUB_SHA" \
+            GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
+            /usr/bin/timeout --signal=TERM --kill-after=5s 115s \
+            /usr/bin/python3 -I -S -B research/phase2a_e06i/u6_linux_probe.py
+      - name: Bounded evidence including STOP and cleanup uncertainty
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -f u6-result.json
+          test "$(stat -c '%s' u6-result.json)" -le 1048576
+          cat u6-result.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always() && hashFiles('u6-result.json') != ''
+        with:
+          name: u6-capability-v3-${{ github.run_id }}
+          path: u6-result.json
+          retention-days: 7
+          if-no-files-found: error
