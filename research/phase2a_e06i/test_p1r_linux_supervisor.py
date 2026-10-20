@@ -6,10 +6,7 @@ import sys
 import unittest
 from dataclasses import replace
 
-spec = importlib.util.spec_from_file_location('fixed_supervisor', Path(__file__).with_name('p1r_linux_supervisor.py'))
-s = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = s
-spec.loader.exec_module(s)
+import p1r_linux_supervisor as s
 
 
 def fixture(operation='builder'):
@@ -88,6 +85,15 @@ class FakePort:
     def next_event(self, unit, read_limits, deadline):
         self.tick('event')
         return self.events.pop(0) if self.events else ('idle',)
+
+    def finish_children(self, unit, deadline):
+        self.tick('children')
+        return {'children_reaped': True, 'payload_io_closed': True}
+
+    def collect_outputs(self, unit, deadline):
+        self.tick('artifacts')
+        import p1r_execution_contract as contract
+        return {name: b'{}' for name, cap in contract.OUTPUTS[self.plan.operation]}
 
     def cancel_reap_submitter(self, unit, deadline):
         self.tick('reap')
