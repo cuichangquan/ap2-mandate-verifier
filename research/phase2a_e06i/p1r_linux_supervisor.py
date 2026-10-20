@@ -1,15 +1,16 @@
 """Fixed-operation supervisor controller; OFFLINE_FAKE port only in this stage.
 
 Supported: fixed argv, pinned byte checks, pre-GO admission, bounded event
-capture, one-shot lifecycle, and submitter-reap -> group-stop -> owned child/IO
-finalization -> empty readback.
+capture, one-shot lifecycle, and owner child reap -> bounded artifact collection -> submitter barrier ->
+group stop -> parent FD finalization -> empty readback.
 A port is trusted parent-side infrastructure, NEVER a target-supplied receipt.
 Mocks test ordering/validation, not kernel enforcement or source authority.
 
-NOT IMPLEMENTED: Linux/systemd port, gated-exec launcher, authenticated complete
-runtime/import manifests, installer, file staging/output collection, report
-comparison and AP2 integration. No subprocess/socket or import-time I/O exists.
-Missing port/pins or any live-mode request fails closed. CLI always exits HOLD.
+Implemented source companions provide contract, owner, watchdog and Linux syscall
+mapping; native approval registry is EMPTY. Installed authenticated runtime/root,
+real input materialization, runtime/kernel proof and AP2 report semantics remain
+UNPROVEN. No installer or new workflow ships. CLI always exits HOLD. Only fake
+infrastructure runs under this stage's test approval.
 The U6 64MiB/32MiB ceilings below are conservative MODEL bounds, not evidence
 that AP2 workloads fit; PR136's 2GiB/8GiB design ceilings are not adopted.
 """
@@ -19,6 +20,7 @@ import math
 import re
 import time
 from typing import Protocol
+import p1r_execution_contract as contract
 
 RUNTIME = '/opt/ap2-runtime'
 SOURCE = '/opt/ap2-source/research/phase2a_e06i'
@@ -27,7 +29,7 @@ INPUT = '/run/ap2-supervisor/input'
 OUTPUT = '/run/ap2-supervisor/output'
 PYTHON = RUNTIME + '/bin/python3'
 RUBY = RUNTIME + '/bin/ruby'
-LAUNCHER = RUNTIME + '/trusted_site_launcher.py'
+LAUNCHER = SOURCE + '/p1r_exec_owner.py'
 READONLY = (RUNTIME, '/opt/ap2-source', UPSTREAM, INPUT)
 MEMORY = 67108864
 SCRATCH = 33554432
@@ -35,9 +37,9 @@ INODES = 256
 TASKS = 16
 STDOUT = 65536
 STDERR = 4096
-WORK_SECONDS = 3
-TOTAL_SECONDS = 6
-CLEANUP_RESERVE = 2
+WORK_SECONDS = contract.WORK_SECONDS
+TOTAL_SECONDS = contract.TOTAL_SECONDS
+CLEANUP_RESERVE = contract.CLEANUP_RESERVE
 MAX_EVENTS = 256
 MAX_FILES = 512
 MAX_FILE_BYTES = 16777216
@@ -89,7 +91,7 @@ class Plan:
 class Port(Protocol):
     """Trusted infrastructure seam. ONLY OFFLINE_FAKE is supported here.
 
-    A future separately reviewed Linux port must own/track the submitter BEFORE
+    The Linux port must own/track the submitter BEFORE
     submission can partially succeed, reject pre-existing unit identities,
     freeze checked bytes/paths until cleanup,
     gate target exec on GO, and independently read /proc/cgroup/mount state.
@@ -102,7 +104,7 @@ class Port(Protocol):
     finalize_owned must use a parent-owned descendant/descriptor ledger and a
     suitable OS reaping owner (not merely infer reaping from an empty cgroup).
     It must attempt all waits/closes, including after partial submission, and
-    must never close a reused/foreign descriptor. No such OS boundary ships.
+    must never close a reused/foreign descriptor. Native approval registry remains empty; actual Linux enforcement is NOT_RUN.
     """
     mode: str
     def read_pinned(self, path: str, read_limit: int, deadline: float) -> bytes: ...
@@ -110,6 +112,8 @@ class Port(Protocol):
     def observe_parent(self, unit: str, deadline: float) -> dict: ...
     def go(self, unit: str, deadline: float) -> None: ...
     def next_event(self, unit: str, read_limits: dict, deadline: float) -> tuple: ...
+    def finish_children(self, unit: str, deadline: float) -> dict: ...
+    def collect_outputs(self, unit: str, deadline: float) -> dict: ...
     def cancel_reap_submitter(self, unit: str, deadline: float) -> bool: ...
     def stop_group(self, unit: str, deadline: float) -> None: ...
     def finalize_owned(self, unit: str, deadline: float) -> dict: ...
@@ -147,7 +151,7 @@ def plan_for(operation, run_id, manifest):
     need(required <= paths, 'REQUIRED_PINS_MISSING')
     # Immutable source/dependency inventory may include additional files, all
     # of which are hashed; this does not establish closure completeness/trust.
-    argv = (RUBY, script) if operation == 'ruby' else (PYTHON, '-I', '-S', '-B', LAUNCHER, script)
+    argv = (RUBY, script) if operation == 'ruby' else (PYTHON, '-I', '-S', '-B', LAUNCHER, '--python-target='+operation, script)
     if operation == 'builder':
         argv += ('--epoch', str(manifest.epoch), '--upstream-root', UPSTREAM,
                  '--policy', OUTPUT + '/policy.json', '--fixture', OUTPUT + '/fixture.json')
@@ -205,9 +209,10 @@ def admission(plan, observed):
 
 
 class Supervisor:
-    def __init__(self, port=None, *, clock=time.monotonic):
+    def __init__(self, port=None, *, clock=time.monotonic, allocated_at=None):
         self.port, self.clock, self.used = port, clock, False
         self.last = None
+        self.allocated_at = allocated_at
 
     def now(self):
         value = self.clock()
@@ -219,14 +224,26 @@ class Supervisor:
     def before(self, deadline):
         need(self.now() < deadline, 'DEADLINE')
 
-    def cleanup(self, plan, deadline, observed):
+    def cleanup(self, plan, deadline, observed, completed=False):
         # No clean cache: reaping precedes the FINAL group stop, including a
         # submitter which registers its unit late while being cancelled/reaped.
         failures = []
-        reaped = finalized = False
-        for step in ('reap', 'stop', 'finalize', 'readback'):
+        reaped = finalized = children = False
+        artifacts = {}
+        for step in ('children', 'artifacts', 'reap', 'stop', 'finalize', 'readback'):
             try:
-                if step == 'reap':
+                if step == 'children':
+                    done = self.port.finish_children(plan.unit, deadline)
+                    need(type(done) is dict and set(done) == {'children_reaped', 'payload_io_closed'} and
+                         done['children_reaped'] is True and done['payload_io_closed'] is True, 'OWNER_REAP_UNCERTAIN')
+                    children = True
+                elif step == 'artifacts':
+                    if completed:
+                        need(children and observed, 'COLLECT_BEFORE_REAP')
+                        artifacts = self.port.collect_outputs(plan.unit, deadline)
+                        import p1r_execution_contract as contract
+                        contract.check_artifacts(plan.operation, artifacts)
+                elif step == 'reap':
                     reaped = self.port.cancel_reap_submitter(plan.unit, deadline) is True
                     need(reaped, 'SUBMITTER_UNREAPED')
                 elif step == 'stop':
@@ -244,11 +261,12 @@ class Supervisor:
                     need(type(state) is dict and set(state) == {'unit', 'cgroup', 'active', 'populated'} and
                          state['unit'] == plan.unit and state['cgroup'] == '/system.slice/' + plan.unit and
                          state['active'] in ('inactive', 'failed') and type(state['populated']) is int and
-                         state['populated'] == 0 and observed and reaped and finalized, 'CLEANUP_UNCONFIRMED')
+                         state['populated'] == 0 and observed and children and reaped and finalized, 'CLEANUP_UNCONFIRMED')
             except BaseException:
                 failures.append(step)
         need(not failures, 'CLEANUP_UNCERTAIN')
         self.before(deadline)
+        return artifacts
 
     def run_mock(self, operation, run_id, manifest):
         """Exercise controller against trusted fake infrastructure only.
@@ -256,13 +274,27 @@ class Supervisor:
         A matching expected exit (including Oracle/Ruby exit1) is merely a
         lifecycle observation. No report provenance/crypto/semantic PASS follows.
         """
+        return self._run(operation, run_id, manifest, 'OFFLINE_FAKE')
+
+    def run_native(self, operation, run_id, manifest):
+        # Closed by the empty registry BEFORE any native effect. A mock profile
+        # or fake port can never be promoted by this separate entry.
+        import p1r_execution_contract as contract
+        need(self.port is not None and self.port.mode == 'LINUX', 'NATIVE_PORT_REQUIRED')
+        contract.select_native(self.port.profile.name)
+        return self._run(operation, run_id, manifest, 'LINUX')
+
+    def _run(self, operation, run_id, manifest, mode):
         need(not self.used, 'ALLOCATION_CONSUMED')
         self.used = True
-        need(self.port is not None and self.port.mode == 'OFFLINE_FAKE', 'LIVE_BACKEND_UNIMPLEMENTED')
+        need(self.port is not None and self.port.mode == mode, 'LIVE_BACKEND_UNIMPLEMENTED')
         plan = plan_for(operation, run_id, manifest)
-        started = self.now()
-        total_end = started + TOTAL_SECONDS
-        work_end = min(started + WORK_SECONDS, total_end - CLEANUP_RESERVE)
+        now = self.now()
+        started = now if self.allocated_at is None else self.allocated_at
+        need(type(started) in (int,float) and math.isfinite(started) and 0 <= started <= now, 'ALLOCATION_CLOCK')
+        work_end,total_end,_,_ = contract.time_bounds(started)
+        # Native watchdog supplies the origin before setup; never reset it.
+        work_end = min(work_end,total_end-CLEANUP_RESERVE)
         # All bytes are verified before a unit can be submitted. A future OS
         # port must keep those same files sealed through exec, not reopen names.
         for pin in plan.pins:
@@ -276,6 +308,8 @@ class Supervisor:
         ended = set()
         code = None
         primary = None
+        completed = False
+        artifacts = {}
         try:
             # Ownership starts BEFORE this call; even a partial submit must
             # attempt reaping, final group stop and readback. Never retry submit.
@@ -310,12 +344,13 @@ class Supervisor:
                 else:
                     need(event == ('idle',), 'EVENT_KIND')
             need(len(ended) == 2 and code == plan.expected_exit, 'INCOMPLETE_OR_UNEXPECTED_EXIT')
+            completed = True
         except BaseException as error:
             primary = error
             raise
         finally:
             try:
-                self.cleanup(plan, total_end, observed)
+                artifacts = self.cleanup(plan, total_end, observed, completed)
             except BaseException:
                 if primary is not None:
                     primary.add_note('CLEANUP_UNCERTAIN')
@@ -323,13 +358,15 @@ class Supervisor:
                     raise Stop('CLEANUP_UNCERTAIN') from None
         finished = self.now()
         need(finished < total_end, 'DEADLINE')
-        return {'status': 'MOCK_SUPERVISOR_LIFECYCLE_COMPLETE', 'operation': operation,
+        result = {'status': 'MOCK_SUPERVISOR_LIFECYCLE_COMPLETE' if mode == 'OFFLINE_FAKE' else 'SUPERVISOR_LIFECYCLE_COMPLETE', 'operation': operation,
                 'unit': plan.unit, 'argv': plan.argv, 'files': plan.pins,
                 'stdout': bytes(output['stdout']), 'stderr': bytes(output['stderr']),
                 'exit': code, 'seconds': finished - started, 'cleanup': True,
-                'actual_execution': False, 'runtime_attestation': 'UNPROVEN',
+                'artifacts': artifacts, 'actual_execution': mode == 'LINUX', 'runtime_attestation': 'UNPROVEN',
                 'source_closure_authority': 'UNPROVEN', 'report_comparison': 'NOT_IMPLEMENTED',
                 'ap2_six_cases': 'NOT_RUN', 'phase2_gate': 'HOLD'}
+        contract.encode_result(result)
+        return result
 
 
 if __name__ == '__main__':

@@ -6,10 +6,7 @@ import sys
 import unittest
 from dataclasses import replace
 
-spec = importlib.util.spec_from_file_location('fixed_supervisor', Path(__file__).with_name('p1r_linux_supervisor.py'))
-s = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = s
-spec.loader.exec_module(s)
+import p1r_linux_supervisor as s
 
 
 def fixture(operation='builder'):
@@ -88,6 +85,15 @@ class FakePort:
     def next_event(self, unit, read_limits, deadline):
         self.tick('event')
         return self.events.pop(0) if self.events else ('idle',)
+
+    def finish_children(self, unit, deadline):
+        self.tick('children')
+        return {'children_reaped': True, 'payload_io_closed': True}
+
+    def collect_outputs(self, unit, deadline):
+        self.tick('artifacts')
+        import p1r_execution_contract as contract
+        return {name: b'{}' for name, cap in contract.OUTPUTS[self.plan.operation]}
 
     def cancel_reap_submitter(self, unit, deadline):
         self.tick('reap')
@@ -467,6 +473,37 @@ class Tests(unittest.TestCase):
         with self.assertRaisesRegex(s.Stop, 'CLOCK'):
             supervisor.run_mock('builder', '123', port.manifest)
         self.assertNotIn('submit', port.calls)
+
+    def test_native_allocation_setup_consumes_work_budget_without_reset(self):
+        port=FakePort();port.time=2.5
+        result=s.Supervisor(port,clock=lambda:port.time,allocated_at=0).run_mock('builder','123',port.manifest)
+        self.assertEqual(result['seconds'],2.5)
+        for start in (True,-1,float('inf'),float('nan'),3):
+            port=FakePort();port.time=2.5
+            with self.subTest(start=start),self.assertRaises(s.Stop):
+                s.Supervisor(port,clock=lambda:port.time,allocated_at=start).run_mock('builder','123',port.manifest)
+            self.assertNotIn('submit',port.calls)
+        for now in (3,3.01,6):
+            port=FakePort();port.time=now
+            with self.subTest(now=now),self.assertRaises(s.Stop):
+                s.Supervisor(port,clock=lambda:port.time,allocated_at=0).run_mock('builder','123',port.manifest)
+            self.assertNotIn('submit',port.calls)
+
+    def test_work_before_three_cleanup_may_finish_just_before_six(self):
+        for end in (5.999,6.0):
+            port=FakePort();original=port.tick
+            def tick(stage):
+                original(stage)
+                if stage=='event':port.time=2.999
+                if stage=='children':port.time=3.001
+                if stage=='stopped':port.time=end
+            port.tick=tick
+            if end<6:
+                result=s.Supervisor(port,clock=lambda:port.time,allocated_at=0).run_mock('builder','123',port.manifest)
+                self.assertEqual(result['seconds'],end);self.assertTrue(result['cleanup'])
+            else:
+                with self.assertRaises(s.Stop):s.Supervisor(port,clock=lambda:port.time,allocated_at=0).run_mock('builder','123',port.manifest)
+            self.assertEqual(port.calls[-4:],['reap','stop','finalize','stopped'])
 
 
 if __name__ == '__main__':
