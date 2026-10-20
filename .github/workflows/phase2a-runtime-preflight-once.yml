@@ -1,0 +1,102 @@
+name: Issue73 fixed runtime metadata preflight once
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact reviewed merged main SHA
+        required: true
+        type: string
+      zero_cost_confirmed:
+        description: Fresh authenticated billing storage and official standard public runner pricing prove incremental cost zero including 32MiB seven days (yes)
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: issue73-runtime-preflight-once-20261020
+  cancel-in-progress: false
+jobs:
+  metadata:
+    if: github.repository == 'cuichangquan/ap2-mandate-verifier' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            research/phase2a_e06i/p1r_runtime_recipe.json
+            research/phase2a_e06i/p1r_runtime_prepare.py
+      - name: Verify fixed source context tools and cost then consume fresh guard
+        id: claim
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          ZERO_COST: ${{ inputs.zero_cost_confirmed }}
+          SOURCE_SHA: f1e6c24a856a54fcb9556a15997dbee5ee7ecfa3c8260ba7db8d08b86296ef8e
+          RECIPE_SHA: b6f54ddad1c1840714a57b7415dc24d135cb653ff7c4af83bbb5ead45da2c2d2
+        run: |
+          set -Eeuo pipefail
+          [ "$GITHUB_RUN_ATTEMPT" = 1 ]
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [ "$EXPECTED_SHA" = "$GITHUB_SHA" ]
+          [ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ]
+          [ "$ZERO_COST" = yes ]
+          test -x /usr/bin/python3
+          test -x /usr/bin/gpg
+          test -x /usr/bin/gpgv
+          test -x /usr/bin/timeout
+          printf '%s  %s\n' "$SOURCE_SHA" research/phase2a_e06i/p1r_runtime_prepare.py | sha256sum -c -
+          printf '%s  %s\n' "$RECIPE_SHA" research/phase2a_e06i/p1r_runtime_recipe.json | sha256sum -c -
+          [ "$(gh api repos/$GITHUB_REPOSITORY --jq '.visibility')" = public ]
+          [ "$(gh api repos/$GITHUB_REPOSITORY/git/ref/heads/main --jq '.object.sha')" = "$GITHUB_SHA" ]
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref=refs/tags/issue73-runtime-preflight-once-consumed-20261020 \
+            -f sha="$GITHUB_SHA" --jq '{ref,sha:.object.sha}'
+      - name: At most nine direct metadata GETs no retry no payload acquisition
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          env -i PATH=/usr/bin:/bin GITHUB_SHA="$GITHUB_SHA" \
+            GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
+            /usr/bin/timeout --signal=TERM --kill-after=5s 115s \
+            /usr/bin/python3 -I -S -B research/phase2a_e06i/p1r_runtime_prepare.py
+      - name: Validate closed bounded artifact namespace including metadata originals
+        id: artifact_bounds
+        if: always() && steps.claim.outcome == 'success'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          env -i PATH=/usr/bin:/bin GITHUB_SHA="$GITHUB_SHA" GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" /usr/bin/python3 -I -S -B - <<'PY'
+          import json, os, pathlib, stat
+          root = pathlib.Path('runtime-metadata-evidence')
+          assert root.is_dir() and not root.is_symlink()
+          allowed = {'result.json','main_key.asc','security_key.asc','stable_key.asc','trixie_key.asc','bullseye_key.asc',
+                     'main_InRelease','security_InRelease','main_Packages.xz','security_Packages.xz'}
+          files = list(root.iterdir())
+          assert all(p.name in allowed and stat.S_ISREG(p.lstat().st_mode) for p in files)
+          ARTIFACT_CAP = 33554432
+          assert sum(p.stat().st_size for p in files) <= ARTIFACT_CAP - 65536  # ZIP framing reserve
+          result = root/'result.json'
+          assert 0 < result.stat().st_size <= 1048576
+          report = json.loads(result.read_text())
+          assert report['sha'] == os.environ['GITHUB_SHA'] and report['run'] == os.environ['GITHUB_RUN_ID']
+          assert report['attempt'] == os.environ['GITHUB_RUN_ATTEMPT'] == '1'
+          assert report['status'] in ('STOP_NO_RETRY','FIXED_METADATA_MEMBERSHIP_CONFIRMED_RUNTIME_UNPROVEN')
+          assert report['scope'] == 'METADATA_ONLY_RUNTIME_UNPROVEN'
+          assert report['ap2_six_cases'] == 'NOT_RUN' and report['native_authority'] is False
+          print('BOUNDED_METADATA_ARTIFACT_ONLY')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always() && steps.artifact_bounds.outcome == 'success'
+        with:
+          name: runtime-metadata-${{ github.run_id }}
+          path: runtime-metadata-evidence/
+          retention-days: 7
+          if-no-files-found: error
