@@ -24,8 +24,8 @@ module AP2MandateVerifier
 
     # Internal stage handoff: always authenticates this original wire first.
     # Returned claims remain unvalidated for AP2 authority/schema/constraints.
-    def self.verified_payload!(source, issuer_pem)
-      wire = InputValidator.snapshot!(source, max_bytes: MAX_WIRE_BYTES)
+    def self.verified_payload!(source, issuer_pem, expected_typ: "example+sd-jwt", max_bytes: MAX_WIRE_BYTES)
+      wire = InputValidator.snapshot!(source, max_bytes: max_bytes)
       raise Rejected, :invalid_root_jws unless wire.ascii_only?
       parts = wire.split(".", -1)
       raise Rejected, :invalid_root_jws unless parts.length == 3
@@ -39,7 +39,7 @@ module AP2MandateVerifier
         (!header.key?("kid") || (header["kid"].instance_of?(String) &&
           header["kid"].bytesize.between?(1, 128)))
       raise Rejected, :unsupported_root_algorithm unless header["alg"] == "ES256"
-      raise Rejected, :unsupported_root_type unless header["typ"] == "example+sd-jwt"
+      raise Rejected, :unsupported_root_type unless header["typ"] == expected_typ
       raise Rejected, :invalid_root_payload unless payload.instance_of?(Hash)
       key = public_key!(issuer_pem)
 
@@ -57,6 +57,15 @@ module AP2MandateVerifier
       end
       raise Unavailable, :root_signature_check_unavailable unless verified == payload && protected_header == header
       payload
+    end
+
+    # Canonical coordinates from independently supplied public PEM, never JWK import.
+    def self.public_jwk!(pem)
+      dependencies!
+      point = public_key!(pem).public_key.to_octet_string(:uncompressed)
+      {"kty" => "EC", "crv" => "P-256",
+       "x" => Base64.urlsafe_encode64(point.byteslice(1, 32), padding: false),
+       "y" => Base64.urlsafe_encode64(point.byteslice(33, 32), padding: false)}
     end
 
     def self.dependencies!

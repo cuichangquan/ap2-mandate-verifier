@@ -15,6 +15,13 @@ module AP2MandateVerifier
     class Rejected < RootSignature::Rejected; end
 
     def self.check!(source, issuer_pem)
+      verified_root!(source, issuer_pem)
+      nil
+    end
+
+    # Internal handoff only: signature and entire closure are verified first.
+    # AP2 semantics, constraints and Host authorization remain unvalidated.
+    def self.verified_root!(source, issuer_pem)
       wire = InputValidator.snapshot!(source)
       raise Rejected, :invalid_root_presentation unless wire.ascii_only? && wire.end_with?("~")
       parts = wire.split("~", -1)
@@ -41,10 +48,10 @@ module AP2MandateVerifier
       used = {}
       observed = []
       budget = [0]
-      walk!(payload, [], mapping, used, observed, budget, 1)
+      resolved = walk!(payload, [], mapping, used, observed, budget, 1)
       raise Rejected, :unsupported_disclosure_profile unless observed.sort_by(&:to_s) == PATHS.sort_by(&:to_s)
       raise Rejected, :extra_disclosure unless used.size == mapping.size
-      nil
+      resolved
     end
 
     def self.walk!(value, path, mapping, used, observed, budget, depth)
@@ -56,10 +63,10 @@ module AP2MandateVerifier
         raise Rejected, :unsupported_disclosure_profile if value.key?("_sd") || value.key?("...") ||
           (path != [] && value.key?("_sd_alg"))
         raise Rejected, :disclosure_limit_exceeded if value.size > 32
-        value.each { |key, child| walk!(child, path + [key], mapping, used, observed, budget, depth + 1) }
+        value.to_h { |key, child| [key, walk!(child, path + [key], mapping, used, observed, budget, depth + 1)] }
       when Array
         raise Rejected, :disclosure_limit_exceeded if value.size > 16
-        value.each_with_index do |item, index|
+        value.each_with_index.map do |item, index|
           here = path + [index]
           if item.instance_of?(Hash) && item.key?("...")
             raise Rejected, :unsupported_disclosure_profile unless item.keys == ["..."] && PATHS.include?(here)
@@ -75,6 +82,8 @@ module AP2MandateVerifier
             walk!(item, here, mapping, used, observed, budget, depth + 1)
           end
         end
+      else
+        value
       end
     end
 
