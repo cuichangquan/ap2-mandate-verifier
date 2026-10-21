@@ -1,0 +1,189 @@
+{
+  "acquisition_defects": [
+    "Historical O1/O3 metadata-inclusive 10MB UNMEASURED",
+    "Historical O4 received HTTP596565 measured; sent header-inclusive total UNPROVEN"
+  ],
+  "canonical_historical_comment": "https://github.com/cuichangquan/ap2-mandate-verifier/issues/101#issuecomment-6317426686",
+  "checks": {
+    "NORMAL": "historical alias of FULL, not separately freshly replayed",
+    "O1_O3_classifications": 6,
+    "O1_signature_negative_controls": 2,
+    "O4_cases": 13,
+    "O4_local_refs": 17,
+    "O4_schema_decisions": 64,
+    "Python_syntax_files": 3,
+    "Ruby_syntax_files": 14,
+    "code_iteration_cycles": 1,
+    "independent_binding_profile_cases": 32,
+    "max_code_iteration_cycles": 5,
+    "overwrite_guard": true,
+    "regression_cases": 411,
+    "saved_wire_Gem_replay_cases": [
+      32,
+      6
+    ],
+    "semantic_failures": 0,
+    "setup_issues": [
+      "Bundler frozen empty CHECKSUMS stopped before tests; no install/lock repair",
+      "Initial Ruby load wrapper skipped CLI guard; no replay claimed until explicit program-name run"
+    ]
+  },
+  "conclusion": "HOLD",
+  "current_verifier_sha256": {
+    "lib/ap2_mandate_verifier.rb": "ec0ba37c67c37662a26faff933f5689920463ececbec3853061f1a4dce05f0c4",
+    "lib/ap2_mandate_verifier/input_validator.rb": "299bc4a4f8eb353aa3e240a3b4cbd99aacd4eb3123b0b578c5f93f5599baf738",
+    "lib/ap2_mandate_verifier/purchase_binding.rb": "551aecadeac6a52d4c1f3d58d85a470114081f6146b017cd2318c9bd7dbdb60d",
+    "lib/ap2_mandate_verifier/result.rb": "bb377c7564bbda10f6a30bdd228f52c540a9da10875c56f97133178439585fda",
+    "lib/ap2_mandate_verifier/root_disclosures.rb": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+    "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+    "lib/ap2_mandate_verifier/scoped_constraints.rb": "c94d317ffc264f016e5e9063413ff4162ed4e0245802e90a4efb6c6d0c4b4132"
+  },
+  "dependency_acquisition_or_install": false,
+  "evidence": null,
+  "executed_network_or_install": false,
+  "historical_comparator_versions": "Original scripts retained locally; historical SHA values are not current Stage11 script identities",
+  "historical_inputs_replaced": false,
+  "historical_sha256": {
+    "O1O3_REPORT.json": "790f3a7703a6cabab6c77f665d5062c5f6586f06467e232f6fd4520afc82fae9",
+    "O2O5_FINAL_REPORT.json": "403f93cf23b5113ac9ce5425c1f856eb3617aaaeaf54ed2a233128d202099631",
+    "O2O5_PUBLIC_CASES.json": "be17fc33612ec561147100fbb901f5c2ef288d4535ed1aa69b56a61447fc8942",
+    "O4_HTTP_ACQUISITION.json": "06ee7ad9d219af1619c5a5aec59000ff87f6be49cff91e4a60f68968b57b20c3",
+    "O4_VERIFIED_REPORT.json": "f45e3b94c8434ab117acba8b94ca8bfb1e37dae42a2936fb2f5205c103dcdef8",
+    "STAGE7_PUBLIC_CASES.json": "ba8bfe3cea97b2230084a5ab5ef97d99701e3974160abbad06a346f8115c85b0",
+    "test/integration_matrix_test.rb": "231fc735be3af2b5084219cff9d0c1c7c2e470e7954f7bde0ed841cb371890db",
+    "test/o1o3_compare.py": "82b9f0ec3bab2658e1a5864d47200e6590fed901bb5685353e7c411249ee582d",
+    "test/o2o5_compare.py": "4ef30a7eba53a649ee3109793762d267331bbd6778b3f5b56af4ee252048e542",
+    "test/o4_compare.py": "1f2dcb17f65ae67cd51ec56a6c6ef8cce9ef00baee4dcec0aac25671f8bc679d"
+  },
+  "local_snapshot_commit": "6ec5ab6b0dc39a686e60334114dfcd6706ffabf9",
+  "main_commit_object_available_locally": true,
+  "network_scope_note": "Comparison execution is offline; separately approved Git object fetch is integration-only",
+  "original_generator_excluded": {
+    "path": "test/o2o5_replay_test.rb",
+    "retained_original_locally": true,
+    "sha256": "70a926b9f2a8ffbe61d0b931b7625b9ba01d5ff928db40c9c6d8af6d11d5c4ff"
+  },
+  "public_candidate_files_sha256": {
+    ".gitignore": "adb7ac09f0f838c63ce1732c6a3931ca4d736d2f4ec5dd92c468403a2b892bfc",
+    "O1O3_POLICY.json": "e8d7ff92b0340f2415b0ebff629fbed5d631768eb1ed844d1b3733dca7656a88",
+    "O1O3_REPORT.json": "790f3a7703a6cabab6c77f665d5062c5f6586f06467e232f6fd4520afc82fae9",
+    "O2O5_FINAL_REPORT.json": "403f93cf23b5113ac9ce5425c1f856eb3617aaaeaf54ed2a233128d202099631",
+    "O2O5_PUBLIC_CASES.json": "be17fc33612ec561147100fbb901f5c2ef288d4535ed1aa69b56a61447fc8942",
+    "O4_HTTP_ACQUISITION.json": "06ee7ad9d219af1619c5a5aec59000ff87f6be49cff91e4a60f68968b57b20c3",
+    "O4_VERIFIED_REPORT.json": "f45e3b94c8434ab117acba8b94ca8bfb1e37dae42a2936fb2f5205c103dcdef8",
+    "STAGE11_GEM_REPLAY_32.json": "be7f69541ba56d4d745b2fefb2b10eee1b9c31c4b960b25f545face5f13feabf",
+    "STAGE11_GEM_REPLAY_6.json": "3efd80348874437b1c5d359a0441ddd44e10cc0690da250a43df4a14e4b9fe50",
+    "STAGE11_O1O3_REPORT.json": "765c89005265c23563958171b4828b6652410c92271e6ddd9acd19b6a9baa7bd",
+    "STAGE11_O2O5_REPORT.json": "ea6bbd14d68ec9eeaffd096db7c443530d6d3ab8c68ee5b17c01ba34d0e6a77b",
+    "STAGE11_O4_REPORT.json": "e924073e790193182c03b262cb9a5fcc066e23c17d3ae2f3997b1098b8dcb1c5",
+    "STAGE7_PUBLIC_CASES.json": "ba8bfe3cea97b2230084a5ab5ef97d99701e3974160abbad06a346f8115c85b0",
+    "docs/STAGE11_COMPARISON.md": "79a163d9550cc6ba7274702ce6b14b00f5df7915a38beda2e2e0c5b41127f5a3",
+    "o1o3-requirements.lock": "8e6d9f8898e607fc95b41e3ed8cf24b8cb88afd95aadd86bf9797349341092ba",
+    "o4-requirements.lock": "7a468daf8e42b283c0172f3cd6a61f480a04b1f10fa5be1a547e917ff8b96432",
+    "test/integration_matrix_test.rb": "231fc735be3af2b5084219cff9d0c1c7c2e470e7954f7bde0ed841cb371890db",
+    "test/o1o3_compare.py": "b8bec519e3c8b5b0ed8ece609f579825cbdc633dc6ac818dec1bd14c598bcc04",
+    "test/o2o5_compare.py": "5b28dbd536921afe2cb7c4bff80730bd00c7ed18de105e30ee8c1f711763a13e",
+    "test/o4_compare.py": "c76d09ae985ed8febc62e18a1d2c3dd3723305e549e260b47c82773378f31465",
+    "test/stage7_saved_replay_test.rb": "6454789b7102e9d7ded2c862ef016a97c58739b6aab63aaa0dfd6ab09e2158e0"
+  },
+  "publish_excluded": [
+    "private keys",
+    "private workstation paths",
+    "PII",
+    "venv/vendor/wheels/cache",
+    "raw headers",
+    "environment logs",
+    "local Gemfile.lock"
+  ],
+  "remote_main_sha": "027ed4734af47c8289dbcb837373bb6086463ec4",
+  "remote_main_tree": "b436d9d7925225e0b6295678179b624382b10990",
+  "runtime": {
+    "python": "3.11.15",
+    "python_dependencies": {
+      "attrs": "26.1.0",
+      "cffi": "2.0.0",
+      "cryptography": "50.0.2",
+      "jsonschema": "4.26.0",
+      "jsonschema-specifications": "2025.9.1",
+      "jwcrypto": "1.6.1",
+      "pycparser": "2.23",
+      "referencing": "0.37.0",
+      "rpds-py": "0.30.0",
+      "typing-extensions": "4.15.0"
+    },
+    "ruby": {
+      "json": "2.18.0",
+      "jwt": "3.3.0",
+      "ruby": "4.0.1"
+    }
+  },
+  "schema_identities": {
+    "ap2/checkout_mandate.json": {
+      "git_blob": "8755db60a1c6e15f49cfe6c9a5dee6838d2f379d",
+      "id": "https://ap2-protocol.org/schemas/checkout_mandate.json",
+      "sha256": "10c0341edfeaa9084d3704ef8e94869de20499c8e357068d65f8d622bf79483a"
+    },
+    "ap2/open_checkout_mandate.json": {
+      "git_blob": "e3d9cafa7311d90612c7f908ae9b8821ddc8735a",
+      "id": "https://ap2-protocol.org/schemas/open_checkout_mandate",
+      "sha256": "bd6eb1c95a5ccb967259fae49100287755251c9d1bdb48342d96dd99fcb30b41"
+    },
+    "ap2/types/item.json": {
+      "git_blob": "0b31d4b0a0ee5d96d2d08d0b9d7b6081aaa41c2e",
+      "id": "https://ap2-protocol.org/schemas/types/item.json",
+      "sha256": "48c24532f105fda096ab89a27e04e896a597fda7e308e96cc88e11ce6a6632f9"
+    },
+    "ap2/types/merchant.json": {
+      "git_blob": "2e44a4dc943c009af106e7103e9e30f4e556b98c",
+      "id": "https://ap2-protocol.org/schemas/types/merchant.json",
+      "sha256": "13457334d8577230a1cce5265971cfc02f68f5d4e97f74bd2e78128105d3ab31"
+    },
+    "ucp/types/buyer.json": {
+      "git_blob": "0c408c6d1499dc9f249b6260ca5ce8848cd0b1c2",
+      "id": "https://ap2-protocol.org/schemas/types/buyer.json",
+      "sha256": "93df45c6d425486742527e7ed6d9d91feca558f4802141ba994e609011a14df9"
+    },
+    "ucp/types/checkout.json": {
+      "git_blob": "bb9697ecea36b81f283165ad85a19753f00cfa59",
+      "id": "https://ap2-protocol.org/schemas/types/checkout.json",
+      "sha256": "275f6589d4f49313f6d8cf3a0e3aedfca1d7209c3a8b8be404097c3d86d964f9"
+    },
+    "ucp/types/line_item.json": {
+      "git_blob": "a8482fc594d6792c43eb65c3cdeae86a2996cdc4",
+      "id": "https://ap2-protocol.org/schemas/types/line_item.json",
+      "sha256": "d71c13b023631f118b1a9df51433abc25883332f7ac2c097396ab956e0c494e6"
+    },
+    "ucp/types/link.json": {
+      "git_blob": "e05cc0048c35cd2f89d6b480189739cf3f688da6",
+      "id": "https://ap2-protocol.org/schemas/types/link.json",
+      "sha256": "7685745f445a7ac9a6044de3f9a4cdd62a3422c200f39696f5e6b0292e08b478"
+    },
+    "ucp/types/message.json": {
+      "git_blob": "694a4edd619d5dae95843af0ac71ef676d969bbd",
+      "id": "https://ap2-protocol.org/schemas/types/message.json",
+      "sha256": "b2b2774f2ab2b08ff79bb1cd8165905e624235ab19a10e687629baab094fc003"
+    },
+    "ucp/types/message_error.json": {
+      "git_blob": "2c26c91ad2c11fd39ce2d0ebbf631a036c3d6f1a",
+      "id": "https://ap2-protocol.org/schemas/types/message_error.json",
+      "sha256": "435b63a09d9b3ffede0a576d9ef2230f85d87e59b2006f55dc64079d380a1c75"
+    },
+    "ucp/types/message_info.json": {
+      "git_blob": "bb92a0a0566a0496082499c15b772a5bc5e65cdb",
+      "id": "https://ap2-protocol.org/schemas/types/message_info.json",
+      "sha256": "0c64b5d186f51f591c73e33bb4ff381bf648b301cc22827003185c78bfcf0c79"
+    },
+    "ucp/types/message_warning.json": {
+      "git_blob": "35e9cd4b5160e84c2b4a802b54ef9ed7278ef3e8",
+      "id": "https://ap2-protocol.org/schemas/types/message_warning.json",
+      "sha256": "836fd348a2085d95d332d1449bbb52a4ba6544faab32fab3827670b9d8e0ae4b"
+    },
+    "ucp/types/total.json": {
+      "git_blob": "491c47c787a968fb64e72329d97898cfb17353e6",
+      "id": "https://ap2-protocol.org/schemas/types/total.json",
+      "sha256": "a49d2d2feb6567a3ba20b2770ee707e0f3de481bcece9ab8577a65dec9709531"
+    }
+  },
+  "scope": "STAGE11_FULL_MAIN_CHECKOUT_INTEGRATION",
+  "success": false
+}

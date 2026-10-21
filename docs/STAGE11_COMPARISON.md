@@ -1,0 +1,116 @@
+# Stage11 retained comparison integration — research only, HOLD
+
+Production remains success=false/evidence=nil. No Host ALLOW, Phase2B,
+production, package distribution, new dependency acquisition or Actions.
+The previous Stage7 observations are preserved, not replaced by new fixtures.
+
+## Provenance and limits
+
+Integration base main: 027ed4734af47c8289dbcb837373bb6086463ec4;
+tree b436d9d7925225e0b6295678179b624382b10990. Necessary repository Git
+objects were fetched into a separate complete checkout. The prior local
+candidate and original evidence are retained unchanged. Production sources,
+existing five tests, Gemfile/gemspec, research Oracle, AGENTS and workflows
+remain unchanged; existing ignore rules gain only local output/lock exclusions.
+Final offline verification uses separate output paths and does not overwrite
+the committed supplementary results. Its reviewed commit identifies this
+integration; the manifest retains the earlier local snapshot identity.
+
+Issue101 comment6317426686 pins ten original files. Historical JSON files here
+are byte-for-byte copies, including retained original signed public wires.
+The original comparison scripts are retained in the original local workspace;
+historical report adapter SHA values identify those original versions, not the
+modified Stage11 scripts. STAGE11_* files are supplementary fresh results.
+The manifest separates historical identities, current sources and fresh outputs.
+This is not retrospective immutable-runtime attestation of historical runs.
+
+The old 32-case generator/exporter is deliberately excluded from normal tests
+and this candidate. The new stage7_saved_replay_test.rb only replays retained
+inputs, creates no keys, never signs, checks the pinned fixture SHA, compares
+all three wire SHA values, actual Gem result and TracePoint entries with the
+retained expectations, and records its own and production source SHA values.
+Output files use O_EXCL. Existing integration16 still generates ephemeral test
+keys but only exports with its explicit opt-in; normal runs unset that option.
+It does not replace the saved signed fixtures or historical observations.
+
+Python O1/O3 and O2/O5 comparisons require a fresh Gem replay file and record
+its SHA. O4 additionally requires the fresh O2/O5 report whose source SHA must
+match the loaded binding comparator. Schema identities and local Registry are
+unchanged. TracePoint records entries, not per-stage PASS.
+
+## Local checks
+
+- Existing regression411 = input79 + signature74 + disclosure64 + purchase81
+  + scoped97 + integration16, PASS.
+- Retained O2/O5 fixture32 and O1/O3 fixture6 Gem replays PASS. All preserve
+  original bytes. NORMAL is a historical same-Root alias of FULL, not another
+  fresh O1/O3 invocation. Signature alteration/wrong external key controls PASS.
+- Independent binding/profile32 MATCH; O4 thirteen cases/64 Schema decisions/
+  seventeen local references MATCH. Normal is Schema VALID, S01 is INVALID.
+- Schema VALID does not imply disclosure/profile validity: EXTRA/UNKNOWN,
+  amount/currency/totals mismatches and quantity2.0 remain distinguished.
+  DECOY complete control remains NOT_AVAILABLE; no hidden value is filled in.
+- All positive Gem results remain unverified; all evidence fields remain nil.
+
+First setup attempt stopped before tests: Bundler frozen mode rejected empty
+CHECKSUMS entries in the existing lock. No install or lock repair was attempted.
+Execution instead activates existing json2.18.0/jwt3.3.0 directly. An initial
+Ruby load wrapper skipped the replay CLI main guard and produced no report;
+the explicit program-name wrapper below executed the actual32/6 replays.
+These setup attempts are not counted as passed tests. No semantic test failed.
+
+## Offline reproduction
+
+Use only an already approved Ruby4.0.1 and installed fixed gems, existing
+Python3.11.15 venv with the two hash locks' dependency closure, and the13
+already acquired fixed Schema files. The variables below must point to these
+existing local resources; none of these commands acquires or installs them.
+Run from repository root and use NEW output names. Existing outputs are never
+overwritten. No absolute workstation path belongs in a committed command.
+
+```sh
+env -u RUBYOPT -u RUBYLIB -u BUNDLE_GEMFILE -u AP2_STAGE7_EXPORT \
+  GEM_HOME="$AP2_GEM_HOME" GEM_PATH="$AP2_GEM_PATH" \
+  "$AP2_RUBY" -e 'gem "json", "= 2.18.0"; gem "jwt", "= 3.3.0"; ARGV.each { |p| load p }' \
+  test/input_boundary_test.rb test/root_signature_test.rb test/root_disclosures_test.rb \
+  test/purchase_binding_test.rb test/scoped_constraints_test.rb test/integration_matrix_test.rb
+env -u RUBYOPT -u RUBYLIB -u BUNDLE_GEMFILE \
+  GEM_HOME="$AP2_GEM_HOME" GEM_PATH="$AP2_GEM_PATH" \
+  "$AP2_RUBY" -e 'gem "json", "= 2.18.0"; gem "jwt", "= 3.3.0"; f=ARGV.shift; $PROGRAM_NAME=f; load f' \
+  test/stage7_saved_replay_test.rb O2O5_PUBLIC_CASES.json NEW_REPLAY32.json
+env -u RUBYOPT -u RUBYLIB -u BUNDLE_GEMFILE \
+  GEM_HOME="$AP2_GEM_HOME" GEM_PATH="$AP2_GEM_PATH" \
+  "$AP2_RUBY" -e 'gem "json", "= 2.18.0"; gem "jwt", "= 3.3.0"; f=ARGV.shift; $PROGRAM_NAME=f; load f' \
+  test/stage7_saved_replay_test.rb STAGE7_PUBLIC_CASES.json NEW_REPLAY6.json
+"$AP2_PYTHON" -I -B test/o1o3_compare.py \
+  --oracle research/phase2a_e06i/e03_e04_signed_oracle.py \
+  --bundle STAGE7_PUBLIC_CASES.json --policy O1O3_POLICY.json \
+  --gem-replay NEW_REPLAY6.json --report NEW_O1O3.json
+"$AP2_PYTHON" -I -B test/o2o5_compare.py \
+  --oracle research/phase2a_e06i/e03_e04_signed_oracle.py \
+  --fixture O2O5_PUBLIC_CASES.json --gem-replay NEW_REPLAY32.json --report NEW_O2O5.json
+"$AP2_PYTHON" -I -B test/o4_compare.py \
+  --oracle research/phase2a_e06i/e03_e04_signed_oracle.py \
+  --fixture O2O5_PUBLIC_CASES.json --schema-dir "$AP2_SCHEMA_DIR" \
+  --gem-replay NEW_REPLAY32.json --binding-report NEW_O2O5.json --report NEW_O4.json
+```
+
+The five-wheel O4 lock supplements the five-wheel O1/O3 lock; existing
+typing-extensions is reused. No format extras, SDK installation or source builds.
+Schema/vendor/wheels/venv/cache/raw headers/environment logs are excluded from
+publication; their identities remain in the historical ledger and new manifest.
+This candidate therefore does not claim self-contained dependency reproduction.
+
+## Outstanding gates and acquisition defects
+
+Historical acquisition1: wheel4408169 bytes measured, metadata-inclusive10MB
+total unmeasured. Acquisition2: received HTTP body/header596565 bytes measured,
+curl size_request0 in18 transfers means sent-header-inclusive total unproven.
+Reserved bytes do not repair this. No new fetch was used to change that record.
+
+Synthetic fixture/profile/cryptographic design assumptions are shared despite
+different implementations. Real Issuer/Host enrollment, key/profile lifecycle,
+challenge/order/Buyer authority, nonce-CAS/replay/revocation, full Schema/all
+constraints, resource/time/concurrency guarantees and success Evidence remain
+unproven or unimplemented. Stage7 final acceptance and production/distribution/
+Phase2B stay HOLD. Stage10 DESIGN_ONLY material is separate, not implemented.
