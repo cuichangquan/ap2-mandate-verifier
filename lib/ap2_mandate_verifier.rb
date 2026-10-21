@@ -5,6 +5,7 @@ require_relative "ap2_mandate_verifier/input_validator"
 require_relative "ap2_mandate_verifier/root_signature"
 require_relative "ap2_mandate_verifier/root_disclosures"
 require_relative "ap2_mandate_verifier/purchase_binding"
+require_relative "ap2_mandate_verifier/scoped_constraints"
 
 module AP2MandateVerifier
   # Accepts original JSON bytes only. Syntax validity is not AP2 validity,
@@ -65,5 +66,18 @@ module AP2MandateVerifier
     Result.new(status: :unavailable, code: :purchase_dependency_unavailable)
   rescue StandardError
     Result.new(status: :unavailable, code: :purchase_check_unavailable)
+  end
+
+  def self.verify_scoped_constraints(**inputs)
+    ScopedConstraints.check!(**inputs)
+    Result.new(status: :unverified, code: :scoped_constraints_verified_only)
+  rescue InputValidator::Unavailable, RootSignature::Unavailable => error
+    Result.new(status: :unavailable, code: error.code)
+  rescue InputValidator::Invalid, RootSignature::Rejected => error
+    Result.new(status: :rejected, code: error.code)
+  rescue LoadError
+    Result.new(status: :unavailable, code: :constraint_dependency_unavailable)
+  rescue StandardError
+    Result.new(status: :unavailable, code: :constraint_check_unavailable)
   end
 end

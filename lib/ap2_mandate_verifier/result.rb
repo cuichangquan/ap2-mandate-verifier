@@ -12,14 +12,17 @@ module AP2MandateVerifier
                    missing_disclosure duplicate_disclosure duplicate_commitment extra_disclosure
                    disclosure_limit_exceeded unsupported_purchase_profile agent_key_mismatch
                    root_binding_mismatch audience_mismatch nonce_mismatch invalid_purchase_time
-                   delegation_claim_mismatch checkout_binding_mismatch checkout_identity_mismatch].freeze,
+                   delegation_claim_mismatch checkout_binding_mismatch checkout_identity_mismatch
+                   invalid_scoped_schema unsupported_scoped_profile unsupported_constraint
+                   constraint_mismatch amount_mismatch currency_mismatch constraint_limit_exceeded].freeze,
       unverified: %i[verification_not_implemented root_signature_verified_only root_disclosures_verified_only
-                     purchase_binding_verified_only].freeze,
+                     purchase_binding_verified_only scoped_constraints_verified_only].freeze,
       unavailable: %i[json_dependency_unavailable input_check_unavailable
                       signature_dependency_unavailable issuer_key_unavailable
                       issuer_key_unsupported root_signature_check_unavailable
                       disclosure_dependency_unavailable root_disclosure_check_unavailable
-                      purchase_context_unavailable purchase_dependency_unavailable purchase_check_unavailable].freeze
+                      purchase_context_unavailable purchase_dependency_unavailable purchase_check_unavailable
+                      constraint_context_unavailable constraint_dependency_unavailable constraint_check_unavailable].freeze
     }.freeze
 
     attr_reader :status, :code

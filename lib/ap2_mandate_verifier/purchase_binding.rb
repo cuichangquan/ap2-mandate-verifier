@@ -9,6 +9,14 @@ module AP2MandateVerifier
     class Rejected < RootSignature::Rejected; end
 
     def self.check!(root_presentation:, terminal_jws:, host_checkout_jws:,
+                   **context)
+      verified_purchase!(root_presentation: root_presentation, terminal_jws: terminal_jws,
+                         host_checkout_jws: host_checkout_jws, **context)
+      nil
+    end
+
+    # Internal handoff after every signature, closure and binding check.
+    def self.verified_purchase!(root_presentation:, terminal_jws:, host_checkout_jws:,
                    trusted_issuer_public_key_pem:, expected_agent_public_key_pem:,
                    trusted_merchant_public_key_pem:, expected_aud:, expected_nonce:,
                    verified_at:, expected_checkout_id:, expected_merchant_id:)
@@ -61,7 +69,7 @@ module AP2MandateVerifier
         checkout["merchant"]["id"] == merchant_id
       raise Rejected, :unsupported_purchase_profile unless checkout["status"] == "ready_for_complete"
       # Item/amount/currency/links and Root constraints are stage6, not certified.
-      nil
+      [open, checkout]
     end
 
     def self.context!(source, limit)
