@@ -26,6 +26,35 @@ def audit(event,args):
 sys.addaudithook(audit)
 NOW = dt.datetime(2026,10,20,8,tzinfo=dt.timezone.utc)
 
+# Literal field projections from the retained run39394877547 originals, not
+# signature evidence or a new signed-metadata replay. Historical NOW is used
+# only for fixture parsing; production UTC/expiry/signature checks are unchanged.
+# ZIP SHA256: 1e5c4b3ea8008b883cd4798cb545de515d41c51010c0da632c4884690fd49048
+# main InRelease SHA256: 77737fa4b34f2693e982cc9ee35736816c35a7778fc2d326cc1bbf5b301fe1aa
+# security InRelease SHA256: 1fdef039b234961ba7a4a4fb0977a2a2d2a76a42fc746a3c243c451ee51bdb7c
+SAVED_RELEASE_FIELDS = {
+    'main': b'''Origin: Debian
+Label: Debian
+Suite: oldstable
+Codename: bookworm
+Date: Sat, 11 Jul 2026 10:16:37 UTC
+Architectures: all amd64 arm64 armel armhf i386 mips64el mipsel ppc64el s390x
+Components: main contrib non-free-firmware non-free
+SHA256:
+ 9e0b5aabb2465b3d2e7a7fe27f9913846277833f7a2826e7767acccff5b588c5  8790396 main/binary-amd64/Packages.xz
+''',
+    'security': b'''Origin: Debian
+Label: Debian-Security
+Suite: oldstable-security
+Codename: bookworm-security
+Date: Tue, 20 Oct 2026 02:02:23 UTC
+Valid-Until: Tue, 27 Oct 2026 02:02:23 UTC
+Architectures: amd64 arm64 armhf i386 ppc64el
+Components: updates/main updates/contrib updates/non-free-firmware updates/non-free
+SHA256:
+ 91b95fb63d502d38db76ec77806f614d6ee8731912c1301cd4fa13e53059437b   354040 main/binary-amd64/Packages.xz
+'''}
+
 def sig(origin):
     data = []
     for role in p.ROLES[origin]:
@@ -43,11 +72,13 @@ def key(role):
     return data.encode()
 
 def release(origin,index,expiry='Tue, 27 Oct 2026 08:00:00 +0000'):
-    text = 'Origin: Debian\nCodename: '+('bookworm' if origin == 'main' else 'bookworm-security')+'\n'
-    text += 'Architectures: all amd64 arm64\nComponents: main contrib\nDate: Tue, 20 Oct 2026 07:00:00 +0000\n'
+    identity = ('Origin:','Codename:','Architectures:','Components:')
+    text = '\n'.join(line for line in SAVED_RELEASE_FIELDS[origin].decode('ascii').splitlines()
+                     if line.startswith(identity))+'\n'
+    text += 'Date: Tue, 20 Oct 2026 07:00:00 +0000\n'
     if expiry is not None:
         text += 'Valid-Until: '+expiry+'\n'
-    text += 'SHA256:\n '+p.digest(index)+' '+str(len(index))+' '+p.INDEX_PATH+'\n'
+    text += 'SHA256:\n '+p.digest(index)+' '+str(len(index))+' main/binary-amd64/Packages.xz\n'
     return text.encode()
 
 class Integration:
@@ -202,6 +233,48 @@ class Tests(unittest.TestCase):
                        source+b'x'*65537]:
             self.stop(p.signature_check,source,'main')
         self.stop(p.signature_check,sig('security'),'main')
+    def test_saved_release_fields_keep_origin_and_signed_index_distinct(self):
+        expected = {
+            'main': (8790396,'9e0b5aabb2465b3d2e7a7fe27f9913846277833f7a2826e7767acccff5b588c5','ABSENT'),
+            'security': (354040,'91b95fb63d502d38db76ec77806f614d6ee8731912c1301cd4fa13e53059437b','2026-10-27T02:02:23+00:00')}
+        self.assertEqual(p.INDEX_PATH,'main/binary-amd64/Packages.xz')
+        for origin, raw in SAVED_RELEASE_FIELDS.items():
+            with self.subTest(origin=origin):
+                result = p.release_check(raw,origin,NOW)
+                self.assertEqual((result['size'],result['sha256'],result['valid_until']),expected[origin])
+                # Components must not rewrite the signed index path or GET URL.
+                rewritten = raw.replace(b' main/binary-amd64/Packages.xz',
+                                        b' updates/main/binary-amd64/Packages.xz')
+                with self.assertRaises(p.Stop) as rejected:
+                    p.release_check(rewritten,origin,NOW)
+                self.assertEqual(str(rejected.exception),'INDEX_DESCRIPTOR')
+        for origin in ('unknown','bookworm-security',None):
+            self.stop(p.release_check,SAVED_RELEASE_FIELDS['security'],origin,NOW)
+
+    def test_saved_components_reject_swapped_missing_and_partial_tokens(self):
+        for origin, raw in SAVED_RELEASE_FIELDS.items():
+            line = next(line for line in raw.splitlines() if line.startswith(b'Components:'))
+            swapped = b'updates/main' if origin == 'main' else b'main'
+            partial = b'main-extra' if origin == 'main' else b'updates/main-extra'
+            for replacement in (b'Components: '+swapped,b'Components: '+partial,
+                                b'Components: contrib',b'Components:',b''):
+                with self.subTest(origin=origin,replacement=replacement):
+                    changed = raw.replace(line+b'\n',replacement+b'\n' if replacement else b'')
+                    with self.assertRaises(p.Stop) as rejected:
+                        p.release_check(changed,origin,NOW)
+                    self.assertEqual(str(rejected.exception),'RELEASE_IDENTITY')
+
+    def test_saved_security_component_fix_preserves_expiry_rejection(self):
+        raw = SAVED_RELEASE_FIELDS['security']
+        missing = raw.replace(b'Valid-Until: Tue, 27 Oct 2026 02:02:23 UTC\n',b'')
+        deadline = dt.datetime(2026,10,27,2,2,23,tzinfo=dt.timezone.utc)
+        for candidate, now in ((missing,NOW),(raw,deadline),
+                               (raw,deadline+dt.timedelta(seconds=1))):
+            with self.subTest(missing=candidate == missing,now=now):
+                with self.assertRaises(p.Stop) as rejected:
+                    p.release_check(candidate,'security',now)
+                self.assertEqual(str(rejected.exception),'RELEASE_EXPIRED')
+
     def test_release_date_expiry_identity_and_unique_hash(self):
         raw=release('main',b'abc',None)
         self.assertEqual(p.release_check(raw,'main',NOW)['valid_until'],'ABSENT')
@@ -248,11 +321,18 @@ class Tests(unittest.TestCase):
         self.stop(p.verify,self.recipe,fake,fake,out,private,self.budget,lambda:NOW)
         self.assertEqual(fake.events,['main_key'])
     def test_workflow_guards_and_no_automatic_trigger(self):
-        text=(HERE.parent.parent/'.github/workflows/phase2a-runtime-preflight-once.yml').read_text()
+        text=(HERE.parent.parent/'.github/workflows/phase2a-runtime-preflight-v2-once.yml').read_text()
         for token in ['workflow_dispatch:','github.run_attempt == 1','runs-on: ubuntu-24.04','timeout-minutes: 5',
-                      'runtime-preflight-once-consumed-20261020','persist-credentials: false','--kill-after=5s 115s',
+                      'runtime-preflight-v2-once-consumed-20261021','persist-credentials: false','--kill-after=5s 115s',
                       'retention-days: 7','ARTIFACT_CAP','zero_cost_confirmed','RECIPE_SHA','SOURCE_SHA']:
             self.assertIn(token,text)
+        self.assertEqual(text.split('SOURCE_SHA: ',1)[1].split()[0],
+                         p.digest((HERE/'p1r_runtime_prepare.py').read_bytes()))
+        self.assertEqual(text.split('RECIPE_SHA: ',1)[1].split()[0],
+                         p.digest((HERE/'p1r_runtime_recipe.json').read_bytes()))
+        previous=HERE.parent.parent/'.github/workflows/phase2a-runtime-preflight-once.yml'
+        self.assertEqual(p.digest(previous.read_bytes()),
+                         'dd47fbdfc7868726bb4b696e8fb85c47a6317d1792361712c8c10965c3ef0262')
         self.assertNotIn('pull_request:',text)
         self.assertNotIn('push:',text)
         self.assertNotIn('sudo ',text)
