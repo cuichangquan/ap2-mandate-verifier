@@ -105,6 +105,20 @@ module BoundaryTest
   before = source.dup
   expect(source, :unverified, :verification_not_implemented)
   assert(source == before && !source.frozen?)
+  # Exact mutable Strings may carry singleton methods too. No input-provided
+  # type/length/slice override may run or replace the original bytes.
+  callbacks = 0
+  [[+"{", :rejected, :invalid_json],
+   ["x" * (max + 1), :rejected, :input_too_large],
+   [+"{}", :unverified, :verification_not_implemented],
+   [Object.new, :rejected, :invalid_input_type],
+   [Class.new(String).new("{}"), :rejected, :invalid_input_type]].each do |wire, status, code|
+    wire.define_singleton_method(:instance_of?) { |_klass| callbacks += 1; true }
+    wire.define_singleton_method(:bytesize) { callbacks += 1; 2 }
+    wire.define_singleton_method(:byteslice) { |*_args| callbacks += 1; "{}" }
+    expect(wire, status, code)
+    assert(callbacks.zero?)
+  end
   [[:success, :verification_not_implemented], [:rejected, :verification_not_implemented],
    [:unverified, :invalid_json], [:unavailable, :invalid_json]].each do |status, code|
     rejected = false

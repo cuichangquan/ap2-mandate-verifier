@@ -6,6 +6,9 @@ module AP2MandateVerifier
     MAX_BYTES = 131_072
     MAX_DEPTH = 24 # Root container counts as depth one, matching JSON.parse.
     JSON_VERSION = "2.18.0"
+    CORE_INSTANCE_OF = Object.instance_method(:instance_of?)
+    CORE_BYTESIZE = String.instance_method(:bytesize)
+    CORE_BYTESLICE = String.instance_method(:byteslice)
 
     class Invalid < StandardError
       attr_reader :code
@@ -16,11 +19,12 @@ module AP2MandateVerifier
     end
 
     def self.check!(source)
-      # Exact String avoids caller-defined conversion and overridden methods.
-      raise Invalid, :invalid_input_type unless source.instance_of?(String)
-      raise Invalid, :input_too_large if source.bytesize > MAX_BYTES
+      # Even exact Strings can have singleton overrides. Never dispatch to
+      # caller methods during type/size checks or original-byte copying.
+      raise Invalid, :invalid_input_type unless CORE_INSTANCE_OF.bind_call(source, String)
+      raise Invalid, :input_too_large if CORE_BYTESIZE.bind_call(source) > MAX_BYTES
       # Bounded, detached snapshot; never dup an unbounded mutable source.
-      wire = source.byteslice(0, MAX_BYTES + 1)
+      wire = CORE_BYTESLICE.bind_call(source, 0, MAX_BYTES + 1)
       raise Invalid, :input_too_large if wire.bytesize > MAX_BYTES
       wire.force_encoding(Encoding::UTF_8)
       raise Invalid, :invalid_encoding unless wire.valid_encoding?
@@ -81,5 +85,6 @@ module AP2MandateVerifier
       end
     end
     private_class_method :check_numbers!, :reject_extensions!
+    private_constant :CORE_INSTANCE_OF, :CORE_BYTESIZE, :CORE_BYTESLICE
   end
 end
