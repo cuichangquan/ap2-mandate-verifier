@@ -288,8 +288,12 @@ def fields(text):
 def release_check(raw, origin, now):
     need(0 < len(raw) <= 524288, 'RELEASE_LIMIT')
     f = fields(raw.decode('utf-8'))
+    need(origin in ROLES, 'RELEASE_IDENTITY')
+    # Security's Components token is updates/main, but its signed SHA256 index
+    # path is still main/binary-amd64/Packages.xz. Never derive a URL from it.
+    component = 'main' if origin == 'main' else 'updates/main'
     need(f.get('Origin') == 'Debian' and f.get('Codename') == ('bookworm' if origin == 'main' else 'bookworm-security') and
-         'amd64' in f.get('Architectures','').split() and 'main' in f.get('Components','').split(), 'RELEASE_IDENTITY')
+         'amd64' in f.get('Architectures','').split() and component in f.get('Components','').split(), 'RELEASE_IDENTITY')
     def parsed(name):
         try:
             value = email.utils.parsedate_to_datetime(f[name])
