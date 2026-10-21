@@ -11,13 +11,14 @@
     "O4_cases": 13,
     "O4_local_refs": 17,
     "O4_schema_decisions": 64,
-    "Python_syntax_files": 3,
+    "Python_syntax_files": 4,
     "Ruby_syntax_files": 14,
-    "code_iteration_cycles": 1,
+    "code_iteration_cycles": 4,
     "independent_binding_profile_cases": 32,
     "max_code_iteration_cycles": 5,
     "overwrite_guard": true,
     "regression_cases": 411,
+    "report_boundary_controls": 40,
     "saved_wire_Gem_replay_cases": [
       32,
       6
@@ -29,6 +30,11 @@
     ]
   },
   "conclusion": "HOLD",
+  "current_result_files": [
+    "STAGE11_R4_O1O3_REPORT.json",
+    "STAGE11_R4_O2O5_REPORT.json",
+    "STAGE11_R4_O4_REPORT.json"
+  ],
   "current_verifier_sha256": {
     "lib/ap2_mandate_verifier.rb": "ec0ba37c67c37662a26faff933f5689920463ececbec3853061f1a4dce05f0c4",
     "lib/ap2_mandate_verifier/input_validator.rb": "299bc4a4f8eb353aa3e240a3b4cbd99aacd4eb3123b0b578c5f93f5599baf738",
@@ -55,6 +61,7 @@
     "test/o2o5_compare.py": "4ef30a7eba53a649ee3109793762d267331bbd6778b3f5b56af4ee252048e542",
     "test/o4_compare.py": "1f2dcb17f65ae67cd51ec56a6c6ef8cce9ef00baee4dcec0aac25671f8bc679d"
   },
+  "initial_stage11_reports": "Preserved prior adapter observations; current reports use STAGE11_R4 prefix",
   "local_snapshot_commit": "6ec5ab6b0dc39a686e60334114dfcd6706ffabf9",
   "main_commit_object_available_locally": true,
   "network_scope_note": "Comparison execution is offline; separately approved Git object fetch is integration-only",
@@ -76,14 +83,18 @@
     "STAGE11_O1O3_REPORT.json": "765c89005265c23563958171b4828b6652410c92271e6ddd9acd19b6a9baa7bd",
     "STAGE11_O2O5_REPORT.json": "ea6bbd14d68ec9eeaffd096db7c443530d6d3ab8c68ee5b17c01ba34d0e6a77b",
     "STAGE11_O4_REPORT.json": "e924073e790193182c03b262cb9a5fcc066e23c17d3ae2f3997b1098b8dcb1c5",
+    "STAGE11_R4_O1O3_REPORT.json": "91f38aa08df08b7543e8200efb2dc48f7fb4484f2728cfb4ad085b7bf1f3e77c",
+    "STAGE11_R4_O2O5_REPORT.json": "0c838b5fbb5b8a19b46904391892ee239f442937bbc28e2019c46598545c7f9e",
+    "STAGE11_R4_O4_REPORT.json": "2e39098b0663251f35cb62acc36b68964227432295f01f67a410a767746f7d59",
     "STAGE7_PUBLIC_CASES.json": "ba8bfe3cea97b2230084a5ab5ef97d99701e3974160abbad06a346f8115c85b0",
-    "docs/STAGE11_COMPARISON.md": "79a163d9550cc6ba7274702ce6b14b00f5df7915a38beda2e2e0c5b41127f5a3",
+    "docs/STAGE11_COMPARISON.md": "aa8e9f02a61513f09347cf82c64b9c6cdb3c065a22175b4a702f9f5a93f67b94",
     "o1o3-requirements.lock": "8e6d9f8898e607fc95b41e3ed8cf24b8cb88afd95aadd86bf9797349341092ba",
     "o4-requirements.lock": "7a468daf8e42b283c0172f3cd6a61f480a04b1f10fa5be1a547e917ff8b96432",
     "test/integration_matrix_test.rb": "231fc735be3af2b5084219cff9d0c1c7c2e470e7954f7bde0ed841cb371890db",
-    "test/o1o3_compare.py": "b8bec519e3c8b5b0ed8ece609f579825cbdc633dc6ac818dec1bd14c598bcc04",
-    "test/o2o5_compare.py": "5b28dbd536921afe2cb7c4bff80730bd00c7ed18de105e30ee8c1f711763a13e",
-    "test/o4_compare.py": "c76d09ae985ed8febc62e18a1d2c3dd3723305e549e260b47c82773378f31465",
+    "test/o1o3_compare.py": "b0900e76c3a12b7ce00d48412091191d43c6ce728bff6e219d03e74dedcf5d27",
+    "test/o2o5_compare.py": "5515d7c9c03361d989508007891459fffd1d66bf5ac3cda51cd3fdd175a4261c",
+    "test/o4_compare.py": "cad91fdefc69fd7b806b78e4c226fdb86093a2a582541421e47cf9f4af832108",
+    "test/stage11_report_boundary_test.py": "bc98497cfc107384dba64618f49932d8855f6e0d25d1620c6f7044733891b0db",
     "test/stage7_saved_replay_test.rb": "6454789b7102e9d7ded2c862ef016a97c58739b6aab63aaa0dfd6ab09e2158e0"
   },
   "publish_excluded": [

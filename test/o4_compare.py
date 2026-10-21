@@ -36,6 +36,27 @@ def load_source(path, digest, name):
     return module
 
 
+def validate_replay(replay, fixture_sha, case_names):
+    root = Path(__file__).resolve().parent.parent
+    observer = root / 'test/stage7_saved_replay_test.rb'
+    sources = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+               for p in sorted((root / 'lib').rglob('*.rb'))}
+    if not (replay.get('observer_sha256') == hashlib.sha256(observer.read_bytes()).hexdigest()
+            and replay.get('verifier_source_sha256') == sources
+            and replay.get('fixture_sha256') == fixture_sha
+            and replay.get('case_count') == len(case_names)
+            and set(replay.get('cases', {})) == set(case_names)
+            and replay.get('scope') == 'STAGE11_SAVED_WIRE_REPLAY_NOT_NEW_FIXTURES'
+            and replay.get('conclusion') == 'HOLD'
+            and replay.get('success') is False and replay.get('evidence', 'missing') is None):
+        raise ValueError('fresh Gem replay source/result identity')
+    for row in replay['cases'].values():
+        expected_status = 'unverified' if row.get('code') == 'scoped_constraints_verified_only' else 'rejected'
+        if (row.get('success') is not False or row.get('evidence', 'missing') is not None
+                or row.get('status') != expected_status):
+            raise ValueError('Gem replay row non-success boundary')
+
+
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--oracle',required=True)
@@ -95,13 +116,15 @@ def main():
          'checkout':'https://ap2-protocol.org/schemas/types/checkout.json'}
     validators={k:Draft202012Validator(schemas[uri],registry=registry) for k,uri in ids.items()}
     raw=oracle.read_regular(args.fixture,1048576)
-    prior=json.loads(Path(args.binding_report).read_text())
+    prior=oracle.strict_json(oracle.read_regular(args.binding_report,131072))
     need(hashlib.sha256(raw).hexdigest()==prior['fixture_sha256'],'fixture identity changed')
     need(prior['adapter_sha256']==binding_sha,'binding source/report mismatch')
     replay_raw=oracle.read_regular(args.gem_replay,65536)
     replay=oracle.strict_json(replay_raw)
     need(replay['fixture_sha256']==prior['fixture_sha256'] and replay['case_count']==32
          and replay['success'] is False and replay['evidence'] is None,'fresh Gem replay identity')
+    validate_replay(replay, hashlib.sha256(raw).hexdigest(), binding.EXPECTED)
+    binding.validate_binding_report(prior, binding_sha, replay_raw, replay)
     fixture=oracle.strict_json(raw)
     def presented(payload,parts):
         mapping={oracle.b64url(hashlib.sha256(s.encode('ascii')).digest()):

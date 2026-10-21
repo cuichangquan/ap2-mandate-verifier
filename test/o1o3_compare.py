@@ -24,6 +24,27 @@ def demand(value, message):
         raise ValueError(message)
 
 
+def validate_replay(replay, fixture_sha, case_names):
+    root = Path(__file__).resolve().parent.parent
+    observer = root / 'test/stage7_saved_replay_test.rb'
+    sources = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+               for p in sorted((root / 'lib').rglob('*.rb'))}
+    if not (replay.get('observer_sha256') == hashlib.sha256(observer.read_bytes()).hexdigest()
+            and replay.get('verifier_source_sha256') == sources
+            and replay.get('fixture_sha256') == fixture_sha
+            and replay.get('case_count') == len(case_names)
+            and set(replay.get('cases', {})) == set(case_names)
+            and replay.get('scope') == 'STAGE11_SAVED_WIRE_REPLAY_NOT_NEW_FIXTURES'
+            and replay.get('conclusion') == 'HOLD'
+            and replay.get('success') is False and replay.get('evidence', 'missing') is None):
+        raise ValueError('fresh Gem replay source/result identity')
+    for row in replay['cases'].values():
+        expected_status = 'unverified' if row.get('code') == 'scoped_constraints_verified_only' else 'rejected'
+        if (row.get('success') is not False or row.get('evidence', 'missing') is not None
+                or row.get('status') != expected_status):
+            raise ValueError('Gem replay row non-success boundary')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--oracle', required=True)
@@ -46,6 +67,7 @@ def main():
     demand(replay['fixture_sha256'] == BUNDLE_SHA and replay['case_count'] == 6
            and replay['success'] is False and replay['evidence'] is None,
            'fresh Gem replay identity')
+    validate_replay(replay, BUNDLE_SHA, EXPECTED)
     policy_raw = oracle.read_regular(args.policy, 16384)
     policy = oracle.strict_json(policy_raw)
     demand(set(policy) == {'scope', 'issuer_public_jwk', 'expected_alg',

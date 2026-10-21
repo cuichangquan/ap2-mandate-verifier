@@ -38,6 +38,26 @@ its SHA. O4 additionally requires the fresh O2/O5 report whose source SHA must
 match the loaded binding comparator. Schema identities and local Registry are
 unchanged. TracePoint records entries, not per-stage PASS.
 
+## Review repairs and current result identities
+
+The first PR review found that replay source hashes and the O4 prerequisite
+report were insufficiently checked. All three adapters now require the exact
+current observer and complete verifier source map, exact replay case set and
+per-row non-success boundary. O4 additionally requires the complete32-case
+O2/O5 result boundary, all expected codes/stages/wire hashes and the exact
+same fresh replay digest. Forty positive/negative boundary controls
+cover stale observer/source, missing or extra source, missing cases, synthetic
+minimal/failed prerequisite, mismatched replay/code/wire/O2 result, complete independent event order,
+replay status and Evidence.
+
+STAGE11_R4_* reports identify the repaired adapters; earlier STAGE11_* reports
+are preserved initial-candidate observations, not current-adapter evidence.
+Both sets retain identical original signed fixture inputs. For reproduction,
+run the boundary controls after producing STAGE11_R4_O2O5_REPORT.json with
+the O2/O5 command below (use that NEW report name on its first run).
+The boundary controls read that retained current report and never overwrite it:
+`"$AP2_PYTHON" -I -B test/stage11_report_boundary_test.py`.
+
 ## Local checks
 
 - Existing regression411 = input79 + signature74 + disclosure64 + purchase81

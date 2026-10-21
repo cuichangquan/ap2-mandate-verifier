@@ -181,6 +181,76 @@ def subset(o, cart, i):
         need(all(t['amount'] == amount for t in totals), 'amount_mismatch')
 
 
+def validate_replay(replay, fixture_sha, case_names):
+    root = Path(__file__).resolve().parent.parent
+    observer = root / 'test/stage7_saved_replay_test.rb'
+    sources = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+               for p in sorted((root / 'lib').rglob('*.rb'))}
+    if not (replay.get('observer_sha256') == hashlib.sha256(observer.read_bytes()).hexdigest()
+            and replay.get('verifier_source_sha256') == sources
+            and replay.get('fixture_sha256') == fixture_sha
+            and replay.get('case_count') == len(case_names)
+            and set(replay.get('cases', {})) == set(case_names)
+            and replay.get('scope') == 'STAGE11_SAVED_WIRE_REPLAY_NOT_NEW_FIXTURES'
+            and replay.get('conclusion') == 'HOLD'
+            and replay.get('success') is False and replay.get('evidence', 'missing') is None):
+        raise ValueError('fresh Gem replay source/result identity')
+    for row in replay['cases'].values():
+        expected_status = 'unverified' if row.get('code') == 'scoped_constraints_verified_only' else 'rejected'
+        if (row.get('success') is not False or row.get('evidence', 'missing') is not None
+                or row.get('status') != expected_status):
+            raise ValueError('Gem replay row non-success boundary')
+
+
+def validate_binding_report(report, adapter_sha, replay_raw, replay):
+    need(report.get('scope') == 'LOCAL_SYNTHETIC_O2_O5_AND_MANUAL_SUBSET_COMPARISON'
+         and report.get('adapter_sha256') == adapter_sha
+         and report.get('oracle_sha256') == ORACLE_SHA
+         and report.get('fixture_sha256') == replay['fixture_sha256']
+         and report.get('fresh_gem_replay_sha256') == hashlib.sha256(replay_raw).hexdigest()
+         and report.get('case_count') == len(EXPECTED)
+         and set(report.get('cases', {})) == set(EXPECTED)
+         and report.get('official_O4') == 'NOT_RUN'
+         and report.get('conclusion') == 'HOLD'
+         and report.get('success') is False and report.get('evidence', 'missing') is None,
+         'completed binding report identity/result boundary')
+    for name, (code, count) in EXPECTED.items():
+        row = report['cases'][name]
+        observed = replay['cases'][name]
+        binding_valid = {'FULL','NORMAL','S01','UNKNOWN_CONSTRAINT','QUANTITY_TYPE',
+                         'QUANTITY_MISMATCH','AMOUNT','CURRENCY','TOTALS',
+                         'HIDDEN','UNKNOWN','DUPLICATE','EXTRA','DECOY','HIDDEN_BEFORE_AMOUNT'}
+        phases = ['open_time', 'external_agent_match', 'agent_signature', 'root_hash',
+                  'aud_nonce', 'terminal_time', 'closed_time', 'checkout_original_hash',
+                  'merchant_signature', 'checkout_identity']
+        stop = {'WRONG_AGENT_KEY':'external_agent_match',
+                'WRONG_AGENT_SIGNATURE':'agent_signature', 'TAMPERED_AGENT_SIGNATURE':'agent_signature',
+                'ROOT_BINDING':'root_hash', 'AUDIENCE':'aud_nonce', 'NONCE':'aud_nonce',
+                'EXPIRED':'open_time', 'FUTURE_AGENT':'terminal_time', 'CLOSED_TIME':'closed_time',
+                'CHECKOUT_ORIGINAL':'checkout_original_hash', 'CHECKOUT_HASH':'checkout_original_hash',
+                'WRONG_MERCHANT_KEY':'merchant_signature', 'CHECKOUT_ID':'checkout_identity',
+                'MERCHANT_ID':'checkout_identity', 'AGENT_BEFORE_S01':'agent_signature',
+                'NONCE_BEFORE_MERCHANT':'aud_nonce', 'MERCHANT_BEFORE_QUANTITY':'merchant_signature'}
+        expected_binding_events = phases if name in binding_valid else phases[:phases.index(stop[name])+1]
+        graph_negative = name in {'HIDDEN','UNKNOWN','DUPLICATE','EXTRA','DECOY','HIDDEN_BEFORE_AMOUNT'}
+        expected_pipeline = ['root_signature','root_graph']
+        if not graph_negative:
+            expected_pipeline += expected_binding_events
+            if name in binding_valid:
+                expected_pipeline += ['local_profile']
+        need(row.get('o2_isolated') == ('VALID_LIMITED_BINDING' if name in binding_valid else code)
+             and row.get('comparison') == 'MATCH'
+             and row.get('expected_code') == row.get('python_code') == row.get('gem_code') == code
+             and observed['code'] == code
+             and row.get('gem_entries') == observed['entries'] == G[:count]
+             and row.get('original_wire_hashes') == {k: observed[k] for k in
+                 ('root_sha256', 'terminal_sha256', 'checkout_sha256')}
+             and isinstance(row.get('o2_isolated'), str)
+             and row.get('o2_events') == expected_binding_events
+             and row.get('python_pipeline_events') == expected_pipeline,
+             name + ': incomplete binding prerequisite result')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--oracle', required=True)
@@ -200,6 +270,7 @@ def main():
     need(replay['fixture_sha256'] == hashlib.sha256(raw).hexdigest()
          and replay['case_count'] == 32 and replay['success'] is False
          and replay['evidence'] is None, 'fresh Gem replay identity')
+    validate_replay(replay, hashlib.sha256(raw).hexdigest(), EXPECTED)
     need(set(bundle['cases']) == set(EXPECTED), 'case set mismatch')
     rows = {}
     for name, i in bundle['cases'].items():
