@@ -7,11 +7,15 @@ module AP2MandateVerifier
       rejected: %i[invalid_input_type input_too_large invalid_encoding
                    invalid_json duplicate_key input_too_deep invalid_root_jws
                    unsupported_root_header unsupported_root_algorithm
-                   unsupported_root_type invalid_root_payload invalid_root_signature].freeze,
-      unverified: %i[verification_not_implemented root_signature_verified_only].freeze,
+                   unsupported_root_type invalid_root_payload invalid_root_signature
+                   invalid_root_presentation unsupported_disclosure_profile invalid_disclosure
+                   missing_disclosure duplicate_disclosure duplicate_commitment extra_disclosure
+                   disclosure_limit_exceeded].freeze,
+      unverified: %i[verification_not_implemented root_signature_verified_only root_disclosures_verified_only].freeze,
       unavailable: %i[json_dependency_unavailable input_check_unavailable
                       signature_dependency_unavailable issuer_key_unavailable
-                      issuer_key_unsupported root_signature_check_unavailable].freeze
+                      issuer_key_unsupported root_signature_check_unavailable
+                      disclosure_dependency_unavailable root_disclosure_check_unavailable].freeze
     }.freeze
 
     attr_reader :status, :code

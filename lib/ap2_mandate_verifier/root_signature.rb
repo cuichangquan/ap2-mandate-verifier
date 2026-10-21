@@ -18,6 +18,13 @@ module AP2MandateVerifier
     class Unavailable < Rejected; end
 
     def self.check!(source, issuer_pem)
+      verified_payload!(source, issuer_pem)
+      nil
+    end
+
+    # Internal stage handoff: always authenticates this original wire first.
+    # Returned claims remain unvalidated for AP2 authority/schema/constraints.
+    def self.verified_payload!(source, issuer_pem)
       wire = InputValidator.snapshot!(source, max_bytes: MAX_WIRE_BYTES)
       raise Rejected, :invalid_root_jws unless wire.ascii_only?
       parts = wire.split(".", -1)
@@ -49,7 +56,7 @@ module AP2MandateVerifier
         raise Rejected, :invalid_root_signature
       end
       raise Unavailable, :root_signature_check_unavailable unless verified == payload && protected_header == header
-      nil
+      payload
     end
 
     def self.dependencies!
