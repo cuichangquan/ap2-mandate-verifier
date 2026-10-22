@@ -128,6 +128,10 @@ verified terminal claim, retaining the original signature/Host nonce comparison.
 It aligns with PHASE2A_MINIMAL_VERIFIER_DESIGN and the B1 immutable Host snapshot
 contract's hashed-nonce output rule. Both contract and implementation revisions
 advance to2 because the output shape changed; the raw-nonce v1 is not emitted
-for compatibility. Host comparison uses its locally retained nonce digest;
-no issuance/consumption is performed. A hash is not a secret or authorization.
+for compatibility. Verifier input and signature comparison still use the raw Host challenge nonce
+and raw signed terminal nonce; only the public Evidence projection is hashed.
+A future consuming Host may compare that Evidence digest with SHA256 of its
+locally retained raw nonce. No digest-based Host consumer, input-side nonce
+privacy, secret storage or issuance/consumption is implemented here. A hash is
+not a secret or authorization.
 Historical v1 results/source pins remain historical evidence and are not replaced.
