@@ -35,6 +35,7 @@ def validate_replay(replay, fixture_sha, case_names):
             and replay.get('case_count') == len(case_names)
             and set(replay.get('cases', {})) == set(case_names)
             and replay.get('scope') == 'STAGE11_SAVED_WIRE_REPLAY_NOT_NEW_FIXTURES'
+            and replay.get('runtime') == {'ruby': '4.0.1', 'json': '2.18.0', 'jwt': '3.3.0'}
             and replay.get('conclusion') == 'HOLD'
             and replay.get('success') is False and replay.get('evidence', 'missing') is None):
         raise ValueError('fresh Gem replay source/result identity')

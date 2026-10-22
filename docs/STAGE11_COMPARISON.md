@@ -45,15 +45,20 @@ report were insufficiently checked. All three adapters now require the exact
 current observer and complete verifier source map, exact replay case set and
 per-row non-success boundary. O4 additionally requires the complete32-case
 O2/O5 result boundary, all expected codes/stages/wire hashes and the exact
-same fresh replay digest. Forty positive/negative boundary controls
+same fresh replay digest. Fifty-five positive/negative boundary controls
 cover stale observer/source, missing or extra source, missing cases, synthetic
 minimal/failed prerequisite, mismatched replay/code/wire/O2 result, complete independent event order,
-replay status and Evidence.
+replay status, prescribed Ruby4.0.1/JSON2.18.0/JWT3.3.0 runtime and Evidence.
 
-STAGE11_R4_* reports identify the repaired adapters; earlier STAGE11_* reports
+STAGE11_R5_* reports identify the repaired adapters; earlier STAGE11_* reports
 are preserved initial-candidate observations, not current-adapter evidence.
-Both sets retain identical original signed fixture inputs. For reproduction,
-run the boundary controls after producing STAGE11_R4_O2O5_REPORT.json with
+Initial, R4 and current R5 results retain identical original signed fixture inputs.
+The second PR review identified recorded-but-unchecked runtime metadata.
+Evidence admission was reassessed as one identity/result boundary: exact
+observer, complete verifier source map, fixture/cases, prescribed runtime tuple,
+per-row status/non-success, and complete O4 prerequisite/order. This final
+local repair is cycle5 of5; any further substantive gap requires STOP/reassessment. For reproduction,
+run the boundary controls after producing STAGE11_R5_O2O5_REPORT.json with
 the O2/O5 command below (use that NEW report name on its first run).
 The boundary controls read that retained current report and never overwrite it:
 `"$AP2_PYTHON" -I -B test/stage11_report_boundary_test.py`.

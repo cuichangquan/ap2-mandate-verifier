@@ -26,7 +26,8 @@ def main():
         args = (replay['fixture_sha256'], set(replay['cases']))
         validate(replay, *args); count += 1
         for mutation in ('observer', 'stale_source', 'missing_source', 'extra_source',
-                         'missing_case', 'success_row', 'evidence_row', 'status_row'):
+                         'missing_case', 'success_row', 'evidence_row', 'status_row', 'missing_runtime', 'ruby_runtime',
+                         'json_runtime', 'jwt_runtime', 'extra_runtime'):
             bad = copy.deepcopy(replay)
             if mutation == 'observer': bad['observer_sha256'] = '0' * 64
             elif mutation == 'stale_source':
@@ -37,9 +38,14 @@ def main():
             elif mutation == 'success_row': bad['cases'][next(iter(bad['cases']))]['success'] = True
             elif mutation == 'evidence_row': bad['cases'][next(iter(bad['cases']))]['evidence'] = {}
             elif mutation == 'status_row': bad['cases'][next(iter(bad['cases']))]['status'] = 'success'
+            elif mutation == 'missing_runtime': bad.pop('runtime')
+            elif mutation == 'ruby_runtime': bad['runtime']['ruby'] = '3.4.0'
+            elif mutation == 'json_runtime': bad['runtime']['json'] = '2.17.0'
+            elif mutation == 'jwt_runtime': bad['runtime']['jwt'] = '3.2.0'
+            elif mutation == 'extra_runtime': bad['runtime']['unapproved'] = True
             rejected(lambda: validate(bad, *args))
     binding = modules['o2o5']
-    prior = json.loads((ROOT / 'STAGE11_R4_O2O5_REPORT.json').read_text())
+    prior = json.loads((ROOT / 'STAGE11_R5_O2O5_REPORT.json').read_text())
     replay_raw = (ROOT / 'STAGE11_GEM_REPLAY_32.json').read_bytes()
     replay = json.loads(replay_raw)
     adapter_sha = hashlib.sha256((ROOT / 'test/o2o5_compare.py').read_bytes()).hexdigest()

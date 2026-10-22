@@ -13,12 +13,12 @@
     "O4_schema_decisions": 64,
     "Python_syntax_files": 4,
     "Ruby_syntax_files": 14,
-    "code_iteration_cycles": 4,
+    "code_iteration_cycles": 5,
     "independent_binding_profile_cases": 32,
     "max_code_iteration_cycles": 5,
     "overwrite_guard": true,
     "regression_cases": 411,
-    "report_boundary_controls": 40,
+    "report_boundary_controls": 55,
     "saved_wire_Gem_replay_cases": [
       32,
       6
@@ -31,9 +31,9 @@
   },
   "conclusion": "HOLD",
   "current_result_files": [
-    "STAGE11_R4_O1O3_REPORT.json",
-    "STAGE11_R4_O2O5_REPORT.json",
-    "STAGE11_R4_O4_REPORT.json"
+    "STAGE11_R5_O1O3_REPORT.json",
+    "STAGE11_R5_O2O5_REPORT.json",
+    "STAGE11_R5_O4_REPORT.json"
   ],
   "current_verifier_sha256": {
     "lib/ap2_mandate_verifier.rb": "ec0ba37c67c37662a26faff933f5689920463ececbec3853061f1a4dce05f0c4",
@@ -46,6 +46,7 @@
   },
   "dependency_acquisition_or_install": false,
   "evidence": null,
+  "evidence_admission_design_reassessment": "Exact observer, complete current verifier source map, fixture/case set, prescribed runtime tuple, status/non-success and complete binding prerequisite/order; cycle5/5 STOP on further substantive gap",
   "executed_network_or_install": false,
   "historical_comparator_versions": "Original scripts retained locally; historical SHA values are not current Stage11 script identities",
   "historical_inputs_replaced": false,
@@ -61,7 +62,7 @@
     "test/o2o5_compare.py": "4ef30a7eba53a649ee3109793762d267331bbd6778b3f5b56af4ee252048e542",
     "test/o4_compare.py": "1f2dcb17f65ae67cd51ec56a6c6ef8cce9ef00baee4dcec0aac25671f8bc679d"
   },
-  "initial_stage11_reports": "Preserved prior adapter observations; current reports use STAGE11_R4 prefix",
+  "initial_stage11_reports": "Initial and R4 observations preserved; current reports use STAGE11_R5 prefix",
   "local_snapshot_commit": "6ec5ab6b0dc39a686e60334114dfcd6706ffabf9",
   "main_commit_object_available_locally": true,
   "network_scope_note": "Comparison execution is offline; separately approved Git object fetch is integration-only",
@@ -86,15 +87,18 @@
     "STAGE11_R4_O1O3_REPORT.json": "91f38aa08df08b7543e8200efb2dc48f7fb4484f2728cfb4ad085b7bf1f3e77c",
     "STAGE11_R4_O2O5_REPORT.json": "0c838b5fbb5b8a19b46904391892ee239f442937bbc28e2019c46598545c7f9e",
     "STAGE11_R4_O4_REPORT.json": "2e39098b0663251f35cb62acc36b68964227432295f01f67a410a767746f7d59",
+    "STAGE11_R5_O1O3_REPORT.json": "398d8f95363a13dff70b976fd34e9126ce23b0790c03800548d28575530e154d",
+    "STAGE11_R5_O2O5_REPORT.json": "e87b929019e4e7208de483007cb796af093f75603395b48f8eea42ef8196db96",
+    "STAGE11_R5_O4_REPORT.json": "3c889852f61d271c634d035b947c9070f26ca80ad9f7886724b7a1dea3907472",
     "STAGE7_PUBLIC_CASES.json": "ba8bfe3cea97b2230084a5ab5ef97d99701e3974160abbad06a346f8115c85b0",
-    "docs/STAGE11_COMPARISON.md": "aa8e9f02a61513f09347cf82c64b9c6cdb3c065a22175b4a702f9f5a93f67b94",
+    "docs/STAGE11_COMPARISON.md": "6402bb48018f2b28a90ad48dee238d3cb6ffc10fd58138dd1c5621035ddb31c3",
     "o1o3-requirements.lock": "8e6d9f8898e607fc95b41e3ed8cf24b8cb88afd95aadd86bf9797349341092ba",
     "o4-requirements.lock": "7a468daf8e42b283c0172f3cd6a61f480a04b1f10fa5be1a547e917ff8b96432",
     "test/integration_matrix_test.rb": "231fc735be3af2b5084219cff9d0c1c7c2e470e7954f7bde0ed841cb371890db",
-    "test/o1o3_compare.py": "b0900e76c3a12b7ce00d48412091191d43c6ce728bff6e219d03e74dedcf5d27",
-    "test/o2o5_compare.py": "5515d7c9c03361d989508007891459fffd1d66bf5ac3cda51cd3fdd175a4261c",
-    "test/o4_compare.py": "cad91fdefc69fd7b806b78e4c226fdb86093a2a582541421e47cf9f4af832108",
-    "test/stage11_report_boundary_test.py": "bc98497cfc107384dba64618f49932d8855f6e0d25d1620c6f7044733891b0db",
+    "test/o1o3_compare.py": "d098704bc37e453b78c301dc0cb6de22d45ff2e58e7deeae150da90031f32052",
+    "test/o2o5_compare.py": "af8b5e1946d8172f795584d1ef61eab9e9bfab80e0d6d0648507171601bce62a",
+    "test/o4_compare.py": "f31d3babb45ac6863c2414be25a3d82aeb136761264598989aab4ddecf8f735c",
+    "test/stage11_report_boundary_test.py": "f7dd581303bbf2c433f3076c4a8256b8785f0e978d3eee5aee7b40f2b718029f",
     "test/stage7_saved_replay_test.rb": "6454789b7102e9d7ded2c862ef016a97c58739b6aab63aaa0dfd6ab09e2158e0"
   },
   "publish_excluded": [
