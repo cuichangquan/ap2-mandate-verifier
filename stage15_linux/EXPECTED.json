@@ -1,0 +1,1125 @@
+{
+  "scope": "INDEPENDENT_MBA_EXPECTATIONS_FOR_LINUX_REPLAY_NOT_LINUX_ORACLE",
+  "inputs_sha256": "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1",
+  "oracle_identity": {
+    "python": {
+      "implementation": "CPython",
+      "version": "3.11.15",
+      "system": "Darwin",
+      "machine": "arm64"
+    },
+    "dependencies": {
+      "jwcrypto": "1.6.1",
+      "cryptography": "50.0.2",
+      "cffi": "2.0.0",
+      "typing-extensions": "4.15.0",
+      "pycparser": "2.23",
+      "jsonschema": "4.26.0",
+      "jsonschema-specifications": "2025.9.1",
+      "referencing": "0.37.0",
+      "rpds-py": "0.30.0",
+      "attrs": "26.1.0"
+    },
+    "locks": {
+      "o1o3-requirements.lock": "8e6d9f8898e607fc95b41e3ed8cf24b8cb88afd95aadd86bf9797349341092ba",
+      "o4-requirements.lock": "7a468daf8e42b283c0172f3cd6a61f480a04b1f10fa5be1a547e917ff8b96432"
+    },
+    "identity_source_sha256": "ccd0f10d9bad02b29bfcfa5d1734b1cadf3b19c6ed60d8a278a93d830d217c0e"
+  },
+  "sources": {
+    "stage15/compare.py": "afb93671f0a3de7dce0c384e8c7b6a33d51c51ce6ae4092bb0e217d3929e34e7",
+    "test/o2o5_compare.py": "97faec0c3a36bcf60b6c7a340a38ab9e0512ab3bc04716af04ce7c8f47bc4ba4",
+    "research/phase2a_e06i/e03_e04_signed_oracle.py": "884900e2c3420ebfc2393413ae0e6010db71b28f8a6ef02eec997defa57b8caf",
+    "security_json/compare.py": "c5a8fcf537fd7df986725883a2255e0037499b3209ca120a03aa2924da76d833",
+    "stage15_linux/export_expected.py": "d7fa2c3e737ee72c98f44fed0d66aab10b36234dcaeffcc605b2b09878bcd77c"
+  },
+  "cases": {
+    "FULL": {
+      "code": "scoped_research_verified",
+      "evidence": {
+        "profile_ref": "ap2.checkout.single_merchant_sku",
+        "profile_version": "1",
+        "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+        "verified_at": 1800000000,
+        "clock_source_id": "fixed-synthetic-clock",
+        "valid_from": 1800000000,
+        "valid_until": 1800000100,
+        "trust_snapshot": {
+          "id": "synthetic-snapshot",
+          "policy_version": "policy-1",
+          "content_hash": "bbd09a3725a3b19fe8dfa4c33ef8017192c63a9c1393f86ab4a6c3342424bb63"
+        },
+        "selected_keys": [
+          {
+            "role": "Issuer",
+            "identity": "issuer",
+            "tenant_id": "synthetic-tenant",
+            "purpose": "checkout",
+            "key_ref": "issuer-1",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "profile_version": "1",
+            "key_fingerprint": "f3587dc8627af079964c46145268b2abe30996c3091a2a43850719cafe2b4de9",
+            "algorithm": "ES256",
+            "active": true,
+            "not_before": 1799998000,
+            "not_after": 1800002000
+          },
+          {
+            "role": "Agent",
+            "identity": "agent",
+            "tenant_id": "synthetic-tenant",
+            "purpose": "checkout",
+            "key_ref": "agent-1",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "profile_version": "1",
+            "key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+            "algorithm": "ES256",
+            "active": true,
+            "not_before": 1799998000,
+            "not_after": 1800002000
+          },
+          {
+            "role": "Merchant",
+            "identity": "shop",
+            "tenant_id": "synthetic-tenant",
+            "purpose": "checkout",
+            "key_ref": "merchant-1",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "profile_version": "1",
+            "key_fingerprint": "17de6834337d807b90004dd7d544445f47db959765d8eff5967bae04c070f2b8",
+            "algorithm": "ES256",
+            "active": true,
+            "not_before": 1799998000,
+            "not_after": 1800002000
+          }
+        ],
+        "checkout_binding": {
+          "tenant_id": "synthetic-tenant",
+          "buyer_account_id": "synthetic-buyer",
+          "order_id": "order",
+          "merchant_id": "shop",
+          "audience": "host",
+          "profile_ref": "ap2.checkout.single_merchant_sku",
+          "order_version": "order-v1",
+          "profile_version": "1",
+          "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+          "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+          "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+          "currency": "USD",
+          "expected_total": 200
+        },
+        "verified_challenge": {
+          "challenge_id": "synthetic-challenge",
+          "issuer_id": "synthetic-host",
+          "B": {
+            "tenant_id": "synthetic-tenant",
+            "buyer_account_id": "synthetic-buyer",
+            "order_id": "order",
+            "merchant_id": "shop",
+            "audience": "host",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "order_version": "order-v1",
+            "profile_version": "1",
+            "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+            "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+            "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+            "currency": "USD",
+            "expected_total": 200
+          },
+          "trust_snapshot_id": "synthetic-snapshot",
+          "policy_version": "policy-1",
+          "trust_content_hash": "bbd09a3725a3b19fe8dfa4c33ef8017192c63a9c1393f86ab4a6c3342424bb63",
+          "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+          "not_before": 1799998000,
+          "not_after": 1800002000,
+          "state": "issued",
+          "verified_nonce_sha256": "1b16b1df538ba12dc3f97edbb85caa7050d46c148134290feba80f8236c83db9"
+        },
+        "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+        "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+        "terminal_digest": "750227b1b8d3814320c478737da5ddc9557c28b9b01cc56ec7bfdbf88f362d7d",
+        "contract_version": "ap2.research-evidence.2",
+        "implementation_revision": "ap2.research-verifier.2",
+        "revision_kind": "static_identifier_not_runtime_attestation",
+        "verified_scope": [
+          "strict_inputs",
+          "host_trust_profile_input_checks",
+          "issuer_root_signature",
+          "original_root_graph_closure",
+          "agent_key_confirmation",
+          "agent_terminal_signature",
+          "closed_original_checkout_binding",
+          "merchant_checkout_signature",
+          "fixed_subset_schema_constraints",
+          "host_challenge_order_binding",
+          "validity_intersection"
+        ]
+      },
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature",
+        "signature",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile",
+        "interval"
+      ]
+    },
+    "HIDDEN": {
+      "code": "missing_disclosure",
+      "evidence": null,
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph"
+      ]
+    },
+    "UNKNOWN": {
+      "code": "unsupported_disclosure_profile",
+      "evidence": null,
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph"
+      ]
+    },
+    "DUPLICATE": {
+      "code": "duplicate_commitment",
+      "evidence": null,
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph"
+      ]
+    },
+    "EXTRA": {
+      "code": "extra_disclosure",
+      "evidence": null,
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph"
+      ]
+    },
+    "DECOY": {
+      "code": "missing_disclosure",
+      "evidence": null,
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph"
+      ]
+    },
+    "WRONG_AGENT_KEY": {
+      "code": "agent_key_mismatch",
+      "evidence": null,
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match"
+      ]
+    },
+    "TAMPERED_AGENT_SIGNATURE": {
+      "code": "invalid_root_signature",
+      "evidence": null,
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature"
+      ]
+    },
+    "ROOT_BINDING": {
+      "code": "root_binding_mismatch",
+      "evidence": null,
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash"
+      ]
+    },
+    "NONCE": {
+      "code": "nonce_mismatch",
+      "evidence": null,
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce"
+      ]
+    },
+    "WRONG_MERCHANT_KEY": {
+      "code": "invalid_root_signature",
+      "evidence": null,
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature",
+        "signature",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature"
+      ]
+    },
+    "S01": {
+      "code": "invalid_scoped_schema",
+      "evidence": null,
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature",
+        "signature",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile"
+      ]
+    },
+    "AMOUNT": {
+      "code": "amount_mismatch",
+      "evidence": null,
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature",
+        "signature",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile"
+      ]
+    },
+    "TOTALS": {
+      "code": "amount_mismatch",
+      "evidence": null,
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature",
+        "signature",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile"
+      ]
+    },
+    "CONSUMED": {
+      "code": "challenge_state_mismatch",
+      "evidence": null,
+      "entries": [],
+      "python_events": [
+        "host"
+      ]
+    },
+    "CHALLENGE_EXPIRED": {
+      "code": "challenge_time_mismatch",
+      "evidence": null,
+      "entries": [],
+      "python_events": [
+        "host"
+      ]
+    },
+    "CHALLENGE_START": {
+      "code": "scoped_research_verified",
+      "evidence": {
+        "profile_ref": "ap2.checkout.single_merchant_sku",
+        "profile_version": "1",
+        "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+        "verified_at": 1800000000,
+        "clock_source_id": "fixed-synthetic-clock",
+        "valid_from": 1800000000,
+        "valid_until": 1800000100,
+        "trust_snapshot": {
+          "id": "synthetic-snapshot",
+          "policy_version": "policy-1",
+          "content_hash": "bbd09a3725a3b19fe8dfa4c33ef8017192c63a9c1393f86ab4a6c3342424bb63"
+        },
+        "selected_keys": [
+          {
+            "role": "Issuer",
+            "identity": "issuer",
+            "tenant_id": "synthetic-tenant",
+            "purpose": "checkout",
+            "key_ref": "issuer-1",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "profile_version": "1",
+            "key_fingerprint": "f3587dc8627af079964c46145268b2abe30996c3091a2a43850719cafe2b4de9",
+            "algorithm": "ES256",
+            "active": true,
+            "not_before": 1799998000,
+            "not_after": 1800002000
+          },
+          {
+            "role": "Agent",
+            "identity": "agent",
+            "tenant_id": "synthetic-tenant",
+            "purpose": "checkout",
+            "key_ref": "agent-1",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "profile_version": "1",
+            "key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+            "algorithm": "ES256",
+            "active": true,
+            "not_before": 1799998000,
+            "not_after": 1800002000
+          },
+          {
+            "role": "Merchant",
+            "identity": "shop",
+            "tenant_id": "synthetic-tenant",
+            "purpose": "checkout",
+            "key_ref": "merchant-1",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "profile_version": "1",
+            "key_fingerprint": "17de6834337d807b90004dd7d544445f47db959765d8eff5967bae04c070f2b8",
+            "algorithm": "ES256",
+            "active": true,
+            "not_before": 1799998000,
+            "not_after": 1800002000
+          }
+        ],
+        "checkout_binding": {
+          "tenant_id": "synthetic-tenant",
+          "buyer_account_id": "synthetic-buyer",
+          "order_id": "order",
+          "merchant_id": "shop",
+          "audience": "host",
+          "profile_ref": "ap2.checkout.single_merchant_sku",
+          "order_version": "order-v1",
+          "profile_version": "1",
+          "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+          "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+          "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+          "currency": "USD",
+          "expected_total": 200
+        },
+        "verified_challenge": {
+          "challenge_id": "synthetic-challenge",
+          "issuer_id": "synthetic-host",
+          "B": {
+            "tenant_id": "synthetic-tenant",
+            "buyer_account_id": "synthetic-buyer",
+            "order_id": "order",
+            "merchant_id": "shop",
+            "audience": "host",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "order_version": "order-v1",
+            "profile_version": "1",
+            "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+            "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+            "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+            "currency": "USD",
+            "expected_total": 200
+          },
+          "trust_snapshot_id": "synthetic-snapshot",
+          "policy_version": "policy-1",
+          "trust_content_hash": "bbd09a3725a3b19fe8dfa4c33ef8017192c63a9c1393f86ab4a6c3342424bb63",
+          "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+          "not_before": 1800000000,
+          "not_after": 1800002000,
+          "state": "issued",
+          "verified_nonce_sha256": "1b16b1df538ba12dc3f97edbb85caa7050d46c148134290feba80f8236c83db9"
+        },
+        "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+        "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+        "terminal_digest": "750227b1b8d3814320c478737da5ddc9557c28b9b01cc56ec7bfdbf88f362d7d",
+        "contract_version": "ap2.research-evidence.2",
+        "implementation_revision": "ap2.research-verifier.2",
+        "revision_kind": "static_identifier_not_runtime_attestation",
+        "verified_scope": [
+          "strict_inputs",
+          "host_trust_profile_input_checks",
+          "issuer_root_signature",
+          "original_root_graph_closure",
+          "agent_key_confirmation",
+          "agent_terminal_signature",
+          "closed_original_checkout_binding",
+          "merchant_checkout_signature",
+          "fixed_subset_schema_constraints",
+          "host_challenge_order_binding",
+          "validity_intersection"
+        ]
+      },
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature",
+        "signature",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile",
+        "interval"
+      ]
+    },
+    "SHORT_CHALLENGE": {
+      "code": "scoped_research_verified",
+      "evidence": {
+        "profile_ref": "ap2.checkout.single_merchant_sku",
+        "profile_version": "1",
+        "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+        "verified_at": 1800000000,
+        "clock_source_id": "fixed-synthetic-clock",
+        "valid_from": 1800000000,
+        "valid_until": 1800000001,
+        "trust_snapshot": {
+          "id": "synthetic-snapshot",
+          "policy_version": "policy-1",
+          "content_hash": "bbd09a3725a3b19fe8dfa4c33ef8017192c63a9c1393f86ab4a6c3342424bb63"
+        },
+        "selected_keys": [
+          {
+            "role": "Issuer",
+            "identity": "issuer",
+            "tenant_id": "synthetic-tenant",
+            "purpose": "checkout",
+            "key_ref": "issuer-1",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "profile_version": "1",
+            "key_fingerprint": "f3587dc8627af079964c46145268b2abe30996c3091a2a43850719cafe2b4de9",
+            "algorithm": "ES256",
+            "active": true,
+            "not_before": 1799998000,
+            "not_after": 1800002000
+          },
+          {
+            "role": "Agent",
+            "identity": "agent",
+            "tenant_id": "synthetic-tenant",
+            "purpose": "checkout",
+            "key_ref": "agent-1",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "profile_version": "1",
+            "key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+            "algorithm": "ES256",
+            "active": true,
+            "not_before": 1799998000,
+            "not_after": 1800002000
+          },
+          {
+            "role": "Merchant",
+            "identity": "shop",
+            "tenant_id": "synthetic-tenant",
+            "purpose": "checkout",
+            "key_ref": "merchant-1",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "profile_version": "1",
+            "key_fingerprint": "17de6834337d807b90004dd7d544445f47db959765d8eff5967bae04c070f2b8",
+            "algorithm": "ES256",
+            "active": true,
+            "not_before": 1799998000,
+            "not_after": 1800002000
+          }
+        ],
+        "checkout_binding": {
+          "tenant_id": "synthetic-tenant",
+          "buyer_account_id": "synthetic-buyer",
+          "order_id": "order",
+          "merchant_id": "shop",
+          "audience": "host",
+          "profile_ref": "ap2.checkout.single_merchant_sku",
+          "order_version": "order-v1",
+          "profile_version": "1",
+          "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+          "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+          "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+          "currency": "USD",
+          "expected_total": 200
+        },
+        "verified_challenge": {
+          "challenge_id": "synthetic-challenge",
+          "issuer_id": "synthetic-host",
+          "B": {
+            "tenant_id": "synthetic-tenant",
+            "buyer_account_id": "synthetic-buyer",
+            "order_id": "order",
+            "merchant_id": "shop",
+            "audience": "host",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "order_version": "order-v1",
+            "profile_version": "1",
+            "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+            "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+            "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+            "currency": "USD",
+            "expected_total": 200
+          },
+          "trust_snapshot_id": "synthetic-snapshot",
+          "policy_version": "policy-1",
+          "trust_content_hash": "bbd09a3725a3b19fe8dfa4c33ef8017192c63a9c1393f86ab4a6c3342424bb63",
+          "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+          "not_before": 1799998000,
+          "not_after": 1800000001,
+          "state": "issued",
+          "verified_nonce_sha256": "1b16b1df538ba12dc3f97edbb85caa7050d46c148134290feba80f8236c83db9"
+        },
+        "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+        "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+        "terminal_digest": "750227b1b8d3814320c478737da5ddc9557c28b9b01cc56ec7bfdbf88f362d7d",
+        "contract_version": "ap2.research-evidence.2",
+        "implementation_revision": "ap2.research-verifier.2",
+        "revision_kind": "static_identifier_not_runtime_attestation",
+        "verified_scope": [
+          "strict_inputs",
+          "host_trust_profile_input_checks",
+          "issuer_root_signature",
+          "original_root_graph_closure",
+          "agent_key_confirmation",
+          "agent_terminal_signature",
+          "closed_original_checkout_binding",
+          "merchant_checkout_signature",
+          "fixed_subset_schema_constraints",
+          "host_challenge_order_binding",
+          "validity_intersection"
+        ]
+      },
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature",
+        "signature",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile",
+        "interval"
+      ]
+    },
+    "BUYER_SPLIT": {
+      "code": "host_binding_mismatch",
+      "evidence": null,
+      "entries": [],
+      "python_events": [
+        "host"
+      ]
+    },
+    "ORDER_VERSION_SPLIT": {
+      "code": "host_binding_mismatch",
+      "evidence": null,
+      "entries": [],
+      "python_events": [
+        "host"
+      ]
+    },
+    "TENANT_REBOUND": {
+      "code": "host_binding_mismatch",
+      "evidence": null,
+      "entries": [
+        "trust"
+      ],
+      "python_events": [
+        "host",
+        "trust"
+      ]
+    },
+    "ROOT_REBOUND": {
+      "code": "host_binding_mismatch",
+      "evidence": null,
+      "entries": [
+        "trust"
+      ],
+      "python_events": [
+        "host",
+        "trust"
+      ]
+    },
+    "AGENT_REBOUND": {
+      "code": "host_binding_mismatch",
+      "evidence": null,
+      "entries": [
+        "trust"
+      ],
+      "python_events": [
+        "host",
+        "trust"
+      ]
+    },
+    "REVOKED_KEY": {
+      "code": "inactive_trust_key",
+      "evidence": null,
+      "entries": [
+        "trust"
+      ],
+      "python_events": [
+        "host",
+        "trust"
+      ]
+    },
+    "KEY_EXPIRED": {
+      "code": "trust_key_time_mismatch",
+      "evidence": null,
+      "entries": [
+        "trust"
+      ],
+      "python_events": [
+        "host",
+        "trust"
+      ]
+    },
+    "SHORT_KEY": {
+      "code": "scoped_research_verified",
+      "evidence": {
+        "profile_ref": "ap2.checkout.single_merchant_sku",
+        "profile_version": "1",
+        "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+        "verified_at": 1800000000,
+        "clock_source_id": "fixed-synthetic-clock",
+        "valid_from": 1800000000,
+        "valid_until": 1800000001,
+        "trust_snapshot": {
+          "id": "synthetic-snapshot",
+          "policy_version": "policy-1",
+          "content_hash": "188efa86cc9c23220a796f7568645f10ef8ee9b1fb1bc7e1019caf67e711a479"
+        },
+        "selected_keys": [
+          {
+            "role": "Issuer",
+            "identity": "issuer",
+            "tenant_id": "synthetic-tenant",
+            "purpose": "checkout",
+            "key_ref": "issuer-1",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "profile_version": "1",
+            "key_fingerprint": "f3587dc8627af079964c46145268b2abe30996c3091a2a43850719cafe2b4de9",
+            "algorithm": "ES256",
+            "active": true,
+            "not_before": 1799998000,
+            "not_after": 1800002000
+          },
+          {
+            "role": "Agent",
+            "identity": "agent",
+            "tenant_id": "synthetic-tenant",
+            "purpose": "checkout",
+            "key_ref": "agent-1",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "profile_version": "1",
+            "key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+            "algorithm": "ES256",
+            "active": true,
+            "not_before": 1799998000,
+            "not_after": 1800000001
+          },
+          {
+            "role": "Merchant",
+            "identity": "shop",
+            "tenant_id": "synthetic-tenant",
+            "purpose": "checkout",
+            "key_ref": "merchant-1",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "profile_version": "1",
+            "key_fingerprint": "17de6834337d807b90004dd7d544445f47db959765d8eff5967bae04c070f2b8",
+            "algorithm": "ES256",
+            "active": true,
+            "not_before": 1799998000,
+            "not_after": 1800002000
+          }
+        ],
+        "checkout_binding": {
+          "tenant_id": "synthetic-tenant",
+          "buyer_account_id": "synthetic-buyer",
+          "order_id": "order",
+          "merchant_id": "shop",
+          "audience": "host",
+          "profile_ref": "ap2.checkout.single_merchant_sku",
+          "order_version": "order-v1",
+          "profile_version": "1",
+          "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+          "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+          "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+          "currency": "USD",
+          "expected_total": 200
+        },
+        "verified_challenge": {
+          "challenge_id": "synthetic-challenge",
+          "issuer_id": "synthetic-host",
+          "B": {
+            "tenant_id": "synthetic-tenant",
+            "buyer_account_id": "synthetic-buyer",
+            "order_id": "order",
+            "merchant_id": "shop",
+            "audience": "host",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "order_version": "order-v1",
+            "profile_version": "1",
+            "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+            "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+            "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+            "currency": "USD",
+            "expected_total": 200
+          },
+          "trust_snapshot_id": "synthetic-snapshot",
+          "policy_version": "policy-1",
+          "trust_content_hash": "188efa86cc9c23220a796f7568645f10ef8ee9b1fb1bc7e1019caf67e711a479",
+          "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+          "not_before": 1799998000,
+          "not_after": 1800002000,
+          "state": "issued",
+          "verified_nonce_sha256": "1b16b1df538ba12dc3f97edbb85caa7050d46c148134290feba80f8236c83db9"
+        },
+        "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+        "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+        "terminal_digest": "750227b1b8d3814320c478737da5ddc9557c28b9b01cc56ec7bfdbf88f362d7d",
+        "contract_version": "ap2.research-evidence.2",
+        "implementation_revision": "ap2.research-verifier.2",
+        "revision_kind": "static_identifier_not_runtime_attestation",
+        "verified_scope": [
+          "strict_inputs",
+          "host_trust_profile_input_checks",
+          "issuer_root_signature",
+          "original_root_graph_closure",
+          "agent_key_confirmation",
+          "agent_terminal_signature",
+          "closed_original_checkout_binding",
+          "merchant_checkout_signature",
+          "fixed_subset_schema_constraints",
+          "host_challenge_order_binding",
+          "validity_intersection"
+        ]
+      },
+      "entries": [
+        "trust",
+        "constraints",
+        "purchase",
+        "root_graph",
+        "signature",
+        "signature",
+        "signature"
+      ],
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile",
+        "interval"
+      ]
+    },
+    "SNAPSHOT_REVOKED": {
+      "code": "inactive_trust_snapshot",
+      "evidence": null,
+      "entries": [
+        "trust"
+      ],
+      "python_events": [
+        "host",
+        "trust"
+      ]
+    },
+    "AMBIGUOUS_KEY": {
+      "code": "ambiguous_trust_key",
+      "evidence": null,
+      "entries": [
+        "trust"
+      ],
+      "python_events": [
+        "host",
+        "trust"
+      ]
+    },
+    "UNKNOWN_KEY": {
+      "code": "trust_key_not_found",
+      "evidence": null,
+      "entries": [
+        "trust"
+      ],
+      "python_events": [
+        "host",
+        "trust"
+      ]
+    },
+    "PROFILE_VERSION": {
+      "code": "unsupported_trust_profile",
+      "evidence": null,
+      "entries": [
+        "trust"
+      ],
+      "python_events": [
+        "host",
+        "trust"
+      ]
+    },
+    "root_presentation_over": {
+      "code": "input_too_large",
+      "evidence": null,
+      "entries": [],
+      "python_events": []
+    },
+    "terminal_jws_over": {
+      "code": "input_too_large",
+      "evidence": null,
+      "entries": [],
+      "python_events": []
+    },
+    "host_checkout_jws_over": {
+      "code": "input_too_large",
+      "evidence": null,
+      "entries": [],
+      "python_events": []
+    },
+    "trust_json_over": {
+      "code": "input_too_large",
+      "evidence": null,
+      "entries": [],
+      "python_events": []
+    },
+    "selection_json_over": {
+      "code": "input_too_large",
+      "evidence": null,
+      "entries": [],
+      "python_events": []
+    },
+    "host_json_over": {
+      "code": "input_too_large",
+      "evidence": null,
+      "entries": [],
+      "python_events": []
+    },
+    "HOST_DEPTH24": {
+      "code": "invalid_host_context",
+      "evidence": null,
+      "entries": [],
+      "python_events": []
+    },
+    "HOST_DEPTH25": {
+      "code": "input_too_deep",
+      "evidence": null,
+      "entries": [],
+      "python_events": []
+    },
+    "HOST_DUPLICATE": {
+      "code": "duplicate_key",
+      "evidence": null,
+      "entries": [],
+      "python_events": []
+    },
+    "HOST_AT_CAP": {
+      "code": "invalid_host_context",
+      "evidence": null,
+      "entries": [],
+      "python_events": []
+    },
+    "HOST_INVALID_TYPE": {
+      "code": "invalid_input_type",
+      "evidence": null,
+      "entries": [],
+      "python_events": []
+    },
+    "HOST_BOM": {
+      "code": "invalid_json",
+      "evidence": null,
+      "entries": [],
+      "python_events": []
+    }
+  }
+}

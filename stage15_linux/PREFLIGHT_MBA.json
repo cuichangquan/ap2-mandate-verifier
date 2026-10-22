@@ -1,0 +1,296 @@
+{
+  "scope": "MBA_PREFLIGHT_NOT_LINUX",
+  "manifest_sha256": "c73d1179231e756faac45a9b75f6c3e4e099c3ce50b5b3fbe6c06fb16d10b257",
+  "replay_sha256": "4971ddabe08a2613f38e05b7caabdb9380d90b1f10cd0f30aaaf176a6426c238",
+  "expected_sha256": "b8de794bc17c1093d070ed0e78a523ffa568c332bce5e89fe5b2503ee8783d7e",
+  "inputs_sha256": "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1",
+  "runtime": {
+    "ruby": "4.0.1",
+    "json": "2.19.9",
+    "json_gem_version": "2.19.9",
+    "jwt": "3.3.0",
+    "base64": "0.3.0",
+    "openssl": "4.0.0",
+    "bundler": "4.0.3",
+    "resolved_gems": {
+      "ap2_mandate_verifier": "0.0.0",
+      "base64": "0.3.0",
+      "json": "2.19.9",
+      "jwt": "3.3.0",
+      "openssl": "4.0.0"
+    },
+    "json_files_sha256": {
+      "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+      "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+      "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+      "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+      "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+      "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+      "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+    }
+  },
+  "ruby_platform": "arm64-darwin25",
+  "regressions": 885,
+  "comparisons": [
+    {
+      "name": "FULL",
+      "code": "scoped_research_verified",
+      "result": "MATCH",
+      "input_sha256": "9f1b0f9af73f217561dff203ab417e2d6c7a0bd44b5f8be272ff88a3e5684d6f"
+    },
+    {
+      "name": "HIDDEN",
+      "code": "missing_disclosure",
+      "result": "MATCH",
+      "input_sha256": "11097e274183799768254b31b0eaae2155907fa5335ba8347e73957a11839ad8"
+    },
+    {
+      "name": "UNKNOWN",
+      "code": "unsupported_disclosure_profile",
+      "result": "MATCH",
+      "input_sha256": "236d88af91abb9f4ee3857bb5b92e49569e5331d7926ac8e3b68401d747f4775"
+    },
+    {
+      "name": "DUPLICATE",
+      "code": "duplicate_commitment",
+      "result": "MATCH",
+      "input_sha256": "8d196b4931d07027d848da717c99da39f52e43f1c5ba19ba5140aad07312d6a2"
+    },
+    {
+      "name": "EXTRA",
+      "code": "extra_disclosure",
+      "result": "MATCH",
+      "input_sha256": "29b488d2a095c40c24604e63f380f9091a67a5e95dbee7170551fb114f2f15cd"
+    },
+    {
+      "name": "DECOY",
+      "code": "missing_disclosure",
+      "result": "MATCH",
+      "input_sha256": "c5fddb5f7539bc018622a95f2f1c813c0034342f5d0250b8274967f43e7a48ef"
+    },
+    {
+      "name": "WRONG_AGENT_KEY",
+      "code": "agent_key_mismatch",
+      "result": "MATCH",
+      "input_sha256": "b8ffef46593b48c8c0270370d7ea652c7b1ea39a16e94ce03a58d8b7bfd5ece6"
+    },
+    {
+      "name": "TAMPERED_AGENT_SIGNATURE",
+      "code": "invalid_root_signature",
+      "result": "MATCH",
+      "input_sha256": "fc6cd042e4f683af06f94a6d9a7ed7fc795c190fddda91ea0800ceac6ac8df13"
+    },
+    {
+      "name": "ROOT_BINDING",
+      "code": "root_binding_mismatch",
+      "result": "MATCH",
+      "input_sha256": "0f4e3bfa643ef1a00e47503c08cb915a4bde61e371444a1cbfe5a5877b968420"
+    },
+    {
+      "name": "NONCE",
+      "code": "nonce_mismatch",
+      "result": "MATCH",
+      "input_sha256": "b99937a34d3a39acbcff5ff4715595ff786a1cd19be50c7171d1c27995e704ba"
+    },
+    {
+      "name": "WRONG_MERCHANT_KEY",
+      "code": "invalid_root_signature",
+      "result": "MATCH",
+      "input_sha256": "ffbe61b4bdc80bee215382ec28a52c2be9f261fd4c816b3e74226938246006ed"
+    },
+    {
+      "name": "S01",
+      "code": "invalid_scoped_schema",
+      "result": "MATCH",
+      "input_sha256": "2d86caef1af32ffc8a5f5407ade8c285f81fde4718362cc56167d2f5d1b93a06"
+    },
+    {
+      "name": "AMOUNT",
+      "code": "amount_mismatch",
+      "result": "MATCH",
+      "input_sha256": "76df4d78e0b9a49e7fc2a5412fe6dc535998825452ea15737ea2706000f6f823"
+    },
+    {
+      "name": "TOTALS",
+      "code": "amount_mismatch",
+      "result": "MATCH",
+      "input_sha256": "5cc084cc54ff60f90c8668218c4714ddb93f1369fc9aabb6ddd98421a29d9e56"
+    },
+    {
+      "name": "CONSUMED",
+      "code": "challenge_state_mismatch",
+      "result": "MATCH",
+      "input_sha256": "d7166c9e20713d0879c8ea4902da26e4cb9c6ad131c54295b03534f4b7f3efc2"
+    },
+    {
+      "name": "CHALLENGE_EXPIRED",
+      "code": "challenge_time_mismatch",
+      "result": "MATCH",
+      "input_sha256": "2b2764939c8ad39cc4273187352d86070223e0577bdfad74ac398e9c64b0518d"
+    },
+    {
+      "name": "CHALLENGE_START",
+      "code": "scoped_research_verified",
+      "result": "MATCH",
+      "input_sha256": "6fd1e3b9954a770871668beb2207b0f8708cc0a76f999510154ecf9c3c1c953d"
+    },
+    {
+      "name": "SHORT_CHALLENGE",
+      "code": "scoped_research_verified",
+      "result": "MATCH",
+      "input_sha256": "b7248804eea9ffca04edc870cbd7ccf2b53a86fcce75e9e1a5be1ffa813ddcba"
+    },
+    {
+      "name": "BUYER_SPLIT",
+      "code": "host_binding_mismatch",
+      "result": "MATCH",
+      "input_sha256": "f5b57c2022e4472583948630524737aea7162989e4ff904d22dc78eefc72e3a9"
+    },
+    {
+      "name": "ORDER_VERSION_SPLIT",
+      "code": "host_binding_mismatch",
+      "result": "MATCH",
+      "input_sha256": "028d2663c30cea6b85ea2dbc395a32736a3513ebc9894521388cff3f5b409958"
+    },
+    {
+      "name": "TENANT_REBOUND",
+      "code": "host_binding_mismatch",
+      "result": "MATCH",
+      "input_sha256": "82daba68be73bf5e7f5e52281fd508054dc5b1711d285fc10ce9eac357daf453"
+    },
+    {
+      "name": "ROOT_REBOUND",
+      "code": "host_binding_mismatch",
+      "result": "MATCH",
+      "input_sha256": "16a7ce2e981cf20f826308fdb634513f65bb36871b0ca2160a00c4b7c5bfe7d8"
+    },
+    {
+      "name": "AGENT_REBOUND",
+      "code": "host_binding_mismatch",
+      "result": "MATCH",
+      "input_sha256": "f6148010adad28a85fb941d26c95437153a2fda967626af59d2775fb726e4cf8"
+    },
+    {
+      "name": "REVOKED_KEY",
+      "code": "inactive_trust_key",
+      "result": "MATCH",
+      "input_sha256": "2fd5f0c6136f181555d1e54c0baf2a4df4df10846f7f076b525885855d7d88c9"
+    },
+    {
+      "name": "KEY_EXPIRED",
+      "code": "trust_key_time_mismatch",
+      "result": "MATCH",
+      "input_sha256": "750f5c59168e53df0f88a314b2d5e0c4a940b8b6eaab934fc94ad046ce0081d0"
+    },
+    {
+      "name": "SHORT_KEY",
+      "code": "scoped_research_verified",
+      "result": "MATCH",
+      "input_sha256": "fac4c35d9fa90d288ea8899d39c01e66717b8e73955034d0fc6a87159327c5ef"
+    },
+    {
+      "name": "SNAPSHOT_REVOKED",
+      "code": "inactive_trust_snapshot",
+      "result": "MATCH",
+      "input_sha256": "12c598b3233150f2d6ffc01ebf254c708b69d9cf4f924e64ed1409fd76043101"
+    },
+    {
+      "name": "AMBIGUOUS_KEY",
+      "code": "ambiguous_trust_key",
+      "result": "MATCH",
+      "input_sha256": "f85298a2599f9b69bed732aa587a74e3ba1e5923af49e908a9caebdffc284e91"
+    },
+    {
+      "name": "UNKNOWN_KEY",
+      "code": "trust_key_not_found",
+      "result": "MATCH",
+      "input_sha256": "fa83b31feb0705978a3a527191dc7b6946f588fad007a056e4dc20f039b1b08a"
+    },
+    {
+      "name": "PROFILE_VERSION",
+      "code": "unsupported_trust_profile",
+      "result": "MATCH",
+      "input_sha256": "16a3d4f2bc5a03a455782daacdae0425ef730ce8de7a3794f8949a11269c07d7"
+    },
+    {
+      "name": "root_presentation_over",
+      "code": "input_too_large",
+      "result": "MATCH",
+      "input_sha256": "19c167107eb321da694558ab8acb57e1c220f92a61dd5494546a965518fc159b"
+    },
+    {
+      "name": "terminal_jws_over",
+      "code": "input_too_large",
+      "result": "MATCH",
+      "input_sha256": "31d6d11da80073aeb822d4a0492634fe07ea8cc9f4b9aa02054f289410a692b4"
+    },
+    {
+      "name": "host_checkout_jws_over",
+      "code": "input_too_large",
+      "result": "MATCH",
+      "input_sha256": "8f5efbe4d6486d8ad650fed3a5be026b64d7fe1895afdd0c278ada99294593b5"
+    },
+    {
+      "name": "trust_json_over",
+      "code": "input_too_large",
+      "result": "MATCH",
+      "input_sha256": "1bffa48a2e5fc8dd7d490c08e80a93e2aa8dc6edf68e414183a095ce12e61eea"
+    },
+    {
+      "name": "selection_json_over",
+      "code": "input_too_large",
+      "result": "MATCH",
+      "input_sha256": "a4b9f99e49be7d4c6bce61ba447007c3789295aa3c084d7fe006ca2f228e02b3"
+    },
+    {
+      "name": "host_json_over",
+      "code": "input_too_large",
+      "result": "MATCH",
+      "input_sha256": "2ef70817264197b05535f815620069cf397323c8010fa9f1653aa88cffe47d9e"
+    },
+    {
+      "name": "HOST_DEPTH24",
+      "code": "invalid_host_context",
+      "result": "MATCH",
+      "input_sha256": "91ac71128a31363c4dce068b570a82419a6d4a8b70413da4dbe4931d08805212"
+    },
+    {
+      "name": "HOST_DEPTH25",
+      "code": "input_too_deep",
+      "result": "MATCH",
+      "input_sha256": "ed76bdd63675b26c2d487d3a7115cf466966fc97b27a10fc9e517479eb430335"
+    },
+    {
+      "name": "HOST_DUPLICATE",
+      "code": "duplicate_key",
+      "result": "MATCH",
+      "input_sha256": "568398be0ef2b55caf7aaa4bbfc8db0a6a7f64c12a59fa46464680fd01d70674"
+    },
+    {
+      "name": "HOST_AT_CAP",
+      "code": "invalid_host_context",
+      "result": "MATCH",
+      "input_sha256": "2f11023f82795d16afb4c7a07356782f392784e140776fbc49bd1c6b7ffde029"
+    },
+    {
+      "name": "HOST_INVALID_TYPE",
+      "code": "invalid_input_type",
+      "result": "MATCH",
+      "input_sha256": "7a10fe1fae856e53fff674ea850760a2640755a5ec80318ba93d54dec71f5831"
+    },
+    {
+      "name": "HOST_BOM",
+      "code": "invalid_json",
+      "result": "MATCH",
+      "input_sha256": "21082ef079c387295ea0d2ec48640b17992911db3dd7b33ade233e761a94a45d"
+    }
+  ],
+  "wall_seconds": 7.277452000416815,
+  "children_cpu": [
+    5.855055,
+    1.200435
+  ],
+  "independent_oracle": "MBA Python expected values, not Linux Oracle re-execution",
+  "schema8": "existing MBA evidence only",
+  "hold": "Hostatomic/payment/production/distribution/Phase2B/Stage16; prior2 acquisition gaps unchanged"
+}
