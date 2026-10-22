@@ -46,10 +46,14 @@ logs stay in ignored `.local-deps/`; they are not distributed in this change.
 Use `security_json/compare.py` for this dependency. Stage11 and Stage15 adapters,
 pins, input originals and R3/R5 results are unchanged. Their historical exact
 source/runtime pins intentionally do not describe the updated Gem. The new
-adapter captures ten current verifier sources into a private temporary tree and
+adapter captures ten current verifier sources plus the distributable gemspec
+into a private temporary tree and
 uses the ordinary Gem entry; candidate/runtime/lock/observer bytes are fixed by
 reviewed SHA pins. The old Stage15 adapter is loaded only as fixed Python oracle
 functions; its main, old runtime check and old result reader are never invoked.
+The gemspec is included because forcing a fixed test GEM_PATH alone does not
+certify the shipped dependency declaration. Candidate boundary controls reject a
+gemspec reverted to2.18.0, relaxed or missing before any Ruby probe executes.
 The old original signed Oracle and binding adapter are independently pinned
 before execution. Expected outcomes are not generated from Gem results.
 

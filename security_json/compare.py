@@ -17,7 +17,7 @@ HERE = Path(__file__).resolve().parent
 SHA = lambda b: hashlib.sha256(b).hexdigest()
 I = runpy.run_path(str(ROOT/'test/stage11_identity.py'))
 READ = I['bounded_regular']
-PINS = {'candidate.json':'4e4939b9ff513187df0bd9ab7fb552134d9f0989c1e195f6648ed2c67eaf7078',
+PINS = {'candidate.json':'04c4cc0a796205def1ffb9d190f5146518e050e73bf39d440a1eec641bc85097',
         'runtime.json':'486772c36389c3213183c4e01f0d1f4c549a3d88e58c319466686fd85c3df83f',
         'dependencies.lock.json':'c365dc5234f23a3602dcf05324185b7be644b7ab61d26d69aefc0e537463fbcc',
         'observe.rb':'4bfc7969b136888c783f93cc923ab349c638c9222bd2af76e401bc349af7dc5d'}
@@ -38,6 +38,14 @@ def pinned(name):
     return raw
 
 
+def capture_candidate(root, candidate):
+    sources={str(p.relative_to(root)):READ(p,65536) for p in sorted((root/'lib').rglob('*.rb'))}
+    # The shipped dependency declaration is part of this security proposition.
+    sources['ap2_mandate_verifier.gemspec']=READ(root/'ap2_mandate_verifier.gemspec',16384)
+    need({k:SHA(v) for k,v in sources.items()}==candidate['sources'],'captured verifier/package identity')
+    return sources
+
+
 def main():
     start=time.monotonic(); out=Path(sys.argv[1]); out.mkdir(exist_ok=False)
     identity=I['current_identity']()
@@ -49,8 +57,7 @@ def main():
     lock=json.loads(pinned('dependencies.lock.json')); observer=pinned('observe.rb')
     need(lock['runtime_manifest_sha256']==PINS['runtime.json'],'lock/runtime link')
     need({k:runtime[k] for k in ['ruby','json','jwt','base64']}==lock['runtime'],'runtime version link')
-    sources={str(p.relative_to(ROOT)):READ(p,65536) for p in sorted((ROOT/'lib').rglob('*.rb'))}
-    need({k:SHA(v) for k,v in sources.items()}==candidate['sources'],'captured verifier identity')
+    sources=capture_candidate(ROOT,candidate)
     original_inputs=READ(ROOT/'stage15/results/R3/INPUTS.json',1048576)
     need(SHA(original_inputs)==INPUT_SHA,'historical public inputs identity')
     saved=json.loads(original_inputs)
