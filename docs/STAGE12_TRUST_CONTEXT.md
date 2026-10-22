@@ -72,7 +72,14 @@ The supported registered body is the exact frozen UTF-8 string
 `TrustContext::PROFILE_HASH`. It names fixed AP2 commit
 b4587ac1d055888a73b4b21750973cffba961793 and the existing limited subset source
 027ed4734af47c8289dbcb837373bb6086463ec4, three SD positions, token types,
-ES256/P256 key format and the two ordered constraint types. Unknown definitions,
+ES256/P256 key format and the two ordered constraint types. Disclosure positions
+use the Root walker's commitment-path notation: the synthetic `disclosed` edge
+is inserted after resolving the outer commitment before walking its nested
+commitments. It is not a signed claim named `disclosed`, and these are not
+post-resolution output paths. Both nested paths therefore include
+`delegate_payload[0].disclosed.constraints...`; a regression compares the
+registered set with RootDisclosures::PATHS and rejects a consistently rehashed
+profile that omits the synthetic edge. Unknown definitions,
 versions, additional fields or alternate whitespace bytes are rejected, even
 when their self-reported hash is consistent. This is a registered exact subset,
 not general Schema/profile support or a configurable claims interpreter.

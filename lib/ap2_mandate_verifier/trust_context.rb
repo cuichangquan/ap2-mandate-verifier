@@ -4,7 +4,7 @@ require "digest"
 module AP2MandateVerifier
   # Authenticated Host assertions, never token-selected registration. No I/O.
   module TrustContext
-    PROFILE_BODY = '{"profile_ref":"ap2.checkout.single_merchant_sku","version":"1","ap2_source":"b4587ac1d055888a73b4b21750973cffba961793","subset_source":"027ed4734af47c8289dbcb837373bb6086463ec4","algorithm":"ES256","key_format":"canonical-public-SPKI-P256-SHA256","root_type":"example+sd-jwt","terminal_type":"kb+sd-jwt","checkout_type":"JWT","disclosure_positions":["delegate_payload[0]","delegate_payload[0].constraints[0].items[0].acceptable_items[0]","delegate_payload[0].constraints[1].allowed[0]"],"constraints":["checkout.line_items","checkout.allowed_merchants"]}'.freeze
+    PROFILE_BODY = '{"profile_ref":"ap2.checkout.single_merchant_sku","version":"1","ap2_source":"b4587ac1d055888a73b4b21750973cffba961793","subset_source":"027ed4734af47c8289dbcb837373bb6086463ec4","algorithm":"ES256","key_format":"canonical-public-SPKI-P256-SHA256","root_type":"example+sd-jwt","terminal_type":"kb+sd-jwt","checkout_type":"JWT","disclosure_path_semantics":"root-walker-with-synthetic-disclosed-edges","disclosure_positions":["delegate_payload[0]","delegate_payload[0].disclosed.constraints[0].items[0].acceptable_items[0]","delegate_payload[0].disclosed.constraints[1].allowed[0]"],"constraints":["checkout.line_items","checkout.allowed_merchants"]}'.freeze
     PROFILE_REF = "ap2.checkout.single_merchant_sku"
     PROFILE_VERSION = "1"
     PROFILE_HASH = Digest::SHA256.hexdigest(PROFILE_BODY).freeze

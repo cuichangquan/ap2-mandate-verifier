@@ -158,5 +158,24 @@ module TrustContextTest
     raise "raw boundary #{result.code} wanted #{code}" unless result.code == code && !result.success? && result.evidence.nil?
     @count += 1
   end
+
+  # Registered commitment paths name the walker's synthetic disclosure edge,
+  # not a claim named "disclosed" or the post-resolution output paths.
+  registered = JSON.parse(T::PROFILE_BODY)
+  actual_paths = AP2MandateVerifier::RootDisclosures::PATHS.map do |path|
+    path.each_with_object(String.new) do |part, text|
+      part.instance_of?(Integer) ? text << "[#{part}]" : text << (text.empty? ? part : ".#{part}")
+    end
+  end
+  raise "registered commitment paths diverge" unless registered["disclosure_positions"].sort == actual_paths.sort &&
+    registered["disclosure_path_semantics"] == "root-walker-with-synthetic-disclosed-edges"
+  @count += 1
+  expect("resolved paths are not registered commitment paths", :unsupported_trust_profile) do |t, s|
+    body = JSON.parse(T::PROFILE_BODY)
+    body["disclosure_positions"].map! { |path| path.gsub(".disclosed.", ".") }
+    wire = JSON.generate(body)
+    t["profile"].merge!("body" => wire, "definition_hash" => Digest::SHA256.hexdigest(wire))
+    s["profile_definition_hash"] = t["profile"]["definition_hash"]
+  end
   puts "PASS #{@count} trust snapshot/profile/key and integrated non-success cases"
 end
