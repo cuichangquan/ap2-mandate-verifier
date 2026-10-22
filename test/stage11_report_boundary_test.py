@@ -45,7 +45,7 @@ def main():
             elif mutation == 'extra_runtime': bad['runtime']['unapproved'] = True
             rejected(lambda: validate(bad, *args))
     binding = modules['o2o5']
-    prior = json.loads((ROOT / 'STAGE11_IDENTITY_O2O5_REPORT.json').read_text())
+    prior = json.loads((ROOT / 'STAGE11_BOUNDED_O2O5_REPORT.json').read_text())
     replay_raw = (ROOT / 'STAGE11_GEM_REPLAY_32.json').read_bytes()
     replay = json.loads(replay_raw)
     adapter_sha = hashlib.sha256((ROOT / 'test/o2o5_compare.py').read_bytes()).hexdigest()

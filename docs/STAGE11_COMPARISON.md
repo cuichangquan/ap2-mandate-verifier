@@ -175,3 +175,17 @@ One integration run failed because the dynamic O4 module loader lacked
 __file__; this same-introduction defect was corrected and its real path tested.
 No prior result was overwritten. The original historical acquisition defects
 and all success/Evidence/Host/production/distribution/Phase2B HOLDs remain.
+
+### Bounded identity input admission
+
+A subsequent review found the new pinned reader had reopened paths with an
+unbounded read after its size check. It now reuses the existing Oracle's
+same-file pattern: lstat, no-follow/nonblocking open, descriptor metadata match,
+one read of at most cap+1, and post-read descriptor/path consistency checks.
+The same reader covers pinned fixtures/policy/ledger and local lock/identity
+source reads. Symlink/FIFO/oversize, replacement-before-open and growth-during-
+read controls reject; the requested read size is checked explicitly.
+Current reports are STAGE11_BOUNDED_*; STAGE11_IDENTITY_* remain preserved.
+Final report-boundary controls58 and identity controls64 pass with unchanged
+411 regressions,38 retained replays and all independent comparisons. This is
+the third local cycle within the separately approved identity repair unit.

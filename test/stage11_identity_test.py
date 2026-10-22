@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import runpy
 import tempfile
+import os
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -67,6 +69,32 @@ def main():
         fake_ledger = work / 'forged-ledger.json'; fake_ledger.write_text(json.dumps(ledger))
         # Even mutually consistent forged ledger+Schema cannot cross the pinned ledger gate.
         rejects(lambda: identity['schema_ledger'](fake_ledger))
+    with tempfile.TemporaryDirectory(prefix='stage11-read-') as directory:
+        work = Path(directory); path = work / 'input'; path.write_bytes(b'abcd')
+        assert identity['bounded_regular'](path, 8) == b'abcd'; count += 1
+        oversized = work / 'large'; oversized.write_bytes(b'x' * 9)
+        rejects(lambda: identity['bounded_regular'](oversized, 8))
+        link = work / 'link'; link.symlink_to(path)
+        rejects(lambda: identity['bounded_regular'](link, 8))
+        fifo = work / 'fifo'; os.mkfifo(fifo)
+        rejects(lambda: identity['bounded_regular'](fifo, 8))
+        real_open = os.open
+        def replace_before_open(target, flags):
+            replacement = work / 'replacement'; replacement.write_bytes(b'wxyz')
+            os.replace(replacement, path)
+            return real_open(target, flags)
+        with mock.patch.object(os, 'open', side_effect=replace_before_open):
+            rejects(lambda: identity['bounded_regular'](path, 8))
+        path.write_bytes(b'abcd')
+        real_read = os.read
+        def enlarge_before_read(fd, requested):
+            assert requested == 9
+            with path.open('ab') as stream: stream.write(b'x' * 65536)
+            return real_read(fd, requested)
+        with mock.patch.object(os, 'read', side_effect=enlarge_before_read) as reads:
+            rejects(lambda: identity['bounded_regular'](path, 8))
+            assert reads.call_args.args[1] == 9
+        count += 1
     for adapter in ('o1o3', 'o2o5', 'o4'):
         module = runpy.run_path(str(ROOT / 'test' / (adapter + '_compare.py')))
         assert module['PYTHON_IDENTITY'] == measured

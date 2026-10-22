@@ -2,6 +2,8 @@
 import hashlib
 import importlib.metadata
 import json
+import os
+import stat
 import platform
 from pathlib import Path
 
@@ -25,11 +27,38 @@ def require_equal(actual, expected, why):
         raise ValueError(why)
 
 
-def pinned_bytes(path, pin_name, cap):
-    path = Path(path)
-    if path.is_symlink() or not path.is_file() or path.stat().st_size > cap:
+def same_stat(a, b):
+    return (stat.S_ISREG(a.st_mode) and stat.S_ISREG(b.st_mode) and
+            all(getattr(a, key) == getattr(b, key) for key in
+                ('st_dev', 'st_ino', 'st_mode', 'st_nlink', 'st_uid', 'st_gid',
+                 'st_size', 'st_mtime_ns', 'st_ctime_ns')))
+
+
+def bounded_regular(path, cap):
+    path = os.fspath(path)
+    if not hasattr(os, 'O_NOFOLLOW') or not hasattr(os, 'O_NONBLOCK'):
+        raise ValueError('safe input open unavailable')
+    before = os.lstat(path)
+    if not stat.S_ISREG(before.st_mode) or not 1 <= before.st_size <= cap:
         raise ValueError('pinned input type/size')
-    raw = path.read_bytes()
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK |
+                 getattr(os, 'O_CLOEXEC', 0))
+    try:
+        opened = os.fstat(fd)
+        if not same_stat(before, opened):
+            raise ValueError('pinned input changed at open')
+        raw = os.read(fd, cap + 1)
+        after = os.fstat(fd)
+        if (len(raw) != opened.st_size or not same_stat(opened, after)
+                or not same_stat(after, os.lstat(path))):
+            raise ValueError('pinned input changed during read')
+        return raw
+    finally:
+        os.close(fd)
+
+
+def pinned_bytes(path, pin_name, cap):
+    raw = bounded_regular(path, cap)
     require_equal(hashlib.sha256(raw).hexdigest(), PINS[pin_name], 'pinned input identity')
     return raw
 
@@ -50,10 +79,10 @@ def current_identity():
     observed = observed_environment()
     validate_environment(observed)
     for name, digest in LOCKS.items():
-        require_equal(hashlib.sha256((ROOT / name).read_bytes()).hexdigest(), digest,
+        require_equal(hashlib.sha256(bounded_regular(ROOT / name, 16384)).hexdigest(), digest,
                       'dependency lock identity')
     return {**observed, 'locks': LOCKS,
-            'identity_source_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+            'identity_source_sha256': hashlib.sha256(bounded_regular(Path(__file__), 16384)).hexdigest()}
 
 
 def require_identity(identity):

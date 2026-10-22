@@ -1,0 +1,1513 @@
+{
+  "adapter_sha256": "7bfc96ad73d027203dc726e905038d2c17d9115b4298cd52bcefad7fd1bbf1c1",
+  "ap2_commit": "b4587ac1d055888a73b4b21750973cffba961793",
+  "binding_source_sha256": "9c0ccf9155e8ea00ad1e38da44e26c70b70597ba3419819d506ca2c5e03f2b29",
+  "case_count": 13,
+  "cases": {
+    "AMOUNT": {
+      "binding_events": [
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity"
+      ],
+      "control_open": {
+        "errors": [],
+        "verdict": "VALID"
+      },
+      "control_origin": "same fully resolved original presentation",
+      "gem_observation": {
+        "checkout_sha256": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+        "code": "amount_mismatch",
+        "entries": [
+          "root_signature",
+          "root_graph",
+          "agent_key_confirmation",
+          "agent_signature",
+          "merchant_signature",
+          "scoped_schema"
+        ],
+        "evidence": null,
+        "root_sha256": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+        "status": "rejected",
+        "success": false,
+        "terminal_sha256": "750227b1b8d3814320c478737da5ddc9557c28b9b01cc56ec7bfdbf88f362d7d"
+      },
+      "manual_profile": "amount_mismatch",
+      "presented": {
+        "checkout": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "closed": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "merchant": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "open": {
+          "errors": [],
+          "verdict": "VALID"
+        }
+      },
+      "root_sha256": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+      "unresolved_original_paths": []
+    },
+    "CURRENCY": {
+      "binding_events": [
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity"
+      ],
+      "control_open": {
+        "errors": [],
+        "verdict": "VALID"
+      },
+      "control_origin": "same fully resolved original presentation",
+      "gem_observation": {
+        "checkout_sha256": "998410165920782ac99fd94ee76b85ef9ed1d472659f1f1b2d8c07271759d650",
+        "code": "currency_mismatch",
+        "entries": [
+          "root_signature",
+          "root_graph",
+          "agent_key_confirmation",
+          "agent_signature",
+          "merchant_signature",
+          "scoped_schema"
+        ],
+        "evidence": null,
+        "root_sha256": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+        "status": "rejected",
+        "success": false,
+        "terminal_sha256": "66c51a34c446bf9ebe25384771037a52ed171ecd5d56bfb6f4218a2cd488cb69"
+      },
+      "manual_profile": "currency_mismatch",
+      "presented": {
+        "checkout": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "closed": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "merchant": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "open": {
+          "errors": [],
+          "verdict": "VALID"
+        }
+      },
+      "root_sha256": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+      "unresolved_original_paths": []
+    },
+    "DECOY": {
+      "binding_events": [
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity"
+      ],
+      "control_open": {
+        "errors": [],
+        "verdict": "NOT_AVAILABLE"
+      },
+      "control_origin": "UNAVAILABLE; no complete same-Issuer-JWS control",
+      "gem_observation": {
+        "checkout_sha256": "c1504c85728849564f0f6fd27bc067af2a11ccb6d3a980230e15f428ec7d5bbf",
+        "code": "missing_disclosure",
+        "entries": [
+          "root_signature",
+          "root_graph"
+        ],
+        "evidence": null,
+        "root_sha256": "55df76384f79ca1ef774c14271906e05ba1f6a5746a7af9be4ea9eda89411d3a",
+        "status": "rejected",
+        "success": false,
+        "terminal_sha256": "c95e4b56e73823e97416dafe69413352821bf1fb1f794a4f32c2f0cf7ec5ee3c"
+      },
+      "manual_profile": "missing_disclosure",
+      "presented": {
+        "checkout": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "closed": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "merchant": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "open": {
+          "errors": [
+            {
+              "causes": [
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    1,
+                    "allowed",
+                    0
+                  ],
+                  "keyword": "required",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    0,
+                    "properties",
+                    "allowed",
+                    "items",
+                    "required"
+                  ]
+                },
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    1,
+                    "allowed",
+                    0
+                  ],
+                  "keyword": "required",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    0,
+                    "properties",
+                    "allowed",
+                    "items",
+                    "required"
+                  ]
+                },
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    1,
+                    "type"
+                  ],
+                  "keyword": "const",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    1,
+                    "properties",
+                    "type",
+                    "const"
+                  ]
+                },
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    1
+                  ],
+                  "keyword": "required",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    1,
+                    "required"
+                  ]
+                }
+              ],
+              "instance_path": [
+                "constraints",
+                1
+              ],
+              "keyword": "anyOf",
+              "schema_path": [
+                "properties",
+                "constraints",
+                "items",
+                "anyOf"
+              ]
+            }
+          ],
+          "verdict": "INVALID"
+        }
+      },
+      "root_sha256": "55df76384f79ca1ef774c14271906e05ba1f6a5746a7af9be4ea9eda89411d3a",
+      "unresolved_original_paths": [
+        "$/delegate_payload/0/disclosed/constraints/1/allowed/0"
+      ]
+    },
+    "DUPLICATE": {
+      "binding_events": [
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity"
+      ],
+      "control_open": {
+        "errors": [
+          {
+            "causes": [
+              {
+                "causes": [],
+                "instance_path": [
+                  "constraints",
+                  1,
+                  "allowed",
+                  0
+                ],
+                "keyword": "required",
+                "schema_path": [
+                  "properties",
+                  "constraints",
+                  "items",
+                  "anyOf",
+                  0,
+                  "properties",
+                  "allowed",
+                  "items",
+                  "required"
+                ]
+              },
+              {
+                "causes": [],
+                "instance_path": [
+                  "constraints",
+                  1,
+                  "type"
+                ],
+                "keyword": "const",
+                "schema_path": [
+                  "properties",
+                  "constraints",
+                  "items",
+                  "anyOf",
+                  1,
+                  "properties",
+                  "type",
+                  "const"
+                ]
+              },
+              {
+                "causes": [],
+                "instance_path": [
+                  "constraints",
+                  1
+                ],
+                "keyword": "required",
+                "schema_path": [
+                  "properties",
+                  "constraints",
+                  "items",
+                  "anyOf",
+                  1,
+                  "required"
+                ]
+              }
+            ],
+            "instance_path": [
+              "constraints",
+              1
+            ],
+            "keyword": "anyOf",
+            "schema_path": [
+              "properties",
+              "constraints",
+              "items",
+              "anyOf"
+            ]
+          }
+        ],
+        "verdict": "INVALID"
+      },
+      "control_origin": "same fully resolved original presentation",
+      "gem_observation": {
+        "checkout_sha256": "67d829982fc68ba549f319b85c4e20d1bcd067c10aaa2089be6bdbcf53400095",
+        "code": "duplicate_commitment",
+        "entries": [
+          "root_signature",
+          "root_graph"
+        ],
+        "evidence": null,
+        "root_sha256": "dc918e6510e88c4042bb601cd0ba14e3921c931a242d42e5bb985ec7b5a1eb0d",
+        "status": "rejected",
+        "success": false,
+        "terminal_sha256": "210a8f1a5f010beb2791a015beb7ae898b454d9e19954b7758bb0690748b974b"
+      },
+      "manual_profile": "duplicate_commitment",
+      "presented": {
+        "checkout": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "closed": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "merchant": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "open": {
+          "errors": [
+            {
+              "causes": [
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    1,
+                    "allowed",
+                    0
+                  ],
+                  "keyword": "required",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    0,
+                    "properties",
+                    "allowed",
+                    "items",
+                    "required"
+                  ]
+                },
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    1,
+                    "type"
+                  ],
+                  "keyword": "const",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    1,
+                    "properties",
+                    "type",
+                    "const"
+                  ]
+                },
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    1
+                  ],
+                  "keyword": "required",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    1,
+                    "required"
+                  ]
+                }
+              ],
+              "instance_path": [
+                "constraints",
+                1
+              ],
+              "keyword": "anyOf",
+              "schema_path": [
+                "properties",
+                "constraints",
+                "items",
+                "anyOf"
+              ]
+            }
+          ],
+          "verdict": "INVALID"
+        }
+      },
+      "root_sha256": "dc918e6510e88c4042bb601cd0ba14e3921c931a242d42e5bb985ec7b5a1eb0d",
+      "unresolved_original_paths": []
+    },
+    "EXTRA": {
+      "binding_events": [
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity"
+      ],
+      "control_open": {
+        "errors": [],
+        "verdict": "VALID"
+      },
+      "control_origin": "same fully resolved original presentation",
+      "gem_observation": {
+        "checkout_sha256": "a982d994cf0dcc484a1cbdd4137a06bc2573586291bacb6be5b5149903728eea",
+        "code": "extra_disclosure",
+        "entries": [
+          "root_signature",
+          "root_graph"
+        ],
+        "evidence": null,
+        "root_sha256": "0dba935c1a432c58122e7b9534751067726f64b383b6b1c42bb546af41da1611",
+        "status": "rejected",
+        "success": false,
+        "terminal_sha256": "be95996c515b31a504d2f7e4dc228a22201add937c4b71cea56b1760e6a3beaa"
+      },
+      "manual_profile": "extra_disclosure",
+      "presented": {
+        "checkout": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "closed": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "merchant": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "open": {
+          "errors": [],
+          "verdict": "VALID"
+        }
+      },
+      "root_sha256": "0dba935c1a432c58122e7b9534751067726f64b383b6b1c42bb546af41da1611",
+      "unresolved_original_paths": []
+    },
+    "FULL": {
+      "binding_events": [
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity"
+      ],
+      "control_open": {
+        "errors": [],
+        "verdict": "VALID"
+      },
+      "control_origin": "same fully resolved original presentation",
+      "gem_observation": {
+        "checkout_sha256": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+        "code": "scoped_constraints_verified_only",
+        "entries": [
+          "root_signature",
+          "root_graph",
+          "agent_key_confirmation",
+          "agent_signature",
+          "merchant_signature",
+          "scoped_schema"
+        ],
+        "evidence": null,
+        "root_sha256": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+        "status": "unverified",
+        "success": false,
+        "terminal_sha256": "750227b1b8d3814320c478737da5ddc9557c28b9b01cc56ec7bfdbf88f362d7d"
+      },
+      "manual_profile": "scoped_constraints_verified_only",
+      "presented": {
+        "checkout": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "closed": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "merchant": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "open": {
+          "errors": [],
+          "verdict": "VALID"
+        }
+      },
+      "root_sha256": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+      "unresolved_original_paths": []
+    },
+    "HIDDEN": {
+      "binding_events": [
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity"
+      ],
+      "control_open": {
+        "errors": [],
+        "verdict": "VALID"
+      },
+      "control_origin": "separate FULL disclosures; identical original Issuer JWS",
+      "gem_observation": {
+        "checkout_sha256": "44a8a8b39a5802359e7385458b4e562e04e9a21809cc9acbcf901b2498861ccf",
+        "code": "missing_disclosure",
+        "entries": [
+          "root_signature",
+          "root_graph"
+        ],
+        "evidence": null,
+        "root_sha256": "29a62a896fa9df67ac8dfa193c4e5d65b910b35302e74fe1b77c2d1653dea52a",
+        "status": "rejected",
+        "success": false,
+        "terminal_sha256": "99a02e6b7505651f6e36d097e7bdc1b5a59d6ea9259febda19ce6cb4b05efbc7"
+      },
+      "manual_profile": "missing_disclosure",
+      "presented": {
+        "checkout": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "closed": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "merchant": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "open": {
+          "errors": [
+            {
+              "causes": [
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    1,
+                    "allowed",
+                    0
+                  ],
+                  "keyword": "required",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    0,
+                    "properties",
+                    "allowed",
+                    "items",
+                    "required"
+                  ]
+                },
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    1,
+                    "allowed",
+                    0
+                  ],
+                  "keyword": "required",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    0,
+                    "properties",
+                    "allowed",
+                    "items",
+                    "required"
+                  ]
+                },
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    1,
+                    "type"
+                  ],
+                  "keyword": "const",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    1,
+                    "properties",
+                    "type",
+                    "const"
+                  ]
+                },
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    1
+                  ],
+                  "keyword": "required",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    1,
+                    "required"
+                  ]
+                }
+              ],
+              "instance_path": [
+                "constraints",
+                1
+              ],
+              "keyword": "anyOf",
+              "schema_path": [
+                "properties",
+                "constraints",
+                "items",
+                "anyOf"
+              ]
+            }
+          ],
+          "verdict": "INVALID"
+        }
+      },
+      "root_sha256": "29a62a896fa9df67ac8dfa193c4e5d65b910b35302e74fe1b77c2d1653dea52a",
+      "unresolved_original_paths": [
+        "$/delegate_payload/0/disclosed/constraints/1/allowed/0"
+      ]
+    },
+    "NORMAL": {
+      "binding_events": [
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity"
+      ],
+      "control_open": {
+        "errors": [],
+        "verdict": "VALID"
+      },
+      "control_origin": "same fully resolved original presentation",
+      "gem_observation": {
+        "checkout_sha256": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+        "code": "scoped_constraints_verified_only",
+        "entries": [
+          "root_signature",
+          "root_graph",
+          "agent_key_confirmation",
+          "agent_signature",
+          "merchant_signature",
+          "scoped_schema"
+        ],
+        "evidence": null,
+        "root_sha256": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+        "status": "unverified",
+        "success": false,
+        "terminal_sha256": "750227b1b8d3814320c478737da5ddc9557c28b9b01cc56ec7bfdbf88f362d7d"
+      },
+      "manual_profile": "scoped_constraints_verified_only",
+      "presented": {
+        "checkout": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "closed": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "merchant": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "open": {
+          "errors": [],
+          "verdict": "VALID"
+        }
+      },
+      "root_sha256": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+      "unresolved_original_paths": []
+    },
+    "QUANTITY_TYPE": {
+      "binding_events": [
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity"
+      ],
+      "control_open": {
+        "errors": [],
+        "verdict": "VALID"
+      },
+      "control_origin": "same fully resolved original presentation",
+      "gem_observation": {
+        "checkout_sha256": "c88215b9777a4fdd2d9a11eb33466cf7c6f1ce27e5cb105fcae7d503a941c3a2",
+        "code": "invalid_scoped_schema",
+        "entries": [
+          "root_signature",
+          "root_graph",
+          "agent_key_confirmation",
+          "agent_signature",
+          "merchant_signature",
+          "scoped_schema"
+        ],
+        "evidence": null,
+        "root_sha256": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+        "status": "rejected",
+        "success": false,
+        "terminal_sha256": "83a2540f4877b260b6a8a751742d215970a857748956f6578b29f50de5bc8366"
+      },
+      "manual_profile": "invalid_scoped_schema",
+      "presented": {
+        "checkout": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "closed": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "merchant": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "open": {
+          "errors": [],
+          "verdict": "VALID"
+        }
+      },
+      "root_sha256": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+      "unresolved_original_paths": []
+    },
+    "S01": {
+      "binding_events": [
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity"
+      ],
+      "control_open": {
+        "errors": [
+          {
+            "causes": [
+              {
+                "causes": [],
+                "instance_path": [
+                  "constraints",
+                  0,
+                  "type"
+                ],
+                "keyword": "const",
+                "schema_path": [
+                  "properties",
+                  "constraints",
+                  "items",
+                  "anyOf",
+                  0,
+                  "properties",
+                  "type",
+                  "const"
+                ]
+              },
+              {
+                "causes": [],
+                "instance_path": [
+                  "constraints",
+                  0
+                ],
+                "keyword": "required",
+                "schema_path": [
+                  "properties",
+                  "constraints",
+                  "items",
+                  "anyOf",
+                  0,
+                  "required"
+                ]
+              },
+              {
+                "causes": [],
+                "instance_path": [
+                  "constraints",
+                  0,
+                  "items",
+                  0,
+                  "id"
+                ],
+                "keyword": "type",
+                "schema_path": [
+                  "properties",
+                  "constraints",
+                  "items",
+                  "anyOf",
+                  1,
+                  "properties",
+                  "items",
+                  "items",
+                  "properties",
+                  "id",
+                  "type"
+                ]
+              }
+            ],
+            "instance_path": [
+              "constraints",
+              0
+            ],
+            "keyword": "anyOf",
+            "schema_path": [
+              "properties",
+              "constraints",
+              "items",
+              "anyOf"
+            ]
+          },
+          {
+            "causes": [],
+            "instance_path": [
+              "constraints"
+            ],
+            "keyword": "contains",
+            "schema_path": [
+              "properties",
+              "constraints",
+              "contains"
+            ]
+          }
+        ],
+        "verdict": "INVALID"
+      },
+      "control_origin": "same fully resolved original presentation",
+      "gem_observation": {
+        "checkout_sha256": "bccc44ae570269dc23265c6ac8b88eec232c2bb48168dd190542e7eaf8d7d6cf",
+        "code": "invalid_scoped_schema",
+        "entries": [
+          "root_signature",
+          "root_graph",
+          "agent_key_confirmation",
+          "agent_signature",
+          "merchant_signature",
+          "scoped_schema"
+        ],
+        "evidence": null,
+        "root_sha256": "2826f1eccdaf00daedad904530557d41b3b8988343ec02d0dab44f8177b3bf2b",
+        "status": "rejected",
+        "success": false,
+        "terminal_sha256": "a690aac754e729591de8fb1e6385fbb947c251f0700acc7d82eb79fa844271f5"
+      },
+      "manual_profile": "invalid_scoped_schema",
+      "presented": {
+        "checkout": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "closed": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "merchant": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "open": {
+          "errors": [
+            {
+              "causes": [
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    0,
+                    "type"
+                  ],
+                  "keyword": "const",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    0,
+                    "properties",
+                    "type",
+                    "const"
+                  ]
+                },
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    0
+                  ],
+                  "keyword": "required",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    0,
+                    "required"
+                  ]
+                },
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    0,
+                    "items",
+                    0,
+                    "id"
+                  ],
+                  "keyword": "type",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    1,
+                    "properties",
+                    "items",
+                    "items",
+                    "properties",
+                    "id",
+                    "type"
+                  ]
+                }
+              ],
+              "instance_path": [
+                "constraints",
+                0
+              ],
+              "keyword": "anyOf",
+              "schema_path": [
+                "properties",
+                "constraints",
+                "items",
+                "anyOf"
+              ]
+            },
+            {
+              "causes": [],
+              "instance_path": [
+                "constraints"
+              ],
+              "keyword": "contains",
+              "schema_path": [
+                "properties",
+                "constraints",
+                "contains"
+              ]
+            }
+          ],
+          "verdict": "INVALID"
+        }
+      },
+      "root_sha256": "2826f1eccdaf00daedad904530557d41b3b8988343ec02d0dab44f8177b3bf2b",
+      "unresolved_original_paths": []
+    },
+    "TOTALS": {
+      "binding_events": [
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity"
+      ],
+      "control_open": {
+        "errors": [],
+        "verdict": "VALID"
+      },
+      "control_origin": "same fully resolved original presentation",
+      "gem_observation": {
+        "checkout_sha256": "853266021c6e52269542951cf9d4d55f7730c39f8531901f085b8fa01f275bd4",
+        "code": "amount_mismatch",
+        "entries": [
+          "root_signature",
+          "root_graph",
+          "agent_key_confirmation",
+          "agent_signature",
+          "merchant_signature",
+          "scoped_schema"
+        ],
+        "evidence": null,
+        "root_sha256": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+        "status": "rejected",
+        "success": false,
+        "terminal_sha256": "7a42bf3b882dde7cebc2d9aa7f55aa35b4912722ee87e40b2c0bafcac998cfbd"
+      },
+      "manual_profile": "amount_mismatch",
+      "presented": {
+        "checkout": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "closed": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "merchant": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "open": {
+          "errors": [],
+          "verdict": "VALID"
+        }
+      },
+      "root_sha256": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+      "unresolved_original_paths": []
+    },
+    "UNKNOWN": {
+      "binding_events": [
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity"
+      ],
+      "control_open": {
+        "errors": [],
+        "verdict": "VALID"
+      },
+      "control_origin": "same fully resolved original presentation",
+      "gem_observation": {
+        "checkout_sha256": "31dcccbb4feb85ed119f8866fe2b1d035ea39c42b3ea8eefaac8368521084152",
+        "code": "unsupported_disclosure_profile",
+        "entries": [
+          "root_signature",
+          "root_graph"
+        ],
+        "evidence": null,
+        "root_sha256": "4a288c28746ba980c279e8f45611e86135a5645dd4bc4d377128bbc576c7fec6",
+        "status": "rejected",
+        "success": false,
+        "terminal_sha256": "50f062f6c1cf6b0171340736f3c2919cc455c314b6b28e0e0789b887890a4ae6"
+      },
+      "manual_profile": "unsupported_disclosure_profile",
+      "presented": {
+        "checkout": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "closed": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "merchant": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "open": {
+          "errors": [],
+          "verdict": "VALID"
+        }
+      },
+      "root_sha256": "4a288c28746ba980c279e8f45611e86135a5645dd4bc4d377128bbc576c7fec6",
+      "unresolved_original_paths": []
+    },
+    "UNKNOWN_CONSTRAINT": {
+      "binding_events": [
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity"
+      ],
+      "control_open": {
+        "errors": [
+          {
+            "causes": [
+              {
+                "causes": [],
+                "instance_path": [
+                  "constraints",
+                  0,
+                  "type"
+                ],
+                "keyword": "const",
+                "schema_path": [
+                  "properties",
+                  "constraints",
+                  "items",
+                  "anyOf",
+                  0,
+                  "properties",
+                  "type",
+                  "const"
+                ]
+              },
+              {
+                "causes": [],
+                "instance_path": [
+                  "constraints",
+                  0
+                ],
+                "keyword": "required",
+                "schema_path": [
+                  "properties",
+                  "constraints",
+                  "items",
+                  "anyOf",
+                  0,
+                  "required"
+                ]
+              },
+              {
+                "causes": [],
+                "instance_path": [
+                  "constraints",
+                  0,
+                  "type"
+                ],
+                "keyword": "const",
+                "schema_path": [
+                  "properties",
+                  "constraints",
+                  "items",
+                  "anyOf",
+                  1,
+                  "properties",
+                  "type",
+                  "const"
+                ]
+              }
+            ],
+            "instance_path": [
+              "constraints",
+              0
+            ],
+            "keyword": "anyOf",
+            "schema_path": [
+              "properties",
+              "constraints",
+              "items",
+              "anyOf"
+            ]
+          },
+          {
+            "causes": [],
+            "instance_path": [
+              "constraints"
+            ],
+            "keyword": "contains",
+            "schema_path": [
+              "properties",
+              "constraints",
+              "contains"
+            ]
+          }
+        ],
+        "verdict": "INVALID"
+      },
+      "control_origin": "same fully resolved original presentation",
+      "gem_observation": {
+        "checkout_sha256": "603f62b0ded5f6e87854600b32f0f29dbc07bb4d1abfa3aa2d2823b36624b9d1",
+        "code": "unsupported_constraint",
+        "entries": [
+          "root_signature",
+          "root_graph",
+          "agent_key_confirmation",
+          "agent_signature",
+          "merchant_signature"
+        ],
+        "evidence": null,
+        "root_sha256": "b121d32f2eb909d6de9d44e85e77d833cfbac3feebe74e8a1e09f94cd2d39dab",
+        "status": "rejected",
+        "success": false,
+        "terminal_sha256": "5b976fd6701a01a4a356e7ca1b3ab252b1e4406a91f440eeb166cc5ce85033dc"
+      },
+      "manual_profile": "unsupported_constraint",
+      "presented": {
+        "checkout": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "closed": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "merchant": {
+          "errors": [],
+          "verdict": "VALID"
+        },
+        "open": {
+          "errors": [
+            {
+              "causes": [
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    0,
+                    "type"
+                  ],
+                  "keyword": "const",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    0,
+                    "properties",
+                    "type",
+                    "const"
+                  ]
+                },
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    0
+                  ],
+                  "keyword": "required",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    0,
+                    "required"
+                  ]
+                },
+                {
+                  "causes": [],
+                  "instance_path": [
+                    "constraints",
+                    0,
+                    "type"
+                  ],
+                  "keyword": "const",
+                  "schema_path": [
+                    "properties",
+                    "constraints",
+                    "items",
+                    "anyOf",
+                    1,
+                    "properties",
+                    "type",
+                    "const"
+                  ]
+                }
+              ],
+              "instance_path": [
+                "constraints",
+                0
+              ],
+              "keyword": "anyOf",
+              "schema_path": [
+                "properties",
+                "constraints",
+                "items",
+                "anyOf"
+              ]
+            },
+            {
+              "causes": [],
+              "instance_path": [
+                "constraints"
+              ],
+              "keyword": "contains",
+              "schema_path": [
+                "properties",
+                "constraints",
+                "contains"
+              ]
+            }
+          ],
+          "verdict": "INVALID"
+        }
+      },
+      "root_sha256": "b121d32f2eb909d6de9d44e85e77d833cfbac3feebe74e8a1e09f94cd2d39dab",
+      "unresolved_original_paths": []
+    }
+  },
+  "conclusion": "HOLD",
+  "dependencies": {
+    "attrs": "26.1.0",
+    "jsonschema": "4.26.0",
+    "jsonschema-specifications": "2025.9.1",
+    "referencing": "0.37.0",
+    "rpds-py": "0.30.0"
+  },
+  "evidence": null,
+  "fixture_sha256": "be17fc33612ec561147100fbb901f5c2ef288d4535ed1aa69b56a61447fc8942",
+  "format_assertions": "NOT_ENABLED; format-bearing optional values absent in these fixtures",
+  "fresh_gem_replay_sha256": "be7f69541ba56d4d745b2fefb2b10eee1b9c31c4b960b25f545face5f13feabf",
+  "limits": [
+    "Not general Schema/all constraints/Host authority/ALLOW",
+    "Schema permits integer-valued float2.0; manual Ruby profile rejects",
+    "Prior 10MB acquisition UNMEASURED; current sent HTTP headers unmeasured"
+  ],
+  "python_identity": {
+    "dependencies": {
+      "attrs": "26.1.0",
+      "cffi": "2.0.0",
+      "cryptography": "50.0.2",
+      "jsonschema": "4.26.0",
+      "jsonschema-specifications": "2025.9.1",
+      "jwcrypto": "1.6.1",
+      "pycparser": "2.23",
+      "referencing": "0.37.0",
+      "rpds-py": "0.30.0",
+      "typing-extensions": "4.15.0"
+    },
+    "identity_source_sha256": "ccd0f10d9bad02b29bfcfa5d1734b1cadf3b19c6ed60d8a278a93d830d217c0e",
+    "locks": {
+      "o1o3-requirements.lock": "8e6d9f8898e607fc95b41e3ed8cf24b8cb88afd95aadd86bf9797349341092ba",
+      "o4-requirements.lock": "7a468daf8e42b283c0172f3cd6a61f480a04b1f10fa5be1a547e917ff8b96432"
+    },
+    "python": {
+      "implementation": "CPython",
+      "machine": "arm64",
+      "system": "Darwin",
+      "version": "3.11.15"
+    }
+  },
+  "registered_reference_count": 17,
+  "schema_validation_count": 64,
+  "schemas": {
+    "ap2/checkout_mandate.json": {
+      "git_blob": "8755db60a1c6e15f49cfe6c9a5dee6838d2f379d",
+      "id": "https://ap2-protocol.org/schemas/checkout_mandate.json",
+      "sha256": "10c0341edfeaa9084d3704ef8e94869de20499c8e357068d65f8d622bf79483a"
+    },
+    "ap2/open_checkout_mandate.json": {
+      "git_blob": "e3d9cafa7311d90612c7f908ae9b8821ddc8735a",
+      "id": "https://ap2-protocol.org/schemas/open_checkout_mandate",
+      "sha256": "bd6eb1c95a5ccb967259fae49100287755251c9d1bdb48342d96dd99fcb30b41"
+    },
+    "ap2/types/item.json": {
+      "git_blob": "0b31d4b0a0ee5d96d2d08d0b9d7b6081aaa41c2e",
+      "id": "https://ap2-protocol.org/schemas/types/item.json",
+      "sha256": "48c24532f105fda096ab89a27e04e896a597fda7e308e96cc88e11ce6a6632f9"
+    },
+    "ap2/types/merchant.json": {
+      "git_blob": "2e44a4dc943c009af106e7103e9e30f4e556b98c",
+      "id": "https://ap2-protocol.org/schemas/types/merchant.json",
+      "sha256": "13457334d8577230a1cce5265971cfc02f68f5d4e97f74bd2e78128105d3ab31"
+    },
+    "ucp/types/buyer.json": {
+      "git_blob": "0c408c6d1499dc9f249b6260ca5ce8848cd0b1c2",
+      "id": "https://ap2-protocol.org/schemas/types/buyer.json",
+      "sha256": "93df45c6d425486742527e7ed6d9d91feca558f4802141ba994e609011a14df9"
+    },
+    "ucp/types/checkout.json": {
+      "git_blob": "bb9697ecea36b81f283165ad85a19753f00cfa59",
+      "id": "https://ap2-protocol.org/schemas/types/checkout.json",
+      "sha256": "275f6589d4f49313f6d8cf3a0e3aedfca1d7209c3a8b8be404097c3d86d964f9"
+    },
+    "ucp/types/line_item.json": {
+      "git_blob": "a8482fc594d6792c43eb65c3cdeae86a2996cdc4",
+      "id": "https://ap2-protocol.org/schemas/types/line_item.json",
+      "sha256": "d71c13b023631f118b1a9df51433abc25883332f7ac2c097396ab956e0c494e6"
+    },
+    "ucp/types/link.json": {
+      "git_blob": "e05cc0048c35cd2f89d6b480189739cf3f688da6",
+      "id": "https://ap2-protocol.org/schemas/types/link.json",
+      "sha256": "7685745f445a7ac9a6044de3f9a4cdd62a3422c200f39696f5e6b0292e08b478"
+    },
+    "ucp/types/message.json": {
+      "git_blob": "694a4edd619d5dae95843af0ac71ef676d969bbd",
+      "id": "https://ap2-protocol.org/schemas/types/message.json",
+      "sha256": "b2b2774f2ab2b08ff79bb1cd8165905e624235ab19a10e687629baab094fc003"
+    },
+    "ucp/types/message_error.json": {
+      "git_blob": "2c26c91ad2c11fd39ce2d0ebbf631a036c3d6f1a",
+      "id": "https://ap2-protocol.org/schemas/types/message_error.json",
+      "sha256": "435b63a09d9b3ffede0a576d9ef2230f85d87e59b2006f55dc64079d380a1c75"
+    },
+    "ucp/types/message_info.json": {
+      "git_blob": "bb92a0a0566a0496082499c15b772a5bc5e65cdb",
+      "id": "https://ap2-protocol.org/schemas/types/message_info.json",
+      "sha256": "0c64b5d186f51f591c73e33bb4ff381bf648b301cc22827003185c78bfcf0c79"
+    },
+    "ucp/types/message_warning.json": {
+      "git_blob": "35e9cd4b5160e84c2b4a802b54ef9ed7278ef3e8",
+      "id": "https://ap2-protocol.org/schemas/types/message_warning.json",
+      "sha256": "836fd348a2085d95d332d1449bbb52a4ba6544faab32fab3827670b9d8e0ae4b"
+    },
+    "ucp/types/total.json": {
+      "git_blob": "491c47c787a968fb64e72329d97898cfb17353e6",
+      "id": "https://ap2-protocol.org/schemas/types/total.json",
+      "sha256": "a49d2d2feb6567a3ba20b2770ee707e0f3de481bcece9ab8577a65dec9709531"
+    }
+  },
+  "scope": "O4_PINNED_SCHEMAS_ON_SYNTHETIC_PROFILE_ONLY",
+  "success": false
+}
