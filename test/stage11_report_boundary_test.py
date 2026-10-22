@@ -20,14 +20,15 @@ def main():
         else:
             raise AssertionError('stale/incomplete evidence accepted')
     for name, module in modules.items():
-        replay = json.loads((ROOT / ('STAGE11_IO_GEM_REPLAY_6.json' if name == 'o1o3'
-                                     else 'STAGE11_IO_GEM_REPLAY_32.json')).read_text())
+        replay = json.loads((ROOT / ('STAGE11_SNAPSHOT_GEM_REPLAY_6.json' if name == 'o1o3'
+                                     else 'STAGE11_SNAPSHOT_GEM_REPLAY_32.json')).read_text())
         validate = module['validate_replay']
         args = (replay['fixture_sha256'], set(replay['cases']))
         validate(replay, *args); count += 1
         for mutation in ('observer', 'stale_source', 'missing_source', 'extra_source',
                          'missing_case', 'success_row', 'evidence_row', 'status_row', 'missing_runtime', 'ruby_runtime',
-                         'json_runtime', 'jwt_runtime', 'extra_runtime'):
+                         'json_runtime', 'jwt_runtime', 'extra_runtime', 'missing_loading',
+                         'wrong_loading_mode', 'wrong_loading_commit', 'wrong_loading_count', 'extra_loading'):
             bad = copy.deepcopy(replay)
             if mutation == 'observer': bad['observer_sha256'] = '0' * 64
             elif mutation == 'stale_source':
@@ -43,10 +44,15 @@ def main():
             elif mutation == 'json_runtime': bad['runtime']['json'] = '2.17.0'
             elif mutation == 'jwt_runtime': bad['runtime']['jwt'] = '3.2.0'
             elif mutation == 'extra_runtime': bad['runtime']['unapproved'] = True
+            elif mutation == 'missing_loading': bad.pop('source_loading')
+            elif mutation == 'wrong_loading_mode': bad['source_loading']['mode'] = 'CHECKOUT_REQUIRE'
+            elif mutation == 'wrong_loading_commit': bad['source_loading']['trusted_verifier_commit'] = '0' * 40
+            elif mutation == 'wrong_loading_count': bad['source_loading']['captured_file_count'] = 6
+            elif mutation == 'extra_loading': bad['source_loading']['extra'] = True
             rejected(lambda: validate(bad, *args))
     binding = modules['o2o5']
-    prior = json.loads((ROOT / 'STAGE11_IO_O2O5_REPORT.json').read_text())
-    replay_raw = (ROOT / 'STAGE11_IO_GEM_REPLAY_32.json').read_bytes()
+    prior = json.loads((ROOT / 'STAGE11_SNAPSHOT_O2O5_REPORT.json').read_text())
+    replay_raw = (ROOT / 'STAGE11_SNAPSHOT_GEM_REPLAY_32.json').read_bytes()
     replay = json.loads(replay_raw)
     adapter_sha = hashlib.sha256((ROOT / 'test/o2o5_compare.py').read_bytes()).hexdigest()
     validate = binding['validate_binding_report']

@@ -1,0 +1,147 @@
+{
+  "NORMAL": "same Root as FULL; Gem unverified",
+  "adapter_sha256": "d88cbc42f3056625ab1141130cd1f886cf9a0e775dcf0b0334211ee479031887",
+  "bundle_sha256": "ba8bfe3cea97b2230084a5ab5ef97d99701e3974160abbad06a346f8115c85b0",
+  "cases": {
+    "DECOY": {
+      "comparison": "MATCH",
+      "gem_code": "missing_disclosure",
+      "gem_recorded_entries": [
+        "root_signature",
+        "root_graph"
+      ],
+      "gem_status": "rejected",
+      "o1": "VALID",
+      "o3_actual": "MISSING",
+      "o3_expected": "MISSING",
+      "root_sha256": "fecfeaeac79bd277504030de2cec5c2745ff7e32a5fb6dec587972186faf9449"
+    },
+    "DUPLICATE": {
+      "comparison": "MATCH",
+      "gem_code": "duplicate_commitment",
+      "gem_recorded_entries": [
+        "root_signature",
+        "root_graph"
+      ],
+      "gem_status": "rejected",
+      "o1": "VALID",
+      "o3_actual": "DUPLICATE",
+      "o3_expected": "DUPLICATE",
+      "root_sha256": "e36f56c5324e4cae9fd2ab7bb305648b870ab296b3ed56d3610347b560d20331"
+    },
+    "EXTRA": {
+      "comparison": "MATCH",
+      "gem_code": "extra_disclosure",
+      "gem_recorded_entries": [
+        "root_signature",
+        "root_graph"
+      ],
+      "gem_status": "rejected",
+      "o1": "VALID",
+      "o3_actual": "UNUSED",
+      "o3_expected": "UNUSED",
+      "root_sha256": "9104b3b066c79420317475c9d644608857ae1b105cbda9a10d478ee5b555813b"
+    },
+    "FULL": {
+      "comparison": "MATCH",
+      "gem_code": "scoped_constraints_verified_only",
+      "gem_recorded_entries": [
+        "root_signature",
+        "root_graph",
+        "agent_key_confirmation",
+        "agent_signature",
+        "merchant_signature",
+        "scoped_schema"
+      ],
+      "gem_status": "unverified",
+      "o1": "VALID",
+      "o3_actual": "FULL",
+      "o3_expected": "FULL",
+      "root_sha256": "303a7b5f02dafbd027929339181d8034db09dca00b8afac8135bb7d8ac456cbc"
+    },
+    "HIDDEN": {
+      "comparison": "MATCH",
+      "gem_code": "missing_disclosure",
+      "gem_recorded_entries": [
+        "root_signature",
+        "root_graph"
+      ],
+      "gem_status": "rejected",
+      "o1": "VALID",
+      "o3_actual": "MISSING",
+      "o3_expected": "MISSING",
+      "root_sha256": "ae78571ec6445f154f9cc5f728d086a6bb813fc0f65d61078a2f27cda75d54ff"
+    },
+    "UNKNOWN": {
+      "comparison": "MATCH",
+      "gem_code": "unsupported_disclosure_profile",
+      "gem_recorded_entries": [
+        "root_signature",
+        "root_graph"
+      ],
+      "gem_status": "rejected",
+      "o1": "VALID",
+      "o3_actual": "UNKNOWN_SLOT",
+      "o3_expected": "UNKNOWN_SLOT",
+      "root_sha256": "2694691b0583044f020aceb3f11fd3d2e21946c13f5a060b7690979c69161b88"
+    }
+  },
+  "comparison": "MATCH",
+  "conclusion": "HOLD",
+  "dependencies": {
+    "cffi": "2.0.0",
+    "cryptography": "50.0.2",
+    "jwcrypto": "1.6.1",
+    "pycparser": "2.23",
+    "typing-extensions": "4.15.0"
+  },
+  "evidence": null,
+  "fresh_gem_replay_sha256": "3b30b9b7e00d21330b7c11c1ef9e062b7eb9468494182f42b80c5e2c9599c155",
+  "not_established": [
+    "O2",
+    "O4",
+    "O5 independent comparison",
+    "Host authority",
+    "general Schema",
+    "full AP2"
+  ],
+  "oracle_sha256": "884900e2c3420ebfc2393413ae0e6010db71b28f8a6ef02eec997defa57b8caf",
+  "policy_sha256": "e8d7ff92b0340f2415b0ebff629fbed5d631768eb1ed844d1b3733dca7656a88",
+  "python_identity": {
+    "dependencies": {
+      "attrs": "26.1.0",
+      "cffi": "2.0.0",
+      "cryptography": "50.0.2",
+      "jsonschema": "4.26.0",
+      "jsonschema-specifications": "2025.9.1",
+      "jwcrypto": "1.6.1",
+      "pycparser": "2.23",
+      "referencing": "0.37.0",
+      "rpds-py": "0.30.0",
+      "typing-extensions": "4.15.0"
+    },
+    "identity_source_sha256": "ccd0f10d9bad02b29bfcfa5d1734b1cadf3b19c6ed60d8a278a93d830d217c0e",
+    "locks": {
+      "o1o3-requirements.lock": "8e6d9f8898e607fc95b41e3ed8cf24b8cb88afd95aadd86bf9797349341092ba",
+      "o4-requirements.lock": "7a468daf8e42b283c0172f3cd6a61f480a04b1f10fa5be1a547e917ff8b96432"
+    },
+    "python": {
+      "implementation": "CPython",
+      "machine": "arm64",
+      "system": "Darwin",
+      "version": "3.11.15"
+    }
+  },
+  "scope": "LOCAL_SYNTHETIC_O1_O3_ONLY",
+  "signature_controls": {
+    "TAMPERED_SIGNATURE": {
+      "o1": "invalid_original_issuer_signature",
+      "o3_entered": false
+    },
+    "WRONG_EXTERNAL_KEY": {
+      "o1": "invalid_original_issuer_signature",
+      "o3_entered": false
+    }
+  },
+  "success": false
+}

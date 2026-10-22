@@ -49,6 +49,10 @@ def validate_replay(replay, fixture_sha, case_names):
     if not (replay.get('observer_sha256') == hashlib.sha256(IDENTITY['bounded_regular'](observer, 65536)).hexdigest()
             and replay.get('verifier_source_sha256') == sources
             and replay.get('fixture_sha256') == fixture_sha
+            and replay.get('source_loading') == {
+                'mode': 'PRIVATE_TEMP_TREE_STANDARD_REQUIRE',
+                'trusted_verifier_commit': '027ed4734af47c8289dbcb837373bb6086463ec4',
+                'captured_file_count': 7}
             and replay.get('case_count') == len(case_names)
             and set(replay.get('cases', {})) == set(case_names)
             and replay.get('scope') == 'STAGE11_SAVED_WIRE_REPLAY_NOT_NEW_FIXTURES'

@@ -17,6 +17,14 @@
     "previous_five_cycle_stop_preserved": true,
     "scope": "Schema ledger/input pins and measured Python/dependency/report identity"
   },
+  "additional_approved_source_snapshot": {
+    "local_cycles": 2,
+    "no_custom_runtime_or_eval_loader": true,
+    "prior_reviewed_startup_hash_gap_retained": true,
+    "scope": "Seven pinned captured verifier files in private temporary tree; standard Gem require only",
+    "trust_boundary": "Trusted harness/interpreter/temp tree without other writers; no malicious-same-user or runtime attestation claim",
+    "trusted_verifier_commit": "027ed4734af47c8289dbcb837373bb6086463ec4"
+  },
   "canonical_historical_comment": "https://github.com/cuichangquan/ap2-mandate-verifier/issues/101#issuecomment-6317426686",
   "checks": {
     "NORMAL": "historical alias of FULL, not separately freshly replayed",
@@ -28,14 +36,14 @@
     "Python_IO_controls": 10,
     "Python_syntax_files": 7,
     "Ruby_IO_controls": 7,
-    "Ruby_syntax_files": 15,
+    "Ruby_syntax_files": 16,
     "code_iteration_cycles": 5,
     "identity_controls": 64,
     "independent_binding_profile_cases": 32,
     "max_code_iteration_cycles": 5,
     "overwrite_guard": true,
     "regression_cases": 411,
-    "report_boundary_controls": 58,
+    "report_boundary_controls": 73,
     "saved_wire_Gem_replay_cases": [
       32,
       6
@@ -44,15 +52,16 @@
     "setup_issues": [
       "Bundler frozen empty CHECKSUMS stopped before tests; no install/lock repair",
       "Initial Ruby load wrapper skipped CLI guard; no replay claimed until explicit program-name run"
-    ]
+    ],
+    "snapshot_controls": 14
   },
   "conclusion": "HOLD",
   "current_result_files": [
-    "STAGE11_IO_GEM_REPLAY_32.json",
-    "STAGE11_IO_GEM_REPLAY_6.json",
-    "STAGE11_IO_O1O3_REPORT.json",
-    "STAGE11_IO_O2O5_REPORT.json",
-    "STAGE11_IO_O4_REPORT.json"
+    "STAGE11_SNAPSHOT_GEM_REPLAY_32.json",
+    "STAGE11_SNAPSHOT_GEM_REPLAY_6.json",
+    "STAGE11_SNAPSHOT_O1O3_REPORT.json",
+    "STAGE11_SNAPSHOT_O2O5_REPORT.json",
+    "STAGE11_SNAPSHOT_O4_REPORT.json"
   ],
   "current_verifier_sha256": {
     "lib/ap2_mandate_verifier.rb": "ec0ba37c67c37662a26faff933f5689920463ececbec3853061f1a4dce05f0c4",
@@ -81,7 +90,7 @@
     "test/o2o5_compare.py": "4ef30a7eba53a649ee3109793762d267331bbd6778b3f5b56af4ee252048e542",
     "test/o4_compare.py": "1f2dcb17f65ae67cd51ec56a6c6ef8cce9ef00baee4dcec0aac25671f8bc679d"
   },
-  "initial_stage11_reports": "All initial/R4/R5/IDENTITY/BOUNDED observations preserved; current reports use STAGE11_IO prefix",
+  "initial_stage11_reports": "All preceding observations preserved; current captured-source reports use STAGE11_SNAPSHOT prefix",
   "local_snapshot_commit": "6ec5ab6b0dc39a686e60334114dfcd6706ffabf9",
   "main_commit_object_available_locally": true,
   "network_scope_note": "Comparison execution is offline; separately approved Git object fetch is integration-only",
@@ -120,20 +129,26 @@
     "STAGE11_R5_O1O3_REPORT.json": "398d8f95363a13dff70b976fd34e9126ce23b0790c03800548d28575530e154d",
     "STAGE11_R5_O2O5_REPORT.json": "e87b929019e4e7208de483007cb796af093f75603395b48f8eea42ef8196db96",
     "STAGE11_R5_O4_REPORT.json": "3c889852f61d271c634d035b947c9070f26ca80ad9f7886724b7a1dea3907472",
+    "STAGE11_SNAPSHOT_GEM_REPLAY_32.json": "32156362676e511ac272fc802092b0d35fcc9ff035a17ad18fd51e18c32a3dc4",
+    "STAGE11_SNAPSHOT_GEM_REPLAY_6.json": "3b30b9b7e00d21330b7c11c1ef9e062b7eb9468494182f42b80c5e2c9599c155",
+    "STAGE11_SNAPSHOT_O1O3_REPORT.json": "9922c735498ed0ccdc2fcb218b23febb477e556023f439dfb4f62c23865e44ae",
+    "STAGE11_SNAPSHOT_O2O5_REPORT.json": "7330b892dc26c24e126589eeff9d70bb54772d811041f1b6e7a437391f6bec3d",
+    "STAGE11_SNAPSHOT_O4_REPORT.json": "4bd74eb9f2cff3bd96feddc37a2a049858fa6b769374a62a8764ce11443d47af",
     "STAGE7_PUBLIC_CASES.json": "ba8bfe3cea97b2230084a5ab5ef97d99701e3974160abbad06a346f8115c85b0",
-    "docs/STAGE11_COMPARISON.md": "e291f9b63d409542c131916a20aa28d784973e72c79184c548926541d6d40b88",
+    "docs/STAGE11_COMPARISON.md": "02ae74470f6f5e439bca63e4806af1c9d6318d0fa4aca66572133008d2dbc6ef",
     "o1o3-requirements.lock": "8e6d9f8898e607fc95b41e3ed8cf24b8cb88afd95aadd86bf9797349341092ba",
     "o4-requirements.lock": "7a468daf8e42b283c0172f3cd6a61f480a04b1f10fa5be1a547e917ff8b96432",
     "test/integration_matrix_test.rb": "231fc735be3af2b5084219cff9d0c1c7c2e470e7954f7bde0ed841cb371890db",
-    "test/o1o3_compare.py": "e8014ac26b1aec27622d9dd4916ee10223bf37df59e906aafed71eea89fb91c5",
-    "test/o2o5_compare.py": "3e97c225673c56d5aa70a17c0524ca60b5a8845eaf4ddc6c28643dc345022659",
-    "test/o4_compare.py": "a4a7afc02fe5bd895ff523bbdd30c117b0e42956a5b2a6cc2d42d469685a4257",
+    "test/o1o3_compare.py": "d88cbc42f3056625ab1141130cd1f886cf9a0e775dcf0b0334211ee479031887",
+    "test/o2o5_compare.py": "97faec0c3a36bcf60b6c7a340a38ab9e0512ab3bc04716af04ce7c8f47bc4ba4",
+    "test/o4_compare.py": "f91d6702325d07e8be069b9adc7ad278b1e877b0ead809dce385d106b23596a9",
     "test/stage11_identity.py": "ccd0f10d9bad02b29bfcfa5d1734b1cadf3b19c6ed60d8a278a93d830d217c0e",
     "test/stage11_identity_test.py": "4dff0c7a2b45b7075ea02618a3d936a251b1ffef267e9a5610bc22c480f0b450",
     "test/stage11_io_test.py": "b4608145739137432d2225819370e4d1d1b44b901c53b178192575fa6b469705",
     "test/stage11_io_test.rb": "792aedce4aa89f358382269f3e52b978d237a0e8b1d9b22e5c174060f1d9d018",
-    "test/stage11_report_boundary_test.py": "e037d4286754930bf30e4267cb908d375a2258ec12141386e4aecc9cb240e8f7",
-    "test/stage7_saved_replay_test.rb": "ff7ec1bea7ebf9b7e2d69522a2a5dabf216a1e609537bcb7c96f5ab398d7cafe"
+    "test/stage11_report_boundary_test.py": "38013d76abdd38be46e5efdbf0cf97e287c99326a3cd6a6ddba541f75031d5e7",
+    "test/stage11_snapshot_test.rb": "bb7e9e9b1878c7d23e25b2808a7f3ce4c77ba1d3eaac72236c9ce77dcf56a873",
+    "test/stage7_saved_replay_test.rb": "c007138a232b7a94b62f206ddd7f48265078d3438a164e8c62e8409a855af9e3"
   },
   "publish_excluded": [
     "private keys",

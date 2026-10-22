@@ -216,3 +216,45 @@ Ruby syntax15/Python AST7. Controls run using existing fixed local dependencies:
 with `test/stage11_io_test.rb`. The report-boundary tests consume the current
 STAGE11_IO reports; earlier sections identify retained historical iterations.
 All HOLDs and historical acquisition-compliance deficiencies remain unchanged.
+
+## Captured seven-file verifier snapshot (separately approved)
+
+The earlier observation entry required the checkout Gem before hashing its
+sources. A startup replacement restored before measurement could therefore
+misattribute observations. The current harness no longer loads checkout Gem
+code. Its literal seven-file SHA256 allowlist is anchored to reviewed main
+027ed4734af47c8289dbcb837373bb6086463ec4, not to the mutable result manifest.
+
+It checks the complete source inventory, captures bounded original bytes and
+verifies every pin. Those frozen bytes alone are written to a dedicated
+private temporary tree. After verifying the tree, ordinary Ruby require loads
+the normal Gem entry and its require_relative dependencies. The seven loaded
+paths and temporary-tree hashes are checked, and post-observation tree checks
+complete before any result is written. Recorded verifier hashes describe the
+captured pinned bytes, not a later reread of the original checkout. Python
+adapters require the new source_loading contract and current observer identity.
+
+The trusted boundary includes this harness, the interpreter/dependencies and
+the temporary tree with no other writers. It is not malicious-same-user defense,
+an immutable environment claim, installed-runtime attestation or a signed
+execution receipt. No custom eval loader, dedicated runtime or general I/O
+platform is introduced. Temporary files use normal private temp handling.
+
+Fourteen local controls include pin mismatch, missing/extra files/directories,
+links, altered captured maps, preload rejection and cleanup. A controlled copy
+of the source checkout is destroyed/replaced after capture; the original seven
+captured files still load through the standard entry and yield non-success.
+The actual checkout/lib and all historical inputs/results are unchanged.
+An initial load-path comparison exposed the macOS temporary-path alias; using
+the temporary directory's canonical path resolved it without relaxing pins.
+
+Current results use STAGE11_SNAPSHOT_*; all earlier results remain retained.
+Final local validation:411 regressions,32+6 saved-wire snapshot replays,
+73 report-boundary controls,64 identity controls,Ruby IO7,Python IO10,
+snapshot14,independent binding32,O1/O3 six classes and signature controls,
+O4 thirteen cases/64 decisions/17 refs; Ruby syntax16/Python AST7.
+Use the existing documented Ruby wrapper with test/stage11_snapshot_test.rb
+for local snapshot controls. Generic comparison commands accept fresh snapshot
+replays; report-boundary controls read the retained current snapshot reports.
+All success/Evidence/Host/production/distribution/Phase2B HOLDs and historical
+acquisition-compliance deficiencies remain unchanged.
