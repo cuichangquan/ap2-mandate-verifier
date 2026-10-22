@@ -1,0 +1,233 @@
+{
+  "scope": "INSTALLED_PRERELEASE_MBA_ONLY_NOT_HOST_ALLOW",
+  "candidate_version": "0.1.0.pre.1",
+  "ruby": "4.0.1",
+  "ruby_platform": "arm64-darwin25",
+  "dependencies": {
+    "json": "2.19.9",
+    "jwt": "3.3.0",
+    "base64": "0.3.0",
+    "openssl": "4.0.0"
+  },
+  "openssl_default": true,
+  "libcrypto": "OpenSSL 3.6.2 7 Apr 2026",
+  "installed_lib_files": 10,
+  "ordinary_entry": true,
+  "independent_research_comparisons": [
+    {
+      "name": "FULL",
+      "code": "scoped_research_verified",
+      "result": "MATCH"
+    },
+    {
+      "name": "HIDDEN",
+      "code": "missing_disclosure",
+      "result": "MATCH"
+    },
+    {
+      "name": "UNKNOWN",
+      "code": "unsupported_disclosure_profile",
+      "result": "MATCH"
+    },
+    {
+      "name": "DUPLICATE",
+      "code": "duplicate_commitment",
+      "result": "MATCH"
+    },
+    {
+      "name": "EXTRA",
+      "code": "extra_disclosure",
+      "result": "MATCH"
+    },
+    {
+      "name": "DECOY",
+      "code": "missing_disclosure",
+      "result": "MATCH"
+    },
+    {
+      "name": "WRONG_AGENT_KEY",
+      "code": "agent_key_mismatch",
+      "result": "MATCH"
+    },
+    {
+      "name": "TAMPERED_AGENT_SIGNATURE",
+      "code": "invalid_root_signature",
+      "result": "MATCH"
+    },
+    {
+      "name": "ROOT_BINDING",
+      "code": "root_binding_mismatch",
+      "result": "MATCH"
+    },
+    {
+      "name": "NONCE",
+      "code": "nonce_mismatch",
+      "result": "MATCH"
+    },
+    {
+      "name": "WRONG_MERCHANT_KEY",
+      "code": "invalid_root_signature",
+      "result": "MATCH"
+    },
+    {
+      "name": "S01",
+      "code": "invalid_scoped_schema",
+      "result": "MATCH"
+    },
+    {
+      "name": "AMOUNT",
+      "code": "amount_mismatch",
+      "result": "MATCH"
+    },
+    {
+      "name": "TOTALS",
+      "code": "amount_mismatch",
+      "result": "MATCH"
+    },
+    {
+      "name": "CONSUMED",
+      "code": "challenge_state_mismatch",
+      "result": "MATCH"
+    },
+    {
+      "name": "CHALLENGE_EXPIRED",
+      "code": "challenge_time_mismatch",
+      "result": "MATCH"
+    },
+    {
+      "name": "CHALLENGE_START",
+      "code": "scoped_research_verified",
+      "result": "MATCH"
+    },
+    {
+      "name": "SHORT_CHALLENGE",
+      "code": "scoped_research_verified",
+      "result": "MATCH"
+    },
+    {
+      "name": "BUYER_SPLIT",
+      "code": "host_binding_mismatch",
+      "result": "MATCH"
+    },
+    {
+      "name": "ORDER_VERSION_SPLIT",
+      "code": "host_binding_mismatch",
+      "result": "MATCH"
+    },
+    {
+      "name": "TENANT_REBOUND",
+      "code": "host_binding_mismatch",
+      "result": "MATCH"
+    },
+    {
+      "name": "ROOT_REBOUND",
+      "code": "host_binding_mismatch",
+      "result": "MATCH"
+    },
+    {
+      "name": "AGENT_REBOUND",
+      "code": "host_binding_mismatch",
+      "result": "MATCH"
+    },
+    {
+      "name": "REVOKED_KEY",
+      "code": "inactive_trust_key",
+      "result": "MATCH"
+    },
+    {
+      "name": "KEY_EXPIRED",
+      "code": "trust_key_time_mismatch",
+      "result": "MATCH"
+    },
+    {
+      "name": "SHORT_KEY",
+      "code": "scoped_research_verified",
+      "result": "MATCH"
+    },
+    {
+      "name": "SNAPSHOT_REVOKED",
+      "code": "inactive_trust_snapshot",
+      "result": "MATCH"
+    },
+    {
+      "name": "AMBIGUOUS_KEY",
+      "code": "ambiguous_trust_key",
+      "result": "MATCH"
+    },
+    {
+      "name": "UNKNOWN_KEY",
+      "code": "trust_key_not_found",
+      "result": "MATCH"
+    },
+    {
+      "name": "PROFILE_VERSION",
+      "code": "unsupported_trust_profile",
+      "result": "MATCH"
+    },
+    {
+      "name": "root_presentation_over",
+      "code": "input_too_large",
+      "result": "MATCH"
+    },
+    {
+      "name": "terminal_jws_over",
+      "code": "input_too_large",
+      "result": "MATCH"
+    },
+    {
+      "name": "host_checkout_jws_over",
+      "code": "input_too_large",
+      "result": "MATCH"
+    },
+    {
+      "name": "trust_json_over",
+      "code": "input_too_large",
+      "result": "MATCH"
+    },
+    {
+      "name": "selection_json_over",
+      "code": "input_too_large",
+      "result": "MATCH"
+    },
+    {
+      "name": "host_json_over",
+      "code": "input_too_large",
+      "result": "MATCH"
+    },
+    {
+      "name": "HOST_DEPTH24",
+      "code": "invalid_host_context",
+      "result": "MATCH"
+    },
+    {
+      "name": "HOST_DEPTH25",
+      "code": "input_too_deep",
+      "result": "MATCH"
+    },
+    {
+      "name": "HOST_DUPLICATE",
+      "code": "duplicate_key",
+      "result": "MATCH"
+    },
+    {
+      "name": "HOST_AT_CAP",
+      "code": "invalid_host_context",
+      "result": "MATCH"
+    },
+    {
+      "name": "HOST_INVALID_TYPE",
+      "code": "invalid_input_type",
+      "result": "MATCH"
+    },
+    {
+      "name": "HOST_BOM",
+      "code": "invalid_json",
+      "result": "MATCH"
+    }
+  ],
+  "legacy_api_checks": 7,
+  "input_rejections": 2,
+  "constructor_rejections": 1,
+  "total_cases": 52,
+  "holds": "production/distribution/Phase2B/Hostatomic/Stage16; old acquisition gaps and Linuxalltraffic unproved"
+}
