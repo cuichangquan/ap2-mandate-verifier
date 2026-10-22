@@ -8,9 +8,18 @@ is changed. The prior Evidence v2 and legacy non-success API contracts remain.
 `results/R3/` contains byte-identical copies of the five saved original R3 files.
 The historical MANIFEST.json binds the README before this publication note and
 all executable files used by R3. Its old README hash is historical, not the hash
-of the updated publication README. The compare.py, observe.rb and candidate.json
-hashes remain identical to R3. New integration test output is saved separately;
+of the updated publication README. observe.rb and candidate.json remain identical
+to R3; compare.py now adds an early optimization-mode rejection after review.
+New integration test output is saved separately in R5;
 no R1/R2/R3 evidence is regenerated or replaced to claim previous execution.
+
+PR review found one applicable P1: -O/-OO/PYTHONOPTIMIZE could strip the adapter's
+assertions. The corrected adapter stops before loading code/inputs or creating
+artifacts whenever sys.flags.optimize is nonzero. Four subprocess controls require
+nonzero exit, exact STOP diagnostic, no stdout and no output directory. R5 records
+the corrected adapter identity; its deterministic inputs must equal the original
+R3 input bytes. R3 success is historical under the recorded unoptimized command,
+not evidence that the original adapter safely supported optimized execution.
 
 R3 report SHA256:
 `6a691a163cba831fc53c30f7d1dd7991eefef34d7ce0883457424075a9a584dd`.

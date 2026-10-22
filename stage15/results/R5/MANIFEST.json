@@ -1,0 +1,27 @@
+{
+  "scope": "STAGE15_OPTIMIZATION_FIX_R5",
+  "source_sha256": {
+    "stage15/compare.py": "afb93671f0a3de7dce0c384e8c7b6a33d51c51ce6ae4092bb0e217d3929e34e7",
+    "stage15/observe.rb": "f7be634d7a16539d1e2c0567339f36d193886a95a866c823c15c7afdd5c8149b",
+    "stage15/candidate.json": "93ca43dd65a6f7bdbc0bbed30004517e059043308cd1e2688e4eaa975675a5e9",
+    "stage15/optimization_test.py": "0854821ce7ef205f6bced1d63f2e5dd3ba3bf021c28df04aa08fee3f1af661e0"
+  },
+  "results_sha256": {
+    "REPORT.json": "55d421d738ea142396e6512125471a2e1677178a8747865f05683f34681a4411",
+    "REGRESSION.txt": "b0e855f8b09b88b01da5d09e984c328b54c706c87c886c10b81dd9628e11095b",
+    "OPTIMIZATION.json": "1290099b74568fbd3c521436dd327a364b9168d3c7f12be82b590810e2578d8f"
+  },
+  "inputs": {
+    "path": "../R3/INPUTS.json",
+    "sha256": "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1",
+    "verified": "R5 exact bytes equal originalR3"
+  },
+  "regressions": 885,
+  "independent_cases": 30,
+  "boundary_probes": 12,
+  "schema_judgments": 8,
+  "optimized_rejections": 4,
+  "syntax_checks": 13,
+  "independent_static_review": "no unresolved P1/P2",
+  "limitation": "MBA only; trusted harness/runtime; NOT_HOST_ALLOW; Stage15overall/Stage16/production/distribution/Phase2B HOLD; no new acquisition/Actions; measurement gaps2 unchanged"
+}

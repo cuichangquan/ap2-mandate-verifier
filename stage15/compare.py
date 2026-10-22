@@ -1,4 +1,11 @@
 """Stage15 local-only independent contract comparison; never a Host ALLOW."""
+import sys
+
+# Assertions below are verification gates, not optional debug diagnostics.
+# Refuse -O/-OO/PYTHONOPTIMIZE before loading code/inputs or creating artifacts.
+if sys.flags.optimize != 0:
+    raise SystemExit('STOP: optimized Python execution is not supported')
+
 import copy
 import hashlib
 import json

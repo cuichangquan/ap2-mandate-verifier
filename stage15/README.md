@@ -8,6 +8,9 @@ Candidate main: `7635ea59ddd7027fa929e164d68f796a56fbca66`; source tree
 source files. Its digest is pinned in compare.py, as is the reused Python binding
 adapter. Existing original signed Oracle, public fixture, dependency locks,
 runtime identity and 13 Schema identities retain their reviewed pins.
+The integration review found that Python optimization could remove assertion
+gates. The current adapter rejects -O/-OO/PYTHONOPTIMIZE before loading inputs or
+creating artifacts. R3 records the historical adapter; the corrected run is R5.
 
 ## Proposition and observation
 
@@ -56,6 +59,8 @@ subprocess.run([sys.executable, 'stage15/compare.py', '../ap2-stage15-results-R3
 
 Each Ruby child has a 10-second subprocess timeout and the enclosing command has
 a 300-second timeout. The script also tracks the remaining whole-run budget.
+Run optimization_test.py without optimization to check four optimized invocation
+rejections. Optimized execution is unsupported, never a successful comparison.
 `INPUTS.json` preserves each exact Gem input; REPORT.json binds its hash, source
 manifest, observer, Python adapter, original fixture, Oracle, dependencies and
 Schema identities to expectations and observations. New results use separate
