@@ -1,0 +1,12 @@
+{
+  "scope": "LOCAL_SYNTHETIC_O1_O3_NO_HOST_AUTHORITY",
+  "issuer_public_jwk": {
+    "kty": "EC",
+    "crv": "P-256",
+    "x": "kKi80mrBYKuJMyFTyaXtrJYVBDgXbaMt9q_lw5KqyqQ",
+    "y": "pQdXieXr6ioRSiMJO28xQkYnowKpvPFVxGSDq5DIz50"
+  },
+  "expected_alg": "ES256",
+  "expected_typ": "example+sd-jwt",
+  "ap2_commit": "b4587ac1d055888a73b4b21750973cffba961793"
+}
