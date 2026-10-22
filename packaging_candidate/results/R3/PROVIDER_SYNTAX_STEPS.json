@@ -1,0 +1,27 @@
+[
+  {
+    "name": "DEPENDENCY_PROVIDERS",
+    "exit_code": 0,
+    "seconds": 0.07357800006866455
+  },
+  {
+    "name": "SYNTAX_ap2_mandate_verifier",
+    "exit_code": 0,
+    "seconds": 0.009309832938015461
+  },
+  {
+    "name": "SYNTAX_Gemfile",
+    "exit_code": 0,
+    "seconds": 0.009144084062427282
+  },
+  {
+    "name": "SYNTAX_package_contents_audit",
+    "exit_code": 0,
+    "seconds": 0.008866208139806986
+  },
+  {
+    "name": "SYNTAX_packaged_gem_test",
+    "exit_code": 0,
+    "seconds": 0.009383582975715399
+  }
+]

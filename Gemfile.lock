@@ -1,14 +1,18 @@
 PATH
   remote: .
   specs:
-    ap2_mandate_verifier (0.0.0)
+    ap2_mandate_verifier (0.1.0.pre.2)
+      base64 (= 0.3.0)
+      digest (= 3.2.1)
       json (= 2.19.9)
       jwt (= 3.3.0)
+      openssl (= 4.0.0)
 
 GEM
   remote: https://rubygems.org/
   specs:
     base64 (0.3.0)
+    digest (3.2.1)
     json (2.19.9)
     jwt (3.3.0)
       base64
@@ -20,8 +24,6 @@ PLATFORMS
 
 DEPENDENCIES
   ap2_mandate_verifier!
-  base64 (= 0.3.0)
-  openssl (= 4.0.0)
 
 BUNDLED WITH
   4.0.3

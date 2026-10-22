@@ -1,0 +1,12 @@
+[
+  {
+    "step": "PACKAGE_AUDIT",
+    "exit_code": 0,
+    "seconds": 0.1508930418640375
+  },
+  {
+    "step": "INSTALLED_GEM",
+    "exit_code": 0,
+    "seconds": 0.18037245911546052
+  }
+]

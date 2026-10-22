@@ -1,0 +1,32 @@
+{
+  "ruby": "4.0.1",
+  "engine": "ruby",
+  "openssl_gem": "4.0.0",
+  "openssl_default_gem": true,
+  "openssl_compiled": "OpenSSL 3.6.1 27 Jan 2026",
+  "openssl_library": "OpenSSL 3.6.2 7 Apr 2026",
+  "openssl_loaded_files_sha256": {
+    "openssl.bundle": "01a6e873f61d701a2d24cca768f83ea89e6ba49b0400695aa2ce89959c409690",
+    "bn.rb": "4c4b949933a849744c06d86002f2702c14a43ed713cb611b550d8736c388a2a4",
+    "cipher.rb": "087436098382bbe93b90cacad6b33b7ed63acf7c7014bdfe89b0d515c1e0259b",
+    "digest.rb": "5b47d3e23d41ac2e140889d47f9e9283c2d044df7e61584c629f67e54f18e5e7",
+    "hmac.rb": "c83bf325f9dc446ea0d24daa6bd43ed5150a928b4527c7d112d5173a9b88209c",
+    "pkcs5.rb": "6f53bb2dd21bd23bd27292553d2bc35c7f7f896f977d878b164d06fe7d1dbf69",
+    "marshal.rb": "0c22b4ebb8886fd5476960bcd7959e991e8cb8db39bd40bd3864318b7eb73424",
+    "pkey.rb": "c2d515da8dc83e839a9aedb8e8a3fb3ee8da9fcef02866c2061f6986ae383d42",
+    "buffering.rb": "9946d086070eedcd56a0149f4c6b61eb54f47bcae0c882cdd8b6a191d994d18d",
+    "ssl.rb": "89dc04186a62ef9de654a6d8d8aedd64a4c91c31069b8fefc85bf6c979bb6342",
+    "version.rb": "6d119fc87783c7cb41425d2c0fbce552490b980a120888404644566d4e238a95",
+    "x509.rb": "ffac93020e0c4ef7507cdddb3d56aa17f35ccd8cdf96f91541ae4b901a2ce232",
+    "openssl.rb": "999a8dcc6baecd9dae41b9a87082c59d29115fb426986a40352f526120e9dc05"
+  },
+  "dependencies": {
+    "json": "2.19.9",
+    "base64": "0.3.0",
+    "jwt": "3.3.0",
+    "openssl": "4.0.0",
+    "ap2_mandate_verifier": "0.1.0.pre.1"
+  },
+  "native_rebuild": false,
+  "new_dependency_installs": 0
+}

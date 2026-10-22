@@ -1,0 +1,37 @@
+[
+  {
+    "name": "REGRESSION",
+    "exit_code": 0,
+    "seconds": 1.402157667092979
+  },
+  {
+    "name": "PACKAGE_AUDIT",
+    "exit_code": 0,
+    "seconds": 0.11658441601321101
+  },
+  {
+    "name": "INSTALLED_GEM",
+    "exit_code": 0,
+    "seconds": 0.17454845900647342
+  },
+  {
+    "name": "SYNTAX_ap2_mandate_verifier",
+    "exit_code": 0,
+    "seconds": 0.009368082974106073
+  },
+  {
+    "name": "SYNTAX_Gemfile",
+    "exit_code": 0,
+    "seconds": 0.008475374896079302
+  },
+  {
+    "name": "SYNTAX_package_contents_audit",
+    "exit_code": 0,
+    "seconds": 0.009400333045050502
+  },
+  {
+    "name": "SYNTAX_packaged_gem_test",
+    "exit_code": 0,
+    "seconds": 0.00859204214066267
+  }
+]
