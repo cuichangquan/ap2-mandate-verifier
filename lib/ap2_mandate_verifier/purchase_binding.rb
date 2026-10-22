@@ -16,7 +16,12 @@ module AP2MandateVerifier
     end
 
     # Internal handoff after every signature, closure and binding check.
-    def self.verified_purchase!(root_presentation:, terminal_jws:, host_checkout_jws:,
+    def self.verified_purchase!(**inputs)
+      verified_details!(**inputs).values_at(:open, :checkout)
+    end
+
+    # Internal handoff only after all existing signature and binding checks.
+    def self.verified_details!(root_presentation:, terminal_jws:, host_checkout_jws:,
                    trusted_issuer_public_key_pem:, expected_agent_public_key_pem:,
                    trusted_merchant_public_key_pem:, expected_aud:, expected_nonce:,
                    verified_at:, expected_checkout_id:, expected_merchant_id:)
@@ -69,7 +74,7 @@ module AP2MandateVerifier
         checkout["merchant"]["id"] == merchant_id
       raise Rejected, :unsupported_purchase_profile unless checkout["status"] == "ready_for_complete"
       # Item/amount/currency/links and Root constraints are stage6, not certified.
-      [open, checkout]
+      {open: open, closed: closed, terminal: terminal, checkout: checkout}
     end
 
     def self.context!(source, limit)

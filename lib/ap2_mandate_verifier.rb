@@ -7,6 +7,7 @@ require_relative "ap2_mandate_verifier/root_disclosures"
 require_relative "ap2_mandate_verifier/purchase_binding"
 require_relative "ap2_mandate_verifier/scoped_constraints"
 require_relative "ap2_mandate_verifier/trust_context"
+require_relative "ap2_mandate_verifier/host_binding"
 
 module AP2MandateVerifier
   # Accepts original JSON bytes only. Syntax validity is not AP2 validity,
@@ -104,6 +105,19 @@ module AP2MandateVerifier
     Result.new(status: :unavailable, code: :signature_dependency_unavailable)
   rescue StandardError
     Result.new(status: :unavailable, code: :trust_check_unavailable)
+  end
+
+  def self.verify_host_binding(**inputs)
+    HostBinding.check!(**inputs)
+    Result.new(status: :unverified, code: :host_binding_verified_only)
+  rescue InputValidator::Unavailable, RootSignature::Unavailable => error
+    Result.new(status: :unavailable, code: error.code)
+  rescue InputValidator::Invalid, RootSignature::Rejected => error
+    Result.new(status: :rejected, code: error.code)
+  rescue LoadError
+    Result.new(status: :unavailable, code: :signature_dependency_unavailable)
+  rescue StandardError
+    Result.new(status: :unavailable, code: :host_binding_check_unavailable)
   end
 
 end

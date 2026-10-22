@@ -50,7 +50,10 @@ module AP2MandateVerifier
       end
       [body, wire]
     end
-    def self.keys!(trust_json:, selection_json:, verified_at:, expected_merchant_id:)
+    def self.keys!(**inputs) = verified_context!(**inputs).fetch(:keys)
+
+    # Internal handoff of validated Host references and selected-key windows.
+    def self.verified_context!(trust_json:, selection_json:, verified_at:, expected_merchant_id:)
       time!(verified_at)
       trust = InputValidator.parse!(trust_json)
       selection = InputValidator.parse!(InputValidator.snapshot!(selection_json, max_bytes: 16_384))
@@ -90,7 +93,8 @@ module AP2MandateVerifier
         end
         reject!(:invalid_trust_key) unless Digest::SHA256.hexdigest(record["public_key_pem"]) == record["key_fingerprint"]
       end
-      ROLES.to_h do |role, keyword|
+      selected = {}
+      keys = ROLES.to_h do |role, keyword|
         wanted = selection[role]
         matches = records.select do |record|
           record["role"] == role && record["tenant_id"] == selection["tenant_id"] &&
@@ -100,8 +104,16 @@ module AP2MandateVerifier
         reject!(:ambiguous_trust_key) unless matches.length == 1
         record = matches.first
         live!(record, verified_at, :inactive_trust_key, :trust_key_time_mismatch)
+        selected[role] = record
         [keyword, record["public_key_pem"].freeze]
       end.freeze
+      windows = [snapshot] + selected.values
+      references = selection.slice("trust_snapshot_id", "policy_version", "trust_content_hash",
+        "profile_definition_hash", "profile_ref", "profile_version", "tenant_id").transform_values(&:freeze).freeze
+      {keys: keys, references: references,
+       agent_fingerprint: selected.fetch("Agent").fetch("key_fingerprint").freeze,
+       valid_from: windows.map { |value| value["not_before"] }.max,
+       valid_until: windows.map { |value| value["not_after"] }.min}.freeze
     end
     private_class_method :reject!, :shape!, :id!, :digest!, :time!, :window!, :live!, :body!
   end
