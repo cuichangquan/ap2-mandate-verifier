@@ -29,7 +29,13 @@ module AP2MandateVerifier
       reject! unless ScopedConstraints::CURRENCIES.include?(value["currency"]) &&
         value["expected_total"].instance_of?(Integer) && value["expected_total"].between?(0, ScopedConstraints::MAX_AMOUNT)
     end
-    def self.check!(trust_json:, selection_json:, host_json:, root_presentation:, terminal_jws:,
+    def self.check!(**inputs)
+      verified_binding!(**inputs)
+      nil
+    end
+
+    # Internal handoff only after the entire supported conjunction passes.
+    def self.verified_binding!(trust_json:, selection_json:, host_json:, root_presentation:, terminal_jws:,
                    host_checkout_jws:, verified_at:)
       # Capture every caller-owned original before key processing. JSON parse
       # yields detached values; neither the Host nor signed bytes are rewritten.
@@ -79,7 +85,15 @@ module AP2MandateVerifier
       # The sole registered profile has no separate validity interval. Merchant
       # JWT has no iat/exp/nbf: inventing one would change the pinned profile.
       reject!(:invalid_host_validity) unless starts.max <= verified_at && verified_at < ends.min
-      nil # No Evidence, ALLOW, nonce consumption, database or clock access.
+      {"profile_ref" => references.fetch("profile_ref"), "profile_version" => references.fetch("profile_version"),
+       "profile_definition_hash" => references.fetch("profile_definition_hash"),
+       "verified_at" => verified_at, "clock_source_id" => host.fetch("clock_source_id"),
+       "valid_from" => starts.max, "valid_until" => ends.min,
+       "trust_snapshot" => {"id" => references.fetch("trust_snapshot_id"), "policy_version" => references.fetch("policy_version"),
+         "content_hash" => references.fetch("trust_content_hash")},
+       "selected_keys" => context.fetch(:selected_keys), "checkout_binding" => binding,
+       "verified_challenge" => challenge, "root_presentation_digest" => Digest::SHA256.hexdigest(root),
+       "checkout_jwt_digest" => Digest::SHA256.hexdigest(checkout), "terminal_digest" => Digest::SHA256.hexdigest(terminal)}
     end
     private_class_method :reject!, :shape!, :id!, :hash!, :time!, :binding!
   end

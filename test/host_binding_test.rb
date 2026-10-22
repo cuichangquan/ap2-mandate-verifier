@@ -75,11 +75,13 @@ module HostBindingTest
     model[:selection]["trust_content_hash"] = model[:host]["challenge"]["trust_content_hash"] = digest(wire)
   end
   @normal = fixture
+  def self.recorded_cases = @recorded_cases || []
   def self.expect(name, code, model = copy(@normal), interval: nil)
     yield model if block_given?
+    (@recorded_cases ||= []) << [name, copy(model), code, interval]
     observed = nil
     trace = TracePoint.new(:return) do |event|
-      if event.defined_class == AP2MandateVerifier::HostBinding.singleton_class && event.method_id == :check! && event.binding.local_variable_defined?(:starts)
+      if event.defined_class == AP2MandateVerifier::HostBinding.singleton_class && event.method_id == :verified_binding! && event.binding.local_variable_defined?(:starts)
         starts = event.binding.local_variable_get(:starts); ends = event.binding.local_variable_get(:ends)
         observed = [starts.max, ends.min] if starts && ends
       end

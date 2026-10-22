@@ -8,6 +8,7 @@ require_relative "ap2_mandate_verifier/purchase_binding"
 require_relative "ap2_mandate_verifier/scoped_constraints"
 require_relative "ap2_mandate_verifier/trust_context"
 require_relative "ap2_mandate_verifier/host_binding"
+require_relative "ap2_mandate_verifier/research_result"
 
 module AP2MandateVerifier
   # Accepts original JSON bytes only. Syntax validity is not AP2 validity,
@@ -119,5 +120,9 @@ module AP2MandateVerifier
   rescue StandardError
     Result.new(status: :unavailable, code: :host_binding_check_unavailable)
   end
+
+  # Research Evidence only; success is not Host ALLOW or a payment permission.
+  # All older methods continue to return non-success Result values.
+  def self.verify_research(**inputs) = ResearchResult.verify(**inputs)
 
 end

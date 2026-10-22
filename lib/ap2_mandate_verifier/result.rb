@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module AP2MandateVerifier
-  # No success state or evidence constructor exists at this stage.
+  # Legacy non-success type. The opt-in research entry uses a separate type.
   class Result
     CODES = {
       rejected: %i[invalid_input_type input_too_large invalid_encoding
@@ -27,7 +27,7 @@ module AP2MandateVerifier
                       issuer_key_unsupported root_signature_check_unavailable
                       disclosure_dependency_unavailable root_disclosure_check_unavailable
                       purchase_context_unavailable purchase_dependency_unavailable purchase_check_unavailable
-                      constraint_context_unavailable constraint_dependency_unavailable constraint_check_unavailable trust_check_unavailable host_binding_check_unavailable].freeze
+                      constraint_context_unavailable constraint_dependency_unavailable constraint_check_unavailable trust_check_unavailable host_binding_check_unavailable research_verification_unavailable].freeze
     }.freeze
 
     attr_reader :status, :code

@@ -110,7 +110,10 @@ module AP2MandateVerifier
       windows = [snapshot] + selected.values
       references = selection.slice("trust_snapshot_id", "policy_version", "trust_content_hash",
         "profile_definition_hash", "profile_ref", "profile_version", "tenant_id").transform_values(&:freeze).freeze
-      {keys: keys, references: references,
+      selected_keys = selected.values.map do |record|
+        record.reject { |field, _| field == "public_key_pem" }.freeze
+      end.freeze
+      {keys: keys, references: references, selected_keys: selected_keys,
        agent_fingerprint: selected.fetch("Agent").fetch("key_fingerprint").freeze,
        valid_from: windows.map { |value| value["not_before"] }.max,
        valid_until: windows.map { |value| value["not_after"] }.min}.freeze
