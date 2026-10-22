@@ -17,10 +17,10 @@ HERE = Path(__file__).resolve().parent
 SHA = lambda b: hashlib.sha256(b).hexdigest()
 I = runpy.run_path(str(ROOT/'test/stage11_identity.py'))
 READ = I['bounded_regular']
-PINS = {'candidate.json':'04c4cc0a796205def1ffb9d190f5146518e050e73bf39d440a1eec641bc85097',
-        'runtime.json':'486772c36389c3213183c4e01f0d1f4c549a3d88e58c319466686fd85c3df83f',
-        'dependencies.lock.json':'c365dc5234f23a3602dcf05324185b7be644b7ab61d26d69aefc0e537463fbcc',
-        'observe.rb':'4bfc7969b136888c783f93cc923ab349c638c9222bd2af76e401bc349af7dc5d'}
+PINS = {'candidate.json':'4c1eede6944da3704b3136bb22a94de6262d10ffc73db4fb01aea9663274f0f5',
+        'runtime.json':'f52e9fc94334d31ec057ba82e1473b8be865a4efa75937737a10f8436fe9d636',
+        'dependencies.lock.json':'a01b7cf96091dd8046868e6ec343a4abbd1ad87546864f573c7801eeea57d9f8',
+        'observe.rb':'8ce7dd4f4273bf92fef03101402293be2e77c0d18a0a03111b4e254235526f35'}
 OLD_ADAPTER_SHA='afb93671f0a3de7dce0c384e8c7b6a33d51c51ce6ae4092bb0e217d3929e34e7'
 INPUT_SHA='41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1'
 PROBES={**{k+'_over':'input_too_large' for k in ['root_presentation','terminal_jws','host_checkout_jws','trust_json','selection_json','host_json']},
@@ -40,8 +40,9 @@ def pinned(name):
 
 def capture_candidate(root, candidate):
     sources={str(p.relative_to(root)):READ(p,65536) for p in sorted((root/'lib').rglob('*.rb'))}
-    # The shipped dependency declaration is part of this security proposition.
-    sources['ap2_mandate_verifier.gemspec']=READ(root/'ap2_mandate_verifier.gemspec',16384)
+    # All normal Bundler resolver inputs belong to the security proposition.
+    for name in ['ap2_mandate_verifier.gemspec','Gemfile','Gemfile.lock']:
+        sources[name]=READ(root/name,16384)
     need({k:SHA(v) for k,v in sources.items()}==candidate['sources'],'captured verifier/package identity')
     return sources
 
@@ -56,7 +57,8 @@ def main():
     candidate=json.loads(pinned('candidate.json')); runtime=json.loads(pinned('runtime.json'))
     lock=json.loads(pinned('dependencies.lock.json')); observer=pinned('observe.rb')
     need(lock['runtime_manifest_sha256']==PINS['runtime.json'],'lock/runtime link')
-    need({k:runtime[k] for k in ['ruby','json','jwt','base64']}==lock['runtime'],'runtime version link')
+    need({k:runtime[k] for k in ['ruby','json','jwt','base64','openssl','bundler']}==lock['runtime'],'runtime version link')
+    need(runtime['resolved_gems']==lock['resolved_gems'],'frozen Bundler resolution link')
     sources=capture_candidate(ROOT,candidate)
     original_inputs=READ(ROOT/'stage15/results/R3/INPUTS.json',1048576)
     need(SHA(original_inputs)==INPUT_SHA,'historical public inputs identity')

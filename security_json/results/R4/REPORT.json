@@ -1,0 +1,2782 @@
+{
+  "scope": "JSON2199_SECURITY_UPDATE_MBA_ONLY",
+  "candidate": {
+    "base_commit": "4748972992c3ae2756cd4c86da2fc286b0c40d1d",
+    "scope": "JSON2199_DEPENDENCY_SECURITY_UPDATE_NOT_OLD_STAGE15_REPLAY",
+    "sources": {
+      "lib/ap2_mandate_verifier/host_binding.rb": "917a4c139accd77d5bbe9125c64ea258349b6854ac04e0fefe33536b9b88ec0a",
+      "lib/ap2_mandate_verifier/input_validator.rb": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+      "lib/ap2_mandate_verifier/purchase_binding.rb": "6f2108ac3298e4558fc053139d045d399687ccc3bf39c01945ed52d529dc26df",
+      "lib/ap2_mandate_verifier/research_result.rb": "02159d2f451461ef818d7b6c9d55349cdfb6e23d9ced7d688730d22c8e96827d",
+      "lib/ap2_mandate_verifier/result.rb": "fade8a1e922f7b4cf2439c120580160f85e0f22f6cfac9ff1ab1364d7b34d310",
+      "lib/ap2_mandate_verifier/root_disclosures.rb": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+      "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+      "lib/ap2_mandate_verifier/scoped_constraints.rb": "b2b5fa4cd1b4ce83cfc5ffc1be0a09ce57ad4a1b9be6778e581dd38f5ce5fd84",
+      "lib/ap2_mandate_verifier/trust_context.rb": "430eb9f9f3be4c0d7e799e95b68009c08582b6961aa954cc866ff012a3b2be36",
+      "lib/ap2_mandate_verifier.rb": "4824eeef1ce6c7833bcc24bc0bf9abc265df0b35ba135e54b4341b54c2f65ef2",
+      "ap2_mandate_verifier.gemspec": "11215bbfc0b4c566e6268bc3785a8995a7dca32cc3612bf115b51730aaca2f96",
+      "Gemfile": "83a462480f370c1721778b2c99c0c9f8a859db6973465c5b1e4dde4024125a1f",
+      "Gemfile.lock": "8308b1370dd41e61f0393aaefdb11fcfce49dbdff18f77a2c022b761138abb42"
+    }
+  },
+  "runtime": {
+    "ruby": "4.0.1",
+    "json": "2.19.9",
+    "json_gem_version": "2.19.9",
+    "jwt": "3.3.0",
+    "base64": "0.3.0",
+    "openssl": "4.0.0",
+    "bundler": "4.0.3",
+    "resolved_gems": {
+      "ap2_mandate_verifier": "0.0.0",
+      "base64": "0.3.0",
+      "json": "2.19.9",
+      "jwt": "3.3.0",
+      "openssl": "4.0.0"
+    },
+    "json_files_sha256": {
+      "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+      "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+      "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+      "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+      "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+      "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+      "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+    }
+  },
+  "dependencies_lock_sha256": "a01b7cf96091dd8046868e6ec343a4abbd1ad87546864f573c7801eeea57d9f8",
+  "candidate_sha256": "4c1eede6944da3704b3136bb22a94de6262d10ffc73db4fb01aea9663274f0f5",
+  "adapter_sha256": "c5a8fcf537fd7df986725883a2255e0037499b3209ca120a03aa2924da76d833",
+  "observer_sha256": "8ce7dd4f4273bf92fef03101402293be2e77c0d18a0a03111b4e254235526f35",
+  "independent_adapter_sha256": "afb93671f0a3de7dce0c384e8c7b6a33d51c51ce6ae4092bb0e217d3929e34e7",
+  "python_identity": {
+    "python": {
+      "implementation": "CPython",
+      "version": "3.11.15",
+      "system": "Darwin",
+      "machine": "arm64"
+    },
+    "dependencies": {
+      "jwcrypto": "1.6.1",
+      "cryptography": "50.0.2",
+      "cffi": "2.0.0",
+      "typing-extensions": "4.15.0",
+      "pycparser": "2.23",
+      "jsonschema": "4.26.0",
+      "jsonschema-specifications": "2025.9.1",
+      "referencing": "0.37.0",
+      "rpds-py": "0.30.0",
+      "attrs": "26.1.0"
+    },
+    "locks": {
+      "o1o3-requirements.lock": "8e6d9f8898e607fc95b41e3ed8cf24b8cb88afd95aadd86bf9797349341092ba",
+      "o4-requirements.lock": "7a468daf8e42b283c0172f3cd6a61f480a04b1f10fa5be1a547e917ff8b96432"
+    },
+    "identity_source_sha256": "ccd0f10d9bad02b29bfcfa5d1734b1cadf3b19c6ed60d8a278a93d830d217c0e"
+  },
+  "original_oracle_sha256": "884900e2c3420ebfc2393413ae0e6010db71b28f8a6ef02eec997defa57b8caf",
+  "binding_adapter_sha256": "97faec0c3a36bcf60b6c7a340a38ab9e0512ab3bc04716af04ce7c8f47bc4ba4",
+  "fixture_sha256": "be17fc33612ec561147100fbb901f5c2ef288d4535ed1aa69b56a61447fc8942",
+  "same_historical_inputs_sha256": "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1",
+  "case_count": 42,
+  "independent_cases": 30,
+  "resource_probes": 12,
+  "cases": [
+    {
+      "name": "FULL",
+      "expected_code": "scoped_research_verified",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile",
+        "interval"
+      ],
+      "actual": {
+        "status": "verified_research",
+        "code": "scoped_research_verified",
+        "success": true,
+        "evidence": {
+          "profile_ref": "ap2.checkout.single_merchant_sku",
+          "profile_version": "1",
+          "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+          "verified_at": 1800000000,
+          "clock_source_id": "fixed-synthetic-clock",
+          "valid_from": 1800000000,
+          "valid_until": 1800000100,
+          "trust_snapshot": {
+            "id": "synthetic-snapshot",
+            "policy_version": "policy-1",
+            "content_hash": "bbd09a3725a3b19fe8dfa4c33ef8017192c63a9c1393f86ab4a6c3342424bb63"
+          },
+          "selected_keys": [
+            {
+              "role": "Issuer",
+              "identity": "issuer",
+              "tenant_id": "synthetic-tenant",
+              "purpose": "checkout",
+              "key_ref": "issuer-1",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "profile_version": "1",
+              "key_fingerprint": "f3587dc8627af079964c46145268b2abe30996c3091a2a43850719cafe2b4de9",
+              "algorithm": "ES256",
+              "active": true,
+              "not_before": 1799998000,
+              "not_after": 1800002000
+            },
+            {
+              "role": "Agent",
+              "identity": "agent",
+              "tenant_id": "synthetic-tenant",
+              "purpose": "checkout",
+              "key_ref": "agent-1",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "profile_version": "1",
+              "key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+              "algorithm": "ES256",
+              "active": true,
+              "not_before": 1799998000,
+              "not_after": 1800002000
+            },
+            {
+              "role": "Merchant",
+              "identity": "shop",
+              "tenant_id": "synthetic-tenant",
+              "purpose": "checkout",
+              "key_ref": "merchant-1",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "profile_version": "1",
+              "key_fingerprint": "17de6834337d807b90004dd7d544445f47db959765d8eff5967bae04c070f2b8",
+              "algorithm": "ES256",
+              "active": true,
+              "not_before": 1799998000,
+              "not_after": 1800002000
+            }
+          ],
+          "checkout_binding": {
+            "tenant_id": "synthetic-tenant",
+            "buyer_account_id": "synthetic-buyer",
+            "order_id": "order",
+            "merchant_id": "shop",
+            "audience": "host",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "order_version": "order-v1",
+            "profile_version": "1",
+            "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+            "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+            "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+            "currency": "USD",
+            "expected_total": 200
+          },
+          "verified_challenge": {
+            "challenge_id": "synthetic-challenge",
+            "issuer_id": "synthetic-host",
+            "B": {
+              "tenant_id": "synthetic-tenant",
+              "buyer_account_id": "synthetic-buyer",
+              "order_id": "order",
+              "merchant_id": "shop",
+              "audience": "host",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "order_version": "order-v1",
+              "profile_version": "1",
+              "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+              "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+              "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+              "currency": "USD",
+              "expected_total": 200
+            },
+            "trust_snapshot_id": "synthetic-snapshot",
+            "policy_version": "policy-1",
+            "trust_content_hash": "bbd09a3725a3b19fe8dfa4c33ef8017192c63a9c1393f86ab4a6c3342424bb63",
+            "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+            "not_before": 1799998000,
+            "not_after": 1800002000,
+            "state": "issued",
+            "verified_nonce_sha256": "1b16b1df538ba12dc3f97edbb85caa7050d46c148134290feba80f8236c83db9"
+          },
+          "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+          "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+          "terminal_digest": "750227b1b8d3814320c478737da5ddc9557c28b9b01cc56ec7bfdbf88f362d7d",
+          "contract_version": "ap2.research-evidence.2",
+          "implementation_revision": "ap2.research-verifier.2",
+          "revision_kind": "static_identifier_not_runtime_attestation",
+          "verified_scope": [
+            "strict_inputs",
+            "host_trust_profile_input_checks",
+            "issuer_root_signature",
+            "original_root_graph_closure",
+            "agent_key_confirmation",
+            "agent_terminal_signature",
+            "closed_original_checkout_binding",
+            "merchant_checkout_signature",
+            "fixed_subset_schema_constraints",
+            "host_challenge_order_binding",
+            "validity_intersection"
+          ]
+        },
+        "deeply_frozen": true,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature",
+          "signature",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "9f1b0f9af73f217561dff203ab417e2d6c7a0bd44b5f8be272ff88a3e5684d6f",
+      "elapsed_seconds": 0.13562504202127457
+    },
+    {
+      "name": "HIDDEN",
+      "expected_code": "missing_disclosure",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "missing_disclosure",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "11097e274183799768254b31b0eaae2155907fa5335ba8347e73957a11839ad8",
+      "elapsed_seconds": 0.13066316698677838
+    },
+    {
+      "name": "UNKNOWN",
+      "expected_code": "unsupported_disclosure_profile",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "unsupported_disclosure_profile",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "236d88af91abb9f4ee3857bb5b92e49569e5331d7926ac8e3b68401d747f4775",
+      "elapsed_seconds": 0.13177454192191362
+    },
+    {
+      "name": "DUPLICATE",
+      "expected_code": "duplicate_commitment",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "duplicate_commitment",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "8d196b4931d07027d848da717c99da39f52e43f1c5ba19ba5140aad07312d6a2",
+      "elapsed_seconds": 0.13184325001202524
+    },
+    {
+      "name": "EXTRA",
+      "expected_code": "extra_disclosure",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "extra_disclosure",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "29b488d2a095c40c24604e63f380f9091a67a5e95dbee7170551fb114f2f15cd",
+      "elapsed_seconds": 0.12988574989140034
+    },
+    {
+      "name": "DECOY",
+      "expected_code": "missing_disclosure",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "missing_disclosure",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "c5fddb5f7539bc018622a95f2f1c813c0034342f5d0250b8274967f43e7a48ef",
+      "elapsed_seconds": 0.132232875097543
+    },
+    {
+      "name": "WRONG_AGENT_KEY",
+      "expected_code": "agent_key_mismatch",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "agent_key_mismatch",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "b8ffef46593b48c8c0270370d7ea652c7b1ea39a16e94ce03a58d8b7bfd5ece6",
+      "elapsed_seconds": 0.13663633400574327
+    },
+    {
+      "name": "TAMPERED_AGENT_SIGNATURE",
+      "expected_code": "invalid_root_signature",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "invalid_root_signature",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "fc6cd042e4f683af06f94a6d9a7ed7fc795c190fddda91ea0800ceac6ac8df13",
+      "elapsed_seconds": 0.1319112500641495
+    },
+    {
+      "name": "ROOT_BINDING",
+      "expected_code": "root_binding_mismatch",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "root_binding_mismatch",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "0f4e3bfa643ef1a00e47503c08cb915a4bde61e371444a1cbfe5a5877b968420",
+      "elapsed_seconds": 0.13024595798924565
+    },
+    {
+      "name": "NONCE",
+      "expected_code": "nonce_mismatch",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "nonce_mismatch",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "b99937a34d3a39acbcff5ff4715595ff786a1cd19be50c7171d1c27995e704ba",
+      "elapsed_seconds": 0.13457454089075327
+    },
+    {
+      "name": "WRONG_MERCHANT_KEY",
+      "expected_code": "invalid_root_signature",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "invalid_root_signature",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature",
+          "signature",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "ffbe61b4bdc80bee215382ec28a52c2be9f261fd4c816b3e74226938246006ed",
+      "elapsed_seconds": 0.13287912495434284
+    },
+    {
+      "name": "S01",
+      "expected_code": "invalid_scoped_schema",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "invalid_scoped_schema",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature",
+          "signature",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "2d86caef1af32ffc8a5f5407ade8c285f81fde4718362cc56167d2f5d1b93a06",
+      "elapsed_seconds": 0.13263762509450316
+    },
+    {
+      "name": "AMOUNT",
+      "expected_code": "amount_mismatch",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "amount_mismatch",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature",
+          "signature",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "76df4d78e0b9a49e7fc2a5412fe6dc535998825452ea15737ea2706000f6f823",
+      "elapsed_seconds": 0.13299445807933807
+    },
+    {
+      "name": "TOTALS",
+      "expected_code": "amount_mismatch",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "amount_mismatch",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature",
+          "signature",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "5cc084cc54ff60f90c8668218c4714ddb93f1369fc9aabb6ddd98421a29d9e56",
+      "elapsed_seconds": 0.1328045839909464
+    },
+    {
+      "name": "CONSUMED",
+      "expected_code": "challenge_state_mismatch",
+      "python_events": [
+        "host"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "challenge_state_mismatch",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "d7166c9e20713d0879c8ea4902da26e4cb9c6ad131c54295b03534f4b7f3efc2",
+      "elapsed_seconds": 0.12959370808675885
+    },
+    {
+      "name": "CHALLENGE_EXPIRED",
+      "expected_code": "challenge_time_mismatch",
+      "python_events": [
+        "host"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "challenge_time_mismatch",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "2b2764939c8ad39cc4273187352d86070223e0577bdfad74ac398e9c64b0518d",
+      "elapsed_seconds": 0.1304995419923216
+    },
+    {
+      "name": "CHALLENGE_START",
+      "expected_code": "scoped_research_verified",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile",
+        "interval"
+      ],
+      "actual": {
+        "status": "verified_research",
+        "code": "scoped_research_verified",
+        "success": true,
+        "evidence": {
+          "profile_ref": "ap2.checkout.single_merchant_sku",
+          "profile_version": "1",
+          "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+          "verified_at": 1800000000,
+          "clock_source_id": "fixed-synthetic-clock",
+          "valid_from": 1800000000,
+          "valid_until": 1800000100,
+          "trust_snapshot": {
+            "id": "synthetic-snapshot",
+            "policy_version": "policy-1",
+            "content_hash": "bbd09a3725a3b19fe8dfa4c33ef8017192c63a9c1393f86ab4a6c3342424bb63"
+          },
+          "selected_keys": [
+            {
+              "role": "Issuer",
+              "identity": "issuer",
+              "tenant_id": "synthetic-tenant",
+              "purpose": "checkout",
+              "key_ref": "issuer-1",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "profile_version": "1",
+              "key_fingerprint": "f3587dc8627af079964c46145268b2abe30996c3091a2a43850719cafe2b4de9",
+              "algorithm": "ES256",
+              "active": true,
+              "not_before": 1799998000,
+              "not_after": 1800002000
+            },
+            {
+              "role": "Agent",
+              "identity": "agent",
+              "tenant_id": "synthetic-tenant",
+              "purpose": "checkout",
+              "key_ref": "agent-1",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "profile_version": "1",
+              "key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+              "algorithm": "ES256",
+              "active": true,
+              "not_before": 1799998000,
+              "not_after": 1800002000
+            },
+            {
+              "role": "Merchant",
+              "identity": "shop",
+              "tenant_id": "synthetic-tenant",
+              "purpose": "checkout",
+              "key_ref": "merchant-1",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "profile_version": "1",
+              "key_fingerprint": "17de6834337d807b90004dd7d544445f47db959765d8eff5967bae04c070f2b8",
+              "algorithm": "ES256",
+              "active": true,
+              "not_before": 1799998000,
+              "not_after": 1800002000
+            }
+          ],
+          "checkout_binding": {
+            "tenant_id": "synthetic-tenant",
+            "buyer_account_id": "synthetic-buyer",
+            "order_id": "order",
+            "merchant_id": "shop",
+            "audience": "host",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "order_version": "order-v1",
+            "profile_version": "1",
+            "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+            "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+            "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+            "currency": "USD",
+            "expected_total": 200
+          },
+          "verified_challenge": {
+            "challenge_id": "synthetic-challenge",
+            "issuer_id": "synthetic-host",
+            "B": {
+              "tenant_id": "synthetic-tenant",
+              "buyer_account_id": "synthetic-buyer",
+              "order_id": "order",
+              "merchant_id": "shop",
+              "audience": "host",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "order_version": "order-v1",
+              "profile_version": "1",
+              "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+              "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+              "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+              "currency": "USD",
+              "expected_total": 200
+            },
+            "trust_snapshot_id": "synthetic-snapshot",
+            "policy_version": "policy-1",
+            "trust_content_hash": "bbd09a3725a3b19fe8dfa4c33ef8017192c63a9c1393f86ab4a6c3342424bb63",
+            "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+            "not_before": 1800000000,
+            "not_after": 1800002000,
+            "state": "issued",
+            "verified_nonce_sha256": "1b16b1df538ba12dc3f97edbb85caa7050d46c148134290feba80f8236c83db9"
+          },
+          "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+          "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+          "terminal_digest": "750227b1b8d3814320c478737da5ddc9557c28b9b01cc56ec7bfdbf88f362d7d",
+          "contract_version": "ap2.research-evidence.2",
+          "implementation_revision": "ap2.research-verifier.2",
+          "revision_kind": "static_identifier_not_runtime_attestation",
+          "verified_scope": [
+            "strict_inputs",
+            "host_trust_profile_input_checks",
+            "issuer_root_signature",
+            "original_root_graph_closure",
+            "agent_key_confirmation",
+            "agent_terminal_signature",
+            "closed_original_checkout_binding",
+            "merchant_checkout_signature",
+            "fixed_subset_schema_constraints",
+            "host_challenge_order_binding",
+            "validity_intersection"
+          ]
+        },
+        "deeply_frozen": true,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature",
+          "signature",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "6fd1e3b9954a770871668beb2207b0f8708cc0a76f999510154ecf9c3c1c953d",
+      "elapsed_seconds": 0.1349092919845134
+    },
+    {
+      "name": "SHORT_CHALLENGE",
+      "expected_code": "scoped_research_verified",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile",
+        "interval"
+      ],
+      "actual": {
+        "status": "verified_research",
+        "code": "scoped_research_verified",
+        "success": true,
+        "evidence": {
+          "profile_ref": "ap2.checkout.single_merchant_sku",
+          "profile_version": "1",
+          "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+          "verified_at": 1800000000,
+          "clock_source_id": "fixed-synthetic-clock",
+          "valid_from": 1800000000,
+          "valid_until": 1800000001,
+          "trust_snapshot": {
+            "id": "synthetic-snapshot",
+            "policy_version": "policy-1",
+            "content_hash": "bbd09a3725a3b19fe8dfa4c33ef8017192c63a9c1393f86ab4a6c3342424bb63"
+          },
+          "selected_keys": [
+            {
+              "role": "Issuer",
+              "identity": "issuer",
+              "tenant_id": "synthetic-tenant",
+              "purpose": "checkout",
+              "key_ref": "issuer-1",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "profile_version": "1",
+              "key_fingerprint": "f3587dc8627af079964c46145268b2abe30996c3091a2a43850719cafe2b4de9",
+              "algorithm": "ES256",
+              "active": true,
+              "not_before": 1799998000,
+              "not_after": 1800002000
+            },
+            {
+              "role": "Agent",
+              "identity": "agent",
+              "tenant_id": "synthetic-tenant",
+              "purpose": "checkout",
+              "key_ref": "agent-1",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "profile_version": "1",
+              "key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+              "algorithm": "ES256",
+              "active": true,
+              "not_before": 1799998000,
+              "not_after": 1800002000
+            },
+            {
+              "role": "Merchant",
+              "identity": "shop",
+              "tenant_id": "synthetic-tenant",
+              "purpose": "checkout",
+              "key_ref": "merchant-1",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "profile_version": "1",
+              "key_fingerprint": "17de6834337d807b90004dd7d544445f47db959765d8eff5967bae04c070f2b8",
+              "algorithm": "ES256",
+              "active": true,
+              "not_before": 1799998000,
+              "not_after": 1800002000
+            }
+          ],
+          "checkout_binding": {
+            "tenant_id": "synthetic-tenant",
+            "buyer_account_id": "synthetic-buyer",
+            "order_id": "order",
+            "merchant_id": "shop",
+            "audience": "host",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "order_version": "order-v1",
+            "profile_version": "1",
+            "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+            "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+            "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+            "currency": "USD",
+            "expected_total": 200
+          },
+          "verified_challenge": {
+            "challenge_id": "synthetic-challenge",
+            "issuer_id": "synthetic-host",
+            "B": {
+              "tenant_id": "synthetic-tenant",
+              "buyer_account_id": "synthetic-buyer",
+              "order_id": "order",
+              "merchant_id": "shop",
+              "audience": "host",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "order_version": "order-v1",
+              "profile_version": "1",
+              "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+              "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+              "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+              "currency": "USD",
+              "expected_total": 200
+            },
+            "trust_snapshot_id": "synthetic-snapshot",
+            "policy_version": "policy-1",
+            "trust_content_hash": "bbd09a3725a3b19fe8dfa4c33ef8017192c63a9c1393f86ab4a6c3342424bb63",
+            "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+            "not_before": 1799998000,
+            "not_after": 1800000001,
+            "state": "issued",
+            "verified_nonce_sha256": "1b16b1df538ba12dc3f97edbb85caa7050d46c148134290feba80f8236c83db9"
+          },
+          "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+          "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+          "terminal_digest": "750227b1b8d3814320c478737da5ddc9557c28b9b01cc56ec7bfdbf88f362d7d",
+          "contract_version": "ap2.research-evidence.2",
+          "implementation_revision": "ap2.research-verifier.2",
+          "revision_kind": "static_identifier_not_runtime_attestation",
+          "verified_scope": [
+            "strict_inputs",
+            "host_trust_profile_input_checks",
+            "issuer_root_signature",
+            "original_root_graph_closure",
+            "agent_key_confirmation",
+            "agent_terminal_signature",
+            "closed_original_checkout_binding",
+            "merchant_checkout_signature",
+            "fixed_subset_schema_constraints",
+            "host_challenge_order_binding",
+            "validity_intersection"
+          ]
+        },
+        "deeply_frozen": true,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature",
+          "signature",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "b7248804eea9ffca04edc870cbd7ccf2b53a86fcce75e9e1a5be1ffa813ddcba",
+      "elapsed_seconds": 0.13532983302138746
+    },
+    {
+      "name": "BUYER_SPLIT",
+      "expected_code": "host_binding_mismatch",
+      "python_events": [
+        "host"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "host_binding_mismatch",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "f5b57c2022e4472583948630524737aea7162989e4ff904d22dc78eefc72e3a9",
+      "elapsed_seconds": 0.129605415975675
+    },
+    {
+      "name": "ORDER_VERSION_SPLIT",
+      "expected_code": "host_binding_mismatch",
+      "python_events": [
+        "host"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "host_binding_mismatch",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "028d2663c30cea6b85ea2dbc395a32736a3513ebc9894521388cff3f5b409958",
+      "elapsed_seconds": 0.13010499998927116
+    },
+    {
+      "name": "TENANT_REBOUND",
+      "expected_code": "host_binding_mismatch",
+      "python_events": [
+        "host",
+        "trust"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "host_binding_mismatch",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "82daba68be73bf5e7f5e52281fd508054dc5b1711d285fc10ce9eac357daf453",
+      "elapsed_seconds": 0.13560312520712614
+    },
+    {
+      "name": "ROOT_REBOUND",
+      "expected_code": "host_binding_mismatch",
+      "python_events": [
+        "host",
+        "trust"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "host_binding_mismatch",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "16a7ce2e981cf20f826308fdb634513f65bb36871b0ca2160a00c4b7c5bfe7d8",
+      "elapsed_seconds": 0.1307548750191927
+    },
+    {
+      "name": "AGENT_REBOUND",
+      "expected_code": "host_binding_mismatch",
+      "python_events": [
+        "host",
+        "trust"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "host_binding_mismatch",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "f6148010adad28a85fb941d26c95437153a2fda967626af59d2775fb726e4cf8",
+      "elapsed_seconds": 0.1301234581042081
+    },
+    {
+      "name": "REVOKED_KEY",
+      "expected_code": "inactive_trust_key",
+      "python_events": [
+        "host",
+        "trust"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "inactive_trust_key",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "2fd5f0c6136f181555d1e54c0baf2a4df4df10846f7f076b525885855d7d88c9",
+      "elapsed_seconds": 0.12924141716212034
+    },
+    {
+      "name": "KEY_EXPIRED",
+      "expected_code": "trust_key_time_mismatch",
+      "python_events": [
+        "host",
+        "trust"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "trust_key_time_mismatch",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "750f5c59168e53df0f88a314b2d5e0c4a940b8b6eaab934fc94ad046ce0081d0",
+      "elapsed_seconds": 0.13099704217165709
+    },
+    {
+      "name": "SHORT_KEY",
+      "expected_code": "scoped_research_verified",
+      "python_events": [
+        "host",
+        "trust",
+        "root_signature",
+        "root_graph",
+        "open_time",
+        "external_agent_match",
+        "agent_signature",
+        "root_hash",
+        "aud_nonce",
+        "terminal_time",
+        "closed_time",
+        "checkout_original_hash",
+        "merchant_signature",
+        "checkout_identity",
+        "local_profile",
+        "interval"
+      ],
+      "actual": {
+        "status": "verified_research",
+        "code": "scoped_research_verified",
+        "success": true,
+        "evidence": {
+          "profile_ref": "ap2.checkout.single_merchant_sku",
+          "profile_version": "1",
+          "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+          "verified_at": 1800000000,
+          "clock_source_id": "fixed-synthetic-clock",
+          "valid_from": 1800000000,
+          "valid_until": 1800000001,
+          "trust_snapshot": {
+            "id": "synthetic-snapshot",
+            "policy_version": "policy-1",
+            "content_hash": "188efa86cc9c23220a796f7568645f10ef8ee9b1fb1bc7e1019caf67e711a479"
+          },
+          "selected_keys": [
+            {
+              "role": "Issuer",
+              "identity": "issuer",
+              "tenant_id": "synthetic-tenant",
+              "purpose": "checkout",
+              "key_ref": "issuer-1",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "profile_version": "1",
+              "key_fingerprint": "f3587dc8627af079964c46145268b2abe30996c3091a2a43850719cafe2b4de9",
+              "algorithm": "ES256",
+              "active": true,
+              "not_before": 1799998000,
+              "not_after": 1800002000
+            },
+            {
+              "role": "Agent",
+              "identity": "agent",
+              "tenant_id": "synthetic-tenant",
+              "purpose": "checkout",
+              "key_ref": "agent-1",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "profile_version": "1",
+              "key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+              "algorithm": "ES256",
+              "active": true,
+              "not_before": 1799998000,
+              "not_after": 1800000001
+            },
+            {
+              "role": "Merchant",
+              "identity": "shop",
+              "tenant_id": "synthetic-tenant",
+              "purpose": "checkout",
+              "key_ref": "merchant-1",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "profile_version": "1",
+              "key_fingerprint": "17de6834337d807b90004dd7d544445f47db959765d8eff5967bae04c070f2b8",
+              "algorithm": "ES256",
+              "active": true,
+              "not_before": 1799998000,
+              "not_after": 1800002000
+            }
+          ],
+          "checkout_binding": {
+            "tenant_id": "synthetic-tenant",
+            "buyer_account_id": "synthetic-buyer",
+            "order_id": "order",
+            "merchant_id": "shop",
+            "audience": "host",
+            "profile_ref": "ap2.checkout.single_merchant_sku",
+            "order_version": "order-v1",
+            "profile_version": "1",
+            "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+            "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+            "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+            "currency": "USD",
+            "expected_total": 200
+          },
+          "verified_challenge": {
+            "challenge_id": "synthetic-challenge",
+            "issuer_id": "synthetic-host",
+            "B": {
+              "tenant_id": "synthetic-tenant",
+              "buyer_account_id": "synthetic-buyer",
+              "order_id": "order",
+              "merchant_id": "shop",
+              "audience": "host",
+              "profile_ref": "ap2.checkout.single_merchant_sku",
+              "order_version": "order-v1",
+              "profile_version": "1",
+              "approved_agent_key_fingerprint": "df7e80111befd7adbcc59eab83f30998ec40a0392083e2f662b4868045adfddf",
+              "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+              "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+              "currency": "USD",
+              "expected_total": 200
+            },
+            "trust_snapshot_id": "synthetic-snapshot",
+            "policy_version": "policy-1",
+            "trust_content_hash": "188efa86cc9c23220a796f7568645f10ef8ee9b1fb1bc7e1019caf67e711a479",
+            "profile_definition_hash": "87642c94e30c7dec2106f0fcf8541f03c612e7732db299642447d7ed1235bc68",
+            "not_before": 1799998000,
+            "not_after": 1800002000,
+            "state": "issued",
+            "verified_nonce_sha256": "1b16b1df538ba12dc3f97edbb85caa7050d46c148134290feba80f8236c83db9"
+          },
+          "root_presentation_digest": "1c1ede3ac306fada27128d126d1240a73b6fee65f22575a7b2cf9f3f81636a98",
+          "checkout_jwt_digest": "45710c3a96235882b093246c1d13b8cd3500df7feb425f4d799d4e62e16687f9",
+          "terminal_digest": "750227b1b8d3814320c478737da5ddc9557c28b9b01cc56ec7bfdbf88f362d7d",
+          "contract_version": "ap2.research-evidence.2",
+          "implementation_revision": "ap2.research-verifier.2",
+          "revision_kind": "static_identifier_not_runtime_attestation",
+          "verified_scope": [
+            "strict_inputs",
+            "host_trust_profile_input_checks",
+            "issuer_root_signature",
+            "original_root_graph_closure",
+            "agent_key_confirmation",
+            "agent_terminal_signature",
+            "closed_original_checkout_binding",
+            "merchant_checkout_signature",
+            "fixed_subset_schema_constraints",
+            "host_challenge_order_binding",
+            "validity_intersection"
+          ]
+        },
+        "deeply_frozen": true,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust",
+          "constraints",
+          "purchase",
+          "root_graph",
+          "signature",
+          "signature",
+          "signature"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "fac4c35d9fa90d288ea8899d39c01e66717b8e73955034d0fc6a87159327c5ef",
+      "elapsed_seconds": 0.1329261250793934
+    },
+    {
+      "name": "SNAPSHOT_REVOKED",
+      "expected_code": "inactive_trust_snapshot",
+      "python_events": [
+        "host",
+        "trust"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "inactive_trust_snapshot",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "12c598b3233150f2d6ffc01ebf254c708b69d9cf4f924e64ed1409fd76043101",
+      "elapsed_seconds": 0.1277890419587493
+    },
+    {
+      "name": "AMBIGUOUS_KEY",
+      "expected_code": "ambiguous_trust_key",
+      "python_events": [
+        "host",
+        "trust"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "ambiguous_trust_key",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "f85298a2599f9b69bed732aa587a74e3ba1e5923af49e908a9caebdffc284e91",
+      "elapsed_seconds": 0.130238207988441
+    },
+    {
+      "name": "UNKNOWN_KEY",
+      "expected_code": "trust_key_not_found",
+      "python_events": [
+        "host",
+        "trust"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "trust_key_not_found",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "fa83b31feb0705978a3a527191dc7b6946f588fad007a056e4dc20f039b1b08a",
+      "elapsed_seconds": 0.1298384580295533
+    },
+    {
+      "name": "PROFILE_VERSION",
+      "expected_code": "unsupported_trust_profile",
+      "python_events": [
+        "host",
+        "trust"
+      ],
+      "actual": {
+        "status": "rejected",
+        "code": "unsupported_trust_profile",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [
+          "trust"
+        ],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "16a3d4f2bc5a03a455782daacdae0425ef730ce8de7a3794f8949a11269c07d7",
+      "elapsed_seconds": 0.13238212489522994
+    },
+    {
+      "name": "root_presentation_over",
+      "expected_code": "input_too_large",
+      "python_events": [],
+      "actual": {
+        "status": "rejected",
+        "code": "input_too_large",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "19c167107eb321da694558ab8acb57e1c220f92a61dd5494546a965518fc159b",
+      "elapsed_seconds": 0.12811545911245048
+    },
+    {
+      "name": "terminal_jws_over",
+      "expected_code": "input_too_large",
+      "python_events": [],
+      "actual": {
+        "status": "rejected",
+        "code": "input_too_large",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "31d6d11da80073aeb822d4a0492634fe07ea8cc9f4b9aa02054f289410a692b4",
+      "elapsed_seconds": 0.1288157501257956
+    },
+    {
+      "name": "host_checkout_jws_over",
+      "expected_code": "input_too_large",
+      "python_events": [],
+      "actual": {
+        "status": "rejected",
+        "code": "input_too_large",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "8f5efbe4d6486d8ad650fed3a5be026b64d7fe1895afdd0c278ada99294593b5",
+      "elapsed_seconds": 0.13031145907007158
+    },
+    {
+      "name": "trust_json_over",
+      "expected_code": "input_too_large",
+      "python_events": [],
+      "actual": {
+        "status": "rejected",
+        "code": "input_too_large",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "1bffa48a2e5fc8dd7d490c08e80a93e2aa8dc6edf68e414183a095ce12e61eea",
+      "elapsed_seconds": 0.12978712492622435
+    },
+    {
+      "name": "selection_json_over",
+      "expected_code": "input_too_large",
+      "python_events": [],
+      "actual": {
+        "status": "rejected",
+        "code": "input_too_large",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "a4b9f99e49be7d4c6bce61ba447007c3789295aa3c084d7fe006ca2f228e02b3",
+      "elapsed_seconds": 0.126866249833256
+    },
+    {
+      "name": "host_json_over",
+      "expected_code": "input_too_large",
+      "python_events": [],
+      "actual": {
+        "status": "rejected",
+        "code": "input_too_large",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "2ef70817264197b05535f815620069cf397323c8010fa9f1653aa88cffe47d9e",
+      "elapsed_seconds": 0.1275979580823332
+    },
+    {
+      "name": "HOST_DEPTH24",
+      "expected_code": "invalid_host_context",
+      "python_events": [],
+      "actual": {
+        "status": "rejected",
+        "code": "invalid_host_context",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "91ac71128a31363c4dce068b570a82419a6d4a8b70413da4dbe4931d08805212",
+      "elapsed_seconds": 0.12900062487460673
+    },
+    {
+      "name": "HOST_DEPTH25",
+      "expected_code": "input_too_deep",
+      "python_events": [],
+      "actual": {
+        "status": "rejected",
+        "code": "input_too_deep",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "ed76bdd63675b26c2d487d3a7115cf466966fc97b27a10fc9e517479eb430335",
+      "elapsed_seconds": 0.12776845786720514
+    },
+    {
+      "name": "HOST_DUPLICATE",
+      "expected_code": "duplicate_key",
+      "python_events": [],
+      "actual": {
+        "status": "rejected",
+        "code": "duplicate_key",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "568398be0ef2b55caf7aaa4bbfc8db0a6a7f64c12a59fa46464680fd01d70674",
+      "elapsed_seconds": 0.1266072909347713
+    },
+    {
+      "name": "HOST_AT_CAP",
+      "expected_code": "invalid_host_context",
+      "python_events": [],
+      "actual": {
+        "status": "rejected",
+        "code": "invalid_host_context",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "2f11023f82795d16afb4c7a07356782f392784e140776fbc49bd1c6b7ffde029",
+      "elapsed_seconds": 0.128154749982059
+    },
+    {
+      "name": "HOST_INVALID_TYPE",
+      "expected_code": "invalid_input_type",
+      "python_events": [],
+      "actual": {
+        "status": "rejected",
+        "code": "invalid_input_type",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "7a10fe1fae856e53fff674ea850760a2640755a5ec80318ba93d54dec71f5831",
+      "elapsed_seconds": 0.12758616590872407
+    },
+    {
+      "name": "HOST_BOM",
+      "expected_code": "invalid_json",
+      "python_events": [],
+      "actual": {
+        "status": "rejected",
+        "code": "invalid_json",
+        "success": false,
+        "evidence": null,
+        "deeply_frozen": null,
+        "stable_after_input_mutation": true,
+        "entries": [],
+        "runtime": {
+          "ruby": "4.0.1",
+          "json": "2.19.9",
+          "json_gem_version": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.0",
+          "bundler": "4.0.3",
+          "resolved_gems": {
+            "ap2_mandate_verifier": "0.0.0",
+            "base64": "0.3.0",
+            "json": "2.19.9",
+            "jwt": "3.3.0",
+            "openssl": "4.0.0"
+          },
+          "json_files_sha256": {
+            "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+            "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+            "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+            "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+            "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+            "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+            "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+          }
+        }
+      },
+      "comparison": "MATCH",
+      "input_sha256": "21082ef079c387295ea0d2ec48640b17992911db3dd7b33ade233e761a94a45d",
+      "elapsed_seconds": 0.12638200004585087
+    }
+  ],
+  "schema_controls": {
+    "schema_sha256": {
+      "ap2/open_checkout_mandate.json": "bd6eb1c95a5ccb967259fae49100287755251c9d1bdb48342d96dd99fcb30b41",
+      "ap2/checkout_mandate.json": "10c0341edfeaa9084d3704ef8e94869de20499c8e357068d65f8d622bf79483a",
+      "ap2/types/item.json": "48c24532f105fda096ab89a27e04e896a597fda7e308e96cc88e11ce6a6632f9",
+      "ap2/types/merchant.json": "13457334d8577230a1cce5265971cfc02f68f5d4e97f74bd2e78128105d3ab31",
+      "ucp/types/checkout.json": "275f6589d4f49313f6d8cf3a0e3aedfca1d7209c3a8b8be404097c3d86d964f9",
+      "ucp/types/line_item.json": "d71c13b023631f118b1a9df51433abc25883332f7ac2c097396ab956e0c494e6",
+      "ucp/types/total.json": "a49d2d2feb6567a3ba20b2770ee707e0f3de481bcece9ab8577a65dec9709531",
+      "ucp/types/link.json": "7685745f445a7ac9a6044de3f9a4cdd62a3422c200f39696f5e6b0292e08b478",
+      "ucp/types/buyer.json": "93df45c6d425486742527e7ed6d9d91feca558f4802141ba994e609011a14df9",
+      "ucp/types/message.json": "b2b2774f2ab2b08ff79bb1cd8165905e624235ab19a10e687629baab094fc003",
+      "ucp/types/message_error.json": "435b63a09d9b3ffede0a576d9ef2230f85d87e59b2006f55dc64079d380a1c75",
+      "ucp/types/message_warning.json": "836fd348a2085d95d332d1449bbb52a4ba6544faab32fab3827670b9d8e0ae4b",
+      "ucp/types/message_info.json": "0c64b5d186f51f591c73e33bb4ff381bf648b301cc22827003185c78bfcf0c79"
+    },
+    "checks": [
+      {
+        "case": "FULL",
+        "kind": "open",
+        "expected": "VALID",
+        "actual": "VALID",
+        "paths": []
+      },
+      {
+        "case": "FULL",
+        "kind": "closed",
+        "expected": "VALID",
+        "actual": "VALID",
+        "paths": []
+      },
+      {
+        "case": "FULL",
+        "kind": "merchant",
+        "expected": "VALID",
+        "actual": "VALID",
+        "paths": []
+      },
+      {
+        "case": "FULL",
+        "kind": "checkout",
+        "expected": "VALID",
+        "actual": "VALID",
+        "paths": []
+      },
+      {
+        "case": "S01",
+        "kind": "open",
+        "expected": "INVALID",
+        "actual": "INVALID",
+        "paths": [
+          [
+            "constraints",
+            0
+          ],
+          [
+            "constraints"
+          ]
+        ]
+      },
+      {
+        "case": "S01",
+        "kind": "closed",
+        "expected": "VALID",
+        "actual": "VALID",
+        "paths": []
+      },
+      {
+        "case": "S01",
+        "kind": "merchant",
+        "expected": "VALID",
+        "actual": "VALID",
+        "paths": []
+      },
+      {
+        "case": "S01",
+        "kind": "checkout",
+        "expected": "VALID",
+        "actual": "VALID",
+        "paths": []
+      }
+    ],
+    "scope": "PINNED13_NORMAL_AND_SIGNATURE_VALID_S01_ONLY"
+  },
+  "total_seconds": 5.681358999805525,
+  "per_probe_timeout_seconds": 10,
+  "whole_timeout_seconds": 300,
+  "conclusion": "LIMITED_MATCH_NOT_HOST_ALLOW",
+  "other_environment": "NOT_RUN",
+  "stage16": "HOLD",
+  "limitations": [
+    "Existing safe synthetic cases only; no exploit PoC, crash or disclosure experiment",
+    "New dependency observations do not rewrite/validate historical executions",
+    "MBA trusted harness/interpreter; shared fixture/profile/crypto assumptions",
+    "No real Host trust/clock/atomic consume/payment or product CPU/RSS/parallel guarantee",
+    "terminal.iat+301 computed but not isolated as limiting expiry; prior2 acquisition gaps unchanged"
+  ]
+}

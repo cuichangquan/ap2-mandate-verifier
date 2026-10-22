@@ -46,14 +46,26 @@ logs stay in ignored `.local-deps/`; they are not distributed in this change.
 Use `security_json/compare.py` for this dependency. Stage11 and Stage15 adapters,
 pins, input originals and R3/R5 results are unchanged. Their historical exact
 source/runtime pins intentionally do not describe the updated Gem. The new
-adapter captures ten current verifier sources plus the distributable gemspec
+adapter captures ten current verifier sources plus the distributable gemspec,
+Gemfile and Gemfile.lock (thirteen files)
 into a private temporary tree and
 uses the ordinary Gem entry; candidate/runtime/lock/observer bytes are fixed by
 reviewed SHA pins. The old Stage15 adapter is loaded only as fixed Python oracle
 functions; its main, old runtime check and old result reader are never invoked.
-The gemspec is included because forcing a fixed test GEM_PATH alone does not
-certify the shipped dependency declaration. Candidate boundary controls reject a
-gemspec reverted to2.18.0, relaxed or missing before any Ruby probe executes.
+Forcing a fixed test GEM_PATH alone does not certify normal Bundler resolution.
+The resolver tuple is fixed together: the root lock is regenerated offline with
+`bundle lock --local --update json`, retaining all other versions/platforms. The old CHECKSUMS section contained no
+actual checksums and prevents frozen setup under Bundler4.0.3; that empty section
+is removed. The acquired JSON archive and existing JWT archive hashes remain
+fixed in the dedicated dependency ledger; no archive checksum is invented for
+the built-in OpenSSL gem.
+Each captured-tree Ruby probe runs ordinary frozen Bundler setup against those
+captured resolver files, without install/network/build. Observed resolved gems,
+Bundler4.0.3 and existing OpenSSL4.0.0 are also compared with the pinned runtime.
+Seven candidate controls start from a complete baseline and cover original,
+reverted/relaxed/missing gemspec, stale/missing lock and changed Gemfile before
+Ruby executes. This resolver-boundary reassessment addresses both review gaps
+together. Old R2/R3 results remain historical; the completed resolver run is R4.
 The old original signed Oracle and binding adapter are independently pinned
 before execution. Expected outcomes are not generated from Gem results.
 

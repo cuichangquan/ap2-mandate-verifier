@@ -4,6 +4,15 @@
   "json_gem_version": "2.19.9",
   "jwt": "3.3.0",
   "base64": "0.3.0",
+  "openssl": "4.0.0",
+  "bundler": "4.0.3",
+  "resolved_gems": {
+    "ap2_mandate_verifier": "0.0.0",
+    "base64": "0.3.0",
+    "json": "2.19.9",
+    "jwt": "3.3.0",
+    "openssl": "4.0.0"
+  },
   "json_files_sha256": {
     "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
     "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
