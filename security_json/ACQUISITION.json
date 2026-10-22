@@ -1,0 +1,16 @@
+{
+  "scope": "APPROVED_JSON2199_SINGLE_GEM_ACQUISITION",
+  "url": "https://rubygems.org/gems/json-2.19.9.gem",
+  "sha256": "9b9025b7cdddafa38d316eca0b2358488e42d417045c1b90d216a9fefe46b79a",
+  "body_bytes": 107008,
+  "request_header_bytes": 95,
+  "response_header_bytes": 1061,
+  "http_total_bytes": 108164,
+  "http_budget_bytes": 262144,
+  "counter": "curlHTTP1.1 trace Send/Recv header lengths plus verified body length; size_request0 not used",
+  "http_requests": 1,
+  "redirects": 0,
+  "automatic_retries": 0,
+  "measurement": "HTTP layer only; excludes DNS/TLS/interface traffic; not a pre-guaranteed hard cap",
+  "history": "Does not repair prior2 acquisition measurement gaps"
+}

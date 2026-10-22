@@ -1,0 +1,25 @@
+{
+  "ruby": "4.0.1",
+  "json": "2.19.9",
+  "json_gem_version": "2.19.9",
+  "jwt": "3.3.0",
+  "base64": "0.3.0",
+  "openssl": "4.0.0",
+  "bundler": "4.0.3",
+  "resolved_gems": {
+    "ap2_mandate_verifier": "0.0.0",
+    "base64": "0.3.0",
+    "json": "2.19.9",
+    "jwt": "3.3.0",
+    "openssl": "4.0.0"
+  },
+  "json_files_sha256": {
+    "lib/json.rb": "3590e1ca3360aac144a88f5754cdaf2bfe7db78f3aadfaa7383365063325c87c",
+    "lib/json/common.rb": "f208ef599c217dfdafbf091223c41424192a688be1623fa8d85721041e086b59",
+    "lib/json/ext.rb": "e7d8fe488f0c1bce78dd894471cefdaca0aaff0626f38b3a360343cac10a8f5c",
+    "lib/json/ext/generator.bundle": "a16b77ef04834611f73409e36bd64bf60a9aa530e0c219b97037e3e4e8194642",
+    "lib/json/ext/generator/state.rb": "f89054e3e83d3be9685d5fbf614fcbb2a919ad7fc5d9aa727047d07c5e50a797",
+    "lib/json/ext/parser.bundle": "7e6652097ad667c732ca7bb544d250270f9ff4766da5653f03e0f0866494433f",
+    "lib/json/version.rb": "13e03a8e224b169bb2ab3b43648d5420fd963f794c2d049c00ee6a59f59eaa65"
+  }
+}

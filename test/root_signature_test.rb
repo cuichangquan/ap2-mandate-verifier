@@ -7,7 +7,7 @@ require "jwt"
 require_relative "../lib/ap2_mandate_verifier"
 
 raise "unexpected runtime" unless RUBY_VERSION == "4.0.1" &&
-  JSON::VERSION == "2.18.0" && Gem.loaded_specs.fetch("jwt").version.to_s == "3.3.0"
+  JSON::VERSION == "2.19.9" && Gem.loaded_specs.fetch("jwt").version.to_s == "3.3.0"
 
 # Keys exist only in this process. No private-key files, output or fixtures.
 module RootSignatureTest

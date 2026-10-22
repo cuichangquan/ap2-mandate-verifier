@@ -5,7 +5,7 @@ module AP2MandateVerifier
   module InputValidator
     MAX_BYTES = 131_072
     MAX_DEPTH = 24 # Root container counts as depth one, matching JSON.parse.
-    JSON_VERSION = "2.18.0"
+    JSON_VERSION = "2.19.9"
     CORE_INSTANCE_OF = Object.instance_method(:instance_of?)
     CORE_BYTESIZE = String.instance_method(:bytesize)
     CORE_BYTESLICE = String.instance_method(:byteslice)

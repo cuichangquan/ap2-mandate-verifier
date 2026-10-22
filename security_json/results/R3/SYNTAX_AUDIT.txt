@@ -1,0 +1,24 @@
+lib/ap2_mandate_verifier.rb: syntax PASS
+lib/ap2_mandate_verifier/input_validator.rb: syntax PASS
+lib/ap2_mandate_verifier/host_binding.rb: syntax PASS
+lib/ap2_mandate_verifier/purchase_binding.rb: syntax PASS
+lib/ap2_mandate_verifier/result.rb: syntax PASS
+lib/ap2_mandate_verifier/research_result.rb: syntax PASS
+lib/ap2_mandate_verifier/scoped_constraints.rb: syntax PASS
+lib/ap2_mandate_verifier/root_disclosures.rb: syntax PASS
+lib/ap2_mandate_verifier/trust_context.rb: syntax PASS
+lib/ap2_mandate_verifier/root_signature.rb: syntax PASS
+security_json/observe.rb: syntax PASS
+test/input_boundary_test.rb: syntax PASS
+test/root_signature_test.rb: syntax PASS
+test/root_disclosures_test.rb: syntax PASS
+test/purchase_binding_test.rb: syntax PASS
+test/scoped_constraints_test.rb: syntax PASS
+test/integration_matrix_test.rb: syntax PASS
+test/trust_context_test.rb: syntax PASS
+test/host_binding_test.rb: syntax PASS
+test/research_evidence_test.rb: syntax PASS
+security_json/optimization_test.py: AST PASS
+security_json/compare.py: AST PASS
+security_json/candidate_boundary_test.py: AST PASS
+Old Stage11/15 inputs/source/pins/results unchanged; acquisition/build not repeated

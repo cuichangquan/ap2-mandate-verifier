@@ -1,0 +1,94 @@
+[
+  {
+    "path": "lib/ap2_mandate_verifier/host_binding.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "lib/ap2_mandate_verifier/input_validator.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "lib/ap2_mandate_verifier/purchase_binding.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "lib/ap2_mandate_verifier/research_result.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "lib/ap2_mandate_verifier/result.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "lib/ap2_mandate_verifier/root_disclosures.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "lib/ap2_mandate_verifier/root_signature.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "lib/ap2_mandate_verifier/scoped_constraints.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "lib/ap2_mandate_verifier/trust_context.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "lib/ap2_mandate_verifier.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "security_json/observe.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "test/input_boundary_test.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "test/root_signature_test.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "test/root_disclosures_test.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "test/purchase_binding_test.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "test/scoped_constraints_test.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "test/integration_matrix_test.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "test/trust_context_test.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "test/host_binding_test.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "test/research_evidence_test.rb",
+    "result": "Syntax OK"
+  },
+  {
+    "path": "security_json/candidate_boundary_test.py",
+    "result": "AST_PASS"
+  },
+  {
+    "path": "security_json/compare.py",
+    "result": "AST_PASS"
+  },
+  {
+    "path": "security_json/optimization_test.py",
+    "result": "AST_PASS"
+  }
+]

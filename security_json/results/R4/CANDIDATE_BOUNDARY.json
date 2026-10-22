@@ -1,0 +1,33 @@
+{
+  "scope": "JSON2199_GEMSPEC_IDENTITY",
+  "cases": [
+    {
+      "case": "original",
+      "result": "CAPTURED13_FILES"
+    },
+    {
+      "case": "reverted",
+      "result": "REJECT_BEFORE_RUBY"
+    },
+    {
+      "case": "relaxed",
+      "result": "REJECT_BEFORE_RUBY"
+    },
+    {
+      "case": "missing",
+      "result": "REJECT_BEFORE_RUBY"
+    },
+    {
+      "case": "stale_lock",
+      "result": "REJECT_BEFORE_RUBY"
+    },
+    {
+      "case": "missing_lock",
+      "result": "REJECT_BEFORE_RUBY"
+    },
+    {
+      "case": "changed_gemfile",
+      "result": "REJECT_BEFORE_RUBY"
+    }
+  ]
+}
