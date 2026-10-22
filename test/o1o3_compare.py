@@ -31,9 +31,9 @@ def demand(value, message):
 def validate_replay(replay, fixture_sha, case_names):
     root = Path(__file__).resolve().parent.parent
     observer = root / 'test/stage7_saved_replay_test.rb'
-    sources = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+    sources = {str(p.relative_to(root)): hashlib.sha256(IDENTITY['bounded_regular'](p, 65536)).hexdigest()
                for p in sorted((root / 'lib').rglob('*.rb'))}
-    if not (replay.get('observer_sha256') == hashlib.sha256(observer.read_bytes()).hexdigest()
+    if not (replay.get('observer_sha256') == hashlib.sha256(IDENTITY['bounded_regular'](observer, 65536)).hexdigest()
             and replay.get('verifier_source_sha256') == sources
             and replay.get('fixture_sha256') == fixture_sha
             and replay.get('case_count') == len(case_names)
@@ -58,7 +58,7 @@ def main():
     parser.add_argument('--report', required=True)
     parser.add_argument('--gem-replay', required=True)
     args = parser.parse_args()
-    source = Path(args.oracle).read_bytes()
+    source = IDENTITY['bounded_regular'](Path(args.oracle), 16384)
     demand(hashlib.sha256(source).hexdigest() == ORACLE_SHA, 'oracle identity')
     # Load exactly the checked source bytes, not a second path read.
     spec = importlib.util.spec_from_loader('independent_o1o3', loader=None)
@@ -137,7 +137,7 @@ def main():
     report = {'python_identity': PYTHON_IDENTITY, 'scope': 'LOCAL_SYNTHETIC_O1_O3_ONLY', 'comparison': 'MATCH',
               'oracle_sha256': ORACLE_SHA, 'bundle_sha256': BUNDLE_SHA,
               'policy_sha256': hashlib.sha256(policy_raw).hexdigest(),
-              'adapter_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+              'adapter_sha256': hashlib.sha256(IDENTITY['bounded_regular'](Path(__file__), 65536)).hexdigest(),
               'fresh_gem_replay_sha256': hashlib.sha256(replay_raw).hexdigest(),
               'dependencies': {name: importlib.metadata.version(name) for name in
                                ('jwcrypto', 'cryptography', 'cffi',

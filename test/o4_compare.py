@@ -32,8 +32,8 @@ def need(value, why):
         raise ValueError(why)
 
 
-def load_source(path, digest, name):
-    raw=Path(path).read_bytes()
+def load_source(path, digest, name, cap=16384):
+    raw=IDENTITY['bounded_regular'](Path(path), cap)
     need(hashlib.sha256(raw).hexdigest()==digest, name+' source identity')
     module=types.ModuleType(name)
     module.__file__=str(Path(path).resolve())
@@ -44,9 +44,9 @@ def load_source(path, digest, name):
 def validate_replay(replay, fixture_sha, case_names):
     root = Path(__file__).resolve().parent.parent
     observer = root / 'test/stage7_saved_replay_test.rb'
-    sources = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+    sources = {str(p.relative_to(root)): hashlib.sha256(IDENTITY['bounded_regular'](p, 65536)).hexdigest()
                for p in sorted((root / 'lib').rglob('*.rb'))}
-    if not (replay.get('observer_sha256') == hashlib.sha256(observer.read_bytes()).hexdigest()
+    if not (replay.get('observer_sha256') == hashlib.sha256(IDENTITY['bounded_regular'](observer, 65536)).hexdigest()
             and replay.get('verifier_source_sha256') == sources
             and replay.get('fixture_sha256') == fixture_sha
             and replay.get('case_count') == len(case_names)
@@ -75,8 +75,8 @@ def main():
     oracle=load_source(args.oracle,ORACLE_SHA,'original_signed_oracle')
     # Reuse already independently tested binding predicates, not Gem internals.
     binding_path=Path(__file__).with_name('o2o5_compare.py')
-    binding_sha=hashlib.sha256(binding_path.read_bytes()).hexdigest()
-    binding=load_source(binding_path,binding_sha,'limited_binding')
+    binding_sha=hashlib.sha256(IDENTITY['bounded_regular'](binding_path, 65536)).hexdigest()
+    binding=load_source(binding_path,binding_sha,'limited_binding',65536)
     acquisition=IDENTITY['schema_ledger'](Path('O4_HTTP_ACQUISITION.json'))
     expected={r['name']:r for r in acquisition['requests'] if r['name'] in FILES}
     need(set(expected)==set(FILES),'missing Schema acquisition identity')
@@ -217,7 +217,7 @@ def main():
        'dependencies':{n:importlib.metadata.version(n) for n in
          ('jsonschema','jsonschema-specifications','referencing','rpds-py','attrs')},
        'fixture_sha256':hashlib.sha256(raw).hexdigest(),'binding_source_sha256':binding_sha,
-       'adapter_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+       'adapter_sha256':hashlib.sha256(IDENTITY['bounded_regular'](Path(__file__), 65536)).hexdigest(),
        'fresh_gem_replay_sha256':hashlib.sha256(replay_raw).hexdigest(),
        'format_assertions':'NOT_ENABLED; format-bearing optional values absent in these fixtures',
        'success':False,'evidence':None,'conclusion':'HOLD',

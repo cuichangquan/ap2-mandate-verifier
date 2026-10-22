@@ -1,0 +1,107 @@
+{
+  "scope": "STAGE11_SAVED_WIRE_REPLAY_NOT_NEW_FIXTURES",
+  "fixture_sha256": "ba8bfe3cea97b2230084a5ab5ef97d99701e3974160abbad06a346f8115c85b0",
+  "observer_sha256": "ff7ec1bea7ebf9b7e2d69522a2a5dabf216a1e609537bcb7c96f5ab398d7cafe",
+  "verifier_source_sha256": {
+    "lib/ap2_mandate_verifier.rb": "ec0ba37c67c37662a26faff933f5689920463ececbec3853061f1a4dce05f0c4",
+    "lib/ap2_mandate_verifier/input_validator.rb": "299bc4a4f8eb353aa3e240a3b4cbd99aacd4eb3123b0b578c5f93f5599baf738",
+    "lib/ap2_mandate_verifier/purchase_binding.rb": "551aecadeac6a52d4c1f3d58d85a470114081f6146b017cd2318c9bd7dbdb60d",
+    "lib/ap2_mandate_verifier/result.rb": "bb377c7564bbda10f6a30bdd228f52c540a9da10875c56f97133178439585fda",
+    "lib/ap2_mandate_verifier/root_disclosures.rb": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+    "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+    "lib/ap2_mandate_verifier/scoped_constraints.rb": "c94d317ffc264f016e5e9063413ff4162ed4e0245802e90a4efb6c6d0c4b4132"
+  },
+  "case_count": 6,
+  "cases": {
+    "FULL": {
+      "status": "unverified",
+      "code": "scoped_constraints_verified_only",
+      "entries": [
+        "root_signature",
+        "root_graph",
+        "agent_key_confirmation",
+        "agent_signature",
+        "merchant_signature",
+        "scoped_schema"
+      ],
+      "success": false,
+      "evidence": null,
+      "root_sha256": "303a7b5f02dafbd027929339181d8034db09dca00b8afac8135bb7d8ac456cbc",
+      "terminal_sha256": "3643b44159ff27209fec3b3b078c2c16f217609797f377d1573918dd618b74a7",
+      "checkout_sha256": "80ffded997df90a9ccba23b0f05ea79f1ef9d2e6e02c5ee761d4e2ca61de2a25"
+    },
+    "HIDDEN": {
+      "status": "rejected",
+      "code": "missing_disclosure",
+      "entries": [
+        "root_signature",
+        "root_graph"
+      ],
+      "success": false,
+      "evidence": null,
+      "root_sha256": "ae78571ec6445f154f9cc5f728d086a6bb813fc0f65d61078a2f27cda75d54ff",
+      "terminal_sha256": "995cdd56b217f66055b5a3acfe94f3aecd180e9b119bb5fc2fa235428f5be476",
+      "checkout_sha256": "675fd4db5b08336745b1c90668cec51e32f9a9fe645dc36c1f4a8c28b93f0558"
+    },
+    "UNKNOWN": {
+      "status": "rejected",
+      "code": "unsupported_disclosure_profile",
+      "entries": [
+        "root_signature",
+        "root_graph"
+      ],
+      "success": false,
+      "evidence": null,
+      "root_sha256": "2694691b0583044f020aceb3f11fd3d2e21946c13f5a060b7690979c69161b88",
+      "terminal_sha256": "ac0a04ac8d0e9a88fd04c01ced7019e4375bcb2a7d06636f7acc6a2de03d11c2",
+      "checkout_sha256": "a6ec7d361183fdaa62cee859d7c0f7ba13ce0140e2993d0815162513dc864fde"
+    },
+    "DUPLICATE": {
+      "status": "rejected",
+      "code": "duplicate_commitment",
+      "entries": [
+        "root_signature",
+        "root_graph"
+      ],
+      "success": false,
+      "evidence": null,
+      "root_sha256": "e36f56c5324e4cae9fd2ab7bb305648b870ab296b3ed56d3610347b560d20331",
+      "terminal_sha256": "1d2938486230a57673207df08d07d99b3617d4b68a0f65211ba2518170ab05f6",
+      "checkout_sha256": "a55cf4f11e4f1249f3219f6f7a355065a4ea0650fa30084ae67a4a047a49b3dd"
+    },
+    "EXTRA": {
+      "status": "rejected",
+      "code": "extra_disclosure",
+      "entries": [
+        "root_signature",
+        "root_graph"
+      ],
+      "success": false,
+      "evidence": null,
+      "root_sha256": "9104b3b066c79420317475c9d644608857ae1b105cbda9a10d478ee5b555813b",
+      "terminal_sha256": "08848e92f3e026cab46879877971b6178fdf95d8b27f5ff20507f9c4f10c38f7",
+      "checkout_sha256": "3895eed233a72f3f6bc9497e43d66a0e81598acc4c8c331bff0429da02d8a907"
+    },
+    "DECOY": {
+      "status": "rejected",
+      "code": "missing_disclosure",
+      "entries": [
+        "root_signature",
+        "root_graph"
+      ],
+      "success": false,
+      "evidence": null,
+      "root_sha256": "fecfeaeac79bd277504030de2cec5c2745ff7e32a5fb6dec587972186faf9449",
+      "terminal_sha256": "6c3338dbfa9c557fb50335c3336495884f02e479e27a70dd1dff855b6777f442",
+      "checkout_sha256": "70c22a772985377f6908d0d7ef57a07c8efd080714891d432a7ea217190f6a88"
+    }
+  },
+  "runtime": {
+    "ruby": "4.0.1",
+    "json": "2.18.0",
+    "jwt": "3.3.0"
+  },
+  "success": false,
+  "evidence": null,
+  "conclusion": "HOLD"
+}

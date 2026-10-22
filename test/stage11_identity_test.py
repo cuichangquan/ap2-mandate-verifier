@@ -101,7 +101,7 @@ def main():
         count += 1
     o4 = runpy.run_path(str(ROOT / 'test/o4_compare.py'))
     binding_path = ROOT / 'test/o2o5_compare.py'
-    binding = o4['load_source'](binding_path, hashlib.sha256(binding_path.read_bytes()).hexdigest(), 'identity_binding_control')
+    binding = o4['load_source'](binding_path, hashlib.sha256(binding_path.read_bytes()).hexdigest(), 'identity_binding_control', 65536)
     assert binding.PYTHON_IDENTITY == measured
     count += 1
     print(f'PASS {count} identity controls; fixed Python/dependencies and pinned ledger/inputs; no acquisition')

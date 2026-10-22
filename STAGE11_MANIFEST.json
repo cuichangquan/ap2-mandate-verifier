@@ -3,6 +3,12 @@
     "Historical O1/O3 metadata-inclusive 10MB UNMEASURED",
     "Historical O4 received HTTP596565 measured; sent header-inclusive total UNPROVEN"
   ],
+  "additional_approved_IO_repair": {
+    "acquisition_or_install": false,
+    "local_cycles": 1,
+    "previous_STOP_preserved": true,
+    "scope": "Three Oracle entry points cap16KiB and Ruby fixture cap1MiB on one descriptor; sibling source/hash reads bounded64KiB"
+  },
   "additional_approved_identity_repair": {
     "bounded_read_regression": "Original Oracle same-descriptor/cap+1 pattern restored, replacement/growth/type controls added",
     "integration_failure": "O4 module load missing __file__, corrected with actual loader-path control",
@@ -19,8 +25,10 @@
     "O4_cases": 13,
     "O4_local_refs": 17,
     "O4_schema_decisions": 64,
-    "Python_syntax_files": 6,
-    "Ruby_syntax_files": 14,
+    "Python_IO_controls": 10,
+    "Python_syntax_files": 7,
+    "Ruby_IO_controls": 7,
+    "Ruby_syntax_files": 15,
     "code_iteration_cycles": 5,
     "identity_controls": 64,
     "independent_binding_profile_cases": 32,
@@ -40,9 +48,11 @@
   },
   "conclusion": "HOLD",
   "current_result_files": [
-    "STAGE11_BOUNDED_O1O3_REPORT.json",
-    "STAGE11_BOUNDED_O2O5_REPORT.json",
-    "STAGE11_BOUNDED_O4_REPORT.json"
+    "STAGE11_IO_GEM_REPLAY_32.json",
+    "STAGE11_IO_GEM_REPLAY_6.json",
+    "STAGE11_IO_O1O3_REPORT.json",
+    "STAGE11_IO_O2O5_REPORT.json",
+    "STAGE11_IO_O4_REPORT.json"
   ],
   "current_verifier_sha256": {
     "lib/ap2_mandate_verifier.rb": "ec0ba37c67c37662a26faff933f5689920463ececbec3853061f1a4dce05f0c4",
@@ -71,7 +81,7 @@
     "test/o2o5_compare.py": "4ef30a7eba53a649ee3109793762d267331bbd6778b3f5b56af4ee252048e542",
     "test/o4_compare.py": "1f2dcb17f65ae67cd51ec56a6c6ef8cce9ef00baee4dcec0aac25671f8bc679d"
   },
-  "initial_stage11_reports": "Initial/R4/R5/IDENTITY observations preserved; current reports use STAGE11_BOUNDED prefix",
+  "initial_stage11_reports": "All initial/R4/R5/IDENTITY/BOUNDED observations preserved; current reports use STAGE11_IO prefix",
   "local_snapshot_commit": "6ec5ab6b0dc39a686e60334114dfcd6706ffabf9",
   "main_commit_object_available_locally": true,
   "network_scope_note": "Comparison execution is offline; separately approved Git object fetch is integration-only",
@@ -96,6 +106,11 @@
     "STAGE11_IDENTITY_O1O3_REPORT.json": "ed8ade2f03337e5d13e5da0a20916704c645ee7d2590d4ea39171f565d3ee8f5",
     "STAGE11_IDENTITY_O2O5_REPORT.json": "50bf2021d20336339f014e86afad5e0300ca0e7d3de03a8a50adeac36ea6e4a6",
     "STAGE11_IDENTITY_O4_REPORT.json": "62dcb2e16b478639c2a3dc93e71b682fb68b8d7eb92c348200dd5416516ab0ee",
+    "STAGE11_IO_GEM_REPLAY_32.json": "257d4a8126ac1044be93f1a6205dc42ed50006a5f9e3099491fc88e31d7243a4",
+    "STAGE11_IO_GEM_REPLAY_6.json": "1c978ca7dedbdc8f7a1021326b1bb80694f59d565990112efa4fcc7a851a346b",
+    "STAGE11_IO_O1O3_REPORT.json": "9c790cfcc448853b83775499d2d4f83a7ae249eaa86108839450a41975e3874d",
+    "STAGE11_IO_O2O5_REPORT.json": "a26d126857ad3a9ea798666d0ec953d7d209287ff0550c158814d854b59db289",
+    "STAGE11_IO_O4_REPORT.json": "2cf59a94b26faa4e1816d1cb565a8b69b60d2cfe6060f835d2e3a0d211526588",
     "STAGE11_O1O3_REPORT.json": "765c89005265c23563958171b4828b6652410c92271e6ddd9acd19b6a9baa7bd",
     "STAGE11_O2O5_REPORT.json": "ea6bbd14d68ec9eeaffd096db7c443530d6d3ab8c68ee5b17c01ba34d0e6a77b",
     "STAGE11_O4_REPORT.json": "e924073e790193182c03b262cb9a5fcc066e23c17d3ae2f3997b1098b8dcb1c5",
@@ -106,17 +121,19 @@
     "STAGE11_R5_O2O5_REPORT.json": "e87b929019e4e7208de483007cb796af093f75603395b48f8eea42ef8196db96",
     "STAGE11_R5_O4_REPORT.json": "3c889852f61d271c634d035b947c9070f26ca80ad9f7886724b7a1dea3907472",
     "STAGE7_PUBLIC_CASES.json": "ba8bfe3cea97b2230084a5ab5ef97d99701e3974160abbad06a346f8115c85b0",
-    "docs/STAGE11_COMPARISON.md": "adfb31393a9df138553f3c9cb5e0aea60580547ff3acaf8581d7bd76c606c02b",
+    "docs/STAGE11_COMPARISON.md": "e291f9b63d409542c131916a20aa28d784973e72c79184c548926541d6d40b88",
     "o1o3-requirements.lock": "8e6d9f8898e607fc95b41e3ed8cf24b8cb88afd95aadd86bf9797349341092ba",
     "o4-requirements.lock": "7a468daf8e42b283c0172f3cd6a61f480a04b1f10fa5be1a547e917ff8b96432",
     "test/integration_matrix_test.rb": "231fc735be3af2b5084219cff9d0c1c7c2e470e7954f7bde0ed841cb371890db",
-    "test/o1o3_compare.py": "2f14c59871b6a3593b1f4e44e2068beb742ecd93e78ffff047f1e27ca379cc85",
-    "test/o2o5_compare.py": "9c0ccf9155e8ea00ad1e38da44e26c70b70597ba3419819d506ca2c5e03f2b29",
-    "test/o4_compare.py": "7bfc96ad73d027203dc726e905038d2c17d9115b4298cd52bcefad7fd1bbf1c1",
+    "test/o1o3_compare.py": "e8014ac26b1aec27622d9dd4916ee10223bf37df59e906aafed71eea89fb91c5",
+    "test/o2o5_compare.py": "3e97c225673c56d5aa70a17c0524ca60b5a8845eaf4ddc6c28643dc345022659",
+    "test/o4_compare.py": "a4a7afc02fe5bd895ff523bbdd30c117b0e42956a5b2a6cc2d42d469685a4257",
     "test/stage11_identity.py": "ccd0f10d9bad02b29bfcfa5d1734b1cadf3b19c6ed60d8a278a93d830d217c0e",
-    "test/stage11_identity_test.py": "bf8aa8bbf9d5f057c6c8ddb76c57c121c7e67a24c6d030ed0cca813e7d53edf6",
-    "test/stage11_report_boundary_test.py": "c9760b7e94194873a5934a126c9c24c836dda52c0be807da9b9ed3550e642537",
-    "test/stage7_saved_replay_test.rb": "6454789b7102e9d7ded2c862ef016a97c58739b6aab63aaa0dfd6ab09e2158e0"
+    "test/stage11_identity_test.py": "4dff0c7a2b45b7075ea02618a3d936a251b1ffef267e9a5610bc22c480f0b450",
+    "test/stage11_io_test.py": "b4608145739137432d2225819370e4d1d1b44b901c53b178192575fa6b469705",
+    "test/stage11_io_test.rb": "792aedce4aa89f358382269f3e52b978d237a0e8b1d9b22e5c174060f1d9d018",
+    "test/stage11_report_boundary_test.py": "e037d4286754930bf30e4267cb908d375a2258ec12141386e4aecc9cb240e8f7",
+    "test/stage7_saved_replay_test.rb": "ff7ec1bea7ebf9b7e2d69522a2a5dabf216a1e609537bcb7c96f5ab398d7cafe"
   },
   "publish_excluded": [
     "private keys",

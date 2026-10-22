@@ -20,8 +20,8 @@ def main():
         else:
             raise AssertionError('stale/incomplete evidence accepted')
     for name, module in modules.items():
-        replay = json.loads((ROOT / ('STAGE11_GEM_REPLAY_6.json' if name == 'o1o3'
-                                     else 'STAGE11_GEM_REPLAY_32.json')).read_text())
+        replay = json.loads((ROOT / ('STAGE11_IO_GEM_REPLAY_6.json' if name == 'o1o3'
+                                     else 'STAGE11_IO_GEM_REPLAY_32.json')).read_text())
         validate = module['validate_replay']
         args = (replay['fixture_sha256'], set(replay['cases']))
         validate(replay, *args); count += 1
@@ -45,8 +45,8 @@ def main():
             elif mutation == 'extra_runtime': bad['runtime']['unapproved'] = True
             rejected(lambda: validate(bad, *args))
     binding = modules['o2o5']
-    prior = json.loads((ROOT / 'STAGE11_BOUNDED_O2O5_REPORT.json').read_text())
-    replay_raw = (ROOT / 'STAGE11_GEM_REPLAY_32.json').read_bytes()
+    prior = json.loads((ROOT / 'STAGE11_IO_O2O5_REPORT.json').read_text())
+    replay_raw = (ROOT / 'STAGE11_IO_GEM_REPLAY_32.json').read_bytes()
     replay = json.loads(replay_raw)
     adapter_sha = hashlib.sha256((ROOT / 'test/o2o5_compare.py').read_bytes()).hexdigest()
     validate = binding['validate_binding_report']

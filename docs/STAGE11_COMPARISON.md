@@ -189,3 +189,30 @@ Current reports are STAGE11_BOUNDED_*; STAGE11_IDENTITY_* remain preserved.
 Final report-boundary controls58 and identity controls64 pass with unchanged
 411 regressions,38 retained replays and all independent comparisons. This is
 the third local cycle within the separately approved identity repair unit.
+
+## Separately approved Oracle and Ruby fixture read repair
+
+After the prior STOP, Owner explicitly approved the remaining Python Oracle
+and Ruby fixture input boundaries. All three Oracle CLI reads now use the
+existing reader with a16KiB cap (known source13953B), hash-checking the same
+bytes before compilation. Other adapter/observer/verifier hash reads use64KiB
+caps. Ruby retained fixture input uses one NOFOLLOW/NONBLOCK descriptor,
+cap1MiB, and descriptor/path metadata consistency before and after reading.
+No general I/O platform, new dependency, acquisition or production change.
+
+Current results and fresh observer observations use STAGE11_IO_*; every prior
+report/replay and original signed fixture remains unchanged. Actual CLI tests
+reject FIFO/oversize/symlink Oracle inputs in all three adapters (10 controls),
+with replacement/growth behavior covered by the existing shared-reader tests.
+Ruby fixture tests cover seven positive/type/size/symlink/FIFO/replacement/
+growth-and-read-size controls. No source/fixture full-read bypass remains in
+the three adapters or saved replay entry point.
+
+Final:411 regressions,32+6 saved Gem replays,58 report-boundary controls,
+64 identity controls,Ruby IO7,Python IO10,independent binding32,O1/O3 six
+classes and signature controls,O4 thirteen cases/64 decisions/17 refs;
+Ruby syntax15/Python AST7. Controls run using existing fixed local dependencies:
+`"$AP2_PYTHON" -I -B test/stage11_io_test.py` and the documented Ruby wrapper
+with `test/stage11_io_test.rb`. The report-boundary tests consume the current
+STAGE11_IO reports; earlier sections identify retained historical iterations.
+All HOLDs and historical acquisition-compliance deficiencies remain unchanged.

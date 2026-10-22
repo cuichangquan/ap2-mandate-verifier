@@ -10,9 +10,26 @@ module Stage7SavedReplayTest
     "STAGE7_PUBLIC_CASES.json" => "ba8bfe3cea97b2230084a5ab5ef97d99701e3974160abbad06a346f8115c85b0",
     "O2O5_PUBLIC_CASES.json" => "be17fc33612ec561147100fbb901f5c2ef288d4535ed1aa69b56a61447fc8942"
   }.freeze
+  def self.same_stat?(a, b)
+    a.file? && b.file? && %i[dev ino mode nlink uid gid size mtime ctime].all? { |key| a.public_send(key) == b.public_send(key) }
+  end
+  def self.bounded_regular(path, cap)
+    before = File.lstat(path)
+    raise "fixture type/size" unless before.file? && before.size.positive? && before.size <= cap
+    File.open(path, File::RDONLY | File::NOFOLLOW | File::NONBLOCK) do |file|
+      file.binmode
+      opened = file.stat
+      raise "fixture changed at open" unless same_stat?(before, opened)
+      raw = file.read(cap + 1)
+      after = file.stat
+      raise "fixture changed during read" unless raw && raw.bytesize == opened.size &&
+        same_stat?(opened, after) && same_stat?(after, File.lstat(path))
+      raw
+    end
+  end
   def self.source_hashes
     Dir[File.join(ROOT, "lib/**/*.rb")].sort.to_h do |path|
-      [path.delete_prefix(ROOT + "/"), Digest::SHA256.file(path).hexdigest]
+      [path.delete_prefix(ROOT + "/"), Digest::SHA256.hexdigest(bounded_regular(path, 65_536))]
     end
   end
   def self.observe(input)
@@ -45,8 +62,7 @@ module Stage7SavedReplayTest
     fixture_path, report_path = ARGV
     raise "fixture and NEW report paths required" unless fixture_path && report_path && ARGV.size == 2
     expected_sha = FIXTURES.fetch(File.basename(fixture_path))
-    raise "fixture type/size" unless File.file?(fixture_path) && !File.symlink?(fixture_path) && File.size(fixture_path) < 1_048_576
-    raw = File.binread(fixture_path)
+    raw = bounded_regular(fixture_path, 1_048_576)
     raise "original fixture changed" unless Digest::SHA256.hexdigest(raw) == expected_sha
     fixture = JSON.parse(raw)
     inputs = fixture.fetch("cases", fixture["gem_inputs"])
@@ -65,7 +81,7 @@ module Stage7SavedReplayTest
     end
     raise "source changed during replay" unless before == source_hashes
     report = {"scope" => "STAGE11_SAVED_WIRE_REPLAY_NOT_NEW_FIXTURES", "fixture_sha256" => expected_sha,
-      "observer_sha256" => Digest::SHA256.file(__FILE__).hexdigest,
+      "observer_sha256" => Digest::SHA256.hexdigest(bounded_regular(__FILE__, 65_536)),
       "verifier_source_sha256" => before, "case_count" => cases.size, "cases" => cases,
       "runtime" => {"ruby" => RUBY_VERSION, "json" => JSON::VERSION, "jwt" => Gem.loaded_specs.fetch("jwt").version.to_s},
       "success" => false, "evidence" => nil, "conclusion" => "HOLD"}
