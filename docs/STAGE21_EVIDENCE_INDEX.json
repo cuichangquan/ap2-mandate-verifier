@@ -1,0 +1,487 @@
+{
+  "scope": "SUPPLEMENT_ONLY_NOT_NEW_EXECUTION_OR_RELEASE_GO",
+  "baseline_main": "2c07a83e76c8003d5f7b5ac09a84065f9b3fde3f",
+  "package": {
+    "version": "0.1.0.pre.2",
+    "required_ruby": "= 4.0.1",
+    "dependencies": {
+      "base64": "= 0.3.0",
+      "json": "= 2.19.9",
+      "jwt": "= 3.3.0",
+      "openssl": "= 4.0.0",
+      "digest": "= 3.2.1"
+    },
+    "files": [
+      "LICENSE",
+      "README.md",
+      "docs/SUPPORT_CONTRACT.md",
+      "lib/ap2_mandate_verifier.rb",
+      "lib/ap2_mandate_verifier/host_binding.rb",
+      "lib/ap2_mandate_verifier/input_validator.rb",
+      "lib/ap2_mandate_verifier/purchase_binding.rb",
+      "lib/ap2_mandate_verifier/research_result.rb",
+      "lib/ap2_mandate_verifier/result.rb",
+      "lib/ap2_mandate_verifier/root_disclosures.rb",
+      "lib/ap2_mandate_verifier/root_signature.rb",
+      "lib/ap2_mandate_verifier/scoped_constraints.rb",
+      "lib/ap2_mandate_verifier/trust_context.rb"
+    ],
+    "files_sha256": {
+      "LICENSE": "1442143c4265d88eedfc14f25d04298449358c837b0bb58dfa825f84b36391c8",
+      "README.md": "2c55cf0e6c609d6f546bb1f55f6a11555616f847335f6dffc316110258573f26",
+      "docs/SUPPORT_CONTRACT.md": "6a04d0ec780dc920fde03fc268791d98b7579c95861a3bbfa5770e0565860435",
+      "lib/ap2_mandate_verifier.rb": "4824eeef1ce6c7833bcc24bc0bf9abc265df0b35ba135e54b4341b54c2f65ef2",
+      "lib/ap2_mandate_verifier/host_binding.rb": "917a4c139accd77d5bbe9125c64ea258349b6854ac04e0fefe33536b9b88ec0a",
+      "lib/ap2_mandate_verifier/input_validator.rb": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+      "lib/ap2_mandate_verifier/purchase_binding.rb": "6f2108ac3298e4558fc053139d045d399687ccc3bf39c01945ed52d529dc26df",
+      "lib/ap2_mandate_verifier/research_result.rb": "02159d2f451461ef818d7b6c9d55349cdfb6e23d9ced7d688730d22c8e96827d",
+      "lib/ap2_mandate_verifier/result.rb": "fade8a1e922f7b4cf2439c120580160f85e0f22f6cfac9ff1ab1364d7b34d310",
+      "lib/ap2_mandate_verifier/root_disclosures.rb": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+      "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+      "lib/ap2_mandate_verifier/scoped_constraints.rb": "b2b5fa4cd1b4ce83cfc5ffc1be0a09ce57ad4a1b9be6778e581dd38f5ce5fd84",
+      "lib/ap2_mandate_verifier/trust_context.rb": "430eb9f9f3be4c0d7e799e95b68009c08582b6961aa954cc866ff012a3b2be36"
+    },
+    "artifact_sha256": "db0c16c53c63b16468313e25665fe36fecc4978fab050729b4667e6ef384407b",
+    "artifact_bytes": 29696,
+    "native_extensions": [],
+    "source_archive_installed_all_files_match": true
+  },
+  "inputs_sha256": "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1",
+  "expected_sha256": "b8de794bc17c1093d070ed0e78a523ffa568c332bce5e89fe5b2503ee8783d7e",
+  "stage18": {
+    "run_url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/39869876461",
+    "attempt": 1,
+    "source_regressions": 885,
+    "installed_checks": 52,
+    "loaded_libraries": 10,
+    "platform": "Ubuntu24.04 x86_64 MRI4.0.1",
+    "archive_bodies_bytes": 176640,
+    "archive_http_sent_and_received_bytes": 179976,
+    "all_traffic_128MiB": "UNPROVEN",
+    "log_form": "connector-decoded UTF8 text, not raw HTTP, original Job Summary not saved",
+    "log_sha256": "5e38be24e325596df08be3b0367f0fedd7ac4793af2452eae10db19f9ea10bc9",
+    "extracted_report_sha256": "7602be782ee1843592c1c050bef2ea4339f9c2c60e806ab3310b5b807bdf9d87"
+  },
+  "stage19": {
+    "execution_origin": "Owner ordinary MBA Terminal, not Codex sandbox execution or attestation",
+    "platform": "MBA Darwin arm64 MRI4.0.1",
+    "completed": 21,
+    "expected_matches": 21,
+    "batch_seconds": 3.019693249836564,
+    "summary": {
+      "FULL": {
+        "outer_wall_seconds": {
+          "min": 0.1326351249590516,
+          "median": 0.13277991698123515,
+          "max": 0.24282954190857708
+        },
+        "os_real_seconds": {
+          "min": 0.08,
+          "median": 0.09,
+          "max": 0.17
+        },
+        "os_user_seconds": {
+          "min": 0.06,
+          "median": 0.06,
+          "max": 0.07
+        },
+        "os_system_seconds": {
+          "min": 0.01,
+          "median": 0.01,
+          "max": 0.03
+        },
+        "os_cpu_seconds": {
+          "min": 0.06999999999999999,
+          "median": 0.06999999999999999,
+          "max": 0.1
+        },
+        "peak_rss_bytes": {
+          "min": 28688384,
+          "median": 28934144,
+          "max": 29114368
+        },
+        "peak_rss_mib": {
+          "min": 27.359375,
+          "median": 27.59375,
+          "max": 27.765625
+        },
+        "verify_wall_seconds": {
+          "min": 0.004575000144541264,
+          "median": 0.00460399966686964,
+          "max": 0.005963999778032303
+        },
+        "verify_user_seconds": {
+          "min": 0.004494000000000005,
+          "median": 0.00451,
+          "max": 0.004535999999999998
+        },
+        "verify_system_seconds": {
+          "min": 8.400000000000074e-05,
+          "median": 9.89999999999984e-05,
+          "max": 0.0003589999999999982
+        },
+        "verify_cpu_seconds": {
+          "min": 0.004578000000000006,
+          "median": 0.0046089999999999985,
+          "max": 0.004894999999999997
+        }
+      },
+      "HIDDEN": {
+        "outer_wall_seconds": {
+          "min": 0.12933308398351073,
+          "median": 0.13249154179356992,
+          "max": 0.1325415000319481
+        },
+        "os_real_seconds": {
+          "min": 0.08,
+          "median": 0.08,
+          "max": 0.09
+        },
+        "os_user_seconds": {
+          "min": 0.06,
+          "median": 0.06,
+          "max": 0.06
+        },
+        "os_system_seconds": {
+          "min": 0.01,
+          "median": 0.02,
+          "max": 0.02
+        },
+        "os_cpu_seconds": {
+          "min": 0.06999999999999999,
+          "median": 0.08,
+          "max": 0.08
+        },
+        "peak_rss_bytes": {
+          "min": 28737536,
+          "median": 28770304,
+          "max": 28966912
+        },
+        "peak_rss_mib": {
+          "min": 27.40625,
+          "median": 27.4375,
+          "max": 27.625
+        },
+        "verify_wall_seconds": {
+          "min": 0.0031460002064704895,
+          "median": 0.0031749997287988663,
+          "max": 0.0031970003619790077
+        },
+        "verify_user_seconds": {
+          "min": 0.0030890000000000084,
+          "median": 0.0030979999999999966,
+          "max": 0.003123999999999995
+        },
+        "verify_system_seconds": {
+          "min": 5.4999999999999494e-05,
+          "median": 6.0000000000001025e-05,
+          "max": 0.0001030000000000024
+        },
+        "verify_cpu_seconds": {
+          "min": 0.0031490000000000094,
+          "median": 0.0031789999999999943,
+          "max": 0.003200999999999999
+        }
+      },
+      "S01": {
+        "outer_wall_seconds": {
+          "min": 0.13254195800982416,
+          "median": 0.13259666692465544,
+          "max": 0.1326397079974413
+        },
+        "os_real_seconds": {
+          "min": 0.09,
+          "median": 0.09,
+          "max": 0.09
+        },
+        "os_user_seconds": {
+          "min": 0.06,
+          "median": 0.06,
+          "max": 0.06
+        },
+        "os_system_seconds": {
+          "min": 0.02,
+          "median": 0.02,
+          "max": 0.02
+        },
+        "os_cpu_seconds": {
+          "min": 0.08,
+          "median": 0.08,
+          "max": 0.08
+        },
+        "peak_rss_bytes": {
+          "min": 28884992,
+          "median": 28884992,
+          "max": 28901376
+        },
+        "peak_rss_mib": {
+          "min": 27.546875,
+          "median": 27.546875,
+          "max": 27.5625
+        },
+        "verify_wall_seconds": {
+          "min": 0.00443900004029274,
+          "median": 0.004459000192582607,
+          "max": 0.004525000229477882
+        },
+        "verify_user_seconds": {
+          "min": 0.004365000000000001,
+          "median": 0.004369999999999992,
+          "max": 0.004432000000000005
+        },
+        "verify_system_seconds": {
+          "min": 7.700000000000068e-05,
+          "median": 9.299999999999933e-05,
+          "max": 9.99999999999994e-05
+        },
+        "verify_cpu_seconds": {
+          "min": 0.0044420000000000015,
+          "median": 0.004462999999999991,
+          "max": 0.004532000000000005
+        }
+      },
+      "HOST_AT_CAP": {
+        "outer_wall_seconds": {
+          "min": 0.13041308405809104,
+          "median": 0.13250904204323888,
+          "max": 0.13253204198554158
+        },
+        "os_real_seconds": {
+          "min": 0.08,
+          "median": 0.08,
+          "max": 0.09
+        },
+        "os_user_seconds": {
+          "min": 0.06,
+          "median": 0.06,
+          "max": 0.06
+        },
+        "os_system_seconds": {
+          "min": 0.01,
+          "median": 0.01,
+          "max": 0.02
+        },
+        "os_cpu_seconds": {
+          "min": 0.06999999999999999,
+          "median": 0.06999999999999999,
+          "max": 0.08
+        },
+        "peak_rss_bytes": {
+          "min": 28131328,
+          "median": 28147712,
+          "max": 28180480
+        },
+        "peak_rss_mib": {
+          "min": 26.828125,
+          "median": 26.84375,
+          "max": 26.875
+        },
+        "verify_wall_seconds": {
+          "min": 0.0017330003902316093,
+          "median": 0.0017339996993541718,
+          "max": 0.0017359992489218712
+        },
+        "verify_user_seconds": {
+          "min": 0.0017299999999999954,
+          "median": 0.0017319999999999974,
+          "max": 0.0017329999999999984
+        },
+        "verify_system_seconds": {
+          "min": 5.000000000001531e-06,
+          "median": 5.000000000001531e-06,
+          "max": 1.1000000000000593e-05
+        },
+        "verify_cpu_seconds": {
+          "min": 0.001736999999999999,
+          "median": 0.001738,
+          "max": 0.001740999999999996
+        }
+      },
+      "HOST_DEPTH25": {
+        "outer_wall_seconds": {
+          "min": 0.1326022499706596,
+          "median": 0.13267949991859496,
+          "max": 0.1327103751245886
+        },
+        "os_real_seconds": {
+          "min": 0.08,
+          "median": 0.08,
+          "max": 0.08
+        },
+        "os_user_seconds": {
+          "min": 0.06,
+          "median": 0.06,
+          "max": 0.06
+        },
+        "os_system_seconds": {
+          "min": 0.01,
+          "median": 0.02,
+          "max": 0.02
+        },
+        "os_cpu_seconds": {
+          "min": 0.06999999999999999,
+          "median": 0.08,
+          "max": 0.08
+        },
+        "peak_rss_bytes": {
+          "min": 27852800,
+          "median": 28065792,
+          "max": 28082176
+        },
+        "peak_rss_mib": {
+          "min": 26.5625,
+          "median": 26.765625,
+          "max": 26.78125
+        },
+        "verify_wall_seconds": {
+          "min": 4.399940371513367e-05,
+          "median": 4.499964416027069e-05,
+          "max": 4.800036549568176e-05
+        },
+        "verify_user_seconds": {
+          "min": 4.699999999999843e-05,
+          "median": 4.699999999999843e-05,
+          "max": 4.700000000000537e-05
+        },
+        "verify_system_seconds": {
+          "min": 1.9999999999985307e-06,
+          "median": 1.9999999999985307e-06,
+          "max": 5.000000000001531e-06
+        },
+        "verify_cpu_seconds": {
+          "min": 4.899999999999696e-05,
+          "median": 4.90000000000039e-05,
+          "max": 5.199999999999996e-05
+        }
+      },
+      "root_presentation_over": {
+        "outer_wall_seconds": {
+          "min": 0.13266970799304545,
+          "median": 0.13274645921774209,
+          "max": 0.13339679106138647
+        },
+        "os_real_seconds": {
+          "min": 0.08,
+          "median": 0.08,
+          "max": 0.08
+        },
+        "os_user_seconds": {
+          "min": 0.06,
+          "median": 0.06,
+          "max": 0.06
+        },
+        "os_system_seconds": {
+          "min": 0.01,
+          "median": 0.01,
+          "max": 0.02
+        },
+        "os_cpu_seconds": {
+          "min": 0.06999999999999999,
+          "median": 0.06999999999999999,
+          "max": 0.08
+        },
+        "peak_rss_bytes": {
+          "min": 28327936,
+          "median": 28360704,
+          "max": 28393472
+        },
+        "peak_rss_mib": {
+          "min": 27.015625,
+          "median": 27.046875,
+          "max": 27.078125
+        },
+        "verify_wall_seconds": {
+          "min": 2.00001522898674e-05,
+          "median": 2.400018274784088e-05,
+          "max": 2.400018274784088e-05
+        },
+        "verify_user_seconds": {
+          "min": 2.2999999999995246e-05,
+          "median": 2.4000000000003185e-05,
+          "max": 2.4999999999997247e-05
+        },
+        "verify_system_seconds": {
+          "min": 1.000000000001e-06,
+          "median": 3.9999999999970615e-06,
+          "max": 5.000000000001531e-06
+        },
+        "verify_cpu_seconds": {
+          "min": 2.3999999999996247e-05,
+          "median": 2.8999999999994308e-05,
+          "max": 2.9000000000004716e-05
+        }
+      },
+      "trust_json_over": {
+        "outer_wall_seconds": {
+          "min": 0.13185945805162191,
+          "median": 0.13269966701045632,
+          "max": 0.13273012498393655
+        },
+        "os_real_seconds": {
+          "min": 0.08,
+          "median": 0.08,
+          "max": 0.09
+        },
+        "os_user_seconds": {
+          "min": 0.06,
+          "median": 0.06,
+          "max": 0.06
+        },
+        "os_system_seconds": {
+          "min": 0.02,
+          "median": 0.02,
+          "max": 0.02
+        },
+        "os_cpu_seconds": {
+          "min": 0.08,
+          "median": 0.08,
+          "max": 0.08
+        },
+        "peak_rss_bytes": {
+          "min": 28016640,
+          "median": 28131328,
+          "max": 28344320
+        },
+        "peak_rss_mib": {
+          "min": 26.71875,
+          "median": 26.828125,
+          "max": 27.03125
+        },
+        "verify_wall_seconds": {
+          "min": 2.7999281883239746e-05,
+          "median": 2.9999762773513794e-05,
+          "max": 3.50000336766243e-05
+        },
+        "verify_user_seconds": {
+          "min": 2.9000000000001247e-05,
+          "median": 3.100000000000325e-05,
+          "max": 3.200000000000425e-05
+        },
+        "verify_system_seconds": {
+          "min": 2.999999999999531e-06,
+          "median": 4.000000000000531e-06,
+          "max": 8.999999999998592e-06
+        },
+        "verify_cpu_seconds": {
+          "min": 3.300000000000178e-05,
+          "median": 3.500000000000378e-05,
+          "max": 4.000000000000184e-05
+        }
+      }
+    },
+    "units": "wall/CPU seconds; Darwin peak RSS bytes, MiB=bytes/1048576; OS real/user/sys printed precision retained without invented extra precision",
+    "method": "OS time covers fresh Ruby process with require/input/hash/result work; inner API timers exclude preloads/input preparation/result checks; no warmup calls; no assertion of cold filesystem cache or steady-state warm latency",
+    "rss_scope": "whole Ruby utility peak, including interpreter/dependency/input/result/helper overhead; not API-only or incremental allocation",
+    "R2_report_sha256": "b37ee6f6042a58ef001204ecfa09f8d3678156a37330013bb718ac5b9b94bab7",
+    "R2_reconciliation_sha256": "31191dcc635253cf6e583094211c8b37b9a95a86de1f6bf86283764c1062682d",
+    "helper_sha256": "78c7fca2b7bf95b436436b9bacee33ff24186729c71b04a4a6fa7bf172c4261b",
+    "R1": "One FULL API call matched; time sysctl kern.clockrate denied, no RSS, remaining20 not run; R1 failure preserved separately"
+  },
+  "stage20": {
+    "kind": "Static audit, no new tests or GO",
+    "audit_sha256": "3666f6ce7a7cff194efa8a1da57e09996fa3bf5695b5492b629af6f671b7f0e9",
+    "index_sha256": "c3e96a6717cc7ce72278eb16687a20fc7741516c6952b741343dd5bb7979541e",
+    "finding": "No new concrete product logic defect or identity mismatch identified; not exhaustive proof"
+  },
+  "availability": "Public run/source references are linked; R2 original local reports are not published in this supplement. Their hashes identify retained evidence, not downloadable artifacts or independent attestation."
+}
