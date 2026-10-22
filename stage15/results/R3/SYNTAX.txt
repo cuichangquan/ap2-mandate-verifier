@@ -1,0 +1,13 @@
+lib/ap2_mandate_verifier/host_binding.rb: Syntax OK
+lib/ap2_mandate_verifier/input_validator.rb: Syntax OK
+lib/ap2_mandate_verifier/purchase_binding.rb: Syntax OK
+lib/ap2_mandate_verifier/research_result.rb: Syntax OK
+lib/ap2_mandate_verifier/result.rb: Syntax OK
+lib/ap2_mandate_verifier/root_disclosures.rb: Syntax OK
+lib/ap2_mandate_verifier/root_signature.rb: Syntax OK
+lib/ap2_mandate_verifier/scoped_constraints.rb: Syntax OK
+lib/ap2_mandate_verifier/trust_context.rb: Syntax OK
+lib/ap2_mandate_verifier.rb: Syntax OK
+stage15/observe.rb: Syntax OK
+stage15/compare.py: Python AST PASS
+tracked old files unchanged; diff check PASS

@@ -1,0 +1,20 @@
+{
+  "scope": "STAGE15_LOCAL_ONLY_NOT_PUBLISHED",
+  "files": {
+    "stage15/README.md": "48c3643048f96b1073b2dd3da8da5b91e256093e815f368a216a93366fa6e27e",
+    "stage15/candidate.json": "93ca43dd65a6f7bdbc0bbed30004517e059043308cd1e2688e4eaa975675a5e9",
+    "stage15/compare.py": "46929d2198879a5e9bc1d7cc7c3721073567fa865a205f8a7565287fa047857f",
+    "stage15/observe.rb": "f7be634d7a16539d1e2c0567339f36d193886a95a866c823c15c7afdd5c8149b"
+  },
+  "results": {
+    "REPORT.json": "6a691a163cba831fc53c30f7d1dd7991eefef34d7ce0883457424075a9a584dd",
+    "SYNTAX.txt": "8a6383d31ce57f0e751cd67e4cb4af9b582dc06bef24181fe1307d9aee57d706",
+    "REGRESSION.txt": "2e4a27e6921f78ef9ce9620f0a88ac8f99f37604f0432c355fff06ae0937ba14",
+    "INPUTS.json": "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1"
+  },
+  "independent_static_review": "review_root_signature: no unresolved P1/P2; code-only review, no execution",
+  "local_iteration": "R1 preliminary; R2 added stricter observation/pins/Schema; R3 final same executable code; all prior results retained",
+  "regressions": "885 PASS (79+74+64+81+97+16+147+149+178)",
+  "execution": "existing task venv python; subprocess.run([sys.executable, stage15/compare.py, new result path],timeout=300,check=True); each Ruby probe subprocess timeout<=10; no network/install/Actions",
+  "remaining": "other environment NOT_RUN; Stage16/Host nonce CAS/real authority/payment/production/distribution/Phase2B HOLD; historical acquisition measurement defects unchanged"
+}

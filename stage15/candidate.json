@@ -1,0 +1,16 @@
+{
+  "remote_commit": "7635ea59ddd7027fa929e164d68f796a56fbca66",
+  "tree": "2fb95e9c8eb32e47dfffafe759ddf19bda9006e0",
+  "sources": {
+    "lib/ap2_mandate_verifier/host_binding.rb": "917a4c139accd77d5bbe9125c64ea258349b6854ac04e0fefe33536b9b88ec0a",
+    "lib/ap2_mandate_verifier/input_validator.rb": "299bc4a4f8eb353aa3e240a3b4cbd99aacd4eb3123b0b578c5f93f5599baf738",
+    "lib/ap2_mandate_verifier/purchase_binding.rb": "6f2108ac3298e4558fc053139d045d399687ccc3bf39c01945ed52d529dc26df",
+    "lib/ap2_mandate_verifier/research_result.rb": "02159d2f451461ef818d7b6c9d55349cdfb6e23d9ced7d688730d22c8e96827d",
+    "lib/ap2_mandate_verifier/result.rb": "fade8a1e922f7b4cf2439c120580160f85e0f22f6cfac9ff1ab1364d7b34d310",
+    "lib/ap2_mandate_verifier/root_disclosures.rb": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+    "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+    "lib/ap2_mandate_verifier/scoped_constraints.rb": "b2b5fa4cd1b4ce83cfc5ffc1be0a09ce57ad4a1b9be6778e581dd38f5ce5fd84",
+    "lib/ap2_mandate_verifier/trust_context.rb": "430eb9f9f3be4c0d7e799e95b68009c08582b6961aa954cc866ff012a3b2be36",
+    "lib/ap2_mandate_verifier.rb": "4824eeef1ce6c7833bcc24bc0bf9abc265df0b35ba135e54b4341b54c2f65ef2"
+  }
+}
