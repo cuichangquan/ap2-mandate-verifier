@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier for Ruby
 
-## 未公開の限定Gem候補 — 0.1.0.pre.1
+## 未公開の限定Gem候補 — 0.1.0.pre.2
 
 MRI Ruby4.0.1向け、固定profile `ap2.checkout.single_merchant_sku` version1の
 stateless verifierです。署名・原Root全域開示・委任・購入原文・Host binding・固定制約・
@@ -37,8 +37,8 @@ evidence=nilを維持します。呼出し例のsuccess?を旧APIへ流用して
 
 ## 支持環境・検証結果の区別
 
-Ruby4.0.1、JSON2.19.9、JWT3.3.0、base640.3.0、OpenSSL gem4.0.0を固定。
-OpenSSLは検証済みRubyに同梱のdefault gemを使用し、この候補はnative binaryを同梱しません。
+Ruby4.0.1、JSON2.19.9、JWT3.3.0、base640.3.0、OpenSSL gem4.0.0、Digest3.2.1を固定。
+OpenSSLとDigestは検証済みRubyに同梱のdefault gemを使用し、この候補はnative binaryを同梱しません。
 Bundler4.0.3は検証された解決環境で、Gemの追加runtime依存ではありません。
 ライブラリのwall-clock/RSS/並行数上限はなく、Hostが運用上の制限を設ける必要があります。
 
@@ -46,7 +46,7 @@ Bundler4.0.3は検証された解決環境で、Gemの追加runtime依存では�
 Ubuntu24.04 x86_64で885回帰・42固定入力の再現を観測しました。
 [Linux run39774818984](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/39774818984)は
 MBA独立期待値30＋境界12のGem再入力であり、Linux Oracle再実行ではありません。
-8Schema対照はMBA根拠です。この未公開0.1.0.pre.1の包装/導入結果とは別の観測で、
+8Schema対照はMBA根拠です。この未公開0.1.0.pre.2の包装/導入結果とは別の観測で、
 旧manifest/pin/結果は更新していません。候補の新結果はローカル別保存、配布物には含めません。
 
 これまでの取得量未証明2件とLinux全通信128MiB未証明を保持します。追加Actionsは不許可。

@@ -1,0 +1,47 @@
+{
+  "ruby": "4.0.1",
+  "engine": "ruby",
+  "dependencies": {
+    "json": {
+      "version": "2.19.9",
+      "default": false,
+      "runtime_dependencies": []
+    },
+    "jwt": {
+      "version": "3.3.0",
+      "default": false,
+      "runtime_dependencies": [
+        [
+          "base64",
+          ">= 0"
+        ]
+      ]
+    },
+    "base64": {
+      "version": "0.3.0",
+      "default": false,
+      "runtime_dependencies": []
+    },
+    "openssl": {
+      "version": "4.0.0",
+      "default": true,
+      "runtime_dependencies": []
+    },
+    "digest": {
+      "version": "3.2.1",
+      "default": true,
+      "runtime_dependencies": []
+    }
+  },
+  "openssl_library": "OpenSSL 3.6.2 7 Apr 2026",
+  "digest_loaded_files_sha256": {
+    "version.rb": "04ba85ed7fbc9e7b213f4fc419fd5885dc51a2fc06901856d1a7a0f861447163",
+    "digest.bundle": "87ab8a8e5ae78411295f0b1d4b9dfe1533aeed14ce5de1c268e6af9aeac861d4",
+    "loader.rb": "442ea25158ee0f6bc578c23d6d6239e2b4fa4c8fbac6d7a3103ae9a196066973",
+    "digest.rb": "5b47d3e23d41ac2e140889d47f9e9283c2d044df7e61584c629f67e54f18e5e7",
+    "sha2.bundle": "4e3bbf02253e9bfc1428b03754ac7680d0e8a12cfbce5411ffc0443963aa65f1",
+    "sha2.rb": "550cb434eefca6781338a3e80d90ce94859beb62e4dcbdd81e269bdd9b60ce0d"
+  },
+  "native_rebuild": false,
+  "new_dependency_installs": 0
+}

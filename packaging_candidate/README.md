@@ -1,12 +1,12 @@
 # Unpublished packaging candidate evidence
 
-Scope: `0.1.0.pre.1`, MRI Ruby 4.0.1, existing fixed JSON 2.19.9 / JWT 3.3.0 /
-base64 0.3.0 / OpenSSL default gem 4.0.0. Base main:
+Current scope: `0.1.0.pre.2`, MRI Ruby 4.0.1, existing fixed JSON 2.19.9 / JWT 3.3.0 /
+base64 0.3.0 / OpenSSL default gem 4.0.0 / Digest default gem 3.2.1. Base main:
 `8d9845ff4b5618b9e57eda86d3a1e447d4124b47`.
 The verifier's ten library files are byte-identical to that baseline.
 This record is not a release, distribution permission, production GO or Host ALLOW.
 
-`results/R1/` contains byte-preserving copies of the successful local packaging
+Historical `results/R1/` (pre.1, before explicit Digest pin) contains byte-preserving copies of the successful local packaging
 report, actual archive/source/installed-file audit, installed API observations,
 existing dependency-provider observations, final audit timings, and 885-regression
 stdout. SHA256SUMS authenticates consistency of these copies, not their provenance.
@@ -44,7 +44,7 @@ From repository root, with GEM_HOME="$FRESH" and GEM_PATH="$FIXED_GEM_PATH":
 "$RUBY" "$GEM_CLI" build --norc ap2_mandate_verifier.gemspec --output "$OUT/candidate.gem"
 "$RUBY" "$GEM_CLI" install --norc --local "$OUT/candidate.gem" --install-dir "$FRESH" --ignore-dependencies --no-document
 "$RUBY" -rbundler/setup -Ilib -e 'ARGV.each { |f| require_relative f }' ./test/input_boundary_test.rb ./test/root_signature_test.rb ./test/root_disclosures_test.rb ./test/purchase_binding_test.rb ./test/scoped_constraints_test.rb ./test/integration_matrix_test.rb ./test/trust_context_test.rb ./test/host_binding_test.rb ./test/research_evidence_test.rb
-"$RUBY" test/package_contents_audit.rb "$OUT/candidate.gem" "$OUT/extracted" "$FRESH/gems/ap2_mandate_verifier-0.1.0.pre.1" > "$OUT/package.json"
+"$RUBY" test/package_contents_audit.rb "$OUT/candidate.gem" "$OUT/extracted" "$FRESH/gems/ap2_mandate_verifier-0.1.0.pre.2" > "$OUT/package.json"
 ```
 
 For regression resolution use BUNDLE_FROZEN=true and BUNDLE_GEMFILE pointing to
@@ -70,3 +70,17 @@ this record. Production/distribution/Phase2B/Stage16 GO remain HOLD.
 package/source bytes:885 regressions, the actual archive audit,52 installed
 checks and four syntax checks all exit0. No new Gem build/install occurred.
 It is a new run, not a replacement of R1 or prior research results.
+
+`results/R3/` records pre.2 after the review-required Digest3.2.1 dependency pin,
+new offline build/install,885 regressions and52 installed comparisons. Digest was
+already provided by the same MRI default library; no download/native rebuild
+occurred. R1/R2 and their pre.1 artifact hashes remain historical, unmodified.
+
+R3 DEPENDENCY_PROVIDERS_CORRECTED.json is authoritative for Digest identity. The
+earlier DEPENDENCY_PROVIDERS.json basename-based keys collided with OpenSSL and
+SHA2 loader filenames and are retained only as a superseded observation. The
+corrected observer uses distinct Ruby stdlib/archlib relative paths, rejects
+collisions/missing/extra Digest files and skips builtin features without files.
+The exact executed observer is observe_dependency_providers.rb; run via the same
+installed Gem environment. Failed helper capture attempts remain local and are
+disclosed in CANDIDATE_REPORT; they did not rebuild/install or change the Gem.

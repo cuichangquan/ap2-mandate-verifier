@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name = "ap2_mandate_verifier"
-  spec.version = "0.1.0.pre.1"
+  spec.version = "0.1.0.pre.2"
   spec.summary = "Unreleased fixed-profile AP2 verifier candidate"
   spec.description = "Stateless fixed-profile verification and immutable research Evidence; not Host authorization or payment permission. Unpublished prerelease candidate."
   spec.authors = ["AP2 Mandate Verifier contributors"]
@@ -15,4 +15,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "jwt", "= 3.3.0"
   spec.add_runtime_dependency "base64", "= 0.3.0"
   spec.add_runtime_dependency "openssl", "= 4.0.0"
+  spec.add_runtime_dependency "digest", "= 3.2.1"
 end

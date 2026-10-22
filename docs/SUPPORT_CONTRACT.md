@@ -1,4 +1,4 @@
-# Unpublished fixed-profile Gem candidate — 0.1.0.pre.1
+# Unpublished fixed-profile Gem candidate — 0.1.0.pre.2
 
 This is a prerelease candidate, not a stable release or permission to publish/use
 in production. Production, RubyGems distribution, Phase2B and Stage16 GO remain
@@ -18,10 +18,12 @@ not accepted through a generic AP2/Schema fallback. This synthetic registered
 profile does not establish real Issuer enrollment or general interoperability.
 
 The supported baseline is MRI Ruby4.0.1 and JSON2.19.9/JWT3.3.0/base640.3.0/
-OpenSSL gem4.0.0, all fixed in the gemspec. These versions must be available
+OpenSSL gem4.0.0/Digest3.2.1, all fixed in the gemspec. These versions must be available
 through normal RubyGems/Bundler resolution; source-loadpath bypass or dependency
 replacement is not a compatibility contract. MRI4.0.1 supplied OpenSSL4.0.0 as a
 default gem in the tested environments, using its existing native binding.
+Digest3.2.1 is also a required default gem, used for SHA256 trust/wire identities;
+its existing native provider is reused and recorded, never silently substituted.
 The candidate contains no OpenSSL/JSON native binary and performs no dependency
 download/build itself. If the fixed OpenSSL/default/native provider is missing,
 a local offline validation must stop rather than download or rebuild it.
