@@ -1,0 +1,88 @@
+name: Stage15 limited Linux Gem replay (manual only)
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact reviewed and merged commit (40 lowercase hex)
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: stage15-linux-single-approved-run
+  cancel-in-progress: false
+jobs:
+  replay:
+    if: github.repository == 'cuichangquan/ap2-mandate-verifier' && !github.event.repository.private && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check approved dispatch
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$GITHUB_SHA" = "$EXPECTED_SHA"
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.expected_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          submodules: false
+          lfs: false
+      - name: Check checkout
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: ruby/setup-ruby@e1bd6146574da5e0795075b5319b300edb30c5b0
+        timeout-minutes: 3
+        with:
+          ruby-version: '4.0.1'
+          bundler: none
+          bundler-cache: false
+          rubygems: default
+      - name: Fixed local dependencies (no index, no dependency resolution)
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(ruby -e 'print RUBY_VERSION')" = 4.0.1
+          default_gems=$(ruby -e 'print Gem.default_dir')
+          export GEM_HOME="$RUNNER_TEMP/ap2-gems"
+          export GEM_PATH="$GEM_HOME:$default_gems"
+          mkdir "$GEM_HOME" "$RUNNER_TEMP/ap2-archives"
+          cd "$RUNNER_TEMP/ap2-archives"
+          # Body budget is exact176640B. HTTP metadata is reported separately.
+          # setup-ruby/checkout/Action transport is outside these curl counters.
+          while read -r name bytes sha; do
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --connect-timeout 15 --max-time 45 --retry 0 --max-filesize "$bytes" \
+              --dump-header "$name.headers" --output "$name.gem" \
+              --write-out "$name body=%{size_download} sent_headers=%{size_request} received_headers=%{size_header}\n" \
+              "https://rubygems.org/gems/$name.gem"
+            test "$(wc -c < "$name.gem")" -eq "$bytes"
+            echo "$sha  $name.gem" | sha256sum --check --status
+          done <<'GEMS'
+          json-2.19.9 107008 9b9025b7cdddafa38d316eca0b2358488e42d417045c1b90d216a9fefe46b79a
+          jwt-3.3.0 57856 44cc34fbc341c148233cf66641522b4bce0dfb1ce55e8073f05c56f44f4ee546
+          base64-0.3.0 11776 27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
+          GEMS
+          # Exactly one native JSON build, no retry. Other gems are pure Ruby.
+          timeout 180 gem install --norc --local json-2.19.9.gem --ignore-dependencies --no-document
+          timeout 30 gem install --norc --local jwt-3.3.0.gem --ignore-dependencies --no-document
+          timeout 30 gem install --norc --local base64-0.3.0.gem --ignore-dependencies --no-document
+          echo "GEM_HOME=$GEM_HOME" >> "$GITHUB_ENV"
+          echo "GEM_PATH=$GEM_PATH" >> "$GITHUB_ENV"
+      - name: 885 regressions and42 fixed-input comparisons
+        timeout-minutes: 11
+        env:
+          AP2_LINUX_RUN: '1'
+        run: |
+          set -euo pipefail
+          timeout 630 ruby stage15_linux/replay.rb c73d1179231e756faac45a9b75f6c3e4e099c3ce50b5b3fbe6c06fb16d10b257
