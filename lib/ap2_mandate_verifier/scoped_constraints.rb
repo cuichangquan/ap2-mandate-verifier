@@ -10,7 +10,13 @@ module AP2MandateVerifier
     CORE_INSTANCE_OF = Object.instance_method(:instance_of?)
     class Rejected < RootSignature::Rejected; end
 
-    def self.check!(expected_currency:, expected_total_minor:, **binding_inputs)
+    def self.check!(**inputs)
+      verified_constraints!(**inputs)
+      nil
+    end
+
+    # Internal claims handoff after the complete existing limited profile.
+    def self.verified_constraints!(expected_currency:, expected_total_minor:, **binding_inputs)
       begin
         currency = InputValidator.snapshot!(expected_currency, max_bytes: 3)
       rescue InputValidator::Invalid
@@ -19,7 +25,8 @@ module AP2MandateVerifier
       raise RootSignature::Unavailable, :constraint_context_unavailable unless
         CURRENCIES.include?(currency) && CORE_INSTANCE_OF.bind_call(expected_total_minor, Integer) &&
         expected_total_minor.between?(0, MAX_AMOUNT)
-      open, checkout = PurchaseBinding.verified_purchase!(**binding_inputs)
+      details = PurchaseBinding.verified_details!(**binding_inputs)
+      open, checkout = details.values_at(:open, :checkout)
       constraints = open["constraints"]
       raise Rejected, :unsupported_constraint unless constraints.instance_of?(Array) && constraints.size == 2
       required, allowed = constraints
@@ -66,7 +73,7 @@ module AP2MandateVerifier
       raise Rejected, :amount_mismatch unless amount == expected_total_minor
       totals!(line["totals"], amount)
       totals!(checkout["totals"], amount)
-      nil
+      details
     end
 
     def self.exact!(value, fields)
