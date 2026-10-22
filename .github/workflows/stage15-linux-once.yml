@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   replay:
-    if: github.repository == 'cuichangquan/ap2-mandate-verifier' && !github.event.repository.private
+    if: github.repository == 'cuichangquan/ap2-mandate-verifier' && !github.event.repository.private && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -23,6 +23,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/main
           test "$GITHUB_RUN_ATTEMPT" = 1
           [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
           test "$GITHUB_SHA" = "$EXPECTED_SHA"

@@ -40,7 +40,8 @@ published. Existing saved inputs contain public synthetic nonce values only.
 Only workflow_dispatch is enabled. contents:read, no secrets, immutable checkout
 and setup-ruby Action SHAs, no credentials persisted, no submodules/LFS, no
 bundler cache or implicit dependency installation. expected_sha must equal the
-40-hex dispatched commit, actual checkout, and approved merged ref. The attempt
+40-hex dispatched commit, actual checkout, and approved merged ref. Job and shell
+gates require refs/heads/main, so selecting a feature branch cannot start setup. The attempt
 must be1. The one-run authorization is managed by the operator as well: this
 workflow does not implement a persistent lifetime run counter. Never rerun a
 failed run automatically. A failure permits read-only diagnosis only.
