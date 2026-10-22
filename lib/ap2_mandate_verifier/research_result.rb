@@ -4,8 +4,8 @@ module AP2MandateVerifier
   # In-process immutable checked facts. No JSON/remote reconstruction API.
   # Private constructors are API discipline, not a hostile Ruby-code sandbox.
   class ResearchEvidence
-    CONTRACT_VERSION = "ap2.research-evidence.1"
-    IMPLEMENTATION_REVISION = "ap2.research-verifier.1"
+    CONTRACT_VERSION = "ap2.research-evidence.2"
+    IMPLEMENTATION_REVISION = "ap2.research-verifier.2"
     SCOPE = %w[strict_inputs host_trust_profile_input_checks issuer_root_signature
       original_root_graph_closure agent_key_confirmation agent_terminal_signature
       closed_original_checkout_binding merchant_checkout_signature

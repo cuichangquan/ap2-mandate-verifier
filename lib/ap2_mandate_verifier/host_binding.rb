@@ -85,6 +85,10 @@ module AP2MandateVerifier
       # The sole registered profile has no separate validity interval. Merchant
       # JWT has no iat/exp/nbf: inventing one would change the pinned profile.
       reject!(:invalid_host_validity) unless starts.max <= verified_at && verified_at < ends.min
+      # Explicit public projection: the checked signed nonce remains input-only.
+      verified_challenge = challenge.slice("challenge_id", "issuer_id", "B", "trust_snapshot_id",
+        "policy_version", "trust_content_hash", "profile_definition_hash", "not_before", "not_after", "state")
+        .merge("verified_nonce_sha256" => Digest::SHA256.hexdigest(proof.fetch("nonce")))
       {"profile_ref" => references.fetch("profile_ref"), "profile_version" => references.fetch("profile_version"),
        "profile_definition_hash" => references.fetch("profile_definition_hash"),
        "verified_at" => verified_at, "clock_source_id" => host.fetch("clock_source_id"),
@@ -92,7 +96,7 @@ module AP2MandateVerifier
        "trust_snapshot" => {"id" => references.fetch("trust_snapshot_id"), "policy_version" => references.fetch("policy_version"),
          "content_hash" => references.fetch("trust_content_hash")},
        "selected_keys" => context.fetch(:selected_keys), "checkout_binding" => binding,
-       "verified_challenge" => challenge, "root_presentation_digest" => Digest::SHA256.hexdigest(root),
+       "verified_challenge" => verified_challenge, "root_presentation_digest" => Digest::SHA256.hexdigest(root),
        "checkout_jwt_digest" => Digest::SHA256.hexdigest(checkout), "terminal_digest" => Digest::SHA256.hexdigest(terminal)}
     end
     private_class_method :reject!, :shape!, :id!, :hash!, :time!, :binding!

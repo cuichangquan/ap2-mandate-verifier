@@ -30,10 +30,10 @@ module ResearchEvidenceTest
     assert(values.keys.sort == %w[contract_version implementation_revision revision_kind verified_scope
       profile_ref profile_version profile_definition_hash verified_at clock_source_id valid_from valid_until
       trust_snapshot selected_keys checkout_binding verified_challenge root_presentation_digest checkout_jwt_digest terminal_digest].sort)
-    assert(values["contract_version"] == "ap2.research-evidence.1" && values["implementation_revision"] == "ap2.research-verifier.1" &&
+    assert(values["contract_version"] == "ap2.research-evidence.2" && values["implementation_revision"] == "ap2.research-verifier.2" &&
       values["revision_kind"] == "static_identifier_not_runtime_attestation" && !values.key?("verifier_code_sha"))
     host = model[:host]; snapshot = JSON.parse(model[:trust]["snapshot"]["body"])
-    assert(values["checkout_binding"] == host["binding"] && values["verified_challenge"] == host["challenge"])
+    assert(values["checkout_binding"] == host["binding"] && values["verified_challenge"] == host["challenge"].reject { |field, _| field == "nonce" }.merge("verified_nonce_sha256" => Digest::SHA256.hexdigest(host["challenge"]["nonce"])))
     assert(values["trust_snapshot"] == model[:trust]["snapshot"].slice("id", "policy_version", "content_hash"))
     assert(values["profile_ref"] == AP2MandateVerifier::TrustContext::PROFILE_REF &&
       values["profile_version"] == AP2MandateVerifier::TrustContext::PROFILE_VERSION &&
@@ -151,6 +151,21 @@ module ResearchEvidenceTest
   ensure
     AP2MandateVerifier::ResearchEvidence.define_singleton_method(:copy_frozen, original)
     AP2MandateVerifier::ResearchEvidence.private_class_method(:copy_frozen)
+  end
+
+  ["PRIVACY_NONCE_SENTINEL_14B_9f4d", "nonce-多言語"].each do |nonce|
+    model = HostBindingTest.fixture(nonce: nonce)
+    output = AP2MandateVerifier.verify_research(**HostBindingTest.args(model))
+    normal(model, output)
+    challenge = output.evidence["verified_challenge"]
+    assert(challenge["verified_nonce_sha256"] == Digest::SHA256.hexdigest(nonce) && !challenge.key?("nonce"))
+    assert(!output.evidence.to_h.inspect.include?(nonce) && !JSON.generate(output.evidence.to_h).include?(nonce))
+    @count += 1
+    expect_exception(FrozenError) { challenge["verified_nonce_sha256"].replace("0" * 64) }
+    model[:host]["challenge"]["nonce"] = "different-signed-nonce"
+    rejected = AP2MandateVerifier.verify_research(**HostBindingTest.args(model))
+    assert(!rejected.success? && rejected.evidence.nil? && rejected.code == :nonce_mismatch)
+    @count += 1
   end
   puts "PASS #{@count} unified research/Evidence cases; immutable in-process facts, not Host ALLOW"
 end

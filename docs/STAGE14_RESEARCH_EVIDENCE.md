@@ -45,8 +45,8 @@ replace checked values or modify the returned Evidence.
 
 The exact top-level fields are:
 
-- contract_version = ap2.research-evidence.1; implementation_revision =
-  ap2.research-verifier.1; revision_kind = static_identifier_not_runtime_attestation.
+- contract_version = ap2.research-evidence.2; implementation_revision =
+  ap2.research-verifier.2; revision_kind = static_identifier_not_runtime_attestation.
 - profile_ref/profile_version/profile_definition_hash from the checked fixed
   registration; verified_at and clock_source_id from the checked Host evaluation.
 - valid_from=max(all starts), valid_until=min(all exclusive ends). Starts/ends
@@ -63,8 +63,12 @@ The exact top-level fields are:
 - checkout_binding: every checked B field, including tenant, Buyer/account,
   order ID/version, approved Agent fingerprint, profile version, original-wire
   digests, Merchant, audience, currency and total.
-- verified_challenge: the checked challenge ID/nonce/issuer, B, trust/profile
-  references, not_before/not_after and observed state=issued. This is not a
+- verified_challenge: explicit projection of checked challenge ID/issuer, B,
+  trust/profile references, not_before/not_after and observed state=issued, plus
+  verified_nonce_sha256 (lowercase SHA256 hex of the exact signature-verified
+  terminal nonce UTF-8 bytes, after equality with the Host challenge nonce).
+  Raw nonce is input-only and is omitted from the Evidence Hash/JSON output.
+  This is not a
   claim that the challenge remains issued after return or was atomically used.
 - root_presentation_digest, checkout_jwt_digest, terminal_digest: lowercase
   SHA256 hex of exact captured originals; Root includes disclosure order and
@@ -113,3 +117,21 @@ originals and reports are preserved. Stage15/16, Stage7 final acceptance, genera
 Schema/all constraints, the two acquisition measurement defects, real Host trust,
 production/distribution/Phase2B remain separate HOLDs. No new dependency,
 workflow, database, nonce consumption or deployment is introduced.
+
+
+## Post-merge nonce privacy correction
+
+PR162 discussion4344985837 identified that the initial v1 copied the whole
+issued challenge, exposing its raw nonce through the public Evidence Hash.
+This v2 uses an explicit allowlisted projection and a digest computed from the
+verified terminal claim, retaining the original signature/Host nonce comparison.
+It aligns with PHASE2A_MINIMAL_VERIFIER_DESIGN and the B1 immutable Host snapshot
+contract's hashed-nonce output rule. Both contract and implementation revisions
+advance to2 because the output shape changed; the raw-nonce v1 is not emitted
+for compatibility. Verifier input and signature comparison still use the raw Host challenge nonce
+and raw signed terminal nonce; only the public Evidence projection is hashed.
+A future consuming Host may compare that Evidence digest with SHA256 of its
+locally retained raw nonce. No digest-based Host consumer, input-side nonce
+privacy, secret storage or issuance/consumption is implemented here. A hash is
+not a secret or authorization.
+Historical v1 results/source pins remain historical evidence and are not replaced.

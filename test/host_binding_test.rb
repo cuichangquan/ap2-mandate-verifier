@@ -27,7 +27,7 @@ module HostBindingTest
   def self.totals(n) = [{"type" => "subtotal", "amount" => n}, {"type" => "total", "amount" => n}]
   def self.disclosure(x) = b64(JSON.generate(["host-binding-salt", x]))
   def self.marker(x) = {"..." => sdhash(x)}
-  def self.fixture(open_iat: N - 1_000, open_exp: N + 1_000, terminal_iat: N, closed_exp: open_exp)
+  def self.fixture(open_iat: N - 1_000, open_exp: N + 1_000, terminal_iat: N, closed_exp: open_exp, nonce: "nonce")
     issuer, agent, merchant = @keys
     point = agent.public_key.to_octet_string(:uncompressed)
     item = {"id" => "sku", "title" => "item"}; shop = {"id" => "shop", "name" => "store"}
@@ -41,7 +41,7 @@ module HostBindingTest
     checkout = sign(merchant, {"currency" => "USD", "id" => "order", "merchant" => shop, "status" => "ready_for_complete", "links" => [],
       "line_items" => [{"id" => "line", "item" => item.merge("price" => 100), "quantity" => 2, "totals" => totals(200)}], "totals" => totals(200)}, "JWT")
     closed = {"vct" => "mandate.checkout.1", "iat" => open_iat, "exp" => closed_exp, "checkout_jwt" => checkout, "checkout_hash" => sdhash(checkout)}
-    terminal = sign(agent, {"aud" => "host", "nonce" => "nonce", "iat" => terminal_iat, "sd_hash" => sdhash(root), "delegate_payload" => [closed]}, "kb+sd-jwt")
+    terminal = sign(agent, {"aud" => "host", "nonce" => nonce, "iat" => terminal_iat, "sd_hash" => sdhash(root), "delegate_payload" => [closed]}, "kb+sd-jwt")
     snapshot = {"id" => "snapshot", "policy_version" => "policy-1", "active" => true, "not_before" => N - 2_000, "not_after" => N + 2_000,
       "records" => %w[Issuer Agent Merchant].each_with_index.map do |role, i|
         pem = @keys[i].public_to_pem
@@ -59,7 +59,7 @@ module HostBindingTest
       "profile_ref" => T::PROFILE_REF, "order_version" => "order-v1", "profile_version" => T::PROFILE_VERSION,
       "approved_agent_key_fingerprint" => digest(agent.public_to_pem), "root_presentation_digest" => digest(root), "checkout_jwt_digest" => digest(checkout),
       "currency" => "USD", "expected_total" => 200}
-    challenge = {"challenge_id" => "challenge-1", "nonce" => "nonce", "issuer_id" => "host-issuer", "B" => copy(binding),
+    challenge = {"challenge_id" => "challenge-1", "nonce" => nonce, "issuer_id" => "host-issuer", "B" => copy(binding),
       "trust_snapshot_id" => "snapshot", "policy_version" => "policy-1", "trust_content_hash" => digest(body), "profile_definition_hash" => T::PROFILE_HASH,
       "not_before" => N - 2_000, "not_after" => N + 2_000, "state" => "issued"}
     {trust: trust, selection: selection, host: {"binding" => binding, "challenge" => challenge, "expected_challenge_issuer_id" => "host-issuer", "clock_source_id" => "host-fixed-test-clock"},
