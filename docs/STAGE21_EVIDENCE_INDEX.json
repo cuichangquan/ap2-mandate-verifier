@@ -475,13 +475,43 @@
     "R2_report_sha256": "b37ee6f6042a58ef001204ecfa09f8d3678156a37330013bb718ac5b9b94bab7",
     "R2_reconciliation_sha256": "31191dcc635253cf6e583094211c8b37b9a95a86de1f6bf86283764c1062682d",
     "helper_sha256": "78c7fca2b7bf95b436436b9bacee33ff24186729c71b04a4a6fa7bf172c4261b",
-    "R1": "One FULL API call matched; time sysctl kern.clockrate denied, no RSS, remaining20 not run; R1 failure preserved separately"
+    "R1": "One FULL API call matched; time sysctl kern.clockrate denied, no RSS, remaining20 not run; R1 failure preserved separately",
+    "R1_retained_artifacts": {
+      "provenance": "Captured first Codex-sandbox attempt, preserved in place; diagnostic recorded2026-10-22T23:29:51.726500+00:00. These are retained local bytes, not reconstructed results or public downloadable artifacts.",
+      "files": {
+        "STOP.json": {
+          "bytes": 131,
+          "sha256": "f0004f7036d08450b17fad98eb23f668d5591e496aab0c79d3feb43a9b6e149b"
+        },
+        "DIAGNOSIS.json": {
+          "bytes": 2611,
+          "sha256": "1e58feb608524de9602dce3ac40ea43fe37f8d0ba9eb0092df97c1e5850020d4"
+        },
+        "R1/FULL-1.stdout.json": {
+          "bytes": 1810,
+          "sha256": "026da864ee22af00d2625721b0a088e5f4efec75ba7c589efae77048dacd2ead"
+        },
+        "R1/FULL-1.stderr.txt": {
+          "bytes": 53,
+          "sha256": "ba6ebae0b1256dca1cfeaba1cf25587ff125b43cb69ff46245e406247c5a8451"
+        },
+        "R1/FULL-1.time.txt": {
+          "bytes": 29,
+          "sha256": "d09d340d6033601cf8a01f5fbc0d0c8eb70079a1712bfdcd62b23135d1ebb30b"
+        },
+        "R1/rows.jsonl": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    }
   },
   "stage20": {
     "kind": "Static audit, no new tests or GO",
     "audit_sha256": "3666f6ce7a7cff194efa8a1da57e09996fa3bf5695b5492b629af6f671b7f0e9",
     "index_sha256": "c3e96a6717cc7ce72278eb16687a20fc7741516c6952b741343dd5bb7979541e",
-    "finding": "No new concrete product logic defect or identity mismatch identified; not exhaustive proof"
+    "finding": "No new concrete product logic defect or identity mismatch identified; not exhaustive proof",
+    "E06": "PARTIAL/OPEN; fixed-subset static coverage/MBA Schema observations do not establish the full legacy integrated gate"
   },
   "availability": "Public run/source references are linked; R2 original local reports are not published in this supplement. Their hashes identify retained evidence, not downloadable artifacts or independent attestation."
 }

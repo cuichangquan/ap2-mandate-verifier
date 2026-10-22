@@ -54,8 +54,11 @@ retained local reports are identifiers, not public download links or attestation
 
 ## Gate status and remaining decisions
 
-E00 fixed scope, E02 signatures, E03 supported graph, E06 subset Schema and E08
-research Evidence are supported only within the recorded conditions. E01 genuine
+E00 fixed scope, E02 signatures, E03 supported graph and E08 research Evidence
+have only the recorded scope-bound support. E06 remains PARTIAL/OPEN: the static
+seven-shape coverage and MBA fixed Schema judgments support the hand-checked
+subset only, not completion of the full legacy integrated Schema/order gate.
+Linux replay does not independently close that Schema gap. E01 genuine
 trust, E05 operational rotation/rollback, E07 enforced execution/RSS/concurrency
 limits, E09 fully independent runtime/environment attestation remain conditional
 or unproved. Finite input caps and10s/300s harness limits are not library quotas.
