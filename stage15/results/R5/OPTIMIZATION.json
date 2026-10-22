@@ -1,0 +1,33 @@
+{
+  "scope": "STAGE15_OPTIMIZATION_REJECTION",
+  "cases": [
+    {
+      "case": "-O",
+      "exit_code": 1,
+      "destination_created": false,
+      "stdout_empty": true,
+      "result": "STOP_BEFORE_ARTIFACTS"
+    },
+    {
+      "case": "-OO",
+      "exit_code": 1,
+      "destination_created": false,
+      "stdout_empty": true,
+      "result": "STOP_BEFORE_ARTIFACTS"
+    },
+    {
+      "case": "PYTHONOPTIMIZE1",
+      "exit_code": 1,
+      "destination_created": false,
+      "stdout_empty": true,
+      "result": "STOP_BEFORE_ARTIFACTS"
+    },
+    {
+      "case": "PYTHONOPTIMIZE2",
+      "exit_code": 1,
+      "destination_created": false,
+      "stdout_empty": true,
+      "result": "STOP_BEFORE_ARTIFACTS"
+    }
+  ]
+}
