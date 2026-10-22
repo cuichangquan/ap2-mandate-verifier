@@ -45,14 +45,15 @@ def main():
             elif mutation == 'extra_runtime': bad['runtime']['unapproved'] = True
             rejected(lambda: validate(bad, *args))
     binding = modules['o2o5']
-    prior = json.loads((ROOT / 'STAGE11_R5_O2O5_REPORT.json').read_text())
+    prior = json.loads((ROOT / 'STAGE11_IDENTITY_O2O5_REPORT.json').read_text())
     replay_raw = (ROOT / 'STAGE11_GEM_REPLAY_32.json').read_bytes()
     replay = json.loads(replay_raw)
     adapter_sha = hashlib.sha256((ROOT / 'test/o2o5_compare.py').read_bytes()).hexdigest()
     validate = binding['validate_binding_report']
     validate(prior, adapter_sha, replay_raw, replay); count += 1
     for mutation in ('minimal', 'stale_replay', 'missing_case', 'not_match',
-                     'wrong_code', 'wrong_wire', 'failed', 'success', 'evidence', 'wrong_o2', 'wrong_o2_order', 'wrong_pipeline_order'):
+                     'wrong_code', 'wrong_wire', 'failed', 'success', 'evidence', 'wrong_o2', 'wrong_o2_order', 'wrong_pipeline_order', 'missing_python_identity',
+                     'wrong_python_dependency', 'extra_python_identity'):
         bad = copy.deepcopy(prior)
         if mutation == 'minimal': bad = {k: bad[k] for k in ('fixture_sha256', 'adapter_sha256')}
         elif mutation == 'stale_replay': bad['fresh_gem_replay_sha256'] = '0' * 64
@@ -66,6 +67,9 @@ def main():
         elif mutation == 'wrong_o2': bad['cases']['FULL']['o2_isolated'] = 'invalid_signature'
         elif mutation == 'wrong_o2_order': bad['cases']['FULL']['o2_events'] = ['open_time']
         elif mutation == 'wrong_pipeline_order': bad['cases']['FULL']['python_pipeline_events'] = ['root_signature','root_graph']
+        elif mutation == 'missing_python_identity': bad.pop('python_identity')
+        elif mutation == 'wrong_python_dependency': bad['python_identity']['dependencies']['jwcrypto'] = '0'
+        elif mutation == 'extra_python_identity': bad['python_identity']['extra'] = True
         rejected(lambda: validate(bad, adapter_sha, replay_raw, replay))
     print(f'PASS {count} report-boundary controls; stale verifier/observer and incomplete prerequisites rejected')
 

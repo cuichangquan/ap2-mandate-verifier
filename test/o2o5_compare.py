@@ -4,6 +4,10 @@ import hashlib
 import json
 import os
 from pathlib import Path
+
+import runpy
+IDENTITY = runpy.run_path(str(Path(__file__).with_name('stage11_identity.py')))
+PYTHON_IDENTITY = IDENTITY['current_identity']()
 from jwcrypto import jws
 from jwcrypto.jwk import JWK
 
@@ -204,6 +208,7 @@ def validate_replay(replay, fixture_sha, case_names):
 
 
 def validate_binding_report(report, adapter_sha, replay_raw, replay):
+    IDENTITY['require_identity'](report.get('python_identity'))
     need(report.get('scope') == 'LOCAL_SYNTHETIC_O2_O5_AND_MANUAL_SUBSET_COMPARISON'
          and report.get('adapter_sha256') == adapter_sha
          and report.get('oracle_sha256') == ORACLE_SHA
@@ -264,7 +269,7 @@ def main():
     import types
     oracle = types.ModuleType('o1o3')
     exec(compile(source,args.oracle,'exec'),oracle.__dict__)
-    raw = oracle.read_regular(args.fixture, 1048576)
+    raw = IDENTITY['pinned_bytes'](args.fixture, 'O2O5_PUBLIC_CASES.json', 1048576)
     bundle = oracle.strict_json(raw)
     replay_raw = oracle.read_regular(args.gem_replay, 65536)
     replay = oracle.strict_json(replay_raw)
@@ -330,7 +335,7 @@ def main():
           'o2_isolated':o2,'o2_events':o2_events,'python_pipeline_events':events,
           'gem_entries':observed['entries'],'comparison':'MATCH','original_wire_hashes':
           {k:observed[k] for k in ('root_sha256','terminal_sha256','checkout_sha256')}}
-    report = {'scope':'LOCAL_SYNTHETIC_O2_O5_AND_MANUAL_SUBSET_COMPARISON',
+    report = {'python_identity': PYTHON_IDENTITY, 'scope':'LOCAL_SYNTHETIC_O2_O5_AND_MANUAL_SUBSET_COMPARISON',
       'fixture_sha256':hashlib.sha256(raw).hexdigest(),'oracle_sha256':ORACLE_SHA,
       'adapter_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
       'fresh_gem_replay_sha256':hashlib.sha256(replay_raw).hexdigest(),

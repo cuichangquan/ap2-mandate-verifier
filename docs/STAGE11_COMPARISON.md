@@ -139,3 +139,39 @@ challenge/order/Buyer authority, nonce-CAS/replay/revocation, full Schema/all
 constraints, resource/time/concurrency guarantees and success Evidence remain
 unproven or unimplemented. Stage7 final acceptance and production/distribution/
 Phase2B stay HOLD. Stage10 DESIGN_ONLY material is separate, not implemented.
+
+## Additional approved identity-contract repair
+
+The previous five-cycle unit stopped on two further Gate P2 findings.
+A separately approved repair unifies the comparison input identity boundary in
+`test/stage11_identity.py`; this does not silently extend the former limit.
+Initial/R4/R5 results remain immutable; current supplementary reports use
+STAGE11_IDENTITY_*. No dependency or external source was acquired.
+
+| Boundary | Trust origin and admission |
+| --- | --- |
+| Schema ledger | Known original Issue101 SHA256 is compiled into the reviewed contract before parsing; caller hashes cannot authorize the ledger |
+| Schema files | Fixed ledger SHA256 plus independently computed Git blob identity, pinned AP2 URL and local Registry closure |
+| Public fixtures and policy | Known retained byte SHA256 values, separate from supplied replay fields |
+| Oracle | Existing reviewed original source SHA256 before execution |
+| Observer/verifier | Current reviewed checkout source hashes; exact replay case set, wire hashes, status and non-success boundary |
+| Python/dependencies | Actual CPython3.11.15/Darwin/arm64 plus exact ten installed distribution versions, measured before third-party verifier imports; both lock byte hashes fixed |
+| Reports | All three record measured Python identity and contract source SHA; O4 requires the same complete measured identity in its full O2/O5 prerequisite |
+
+The dependency map is the closed ten-package comparison closure. Extra identity
+fields/dependencies are rejected; unrelated venv tooling is not claimed absent.
+Version metadata/lock identities are not installed-binary attestation, a signed
+execution receipt or protection against an attacker modifying the reviewed code
+and local interpreter together. No generic immutable-runtime claim is made.
+
+Final additional checks:411 regressions; retained32+6 Gem replays;58 report
+boundary controls;57 identity controls; independent binding32; O1/O3 six classes
+and signature controls; O4 thirteen cases/64 decisions/17 local refs; Ruby14 and
+Python6 syntax. Identity controls include mutually consistent forged ledger
+and Schema, altered fixtures/policy, missing/wrong/extra Python/dependency
+identity and the actual O4-to-binding module load path.
+
+One integration run failed because the dynamic O4 module loader lacked
+__file__; this same-introduction defect was corrected and its real path tested.
+No prior result was overwritten. The original historical acquisition defects
+and all success/Evidence/Host/production/distribution/Phase2B HOLDs remain.

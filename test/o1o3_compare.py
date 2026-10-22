@@ -7,6 +7,10 @@ import json
 import os
 from pathlib import Path
 
+import runpy
+IDENTITY = runpy.run_path(str(Path(__file__).with_name('stage11_identity.py')))
+PYTHON_IDENTITY = IDENTITY['current_identity']()
+
 ORACLE_SHA = '884900e2c3420ebfc2393413ae0e6010db71b28f8a6ef02eec997defa57b8caf'
 BUNDLE_SHA = 'ba8bfe3cea97b2230084a5ab5ef97d99701e3974160abbad06a346f8115c85b0'
 EXPECTED = {
@@ -60,7 +64,7 @@ def main():
     spec = importlib.util.spec_from_loader('independent_o1o3', loader=None)
     oracle = importlib.util.module_from_spec(spec)
     exec(compile(source, args.oracle, 'exec'), oracle.__dict__)
-    raw = oracle.read_regular(args.bundle, 262144)
+    raw = IDENTITY['pinned_bytes'](args.bundle, 'STAGE7_PUBLIC_CASES.json', 262144)
     demand(hashlib.sha256(raw).hexdigest() == BUNDLE_SHA, 'bundle identity')
     bundle = oracle.strict_json(raw)
     replay_raw = oracle.read_regular(args.gem_replay, 65536)
@@ -69,7 +73,7 @@ def main():
            and replay['success'] is False and replay['evidence'] is None,
            'fresh Gem replay identity')
     validate_replay(replay, BUNDLE_SHA, EXPECTED)
-    policy_raw = oracle.read_regular(args.policy, 16384)
+    policy_raw = IDENTITY['pinned_bytes'](args.policy, 'O1O3_POLICY.json', 16384)
     policy = oracle.strict_json(policy_raw)
     demand(set(policy) == {'scope', 'issuer_public_jwk', 'expected_alg',
                            'expected_typ', 'ap2_commit'}, 'policy fields')
@@ -130,7 +134,7 @@ def main():
             controls[name] = {'o1': str(exc), 'o3_entered': False}
         else:
             raise ValueError('signature negative accepted')
-    report = {'scope': 'LOCAL_SYNTHETIC_O1_O3_ONLY', 'comparison': 'MATCH',
+    report = {'python_identity': PYTHON_IDENTITY, 'scope': 'LOCAL_SYNTHETIC_O1_O3_ONLY', 'comparison': 'MATCH',
               'oracle_sha256': ORACLE_SHA, 'bundle_sha256': BUNDLE_SHA,
               'policy_sha256': hashlib.sha256(policy_raw).hexdigest(),
               'adapter_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),

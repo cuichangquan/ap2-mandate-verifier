@@ -6,6 +6,10 @@ import json
 import os
 from pathlib import Path
 import types
+
+import runpy
+IDENTITY = runpy.run_path(str(Path(__file__).with_name('stage11_identity.py')))
+PYTHON_IDENTITY = IDENTITY['current_identity']()
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
@@ -32,6 +36,7 @@ def load_source(path, digest, name):
     raw=Path(path).read_bytes()
     need(hashlib.sha256(raw).hexdigest()==digest, name+' source identity')
     module=types.ModuleType(name)
+    module.__file__=str(Path(path).resolve())
     exec(compile(raw,str(path),'exec'),module.__dict__)
     return module
 
@@ -72,14 +77,14 @@ def main():
     binding_path=Path(__file__).with_name('o2o5_compare.py')
     binding_sha=hashlib.sha256(binding_path.read_bytes()).hexdigest()
     binding=load_source(binding_path,binding_sha,'limited_binding')
-    acquisition=json.loads(Path('O4_HTTP_ACQUISITION.json').read_text())
+    acquisition=IDENTITY['schema_ledger'](Path('O4_HTTP_ACQUISITION.json'))
     expected={r['name']:r for r in acquisition['requests'] if r['name'] in FILES}
     need(set(expected)==set(FILES),'missing Schema acquisition identity')
     schemas={}
     schema_hashes={}
     for file in FILES:
         raw=oracle.read_regular(str(Path(args.schema_dir)/file),16384)
-        need(hashlib.sha256(raw).hexdigest()==expected[file]['sha256'],'Schema bytes changed')
+        IDENTITY['validate_schema'](raw, expected[file])
         need(expected[file]['url']=='https://raw.githubusercontent.com/google-agentic-commerce/AP2/'+AP2+'/code/sdk/schemas/'+file,'unpinned Schema URL')
         schema=oracle.strict_json(raw)
         need(schema['$schema']=='https://json-schema.org/draft/2020-12/schema','unknown dialect')
@@ -116,7 +121,7 @@ def main():
          'merchant':'https://ap2-protocol.org/schemas/types/merchant.json',
          'checkout':'https://ap2-protocol.org/schemas/types/checkout.json'}
     validators={k:Draft202012Validator(schemas[uri],registry=registry) for k,uri in ids.items()}
-    raw=oracle.read_regular(args.fixture,1048576)
+    raw=IDENTITY['pinned_bytes'](args.fixture,'O2O5_PUBLIC_CASES.json',1048576)
     prior=oracle.strict_json(oracle.read_regular(args.binding_report,131072))
     need(hashlib.sha256(raw).hexdigest()==prior['fixture_sha256'],'fixture identity changed')
     need(prior['adapter_sha256']==binding_sha,'binding source/report mismatch')
@@ -206,7 +211,7 @@ def main():
             'gem_observation':replay['cases'][name],
             'root_sha256':hashlib.sha256(i['root_presentation'].encode('ascii')).hexdigest(),
             'binding_events':events}
-    report={'scope':'O4_PINNED_SCHEMAS_ON_SYNTHETIC_PROFILE_ONLY','ap2_commit':AP2,
+    report={'python_identity':PYTHON_IDENTITY,'scope':'O4_PINNED_SCHEMAS_ON_SYNTHETIC_PROFILE_ONLY','ap2_commit':AP2,
        'schemas':schema_hashes,'registered_reference_count':ref_count,
        'case_count':len(rows),'schema_validation_count':validation_count,'cases':rows,
        'dependencies':{n:importlib.metadata.version(n) for n in
