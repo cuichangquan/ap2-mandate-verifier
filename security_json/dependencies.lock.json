@@ -1,0 +1,23 @@
+{
+  "runtime": {
+    "ruby": "4.0.1",
+    "json": "2.19.9",
+    "jwt": "3.3.0",
+    "base64": "0.3.0"
+  },
+  "json": {
+    "url": "https://rubygems.org/gems/json-2.19.9.gem",
+    "bytes": 107008,
+    "sha256": "9b9025b7cdddafa38d316eca0b2358488e42d417045c1b90d216a9fefe46b79a",
+    "runtime_dependencies": [],
+    "required_ruby": ">=2.7"
+  },
+  "existing_jwt_gem_sha256": "44cc34fbc341c148233cf66641522b4bce0dfb1ce55e8073f05c56f44f4ee546",
+  "runtime_manifest_sha256": "486772c36389c3213183c4e01f0d1f4c549a3d88e58c319466686fd85c3df83f",
+  "build": {
+    "native_builds": 1,
+    "seconds": 5.1196126660797745,
+    "offline": true,
+    "earlier_cli": "--norc before install failed before native build; original log retained privately"
+  }
+}

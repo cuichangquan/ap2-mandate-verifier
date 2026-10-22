@@ -8,6 +8,6 @@ Gem::Specification.new do |spec|
   spec.files = Dir["lib/**/*.rb"]
   spec.require_paths = ["lib"]
   spec.required_ruby_version = ">= 3.3"
-  spec.add_runtime_dependency "json", "= 2.18.0"
+  spec.add_runtime_dependency "json", "= 2.19.9"
   spec.add_runtime_dependency "jwt", "= 3.3.0"
 end
