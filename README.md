@@ -1,14 +1,14 @@
 # AP2 Mandate Verifier for Ruby
 
-## 未公開の限定Gem候補 — 0.1.0.pre.2
+## 固定profile・研究用途限定pre-release候補 — 0.1.0.pre.2
 
-MRI Ruby4.0.1向け、固定profile `ap2.checkout.single_merchant_sku` version1の
+MRI Ruby4.0.8向け、固定profile `ap2.checkout.single_merchant_sku` version1の
 stateless verifierです。署名・原Root全域開示・委任・購入原文・Host binding・固定制約・
 有効期間がすべて成立したとき、opt-in `verify_research`が不変な研究Evidence v2を返します。
 **Evidenceは購入許可・nonce消費・決済完了ではありません。**
 
 候補の対応契約・入力・API・依存・資源境界は[SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md)を参照。
-RubyGemsへ公開しておらず、stable releaseではありません。本番・配布・Phase2B・Stage16 GOはHOLD。
+Ownerは固定profile・研究用途限定の公開方針に同意済みです。実配布は別の明示承認待ちで、RubyGemsへ公開していません。stable release・本番・Phase2-A全面合格・Phase2B・E10全面GOではありません。
 
 支持範囲はES256/P256、Root Open1→Agent terminal内Closed1、3開示位置、単一Merchant/SKU、
 USD/EUR/JPY、空links。一般AP2/全Schema/任意Issuerの互換性は保証しません。
@@ -37,9 +37,10 @@ evidence=nilを維持します。呼出し例のsuccess?を旧APIへ流用して
 
 ## 支持環境・検証結果の区別
 
-Ruby4.0.1、JSON2.19.9、JWT3.3.0、base640.3.0、OpenSSL gem4.0.0、Digest3.2.1を固定。
-OpenSSLとDigestは検証済みRubyに同梱のdefault gemを使用し、この候補はnative binaryを同梱しません。
-Bundler4.0.3は検証された解決環境で、Gemの追加runtime依存ではありません。
+本候補はMRI Ruby4.0.8、JSON2.19.9、JWT3.3.0、base640.3.0、OpenSSL gem4.0.2、Digest3.2.1を固定。
+MBAの新RubyでOpenSSLとDigestのdefault gem、libcrypto3.5.9、resolv0.7.2、zlib3.2.3をロード確認し、ソース回帰885件が合格しました。JSON2.19.9を別導入して同梱JSON2.18.0を使用しません。この候補はnative binaryを同梱しません。
+Rubyの任意DTrace/USDT診断プローブは公式--disable-dtrace構成で無効です。新環境の記録は`MBA408-20261023-BUILD01`（DTrace拒否）、`BUILD02`（監視停止・終了結果未確定）、`BUILD03`（導入成功）として区別します。旧包装のR1/R2/R3ではありません。対応する`MBA408-20261023-VALIDATION01`と文書修正後の`PACKAGE02`のsource/report参照は[契約文書の証拠識別表](docs/SUPPORT_CONTRACT.md#evidence-identifiers-for-this-runtime-update)を参照してください。Linuxでの新版検証は未実施です。
+新候補の解決環境は同梱Bundler4.0.20です。Gemの追加runtime依存ではありません。Ruby4.0.1/Bundler4.0.3の保存観測は歴史証拠です。
 ライブラリのwall-clock/RSS/並行数上限はなく、Hostが運用上の制限を設ける必要があります。
 
 基準main `8d9845ff4b5618b9e57eda86d3a1e447d4124b47`では、MBA Darwin arm64と
@@ -50,7 +51,9 @@ MBA独立期待値30＋境界12のGem再入力であり、Linux Oracle再実行�
 旧manifest/pin/結果は更新していません。候補の新結果はローカル別保存、配布物には含めません。
 
 これまでの取得量未証明2件とLinux全通信128MiB未証明を保持します。追加Actionsは不許可。
-研究JSONの整理は研究検証終了後の別作業です。独自runtime/supervisorの開発へ戻りません。
+研究資料はresearch/配下へ整理済みです。独自runtime/supervisorの開発へ戻りません。
+
+旧0.1.0.pre.2の実パッケージは[Stage18 run39869876461](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/39869876461)で885回帰・installed52・13payload/10loadedを観測しました。[Stage21追補](https://github.com/cuichangquan/ap2-mandate-verifier/blob/c8d81eab49e37a1236a355d42cf667aab552392d/docs/STAGE21_VALIDATION_SUPPLEMENT.md)はMBAの7入力×3観測と既知の限界を記録しています。これらはRuby4.0.1での歴史観測で、新runtime候補のLinux実証ではありません。新候補のローカル報告は別保存し、旧artifactと同じSHAとは主張しません。
 
 ## 研究資料（履歴）
 
