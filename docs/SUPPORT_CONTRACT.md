@@ -17,34 +17,27 @@ constraints, USD/EUR/JPY and empty links only. Other profiles/forms are rejected
 not accepted through a generic AP2/Schema fallback. This synthetic registered
 profile does not establish real Issuer enrollment or general interoperability.
 
-The supported baseline is MRI Ruby4.0.8 and JSON2.19.9/JWT3.3.0/base640.3.0/
-OpenSSL gem4.0.2/Digest3.2.1, all fixed in the gemspec. These versions must be available
-through normal RubyGems/Bundler resolution; source-loadpath bypass or dependency
-replacement is not a compatibility contract. Ruby4.0.8 source declares OpenSSL4.0.2
-as a default gem; the MBA408-20261023-BUILD03 local installed runtime loaded OpenSSL4.0.2 linked
-against task-local OpenSSL library3.5.9 LTS. MRI4.0.8/Digest3.2.1/resolv0.7.2/
-zlib3.2.3/Bundler4.0.20 identities and885 source regressions were confirmed.
-Package/install52 results are recorded separately and are not historical Linux
-observations. The official --disable-dtrace build omits optional DTrace/USDT
-probes. MBA408-20261023-BUILD01 access denial and BUILD02 monitor failure
-remain preserved failure records, not historical packaging R1/R2/R3.
-The historical MRI4.0.1/OpenSSL4.0.0
-observations are retained separately.
-Digest3.2.1 is also a required default gem, used for SHA256 trust/wire identities;
-its new default native provider was measured in the provider observation bound to MBA408-20261023-VALIDATION01 below.
+The supported baseline is MRI Ruby4.0.9 and JSON2.19.9/JWT3.3.0/base640.3.0/
+OpenSSL gem4.0.2/Digest3.2.1, all fixed in the gemspec. These versions must be
+available through normal RubyGems/Bundler resolution; source-loadpath bypass
+or dependency replacement is not a compatibility contract. MBA409-20261023-BUILD02
+used official --disable-dtrace and reused the existing task-local OpenSSL3.5.9
+library. Loaded provider observations confirmed OpenSSL gem4.0.2/libcrypto3.5.9,
+Digest3.2.1/resolv0.7.2/zlib3.2.3/Bundler4.0.20;885 source regressions passed
+as MBA409-20261023-VALIDATION01. PACKAGE01 records this corrected document's
+separate package/install checks. Linux4.0.9 is not yet observed.
 The candidate contains no OpenSSL/JSON native binary and performs no dependency
-download/build itself. If the fixed OpenSSL/default/native provider is missing,
-a local offline validation must stop rather than download or rebuild it.
-The actual libcrypto and native file hashes are environment observations, not
-proved by the gem version. Bundler4.0.20 is the new resolver baseline, not a runtime gem. Bundler4.0.3
-belongs to the historical runtime observations.
-RubyGems' version requirement does not itself enforce the MRI engine or OS.
+download/build itself. Missing fixed/native providers must stop an offline
+validation rather than trigger extra download/build. Actual native paths/hashes
+are environment observations, not proved by gem versions. Bundler4.0.20 is the
+resolver baseline, not a runtime dependency. RubyGems' version requirement does
+not itself enforce the MRI engine or OS. DTrace/USDT probes are disabled.
 
 Verifier-source observations exist for MBA Darwin arm64 and Ubuntu24.04 x86_64
 at base main8d9845ff4b5618b9e57eda86d3a1e447d4124b47. The old pre.2 artifact was subsequently built/installed on Linux in
 run39869876461 (885 source checks,52 installed checks,13 payload/10 loaded).
 Stage19 records MBA7inputs x3 observations. See the commit-pinned Stage21
-supplement below. Those Ruby4.0.1 observations do not validate this Ruby4.0.8
+supplement below. Those Ruby4.0.1 observations do not validate this Ruby4.0.9
 candidate, which requires new local evidence and has no new Linux run.
 Windows, Intel Mac, other Rubies/engines and all OS versions are unverified.
 No additional Actions run is authorized.
@@ -196,7 +189,7 @@ realIssuer/production/Phase2B/Stage16 GO require separate decisions.
 
 This unpublished local runtime revision keeps version0.1.0.pre.2 pending an
 external same-version availability check; no claim of uploadability is made.
-JSON2.19.9 must override the vulnerable default JSON2.18.0 supplied in Ruby4.0.8.
+JSON2.19.9 must override the vulnerable default JSON2.18.0 supplied in Ruby4.0.9.
 Measured additional providers are resolv0.7.2 and zlib3.2.3; actual identities,
 linked libcrypto, source/archive/installed hashes and test results belong to the
 separate new local validation report. Installed version assertions are not
@@ -210,6 +203,33 @@ revocation, worst-case resource/concurrency guarantees and communication-account
 gaps remain unproved. Evidence is not Host ALLOW; no generic AP2 claim is made.
 
 ## Evidence identifiers for this runtime update
+
+Current namespace: `MBA409-20261023`, separate from all MBA408 and historical
+Ruby4.0.1 records below. The retained local `REPORT_MBA409_VALIDATION01.json`
+and `CANDIDATE_SOURCE_MANIFEST.json` bind exact final source-file SHA256 values,
+provider identities, original input/expectation hashes and package SHA/size.
+They are local evidence, not public downloads. Product lib remains byte-identical
+to base main d6778f54cb4f00bfbcbc99feadbb1b1ae1ea0c70; that commit identifies the
+unchanged product source, not these edited documents or the new runtime.
+
+- ACQUIRE01: official Ruby4.0.9 archive size/SHA matched; HTTP/2 sent-header
+  count is unproved. Original STOP record is immutable; a separate continuation
+  decision allowed reuse without redownload. Total HTTP/128MiB compliance is
+  unproved, independently of product test results.
+- BUILD01: capacity scan raced configure's temporary conftest.dSYM deletion;
+  STOP with owned group reclaimed. No install success is attributed to it.
+- BUILD02: one new build/install completed using the bounded, exact-transient
+  du recheck; unrelated errors or repeated uncertainty still STOP.
+- VALIDATION01: new Ruby4.0.9/provider observation and885 source regressions.
+- PACKAGE01: this final document's package build/fresh offline install,
+  source/archive/installed13 and ordinary loaded10/installed52 verification;
+  only the completed matching local report establishes those results.
+
+No current Git source commit or public report URL is claimed before publication.
+Report/source-manifest identity must be supplied together in any future public
+summary; absent, failed or mismatched results do not establish success.
+
+### Historical Ruby4.0.8 records (unchanged observation identities)
 
 The namespace `MBA408-20261023` identifies this Ruby4.0.8 work only. It must
 not be resolved against `research/packaging_candidate/results/R1`, `R2` or `R3`,

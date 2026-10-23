@@ -12,7 +12,7 @@ expected = (Dir["lib/**/*.rb"] + %w[README.md LICENSE docs/SUPPORT_CONTRACT.md])
 raise "package whitelist" unless files == expected && spec.extensions.empty?
 versions = {"base64"=>"= 0.3.0","json"=>"= 2.19.9","jwt"=>"= 3.3.0","openssl"=>"= 4.0.2","digest"=>"= 3.2.1"}
 raise "package metadata" unless spec.name == "ap2_mandate_verifier" && spec.version.to_s == "0.1.0.pre.2" &&
-  spec.required_ruby_version.to_s == "= 4.0.8" && spec.license == "MIT" &&
+  spec.required_ruby_version.to_s == "= 4.0.9" && spec.license == "MIT" &&
   spec.runtime_dependencies.to_h { |d| [d.name, d.requirement.to_s] } == versions
 package.extract_files(ARGV.fetch(1))
 hashes = files.to_h { |name| [name, Digest::SHA256.file(File.join(ARGV[1], name)).hexdigest] }

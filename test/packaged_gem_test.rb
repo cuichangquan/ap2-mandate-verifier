@@ -15,7 +15,7 @@ def deep_frozen(value)
   end
 end
 spec = Gem.loaded_specs.fetch("ap2_mandate_verifier")
-need(spec.version.to_s == "0.1.0.pre.2" && RUBY_VERSION == "4.0.8" && RUBY_ENGINE == "ruby", "candidate runtime")
+need(spec.version.to_s == "0.1.0.pre.2" && RUBY_VERSION == "4.0.9" && RUBY_ENGINE == "ruby", "candidate runtime")
 versions = {"json"=>"2.19.9","jwt"=>"3.3.0","base64"=>"0.3.0","openssl"=>"4.0.2","digest"=>"3.2.1"}
 need(versions.all? { |k,v| Gem.loaded_specs.fetch(k).version.to_s == v }, "runtime dependencies")
 root = File.realpath(spec.full_gem_path)
