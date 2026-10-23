@@ -38,15 +38,35 @@ LINUX409-PACKAGE01 is new evidence, never a relabelled old Linux result.
   /opt/hostedtoolcache/Ruby/4.0.9. An existing prefix or different toolcache path
   stops; never overwrite/repair an unknown runtime. This replaces setup-ruby's
   implicit/cached download so the exact archive digest is actually checked.
-- Require MRI4.0.9, default OpenSSL gem4.0.2/Digest3.2.1, Bundler4.0.20,
-  resolv0.7.2/zlib3.2.3 before dependency downloads. libcrypto allowlist is
-  exactly3.5.9 or3.6.5, with compile/runtime versions equal; other/unknown versions
-  STOP without acquisition/rebuild. These are reviewed current upstream patch
-  versions, not a claim of whole-library safety. Sources:
-  https://openssl-library.org/source/ and https://openssl-library.org/news/openssl-3.5-notes/
-  The actual provider's libcrypto is NOT known from asset metadata in preparation.
-  Record real loaded native extensions and ldd-resolved libssl/libcrypto paths/
-  SHA256; missing mappings/not-found/identity uncertainty STOP.
+- Before dependency Gem acquisition, run the hash-pinned helper's provider-only
+  mode (<=45s). It needs no JSON Gem/parser or new dependency. Require MRI4.0.9,
+  loaded default OpenSSL gem4.0.2/Digest3.2.1, Bundler4.0.20,
+  resolv0.7.2/zlib3.2.3 and Ubuntu ID=ubuntu/VERSION_ID=24.04/codename=noble.
+- The actual Ruby process's /proc/self/maps must contain exactly one mapped
+  openssl.so and one each libssl.so.3/libcrypto.so.3. Reject deleted/ambiguous/
+  missing mappings. Record canonical paths and SHA256 using bounded regular-file
+  reads with metadata checks. The extension must be under the verified official
+  Ruby provider prefix; it is not a dpkg file and must not be represented as one.
+- Both actual mapped shared libraries must be owned by libssl3t64:amd64 with
+  exact installed/source version3.0.13-0ubuntu3.16, source packageopenssl,
+  architectureamd64 and statusinstalled. Require dpkg --verify output empty and
+  match each actual library's MD5 against that package's installed md5sums file;
+  record SHA256 as its independent byte identity. Unknown owner/version/source/
+  architecture, missing checksum, mismatch, stderr or command failure => STOP,
+  never acquire/upgrade/rebuild a provider to force success. Compile/runtime
+  upstream strings must both be3.0.13, but that string alone grants nothing.
+- Ubuntu USN-8847-1 (2026-09-29) identifies noble libssl3t64
+  3.0.13-0ubuntu3.16 as the fixed package:
+  https://ubuntu.com/security/notices/USN-8847-1
+  Earlier USN-8678-1 identifies3.0.13-0ubuntu3.15, demonstrating backported fixes
+  retain upstream3.0.13. The current exact policy does not automatically accept
+  later/unknown revisions. A changed revision needs read-only assessment/review.
+  The old runner image's libssl-dev listing is supporting context only and is
+  never substituted for actual mapped-library/dpkg evidence.
+- These checks trust the official runner/Ruby archive and installed dpkg database.
+  MD5 is used for dpkg consistency, not publisher authentication or cryptographic
+  provenance; SHA256 records observed bytes, not independent package signatures.
+  Malicious root/same-user/runtime attestation is outside the scoped proposition.
 - Only three official Gem archives, direct HTTPS/no redirects/no retries/no index:
 
 | URL | bytes | SHA256 |
@@ -89,3 +109,14 @@ and MBA409 sent-header/HTTP-total gaps remain unproved. E06PARTIAL/OPEN,
 production/distribution/Phase2B/E10GO, genuine Host trust/clock/revocation,
 Host atomic nonce/order/payment and worst-case resources/concurrency remain HOLD.
 Preparation/merge is not execution B or public Gem distribution approval.
+
+## Preserved failed run and current preparation status
+
+Run39934310448 attempt1, SHA0a4dd69e51cd4317ab45a985d187d0924d0fc753,
+failed the earlier upstream-only version allowlist after official Ruby archive
+verification. OpenSSL reported3.0.13; actual library paths/package revisions were
+not collected. That is not proof of a vulnerable library. Three Gem downloads,
+JSON build,885/52,13/10 verification were skipped. The run slot is consumed and
+no rerun is authorized by this policy-preparation change. Old logs/results and
+communication caveats remain immutable. New execution requires a new explicit
+one-run approval; this PR/source review does not dispatch anything.
