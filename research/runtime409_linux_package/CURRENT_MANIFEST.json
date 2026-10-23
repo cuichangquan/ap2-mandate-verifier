@@ -1,0 +1,115 @@
+{
+  "scope": "LINUX409_PREPARATION_NOT_RUN",
+  "baseline_main": "3fbd550141cc4292fa96e3e97a0a2186f7cc9970",
+  "candidate_version": "0.1.0.pre.2",
+  "upstream": "b4587ac1d055888a73b4b21750973cffba961793",
+  "dependencies": {
+    "json": "2.19.9",
+    "jwt": "3.3.0",
+    "base64": "0.3.0",
+    "openssl": "4.0.2",
+    "digest": "3.2.1"
+  },
+  "accepted_libcrypto_versions": [
+    "3.5.9",
+    "3.6.5"
+  ],
+  "ruby_provider": {
+    "url": "https://github.com/ruby/ruby-builder/releases/download/ruby-4.0.9/ruby-4.0.9-ubuntu-24.04-x64.tar.gz",
+    "bytes": 49100121,
+    "sha256": "046d1422e1be5575eadd55323c85c3efbeaee8c8e1c1bfccee343e28619cb3b3"
+  },
+  "mba_package_reference": {
+    "artifact_sha256": "e910659bbebda7aa5f00d63fb579f3b56819d59b5ee7d8b1734a6331f01d8de4",
+    "artifact_bytes": 33280,
+    "version": "0.1.0.pre.2",
+    "required_ruby": "= 4.0.9",
+    "dependencies": {
+      "base64": "= 0.3.0",
+      "json": "= 2.19.9",
+      "jwt": "= 3.3.0",
+      "openssl": "= 4.0.2",
+      "digest": "= 3.2.1"
+    },
+    "files_sha256": {
+      "LICENSE": "1442143c4265d88eedfc14f25d04298449358c837b0bb58dfa825f84b36391c8",
+      "README.md": "71962a2dc8a3e7b1bd82bd393247e79e0f372e19bdc02cf1e6a03af31d5804df",
+      "docs/SUPPORT_CONTRACT.md": "493fec9d092f110d97117d8c3a94ad45402f87c8e5e6c2f44210e443ea8f5379",
+      "lib/ap2_mandate_verifier.rb": "4824eeef1ce6c7833bcc24bc0bf9abc265df0b35ba135e54b4341b54c2f65ef2",
+      "lib/ap2_mandate_verifier/host_binding.rb": "917a4c139accd77d5bbe9125c64ea258349b6854ac04e0fefe33536b9b88ec0a",
+      "lib/ap2_mandate_verifier/input_validator.rb": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+      "lib/ap2_mandate_verifier/purchase_binding.rb": "6f2108ac3298e4558fc053139d045d399687ccc3bf39c01945ed52d529dc26df",
+      "lib/ap2_mandate_verifier/research_result.rb": "02159d2f451461ef818d7b6c9d55349cdfb6e23d9ced7d688730d22c8e96827d",
+      "lib/ap2_mandate_verifier/result.rb": "fade8a1e922f7b4cf2439c120580160f85e0f22f6cfac9ff1ab1364d7b34d310",
+      "lib/ap2_mandate_verifier/root_disclosures.rb": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+      "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+      "lib/ap2_mandate_verifier/scoped_constraints.rb": "b2b5fa4cd1b4ce83cfc5ffc1be0a09ce57ad4a1b9be6778e581dd38f5ce5fd84",
+      "lib/ap2_mandate_verifier/trust_context.rb": "430eb9f9f3be4c0d7e799e95b68009c08582b6961aa954cc866ff012a3b2be36"
+    }
+  },
+  "files_sha256": {
+    "LICENSE": "1442143c4265d88eedfc14f25d04298449358c837b0bb58dfa825f84b36391c8",
+    "README.md": "71962a2dc8a3e7b1bd82bd393247e79e0f372e19bdc02cf1e6a03af31d5804df",
+    "docs/SUPPORT_CONTRACT.md": "493fec9d092f110d97117d8c3a94ad45402f87c8e5e6c2f44210e443ea8f5379",
+    "ap2_mandate_verifier.gemspec": "f65a859fd2f0d2232035c3bfcb99346cc66228e55855b1a1effd6d6d17a5fd60",
+    "Gemfile": "e2a21f75233d22b155710c04856ed18dc1d21e9d980196243d2f0e3f8123761f",
+    "Gemfile.lock": "c41b5ee15dbc1778c8eef0ed50dcd24456917482159528f855b4150931825156",
+    "lib/ap2_mandate_verifier.rb": "4824eeef1ce6c7833bcc24bc0bf9abc265df0b35ba135e54b4341b54c2f65ef2",
+    "lib/ap2_mandate_verifier/host_binding.rb": "917a4c139accd77d5bbe9125c64ea258349b6854ac04e0fefe33536b9b88ec0a",
+    "lib/ap2_mandate_verifier/input_validator.rb": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+    "lib/ap2_mandate_verifier/purchase_binding.rb": "6f2108ac3298e4558fc053139d045d399687ccc3bf39c01945ed52d529dc26df",
+    "lib/ap2_mandate_verifier/research_result.rb": "02159d2f451461ef818d7b6c9d55349cdfb6e23d9ced7d688730d22c8e96827d",
+    "lib/ap2_mandate_verifier/result.rb": "fade8a1e922f7b4cf2439c120580160f85e0f22f6cfac9ff1ab1364d7b34d310",
+    "lib/ap2_mandate_verifier/root_disclosures.rb": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+    "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+    "lib/ap2_mandate_verifier/scoped_constraints.rb": "b2b5fa4cd1b4ce83cfc5ffc1be0a09ce57ad4a1b9be6778e581dd38f5ce5fd84",
+    "lib/ap2_mandate_verifier/trust_context.rb": "430eb9f9f3be4c0d7e799e95b68009c08582b6961aa954cc866ff012a3b2be36",
+    "test/input_boundary_test.rb": "c257364d9e255675bfab3faaf3272db68d3f7cc48d737f724e166d4295e2f658",
+    "test/root_signature_test.rb": "e917af7bbd4495ee96c2daa13187120a158a387eb2aa188c5ceb6b7202f92df1",
+    "test/root_disclosures_test.rb": "af0e2cc07a1ad4268555db9399251a1aef05558a4108029721b23b89bb68f2b5",
+    "test/purchase_binding_test.rb": "a5f5dc13ab8f8b6a26f88a630cb6bcc7c65d6c9f277de523459aa91dc440bb75",
+    "test/scoped_constraints_test.rb": "c025f8f815b264439459efc7b8cf05d386e366f152b374c1a2c5231987808dcd",
+    "test/integration_matrix_test.rb": "b5137f949faf73db043851dc27b738e43fcc8a1ca3c9e10219f7dc3b4cbdd77b",
+    "test/trust_context_test.rb": "e173c633cbbacc5c11b9afa7dd99f6c63b972eeb4ab7fac60a4d7d191cf42636",
+    "test/host_binding_test.rb": "bc28884462fcf2a5a4c449439890336fe06d61c7c815dfd9c60dac5bf85cd18b",
+    "test/research_evidence_test.rb": "a964e806ab85f18890f38f9c3fb1d36ddeacd058092a767b3469c0c9d2dff195",
+    "test/package_contents_audit.rb": "8c67db6d0bd329aa30a6435b63614e530a9f67ece6e052370804aecc2ed410ad",
+    "research/stage11/inputs/O2O5_PUBLIC_CASES.json": "be17fc33612ec561147100fbb901f5c2ef288d4535ed1aa69b56a61447fc8942",
+    "research/stage15/results/R3/INPUTS.json": "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1",
+    "research/stage15_linux/EXPECTED.json": "b8de794bc17c1093d070ed0e78a523ffa568c332bce5e89fe5b2503ee8783d7e",
+    "research/runtime409_linux_package/verify_package.rb": "4be7322b38234c1147b8be6951eba0735cbfd6f973b84faf48c49d6bece21f9c",
+    "research/runtime409_linux_package/installed_test.rb": "46751854d937d8b28f8436e5e50c07be70c3030741d51101153df7174c232b8f"
+  },
+  "package_files": [
+    "LICENSE",
+    "README.md",
+    "docs/SUPPORT_CONTRACT.md",
+    "lib/ap2_mandate_verifier.rb",
+    "lib/ap2_mandate_verifier/host_binding.rb",
+    "lib/ap2_mandate_verifier/input_validator.rb",
+    "lib/ap2_mandate_verifier/purchase_binding.rb",
+    "lib/ap2_mandate_verifier/research_result.rb",
+    "lib/ap2_mandate_verifier/result.rb",
+    "lib/ap2_mandate_verifier/root_disclosures.rb",
+    "lib/ap2_mandate_verifier/root_signature.rb",
+    "lib/ap2_mandate_verifier/scoped_constraints.rb",
+    "lib/ap2_mandate_verifier/trust_context.rb"
+  ],
+  "tests": [
+    "test/input_boundary_test.rb",
+    "test/root_signature_test.rb",
+    "test/root_disclosures_test.rb",
+    "test/purchase_binding_test.rb",
+    "test/scoped_constraints_test.rb",
+    "test/integration_matrix_test.rb",
+    "test/trust_context_test.rb",
+    "test/host_binding_test.rb",
+    "test/research_evidence_test.rb"
+  ],
+  "data_files": [
+    "research/stage11/inputs/O2O5_PUBLIC_CASES.json",
+    "research/stage15/results/R3/INPUTS.json",
+    "research/stage15_linux/EXPECTED.json"
+  ],
+  "historical_results": "unchanged; not evidence for this Linux409 run"
+}
