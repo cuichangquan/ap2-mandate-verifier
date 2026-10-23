@@ -21,16 +21,17 @@ The supported baseline is MRI Ruby4.0.8 and JSON2.19.9/JWT3.3.0/base640.3.0/
 OpenSSL gem4.0.2/Digest3.2.1, all fixed in the gemspec. These versions must be available
 through normal RubyGems/Bundler resolution; source-loadpath bypass or dependency
 replacement is not a compatibility contract. Ruby4.0.8 source declares OpenSSL4.0.2
-as a default gem; the R3 local installed runtime loaded OpenSSL4.0.2 linked
+as a default gem; the MBA408-20261023-BUILD03 local installed runtime loaded OpenSSL4.0.2 linked
 against task-local OpenSSL library3.5.9 LTS. MRI4.0.8/Digest3.2.1/resolv0.7.2/
 zlib3.2.3/Bundler4.0.20 identities and885 source regressions were confirmed.
 Package/install52 results are recorded separately and are not historical Linux
 observations. The official --disable-dtrace build omits optional DTrace/USDT
-probes. R1 access denial and R2 monitor failure remain preserved failure records.
+probes. MBA408-20261023-BUILD01 access denial and BUILD02 monitor failure
+remain preserved failure records, not historical packaging R1/R2/R3.
 The historical MRI4.0.1/OpenSSL4.0.0
 observations are retained separately.
 Digest3.2.1 is also a required default gem, used for SHA256 trust/wire identities;
-its new default native provider was measured in the separate R3 provider report.
+its new default native provider was measured in the provider observation bound to MBA408-20261023-VALIDATION01 below.
 The candidate contains no OpenSSL/JSON native binary and performs no dependency
 download/build itself. If the fixed OpenSSL/default/native provider is missing,
 a local offline validation must stop rather than download or rebuild it.
@@ -207,3 +208,30 @@ https://github.com/cuichangquan/ap2-mandate-verifier/blob/c8d81eab49e37a1236a355
 E06 remains PARTIAL/OPEN; trusted-harness assumptions, genuine Host trust/clock/
 revocation, worst-case resource/concurrency guarantees and communication-accounting
 gaps remain unproved. Evidence is not Host ALLOW; no generic AP2 claim is made.
+
+## Evidence identifiers for this runtime update
+
+The namespace `MBA408-20261023` identifies this Ruby4.0.8 work only. It must
+not be resolved against `research/packaging_candidate/results/R1`, `R2` or `R3`,
+which retain their original Ruby4.0.1/OpenSSL4.0.0 observations unchanged.
+
+| Unique evidence ID | Observation and report binding |
+| --- | --- |
+| MBA408-20261023-BUILD01 | Ruby build stopped at DTrace access denial; preserved failure, not PASS. |
+| MBA408-20261023-BUILD02 | Capacity monitor exception; original completion remains unknown. Later scoped process absence does not establish success. |
+| MBA408-20261023-BUILD03 | Official disable-dtrace Ruby build/install completed in145.4s; OpenSSL gem4.0.2 linked libcrypto3.5.9. |
+| MBA408-20261023-VALIDATION01 | Original885 source regressions and52 installed checks; original new-runtime package31232B, SHA2563252c9ce71f4ff91870d52004283b2b2fad09e38c71fa93447dfe232d2b7d716. |
+| MBA408-20261023-PACKAGE02 | Documentation-only evidence-reference correction; its final source/tree SHA, new package SHA/size and repeated13-file/52-installed results are recorded together in the PR173 evidence summary. It is a separate artifact and does not rerun885 or replace VALIDATION01. |
+
+VALIDATION01's retained local report (`REPORT_R3.json`, not a public download)
+has SHA256a4923bb132e709568251b8bd15d574893ca88ea36d0274a03d0326436c27dc81.
+Its complete source snapshot was subsequently recorded, byte-identically, as
+commit96351b8d4a0ae5d9566599ccb92b6fa1da5d7986,
+treecd72fe7b9353ffc0270a068e14c2bc34c5b64e2a. Product verifier sources are
+unchanged from base49f4de5e88c6611dfe04b8e595acc7764247a359; historical
+profile-source pins are provenance and do not identify this runtime run.
+Public non-secret report summary and PACKAGE02 source/artifact identities:
+https://github.com/cuichangquan/ap2-mandate-verifier/pull/173
+The summary must explicitly identify the completed observation; a missing,
+failed or mismatched report is not success. No local path is a public evidence
+URL. Raw local environment logs are not published by this package.
