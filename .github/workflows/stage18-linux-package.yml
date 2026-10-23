@@ -87,4 +87,4 @@ jobs:
           EXPECTED_SHA: ${{ inputs.expected_sha }}
         run: |
           set -euo pipefail
-          timeout 630 ruby stage18_linux_package/verify_package.rb 08fe74ff7c403d8b8f8f4a634bfc4e4b63d8e3d0be82bd4f58d5add6c58e313f
+          timeout 630 ruby research/stage18_linux_package/verify_package.rb 94ea9ac1ef428acd50ff31a351d76675b23d08ab1e32119c9ace3b265630a262

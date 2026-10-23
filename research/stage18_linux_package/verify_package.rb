@@ -11,7 +11,7 @@ require "timeout"
 require "tmpdir"
 require "fileutils"
 require "rbconfig"
-ROOT = File.expand_path("..", __dir__)
+ROOT = File.expand_path("../..", __dir__)
 def need(ok, why) = (raise why unless ok)
 # Same bounded regular-file capture as the reviewed Stage15 harness.
 def capture(path, cap)
@@ -51,7 +51,7 @@ need(RUBY_ENGINE == "ruby" && RUBY_VERSION == "4.0.1" && RUBY_PLATFORM.match?(/x
 need(File.read("/etc/os-release").lines.any? { |l| l.strip == 'VERSION_ID="24.04"' }, "Ubuntu24.04")
 need(ENV.fetch("GITHUB_SHA") == ENV.fetch("EXPECTED_SHA") &&
   ENV.fetch("GITHUB_REF") == "refs/heads/main" && ENV.fetch("GITHUB_RUN_ATTEMPT") == "1", "dispatch identity")
-manifest_raw = capture(File.join(__dir__, "MANIFEST.json"), 32_768)
+manifest_raw = capture(File.join(__dir__, "CURRENT_MANIFEST.json"), 32_768)
 need(Digest::SHA256.hexdigest(manifest_raw) == ARGV.fetch(0), "reviewed manifest identity")
 manifest = JSON.parse(manifest_raw)
 need(manifest.fetch("candidate_version") == "0.1.0.pre.2", "candidate version")
@@ -98,14 +98,14 @@ Dir.mktmpdir("ap2-package-") do |work|
   regression = child([RbConfig.ruby,"-rbundler/setup","-I"+File.join(source,"lib"),"-e",
     "ARGV.each { |f| require f }",*manifest.fetch("tests").map { |f| File.join(source,f) }], source, regression_env, 300)
   need(regression.scan(/^PASS (\d+)/).flatten.map(&:to_i) == [79,74,64,81,97,16,147,149,178], "complete885 source regressions")
-  observed = JSON.parse(child([RbConfig.ruby,File.join(source,"stage18_linux_package/installed_test.rb"),
-    File.join(source,"stage15/results/R3/INPUTS.json"),File.join(source,"stage15_linux/EXPECTED.json"),
+  observed = JSON.parse(child([RbConfig.ruby,File.join(source,"research/stage18_linux_package/installed_test.rb"),
+    File.join(source,"research/stage15/results/R3/INPUTS.json"),File.join(source,"research/stage15_linux/EXPECTED.json"),
     audit_path,source], detached, ordinary, 300))
   need(observed.fetch("total_cases") == 52 && observed.fetch("ordinary_entry") &&
     observed.fetch("dependencies") == versions, "installed52/runtime")
   report.merge!(package:package,source_regressions:885,source_regression_stdout_sha256:Digest::SHA256.hexdigest(regression),
-    installed:observed,expected_sha256:manifest.fetch("files_sha256").fetch("stage15_linux/EXPECTED.json"),
-    inputs_sha256:manifest.fetch("files_sha256").fetch("stage15/results/R3/INPUTS.json"))
+    installed:observed,expected_sha256:manifest.fetch("files_sha256").fetch("research/stage15_linux/EXPECTED.json"),
+    inputs_sha256:manifest.fetch("files_sha256").fetch("research/stage15/results/R3/INPUTS.json"))
 end
 report[:holds] = "production/distribution/Phase2B/Stage16GO/Hostatomic; productCPU/RSS/concurrency; prior2acquisition gaps and Linux128MiB whole-traffic unproved"
 text = JSON.pretty_generate(report)

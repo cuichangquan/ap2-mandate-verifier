@@ -81,7 +81,7 @@ def main():
     binding_path=Path(__file__).with_name('o2o5_compare.py')
     binding_sha=hashlib.sha256(IDENTITY['bounded_regular'](binding_path, 65536)).hexdigest()
     binding=load_source(binding_path,binding_sha,'limited_binding',65536)
-    acquisition=IDENTITY['schema_ledger'](Path('O4_HTTP_ACQUISITION.json'))
+    acquisition=IDENTITY['schema_ledger'](Path(__file__).resolve().parent.parent / 'research/stage11/inputs/O4_HTTP_ACQUISITION.json')
     expected={r['name']:r for r in acquisition['requests'] if r['name'] in FILES}
     need(set(expected)==set(FILES),'missing Schema acquisition identity')
     schemas={}

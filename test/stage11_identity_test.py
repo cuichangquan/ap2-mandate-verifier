@@ -50,11 +50,11 @@ def main():
     with tempfile.TemporaryDirectory(prefix='stage11-identity-') as directory:
         work = Path(directory)
         for name in identity['PINS']:
-            original = (ROOT / name).read_bytes()
-            identity['pinned_bytes'](ROOT / name, name, 1048576); count += 1
+            original = (ROOT / "research/stage11/inputs" / name).read_bytes()
+            identity['pinned_bytes'](ROOT / 'research/stage11/inputs' / name, name, 1048576); count += 1
             altered = work / name; altered.write_bytes(original + b' ')
             rejects(lambda: identity['pinned_bytes'](altered, name, 1048576))
-        ledger = identity['schema_ledger'](ROOT / 'O4_HTTP_ACQUISITION.json')
+        ledger = identity['schema_ledger'](ROOT / 'research/stage11/inputs/O4_HTTP_ACQUISITION.json')
         row = next(r for r in ledger['requests'] if r['name'] == 'ap2/open_checkout_mandate.json')
         altered_schema = b'{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object"}\n'
         altered_blob = b'blob ' + str(len(altered_schema)).encode() + b'\0' + altered_schema

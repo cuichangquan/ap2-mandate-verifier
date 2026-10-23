@@ -79,7 +79,7 @@ def current_identity():
     observed = observed_environment()
     validate_environment(observed)
     for name, digest in LOCKS.items():
-        require_equal(hashlib.sha256(bounded_regular(ROOT / name, 16384)).hexdigest(), digest,
+        require_equal(hashlib.sha256(bounded_regular(ROOT / "research/stage11/dependencies" / name, 16384)).hexdigest(), digest,
                       'dependency lock identity')
     return {**observed, 'locks': LOCKS,
             'identity_source_sha256': hashlib.sha256(bounded_regular(Path(__file__), 16384)).hexdigest()}

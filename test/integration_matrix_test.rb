@@ -170,7 +170,7 @@ module IntegrationMatrixTest
         "cases" => @public_cases.to_h { |name, input| [name, {"root" => input[:root_presentation], "terminal" => input[:terminal_jws]}] }}}
     bytes = JSON.pretty_generate(exported) + "\n"
     assert(bytes.bytesize < 1_048_576 && !bytes.include?("PRIVATE KEY"))
-    File.open("STAGE7_PUBLIC_CASES.json", File::WRONLY | File::CREAT | File::EXCL, 0o600) { |f| f.write(bytes) }
+    File.open(File.expand_path("../research/stage11/inputs/STAGE7_PUBLIC_CASES.json", __dir__), File::WRONLY | File::CREAT | File::EXCL, 0o600) { |f| f.write(bytes) }
   end
   puts "PASS #{@cases} same-candidate integration cases; entered stages only; no full AP2/independent Oracle PASS"
 end

@@ -17,7 +17,7 @@ import tempfile
 import time
 import types
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 I = runpy.run_path(str(ROOT / 'test/stage11_identity.py'))
 READ = I['bounded_regular']
 SHA = lambda b: hashlib.sha256(b).hexdigest()
@@ -188,7 +188,7 @@ def main():
     import sys
     out=Path(sys.argv[1]); out.mkdir(exist_ok=False)
     start=time.monotonic(); identity=I['current_identity']()
-    pinraw=READ(ROOT/'stage15/candidate.json',16384)
+    pinraw=READ(ROOT/'research/stage15/candidate.json',16384)
     assert SHA(pinraw)==CANDIDATE_MANIFEST_SHA,'reviewed candidate manifest identity'
     pin=json.loads(pinraw)
     sources={str(p.relative_to(ROOT)):READ(p,65536) for p in sorted((ROOT/'lib').rglob('*.rb'))}
@@ -196,22 +196,22 @@ def main():
     o=load(ROOT/'research/phase2a_e06i/e03_e04_signed_oracle.py','884900e2c3420ebfc2393413ae0e6010db71b28f8a6ef02eec997defa57b8caf','oracle')
     binding_path=ROOT/'test/o2o5_compare.py'
     binding=load(binding_path,BINDING_SHA,'binding')
-    fixture=I['pinned_bytes'](ROOT/'O2O5_PUBLIC_CASES.json','O2O5_PUBLIC_CASES.json',1048576)
+    fixture=I['pinned_bytes'](ROOT/'research/stage11/inputs/O2O5_PUBLIC_CASES.json','O2O5_PUBLIC_CASES.json',1048576)
     bundle=o.strict_json(fixture)['cases']; matrix=cases(bundle)
-    observer=READ(ROOT/'stage15/observe.rb',16384)
+    observer=READ(ROOT/'research/stage15/observe.rb',16384)
     ruby='/opt/homebrew/Cellar/ruby/4.0.1/bin/ruby'
     deps=ROOT.parent/'ap2-gem-input/.local-deps/gems'
     env={**os.environ,'GEM_HOME':str(deps),'GEM_PATH':str(deps)+':/opt/homebrew/Cellar/ruby/4.0.1/lib/ruby/gems/4.0.0'}
     observations=[]; saved_inputs={}
     with tempfile.TemporaryDirectory(prefix='ap2-stage15-') as tmp:
         tree=Path(tmp)
-        for k,v in {**sources,'stage15/observe.rb':observer}.items():
+        for k,v in {**sources,'research/stage15/observe.rb':observer}.items():
             target=tree/k; target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(v)
         def run(name,a,expected,events,facts,kind):
             remaining=300-(time.monotonic()-start)
             assert remaining>0,'whole-run deadline'
             before=time.monotonic()
-            p=subprocess.run([ruby,str(tree/'stage15/observe.rb')],input=J({'args':a}).encode(),
+            p=subprocess.run([ruby,str(tree/'research/stage15/observe.rb')],input=J({'args':a}).encode(),
               stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,timeout=min(10,remaining),check=True)
             elapsed=time.monotonic()-before
             assert len(p.stdout)<131072 and not p.stderr,p.stderr.decode()
@@ -282,7 +282,7 @@ def schema_controls(bundle,o,binding):
     import urllib.parse
     files=['ap2/open_checkout_mandate.json','ap2/checkout_mandate.json','ap2/types/item.json','ap2/types/merchant.json']+[
       'ucp/types/'+s+'.json' for s in ['checkout','line_item','total','link','buyer','message','message_error','message_warning','message_info']]
-    ledger=I['schema_ledger'](ROOT/'O4_HTTP_ACQUISITION.json')
+    ledger=I['schema_ledger'](ROOT/'research/stage11/inputs/O4_HTTP_ACQUISITION.json')
     expected={r['name']:r for r in ledger['requests'] if r['name'] in files}
     assert set(expected)==set(files)
     def no_remote(uri): raise ValueError('unregistered Schema ref: '+uri)

@@ -85,4 +85,4 @@ jobs:
           AP2_LINUX_RUN: '1'
         run: |
           set -euo pipefail
-          timeout 630 ruby stage15_linux/replay.rb c73d1179231e756faac45a9b75f6c3e4e099c3ce50b5b3fbe6c06fb16d10b257
+          timeout 630 ruby research/stage15_linux/replay.rb ae2f722c0dd38c14e2557647fc483b2233c08f72ac495aa45cf0ffb3a5a1f4aa
