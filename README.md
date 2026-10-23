@@ -1,14 +1,14 @@
 # AP2 Mandate Verifier for Ruby
 
-## 固定profile・研究用途限定pre-release候補 — 0.1.0.pre.3
+## 固定profile・研究用途限定pre-release — 0.1.0.pre.3
 
 MRI Ruby4.0.9向け、固定profile `ap2.checkout.single_merchant_sku` version1の
 stateless verifierです。署名・原Root全域開示・委任・購入原文・Host binding・固定制約・
 有効期間がすべて成立したとき、opt-in `verify_research`が不変な研究Evidence v2を返します。
 **Evidenceは購入許可・nonce消費・決済完了ではありません。**
 
-候補の対応契約・入力・API・依存・資源境界は[SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md)を参照。
-GitHubでは固定profile・研究用途限定のpre2を公開済みです。RubyGemsへの公開と、このREADMEを含む新候補の実配布は別の明示承認待ちです。stable release・本番・Phase2-A全面合格・Phase2B・E10全面GOではありません。
+対応契約・入力・API・依存・資源境界は[SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md)を参照。
+2026-10-23にRubyGemsで固定profile・研究用途限定の[0.1.0.pre.3](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0.pre.3)を公開済みです。GitHub Releaseはpre2です。stable release・本番・Phase2-A全面合格・Phase2B・E10全面GOではありません。発行・提示生成・Rails SDKは未完成です。
 
 支持範囲はES256/P256、Root Open1→Agent terminal内Closed1、3開示位置、単一Merchant/SKU、
 USD/EUR/JPY、空links。一般AP2/全Schema/任意Issuerの互換性は保証しません。
@@ -19,40 +19,43 @@ USD/EUR/JPY、空links。一般AP2/全Schema/任意Issuerの互換性は保証�
 
 **研究用途限定・本番利用不可 / RESEARCH ONLY — NOT FOR PRODUCTION.**
 
-現在入手できるのは[GitHub pre-release v0.1.0.pre.2](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.1.0.pre.2)の添付Gemです。RubyGems.orgでの公開は未確認・未実施のため、現時点で通常の `gem install ap2_mandate_verifier` により取得できるとは案内しません。このREADMEを含むpre3は未公開のローカル候補で、公開済みpre2の同梱文書を置き換えるものではありません。
+[RubyGems 0.1.0.pre.3](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0.pre.3)を利用できます。所有者は `cuichangquan`、公開Gemは37,888 bytes、SHA256は `8ad627818dc69b450d0fba970dafaf368ec42dd64fb51eec631731027de3882c` です。[GitHub pre2](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.1.0.pre.2)は別の成果物です。
 
-The available artifact is the attached Gem in the [GitHub v0.1.0.pre.2 prerelease](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.1.0.pre.2). RubyGems publication has not been performed or confirmed, so a normal remote `gem install ap2_mandate_verifier` is not currently an installation route. This README belongs to the unpublished local pre3 candidate; it does not replace the documentation inside the published pre2 artifact.
+[RubyGems 0.1.0.pre.3](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0.pre.3) is published under owner `cuichangquan`: 37,888 bytes, SHA256 `8ad627818dc69b450d0fba970dafaf368ec42dd64fb51eec631731027de3882c`. The [GitHub pre2 release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.1.0.pre.2) is a separate artifact.
+
+**このmainの文書は公開後の追補です。** 公開Gem内のREADME／SUPPORT_CONTRACTは包装時点のスナップショットで、「未公開」等の記載が残っています。公開済みbytesは変更しません。現在のmainから同じ版を再ビルドしても、公開Gemやその検証済みSHAと同一だとは扱えません。[公開後の整備・証拠の区別](docs/POST_RELEASE_MAINTENANCE.md)を参照してください。
+
+**These main-branch documents are a post-publication supplement.** The published Gem's README/SUPPORT_CONTRACT preserve the packaging snapshot, including then-current unpublished wording. Published bytes remain unchanged. A same-version rebuild from current main does not identify the published artifact or inherit its validated SHA. See [post-release maintenance and evidence scope](docs/POST_RELEASE_MAINTENANCE.md).
 
 必要条件 / Requirements:
 
 | 項目 / Component | 条件 / Requirement |
 | --- | --- |
-| Ruby | MRI **4.0.9**。他のRuby版・engineは対象外 / Other versions and engines are outside this candidate's contract. |
+| Ruby | MRI **4.0.9**。他のRuby版・engineは対象外 / Other versions and engines are outside this release's contract. |
 | Runtime Gems | `json = 2.19.9`, `jwt = 3.3.0`, `base64 = 0.3.0`, `openssl = 4.0.2`, `digest = 3.2.1` |
 | Native providers | 利用するRuby用のOpenSSL／JSON拡張が必要。Gem本体はnative binaryを含まない / Compatible OpenSSL and JSON extensions are required; this Gem contains no native binaries. |
 | 観測環境 / Observed systems | **pre3実パッケージ：MBA Darwin arm64のみ。pre3のLinux検証は未実施。** Ubuntu24.04 x86_64の成功run39939021098はpre2の歴史証拠であり、pre3の実行証拠ではない / **pre3 package: MBA Darwin arm64 only; pre3 Linux NOT_RUN.** Successful Ubuntu24.04 x86_64 run39939021098 is historical pre2 evidence, not a pre3 execution. No guarantee for every macOS/Linux configuration. |
 
-以下は利用者が実行する手順例です。既存のRuby4.0.9環境を使い、global環境を変更したくない場合は任意のRuby環境管理・Gem隔離方法を先に選んでください。最後の `gem install --local` はローカルの本体・導入済み依存／キャッシュだけを使います。不足する依存は自動取得せず失敗するため、上記の正確な依存を別途用意してから進めてください。ローカルの依存アーカイブからnative buildが必要になる場合があります。チェックサム不一致なら導入しません。
+以下は利用者が実行する手順例です。既存のMRI Ruby4.0.9と任意のGem隔離環境を使ってください。通常のRubyGems導入はネットワーク取得や依存のnative buildを伴う場合があります。固定依存と実ロードproviderを確認し、未知・不一致なら停止してください。本整備ではコマンドを実行していません。
 
-The following commands are for the user to run with an existing MRI4.0.9 environment. Choose your normal Ruby/Gem isolation method first if you do not want to modify your default Gem environment. `gem install --local` uses the local Gem and installed/cached dependencies only. Missing dependencies cause failure rather than automatic download; prepare the exact dependencies separately before continuing. Local dependency archives may require native builds. Stop if the checksum does not match.
+These commands are for users with an existing MRI Ruby4.0.9 environment and their chosen Gem isolation. Normal RubyGems installation can download dependencies and build native extensions. Check the exact dependencies above and actual loaded providers; stop on unknown or mismatched providers. These commands were not executed during this documentation update.
 
 ```sh
-set -eu
 ruby --version # MRI 4.0.9 required; confirm before continuing
-curl --fail --location --proto '=https' --proto-redir '=https' \
-  --output ap2_mandate_verifier-0.1.0.pre.2.gem \
-  https://github.com/cuichangquan/ap2-mandate-verifier/releases/download/v0.1.0.pre.2/ap2_mandate_verifier-0.1.0.pre.2.gem
-printf '%s\n' 'e910659bbebda7aa5f00d63fb579f3b56819d59b5ee7d8b1734a6331f01d8de4  ap2_mandate_verifier-0.1.0.pre.2.gem' | shasum -a 256 -c -
-gem install --local ./ap2_mandate_verifier-0.1.0.pre.2.gem
+gem install ap2_mandate_verifier --version 0.1.0.pre.3 --prerelease
 ```
 
-Linuxで `shasum` がない場合は、上のチェック行末の `shasum -a 256 -c -` を `sha256sum -c -` に置き換えます。SHA256は配布bytesの同一性確認であり、Host信頼入力や実行環境の安全性を保証しません。
+Bundlerを使う場合はGemfileに次を指定します。依存衝突時は固定条件を緩めず停止してください。Bundler4.0.20は既存の解決基準で、runtime依存ではありません。
 
-On Linux without `shasum`, replace `shasum -a 256 -c -` with `sha256sum -c -`. The checksum identifies distribution bytes; it does not authenticate Host inputs or attest runtime safety.
+For Bundler, add the following Gemfile entry. Stop on conflicts rather than relaxing fixed requirements. Bundler4.0.20 is the existing resolver baseline, not a runtime dependency.
 
-RubyGems公開後には、新候補の確定版を明示した `gem install ap2_mandate_verifier --version '<published-version>' --prerelease` と、対応するGemfile指定を案内する予定です。`<published-version>` は実行可能な版番号ではありません。次版候補 `0.1.0.pre.3` の空き・所有権・公開はまだ確認／承認されていません。
+```ruby
+gem "ap2_mandate_verifier", "= 0.1.0.pre.3"
+```
 
-After RubyGems publication, instructions will use an actual published version, for example `gem install ap2_mandate_verifier --version '<published-version>' --prerelease`, with a matching Gemfile entry. The placeholder is not an installable version. Availability, ownership and publication of a possible `0.1.0.pre.3` have not yet been confirmed or approved.
+SHA256は配布bytesの同一性確認であり、Host信頼入力や実行環境の安全性を保証しません。版番号やインストール成功だけでも公開bytesとの一致や環境安全性は証明されません。
+
+The SHA256 identifies distribution bytes; it does not authenticate Host inputs or attest runtime safety. A version number or successful installation alone does not prove byte identity or environment safety.
 
 ## 保存済み合成入力で試す / Try the saved synthetic example
 
@@ -133,6 +136,12 @@ host_checkout_jws/verified_atです。前3つのJSONは認証済みの独立Host
 旧`verify`はJSON構文境界だけで、その他の低レベルverify入口と共にsuccess?=false/
 evidence=nilを維持します。呼出し例のsuccess?を旧APIへ流用してはいけません。
 
+## 不具合・脆弱性報告 / Reporting
+
+通常の不具合・導入問題は[GitHub Issues](https://github.com/cuichangquan/ap2-mandate-verifier/issues)へ、版・環境・秘匿済みの最小再現と期待／実結果を報告してください。脆弱性は公開Issueではなく[非公開報告手順](SECURITY.md)を使ってください。秘密鍵・token・実Mandate・個人情報は添付しません。対応期限や修正版の提供は保証しません。
+
+Report ordinary bugs or installation problems through [GitHub Issues](https://github.com/cuichangquan/ap2-mandate-verifier/issues), with version, environment, a sanitized minimal reproduction and expected/actual behavior. Use the [private security reporting instructions](SECURITY.md) for vulnerabilities. Do not attach private keys, tokens, real Mandates or personal data. No response deadline or fixed-release delivery is guaranteed.
+
 ## 支持環境・検証結果の区別
 
 本候補はMRI Ruby4.0.9、JSON2.19.9、JWT3.3.0、base640.3.0、OpenSSL gem4.0.2、Digest3.2.1を固定。
@@ -212,7 +221,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - Explore cryptographic verification, trusted issuer/keys, holder/Agent binding, transaction binding, Open/Closed mandate constraints, audience, time, and failure cases.
 - Compare behavior and test vectors with the official AP2 Python implementation before claiming interoperability.
 - Expose verified evidence to the **host**; do not replace the host's authorization or payment controls.
-- The fixed-profile pre2 Gem is published as a GitHub research prerelease. RubyGems publication and distribution of a revised candidate require separate approval; production remains HOLD.
+- The fixed-profile pre3 Gem is published on RubyGems; GitHub Release remains pre2. This is a research verifier core, not a completed issuance, presentation-generation or Rails SDK. Production remains HOLD.
 
 ## Explicit non-goals
 
@@ -293,7 +302,7 @@ Both are **separate projects**. Integration comes after the verification contrac
 
 ## 日本語
 
-分身AIが外部サービスに持ち込む**検証可能な委任証明**を、Ruby側でどこまで安全に検証できるかを研究するリポジトリです。AP2 v0.2のCheckout Mandateから調査します。署名確認だけで購入を許可したり、未知の発行者を無条件に信用したりしません。固定profileのpre2 GemはGitHubで研究用途限定公開済みです。RubyGems公開・改訂候補の配布は別承認待ちで、本番利用・Phase2BはHOLDです。
+分身AIが外部サービスに持ち込む**検証可能な委任証明**を、Ruby側でどこまで安全に検証できるかを研究するリポジトリです。AP2 v0.2のCheckout Mandateから調査します。署名確認だけで購入を許可したり、未知の発行者を無条件に信用したりしません。固定profileのpre3 GemはRubyGemsで研究用途限定公開済み、GitHub Releaseはpre2です。発行・提示生成・Rails SDKは未完成で、本番利用・Phase2BはHOLDです。
 
 ## License
 
