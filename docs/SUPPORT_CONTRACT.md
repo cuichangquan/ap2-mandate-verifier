@@ -1,9 +1,18 @@
-# Fixed-profile research prerelease candidate — 0.1.0.pre.3
+# Fixed-profile research prerelease — 0.1.0.pre.3
 
-The Owner accepted a fixed-profile research-only prerelease policy. GitHub pre2
-is published; this pre3 documentation/package revision is unpublished and requires
-separate distribution approval. RubyGems publication is not performed or confirmed. This
-is not a stable release, full Phase2-A PASS, production or Phase2B/E10 GO. Evidence is not Host ALLOW, payment authorization or proof of consumption.
+The Owner published research-only `0.1.0.pre.3` on RubyGems on 2026-10-23.
+GitHub Release remains pre2. This is not a stable release, general AP2 conformance,
+full Phase2-A PASS, production or Phase2B/E10 GO. Issuance, presentation generation
+and a Rails SDK are not completed. Evidence is not Host ALLOW, payment authorization
+or proof of consumption.
+
+This main-branch contract and README are post-publication supplements. The documents
+inside the published Gem remain the packaging snapshot, including unpublished
+wording. No published artifact/tag is replaced. Current main differs from those
+packaged documents; a same-version rebuild is not the published Gem and cannot
+inherit its archive SHA or package validation. See
+[post-release maintenance](POST_RELEASE_MAINTENANCE.md) for artifact identities,
+pre3 MBA observations and pre3 Linux NOT_RUN.
 
 ## Supported proposition and environment
 
@@ -186,13 +195,18 @@ extensions are included. Repository research data/harnesses are now under
 research/; historical evidence bytes and logical pins were preserved.
 Local candidate installation can reuse existing fixed dependency homes/default
 OpenSSL: it proves installed candidate usability, not fresh offline installation
-of all dependencies or future download availability. Stable/public release,
-realIssuer/production/Phase2B/Stage16 GO require separate decisions.
+of all dependencies or future download availability. Stable release or further
+public distribution, realIssuer/production/Phase2B/Stage16 GO require separate decisions.
 
-## Current candidate versus historical evidence
+## Published pre3 versus historical evidence
 
-This unpublished README/package revision uses candidate version0.1.0.pre.3 pending
-an external same-version/ownership check; no claim of uploadability is made.
+The published version is0.1.0.pre.3 under RubyGems owner cuichangquan.
+The Owner's completed publication check matched the official API, distributed
+archive and MBA original:37888B, SHA256
+8ad627818dc69b450d0fba970dafaf368ec42dd64fb51eec631731027de3882c.
+MBA409-PRE3PACKAGE02-20261023 observed13 payload/10 loaded/52 installed checks.
+The post-release Mac mini audit could not independently refetch RubyGems;
+that audit is not a second publication or package-validation observation.
 The historical MBA409 VALIDATION01/PACKAGE01/PACKAGE02 records below identify pre2,
 not new pre3 execution. Product lib and dependency requirements remain unchanged.
 The later pre2 Linux run39939021098 passed885/52 and13/10 at commit
