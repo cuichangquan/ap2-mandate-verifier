@@ -1,0 +1,51 @@
+{
+  "baseline_main": "7b9cc6121956506ef07cfded3ff2337cc0426261",
+  "status": "LOCAL_DOCUMENT_MOVES_RELOCATION_TEST_PASS_ACTIVE_SIX_UNMOVED",
+  "moved_documents": [
+    {
+      "old_path": "ROOT_DISCLOSURES_SCOPE.md",
+      "new_path": "research/stage11/scopes/ROOT_DISCLOSURES_SCOPE.md",
+      "bytes": 3447,
+      "sha256": "a461bd6320bd1bf1ee7e7bd7c5eb2c113b0e274e33552adfc4c1a891e7bbf60e"
+    },
+    {
+      "old_path": "PURCHASE_BINDING_SCOPE.md",
+      "new_path": "research/stage11/scopes/PURCHASE_BINDING_SCOPE.md",
+      "bytes": 4064,
+      "sha256": "598bc482165622cda14a88511b0afac6ca603a84ea209057bb14e438907628d4"
+    },
+    {
+      "old_path": "SCOPED_CONSTRAINTS_SCOPE.md",
+      "new_path": "research/stage11/scopes/SCOPED_CONSTRAINTS_SCOPE.md",
+      "bytes": 5291,
+      "sha256": "3dfb43260241a83b0a98e578056075479c583cc49a232b61cfc532d90afd3c8c"
+    },
+    {
+      "old_path": "STAGE11_MANIFEST.json",
+      "new_path": "research/stage11/STAGE11_MANIFEST.json",
+      "bytes": 14944,
+      "sha256": "ae478f419a364570aef87feb25f93cee8abba270ea05194219b0148fab4ee37d"
+    }
+  ],
+  "remaining_active_files": [
+    "STAGE7_PUBLIC_CASES.json",
+    "O2O5_PUBLIC_CASES.json",
+    "O1O3_POLICY.json",
+    "O4_HTTP_ACQUISITION.json",
+    "o1o3-requirements.lock",
+    "o4-requirements.lock"
+  ],
+  "package13_and_gemspec_unchanged": true,
+  "historical_manifest_bytes_preserved": true,
+  "current_test_change": "Protected original bytes still compared to fixed baseline Git blobs; only four actual locations changed. Test passed once; see validation.",
+  "stop_reason": "Active fixture/ledger/lock path edits alter source SHA checked by security_json->Stage15 and report Pythonidentity/adapter links. No automatic pin updates or changed identity admission contract.",
+  "validation": {
+    "started_at_utc": "2026-10-23T01:22:44.794406+00:00",
+    "command": "python3.11 -I -B test/research_path_migration_test.py",
+    "returncode": 0,
+    "stdout": "PASS relocation-only: 30 original blobs/bytes/SHA/destinations, 6 reference substitutions, 13 payloads+gemspec and 10 deferred files unchanged; no historical verifier revalidation\n",
+    "test_sha256": "1278b89e772043bb03d9366771d2a8a241ea38b59752cfaff917810d8679f7db",
+    "execution_count": 1,
+    "note": "10 formerly deferred originals remain content-identical:4 now relocated documents and6 unmoved active files. No historical verifier revalidation. Initial transport failure occurred before receipt creation and test initiation."
+  }
+}

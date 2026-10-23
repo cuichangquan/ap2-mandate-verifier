@@ -65,8 +65,12 @@ def main():
     payloads += ["README.md", "LICENSE", "docs/SUPPORT_CONTRACT.md"]
     check(len(payloads) == 13, "fixed package whitelist")
     protected = payloads + ["ap2_mandate_verifier.gemspec"] + ledger["deferred_active_files"]
+    relocated_documents = {'ROOT_DISCLOSURES_SCOPE.md': 'research/stage11/scopes/ROOT_DISCLOSURES_SCOPE.md', 'PURCHASE_BINDING_SCOPE.md': 'research/stage11/scopes/PURCHASE_BINDING_SCOPE.md', 'SCOPED_CONSTRAINTS_SCOPE.md': 'research/stage11/scopes/SCOPED_CONSTRAINTS_SCOPE.md', 'STAGE11_MANIFEST.json': 'research/stage11/STAGE11_MANIFEST.json'}
     for name in protected:
-        check((ROOT / name).read_bytes() == original(name), "unchanged protected file: " + name)
+        location = relocated_documents.get(name, name)
+        check((ROOT / location).read_bytes() == original(name), "unchanged protected file: " + name)
+        if name in relocated_documents:
+            check(not (ROOT / name).exists() and not (ROOT / name).is_symlink(), "old document path absent")
     for name, digest in ledger["package13_and_gemspec_sha256_unchanged"].items():
         check(name in payloads + ["ap2_mandate_verifier.gemspec"], "package ledger whitelist")
         check(hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == digest, "package ledger SHA")
