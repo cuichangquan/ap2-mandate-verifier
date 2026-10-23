@@ -1,0 +1,59 @@
+{
+  "base_commit": "d28bb228daf6979d06ec352670eac5af1e3a61a3",
+  "scope": "LINUX_REPLAY_FROM_INDEPENDENT_MBA_EXPECTATIONS",
+  "captured_sources": {
+    "lib/ap2_mandate_verifier.rb": "4824eeef1ce6c7833bcc24bc0bf9abc265df0b35ba135e54b4341b54c2f65ef2",
+    "lib/ap2_mandate_verifier/host_binding.rb": "917a4c139accd77d5bbe9125c64ea258349b6854ac04e0fefe33536b9b88ec0a",
+    "lib/ap2_mandate_verifier/input_validator.rb": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+    "lib/ap2_mandate_verifier/purchase_binding.rb": "6f2108ac3298e4558fc053139d045d399687ccc3bf39c01945ed52d529dc26df",
+    "lib/ap2_mandate_verifier/research_result.rb": "02159d2f451461ef818d7b6c9d55349cdfb6e23d9ced7d688730d22c8e96827d",
+    "lib/ap2_mandate_verifier/result.rb": "fade8a1e922f7b4cf2439c120580160f85e0f22f6cfac9ff1ab1364d7b34d310",
+    "lib/ap2_mandate_verifier/root_disclosures.rb": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+    "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+    "lib/ap2_mandate_verifier/scoped_constraints.rb": "b2b5fa4cd1b4ce83cfc5ffc1be0a09ce57ad4a1b9be6778e581dd38f5ce5fd84",
+    "lib/ap2_mandate_verifier/trust_context.rb": "430eb9f9f3be4c0d7e799e95b68009c08582b6961aa954cc866ff012a3b2be36",
+    "ap2_mandate_verifier.gemspec": "b6e8a11e6e9ac52a2f59c745417600169a7ef066df0005b961f6bcc2759794e6",
+    "Gemfile": "e2a21f75233d22b155710c04856ed18dc1d21e9d980196243d2f0e3f8123761f",
+    "Gemfile.lock": "093d2baae605825e734782694a5e9d849dacab83de8ed34ddf09d1f85740e668",
+    "research/security_json/observe.rb": "7d643f55918bb7b7d62783f946ec957d8c768d840fc50a2c468e96a9ba313d3e",
+    "test/input_boundary_test.rb": "6b339e3f57e17f12bfba3a19d3b16029e4714f8bfab32ab4365ad8f4f2d4600f",
+    "test/root_signature_test.rb": "d674078f3d3130a7a9bdcbe265b4d57726e2678f6c5a576ba36848280f4e99ec",
+    "test/root_disclosures_test.rb": "8bca399afd5f8caf1d3984ddf338ba960ec3bb52955fb441c22df3c986d3f934",
+    "test/purchase_binding_test.rb": "a5f5dc13ab8f8b6a26f88a630cb6bcc7c65d6c9f277de523459aa91dc440bb75",
+    "test/scoped_constraints_test.rb": "c025f8f815b264439459efc7b8cf05d386e366f152b374c1a2c5231987808dcd",
+    "test/integration_matrix_test.rb": "b5137f949faf73db043851dc27b738e43fcc8a1ca3c9e10219f7dc3b4cbdd77b",
+    "test/trust_context_test.rb": "e173c633cbbacc5c11b9afa7dd99f6c63b972eeb4ab7fac60a4d7d191cf42636",
+    "test/host_binding_test.rb": "bc28884462fcf2a5a4c449439890336fe06d61c7c815dfd9c60dac5bf85cd18b",
+    "test/research_evidence_test.rb": "a964e806ab85f18890f38f9c3fb1d36ddeacd058092a767b3469c0c9d2dff195",
+    "research/stage15_linux/replay.rb": "52ccb6b9c2d677e0cfb1833deddc15163d84a595f25ed3c46e461d19b5e53ad6",
+    "research/stage15_linux/export_expected.py": "6cfe67e2dbcff226951f5ef4654e7fb742ee7c7df0c116a05c010142b6d56118"
+  },
+  "tests": [
+    "test/input_boundary_test.rb",
+    "test/root_signature_test.rb",
+    "test/root_disclosures_test.rb",
+    "test/purchase_binding_test.rb",
+    "test/scoped_constraints_test.rb",
+    "test/integration_matrix_test.rb",
+    "test/trust_context_test.rb",
+    "test/host_binding_test.rb",
+    "test/research_evidence_test.rb"
+  ],
+  "inputs_sha256": "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1",
+  "expected_sha256": "b8de794bc17c1093d070ed0e78a523ffa568c332bce5e89fe5b2503ee8783d7e",
+  "resolved_gems": {
+    "ap2_mandate_verifier": "0.1.0.pre.2",
+    "base64": "0.3.0",
+    "digest": "3.2.1",
+    "json": "2.19.9",
+    "jwt": "3.3.0",
+    "openssl": "4.0.0"
+  },
+  "captured_inputs": {
+    "research/stage11/inputs/O2O5_PUBLIC_CASES.json": "be17fc33612ec561147100fbb901f5c2ef288d4535ed1aa69b56a61447fc8942"
+  },
+  "layout_revision": "root-research-layout.1",
+  "historical_manifest_sha256": "c73d1179231e756faac45a9b75f6c3e4e099c3ce50b5b3fbe6c06fb16d10b257",
+  "validation_status": "NOT_RUN_RELOCATED_CURRENT_SOURCES_NOT_HISTORICAL_RUN",
+  "resolved_gems_source": "current unchanged Gemfile.lock declaration, not a new observed runtime"
+}

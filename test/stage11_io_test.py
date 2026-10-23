@@ -23,9 +23,9 @@ def main():
                            '--oracle', str(bad), '--report', str(output),
                            '--gem-replay', 'research/stage11/archive/STAGE11_IO_GEM_REPLAY_32.json']
                 if adapter == 'o1o3':
-                    command += ['--bundle', 'STAGE7_PUBLIC_CASES.json', '--policy', 'O1O3_POLICY.json']
+                    command += ['--bundle', 'research/stage11/inputs/STAGE7_PUBLIC_CASES.json', '--policy', 'research/stage11/inputs/O1O3_POLICY.json']
                 else:
-                    command += ['--fixture', 'O2O5_PUBLIC_CASES.json']
+                    command += ['--fixture', 'research/stage11/inputs/O2O5_PUBLIC_CASES.json']
                 if adapter == 'o4':
                     command += ['--schema-dir', str(work), '--binding-report', 'research/stage11/archive/STAGE11_IO_O2O5_REPORT.json']
                 result = subprocess.run(command, cwd=ROOT, capture_output=True, timeout=5)

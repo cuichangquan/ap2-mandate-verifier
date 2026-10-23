@@ -52,20 +52,22 @@ def main():
             "STAGE11_SNAPSHOT_O2O5_REPORT.json": 1},
         "test/stage11_io_test.py": {
             "STAGE11_IO_GEM_REPLAY_32.json": 1,
-            "STAGE11_IO_O2O5_REPORT.json": 1}}
+            "STAGE11_IO_O2O5_REPORT.json": 1,
+            "STAGE7_PUBLIC_CASES.json": 1, "O2O5_PUBLIC_CASES.json": 1, "O1O3_POLICY.json": 1}}
     for name, names in substitutions.items():
         raw = original(name)
         for old, count in names.items():
             quoted = ("'" + old + "'").encode()
             check(raw.count(quoted) == count, "original reference count")
-            raw = raw.replace(quoted, ("'" + ARCHIVE + old + "'").encode())
+            prefix = "research/stage11/inputs/" if old in {"STAGE7_PUBLIC_CASES.json", "O2O5_PUBLIC_CASES.json", "O1O3_POLICY.json"} else ARCHIVE
+            raw = raw.replace(quoted, ("'" + prefix + old + "'").encode())
         check((ROOT / name).read_bytes() == raw, "six path-only substitutions")
 
     payloads = [n for n in baseline if n.startswith("lib/") and n.endswith(".rb")]
     payloads += ["README.md", "LICENSE", "docs/SUPPORT_CONTRACT.md"]
     check(len(payloads) == 13, "fixed package whitelist")
     protected = payloads + ["ap2_mandate_verifier.gemspec"] + ledger["deferred_active_files"]
-    relocated_documents = {'ROOT_DISCLOSURES_SCOPE.md': 'research/stage11/scopes/ROOT_DISCLOSURES_SCOPE.md', 'PURCHASE_BINDING_SCOPE.md': 'research/stage11/scopes/PURCHASE_BINDING_SCOPE.md', 'SCOPED_CONSTRAINTS_SCOPE.md': 'research/stage11/scopes/SCOPED_CONSTRAINTS_SCOPE.md', 'STAGE11_MANIFEST.json': 'research/stage11/STAGE11_MANIFEST.json'}
+    relocated_documents = {'ROOT_DISCLOSURES_SCOPE.md': 'research/stage11/scopes/ROOT_DISCLOSURES_SCOPE.md', 'PURCHASE_BINDING_SCOPE.md': 'research/stage11/scopes/PURCHASE_BINDING_SCOPE.md', 'SCOPED_CONSTRAINTS_SCOPE.md': 'research/stage11/scopes/SCOPED_CONSTRAINTS_SCOPE.md', 'STAGE11_MANIFEST.json': 'research/stage11/STAGE11_MANIFEST.json', 'STAGE7_PUBLIC_CASES.json': 'research/stage11/inputs/STAGE7_PUBLIC_CASES.json', 'O2O5_PUBLIC_CASES.json': 'research/stage11/inputs/O2O5_PUBLIC_CASES.json', 'O1O3_POLICY.json': 'research/stage11/inputs/O1O3_POLICY.json', 'O4_HTTP_ACQUISITION.json': 'research/stage11/inputs/O4_HTTP_ACQUISITION.json', 'o1o3-requirements.lock': 'research/stage11/dependencies/o1o3-requirements.lock', 'o4-requirements.lock': 'research/stage11/dependencies/o4-requirements.lock'}
     for name in protected:
         location = relocated_documents.get(name, name)
         check((ROOT / location).read_bytes() == original(name), "unchanged protected file: " + name)
@@ -74,8 +76,8 @@ def main():
     for name, digest in ledger["package13_and_gemspec_sha256_unchanged"].items():
         check(name in payloads + ["ap2_mandate_verifier.gemspec"], "package ledger whitelist")
         check(hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == digest, "package ledger SHA")
-    print("PASS relocation-only: 30 original blobs/bytes/SHA/destinations, 6 reference substitutions, "
-          "13 payloads+gemspec and 10 deferred files unchanged; no historical verifier revalidation")
+    print("PASS relocation-only: 30 original blobs/bytes/SHA/destinations, 9 reference substitutions, "
+          "13 payloads+gemspec and 10 relocated originals unchanged; no historical verifier revalidation")
 
 
 if __name__ == "__main__":

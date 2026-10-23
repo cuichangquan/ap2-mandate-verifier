@@ -6,7 +6,7 @@ require 'open3'
 require 'timeout'
 require 'tmpdir'
 require 'fileutils'
-ROOT = File.expand_path('..', __dir__)
+ROOT = File.expand_path('../..', __dir__)
 def need(ok, why)
   raise why unless ok
 end
@@ -47,7 +47,7 @@ need(linux, 'Linux x64 required') if ENV['AP2_LINUX_RUN'] == '1'
 if linux
   need(File.read('/etc/os-release').lines.any? { |s| s.strip == 'VERSION_ID="24.04"' }, 'Ubuntu24.04 required')
 end
-manifest_raw = read_regular(File.join(__dir__, 'MANIFEST.json'), 16384)
+manifest_raw = read_regular(File.join(__dir__, 'CURRENT_MANIFEST.json'), 16384)
 need(Digest::SHA256.hexdigest(manifest_raw) == ARGV.fetch(0), 'reviewed manifest identity')
 manifest = JSON.parse(manifest_raw)
 captured = manifest.fetch('captured_sources').to_h do |name, digest|
@@ -60,7 +60,7 @@ manifest.fetch('captured_inputs').each do |name, digest|
   need(Digest::SHA256.hexdigest(raw) == digest, 'regression fixture identity')
   captured[name] = raw
 end
-inputs_raw = read_regular(File.join(ROOT, 'stage15/results/R3/INPUTS.json'), 1048576)
+inputs_raw = read_regular(File.join(ROOT, 'research/stage15/results/R3/INPUTS.json'), 1048576)
 expected_raw = read_regular(File.join(__dir__, 'EXPECTED.json'), 131072)
 need(Digest::SHA256.hexdigest(inputs_raw) == manifest.fetch('inputs_sha256'), 'inputs identity')
 need(Digest::SHA256.hexdigest(expected_raw) == manifest.fetch('expected_sha256'), 'expectations identity')
@@ -87,7 +87,7 @@ Dir.mktmpdir('ap2-linux-candidate-') do |tree|
   expected.fetch('cases').each do |name, e|
     remaining = 300 - (Process.clock_gettime(Process::CLOCK_MONOTONIC) - comparison_start)
     need(remaining > 0, 'comparison deadline')
-    observed = JSON.parse(run_child([RbConfig.ruby, File.join(tree, 'security_json/observe.rb')],
+    observed = JSON.parse(run_child([RbConfig.ruby, File.join(tree, 'research/security_json/observe.rb')],
       [10, remaining].min, JSON.generate(args: inputs.fetch(name))))
     success = e.fetch('code') == 'scoped_research_verified'
     need(observed.values_at('code','status','success','evidence','entries') ==

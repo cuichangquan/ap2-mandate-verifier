@@ -13,7 +13,7 @@ API=runpy.run_path(str(HERE/'compare.py'))
 
 def main():
     candidate=json.loads(API['pinned']('candidate.json'))
-    original=API['capture_candidate'](HERE.parent,candidate)
+    original=API['capture_candidate'](API['ROOT'],candidate)
     rows=[]
     with tempfile.TemporaryDirectory(prefix='ap2-json2199-pin-') as tmp:
         root=Path(tmp)

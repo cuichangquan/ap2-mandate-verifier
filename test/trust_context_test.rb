@@ -7,7 +7,7 @@ module TrustContextTest
   T = AP2MandateVerifier::TrustContext
   N = 1_800_000_000
   @count = 0
-  @inputs = JSON.parse(File.binread(File.expand_path("../O2O5_PUBLIC_CASES.json", __dir__))).fetch("cases").fetch("FULL").transform_keys(&:to_sym)
+  @inputs = JSON.parse(File.binread(File.expand_path("../research/stage11/inputs/O2O5_PUBLIC_CASES.json", __dir__))).fetch("cases").fetch("FULL").transform_keys(&:to_sym)
   @keys = T::ROLES.to_h { |role, key| [role, @inputs.delete(key)] }
   @snapshot = {"id" => "snapshot-1", "policy_version" => "policy-1", "active" => true,
     "not_before" => N - 100, "not_after" => N + 100, "records" => @keys.map do |role, pem|
