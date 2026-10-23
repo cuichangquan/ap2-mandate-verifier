@@ -30,7 +30,7 @@ The available artifact is the attached Gem in the [GitHub v0.1.0.pre.2 prereleas
 | Ruby | MRI **4.0.9**。他のRuby版・engineは対象外 / Other versions and engines are outside this candidate's contract. |
 | Runtime Gems | `json = 2.19.9`, `jwt = 3.3.0`, `base64 = 0.3.0`, `openssl = 4.0.2`, `digest = 3.2.1` |
 | Native providers | 利用するRuby用のOpenSSL／JSON拡張が必要。Gem本体はnative binaryを含まない / Compatible OpenSSL and JSON extensions are required; this Gem contains no native binaries. |
-| 観測環境 / Observed systems | MBA Darwin arm64、およびUbuntu24.04 x86_64。全macOS／Linux互換保証ではない / These observations do not guarantee every macOS or Linux configuration. |
+| 観測環境 / Observed systems | **pre3実パッケージ：MBA Darwin arm64のみ。pre3のLinux検証は未実施。** Ubuntu24.04 x86_64の成功run39939021098はpre2の歴史証拠であり、pre3の実行証拠ではない / **pre3 package: MBA Darwin arm64 only; pre3 Linux NOT_RUN.** Successful Ubuntu24.04 x86_64 run39939021098 is historical pre2 evidence, not a pre3 execution. No guarantee for every macOS/Linux configuration. |
 
 以下は利用者が実行する手順例です。既存のRuby4.0.9環境を使い、global環境を変更したくない場合は任意のRuby環境管理・Gem隔離方法を先に選んでください。最後の `gem install --local` はローカルの本体・導入済み依存／キャッシュだけを使います。不足する依存は自動取得せず失敗するため、上記の正確な依存を別途用意してから進めてください。ローカルの依存アーカイブからnative buildが必要になる場合があります。チェックサム不一致なら導入しません。
 
@@ -136,6 +136,9 @@ evidence=nilを維持します。呼出し例のsuccess?を旧APIへ流用して
 ## 支持環境・検証結果の区別
 
 本候補はMRI Ruby4.0.9、JSON2.19.9、JWT3.3.0、base640.3.0、OpenSSL gem4.0.2、Digest3.2.1を固定。
+以下のMBA409ランタイム導入・885回帰と後続Linuxの記録はpre2の歴史証拠です。pre3の包装／導入観測とは分けて扱います。
+The MBA409 runtime/885-regression records and subsequent Linux run below are historical pre2 evidence, separate from pre3 package/install observations.
+
 MBAの新RubyでOpenSSLとDigestのdefault gem、libcrypto3.5.9、resolv0.7.2、zlib3.2.3をロード確認し、ソース回帰885件が合格しました。JSON2.19.9を別導入して同梱JSON2.18.0を使用しません。この候補はnative binaryを同梱しません。
 Rubyの任意DTrace/USDT診断プローブは公式--disable-dtrace構成で無効です。今回の記録は`MBA409-20261023-BUILD01`（configure中の一時ファイル競合で監視停止）、`BUILD02`（導入成功）、`VALIDATION01`（新ランタイムの885回帰）、`PACKAGE01`（元の包装・導入検査）、`PACKAGE02`（証拠参照訂正後の包装・導入検査）として区別します。対応するローカルreport/source manifestは[契約文書の証拠識別表](docs/SUPPORT_CONTRACT.md#evidence-identifiers-for-this-runtime-update)を参照してください。旧MBA408・Ruby4.0.1の結果は別の歴史証拠です。包装時点ではLinux4.0.9は未実施でした。その後[run39939021098 attempt1](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/39939021098)で885回帰・installed52・13payload/10loadedが合格し、MBAとpayload／依存metadataが一致しました。これは保存MBA期待値の再入力であり、Linuxで独立Oracleを再実行したものではありません。Ubuntu実ロードlibssl／libcryptoは`libssl3t64:amd64 3.0.13-0ubuntu3.16`の所有権・整合性まで確認しています。
 The packaged pre2 documents describe the MBA packaging snapshot. Subsequent [Linux run39939021098 attempt1](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/39939021098) passed885 source and52 installed checks,13 payload/10 loaded identities, with MBA payload/dependency metadata matching. These replayed saved MBA expectations; the Linux independent Oracle was not rerun. Actual mapped Ubuntu libraries were owned by verified `libssl3t64:amd64 3.0.13-0ubuntu3.16`. The attached Gem and tag remain unchanged.
