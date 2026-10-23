@@ -39,7 +39,7 @@ evidence=nilを維持します。呼出し例のsuccess?を旧APIへ流用して
 
 本候補はMRI Ruby4.0.9、JSON2.19.9、JWT3.3.0、base640.3.0、OpenSSL gem4.0.2、Digest3.2.1を固定。
 MBAの新RubyでOpenSSLとDigestのdefault gem、libcrypto3.5.9、resolv0.7.2、zlib3.2.3をロード確認し、ソース回帰885件が合格しました。JSON2.19.9を別導入して同梱JSON2.18.0を使用しません。この候補はnative binaryを同梱しません。
-Rubyの任意DTrace/USDT診断プローブは公式--disable-dtrace構成で無効です。今回の記録は`MBA409-20261023-BUILD01`（configure中の一時ファイル競合で監視停止）、`BUILD02`（導入成功）、`VALIDATION01`（新ランタイムの885回帰）、`PACKAGE01`（この文書を含む包装・導入検査）として区別します。対応するローカルreport/source manifestは[契約文書の証拠識別表](docs/SUPPORT_CONTRACT.md#evidence-identifiers-for-this-runtime-update)を参照してください。旧MBA408・Ruby4.0.1の結果は別の歴史証拠です。Linuxでの4.0.9検証は未実施です。
+Rubyの任意DTrace/USDT診断プローブは公式--disable-dtrace構成で無効です。今回の記録は`MBA409-20261023-BUILD01`（configure中の一時ファイル競合で監視停止）、`BUILD02`（導入成功）、`VALIDATION01`（新ランタイムの885回帰）、`PACKAGE01`（元の包装・導入検査）、`PACKAGE02`（証拠参照訂正後の包装・導入検査）として区別します。対応するローカルreport/source manifestは[契約文書の証拠識別表](docs/SUPPORT_CONTRACT.md#evidence-identifiers-for-this-runtime-update)を参照してください。旧MBA408・Ruby4.0.1の結果は別の歴史証拠です。Linuxでの4.0.9検証は未実施です。
 新候補の解決環境は同梱Bundler4.0.20です。Gemの追加runtime依存ではありません。Ruby4.0.1/Bundler4.0.3の保存観測は歴史証拠です。
 ライブラリのwall-clock/RSS/並行数上限はなく、Hostが運用上の制限を設ける必要があります。
 

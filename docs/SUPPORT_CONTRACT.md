@@ -24,8 +24,8 @@ or dependency replacement is not a compatibility contract. MBA409-20261023-BUILD
 used official --disable-dtrace and reused the existing task-local OpenSSL3.5.9
 library. Loaded provider observations confirmed OpenSSL gem4.0.2/libcrypto3.5.9,
 Digest3.2.1/resolv0.7.2/zlib3.2.3/Bundler4.0.20;885 source regressions passed
-as MBA409-20261023-VALIDATION01. PACKAGE01 records this corrected document's
-separate package/install checks. Linux4.0.9 is not yet observed.
+as MBA409-20261023-VALIDATION01. PACKAGE01 records the original validation snapshot's
+package/install checks; PACKAGE02 is the later evidence-reference correction. Linux4.0.9 is not yet observed.
 The candidate contains no OpenSSL/JSON native binary and performs no dependency
 download/build itself. Missing fixed/native providers must stop an offline
 validation rather than trigger extra download/build. Actual native paths/hashes
@@ -205,12 +205,23 @@ gaps remain unproved. Evidence is not Host ALLOW; no generic AP2 claim is made.
 ## Evidence identifiers for this runtime update
 
 Current namespace: `MBA409-20261023`, separate from all MBA408 and historical
-Ruby4.0.1 records below. The retained local `REPORT_MBA409_VALIDATION01.json`
-and `CANDIDATE_SOURCE_MANIFEST.json` bind exact final source-file SHA256 values,
-provider identities, original input/expectation hashes and package SHA/size.
-They are local evidence, not public downloads. Product lib remains byte-identical
-to base main d6778f54cb4f00bfbcbc99feadbb1b1ae1ea0c70; that commit identifies the
-unchanged product source, not these edited documents or the new runtime.
+Ruby4.0.1 records below. The original completed VALIDATION01/PACKAGE01 pair
+has these immutable identities (local retained files, not public downloads):
+
+| Evidence | SHA256 / matching source |
+| --- | --- |
+| REPORT_MBA409_VALIDATION01.json | a329a990fca351380674639181ea487a7f2cc61f52af013f8b474727dd4bf8a4 |
+| CANDIDATE_SOURCE_MANIFEST.json (417 files) | d5288db5c24827fc9a7b40e3c768f75afd7bda18177a124ef500f69b9037e6e6 |
+| Matching original tested source commit | 7822fc2b11b6cb2df4c5b5495d747c0d730083bc |
+| Matching original tested source tree | dd3e65e85502e47188bfc64b7fd974e97e8aba78 |
+| Original PACKAGE01 Gem (32768B) | 13a5042fb0b16010ee16ede106ed4503874208da03fa09e6ba39ffc15b0137b6 |
+
+The report binds provider identities, original input/expectation hashes and
+package SHA/size to that complete manifest. The commit/tree was assigned after
+local validation and all417 blobs matched; original local-only report text is
+preserved. Product lib remains byte-identical to base main
+d6778f54cb4f00bfbcbc99feadbb1b1ae1ea0c70. These immutable identities establish
+the original observation, not automatic validation of subsequent edits.
 
 - ACQUIRE01: official Ruby4.0.9 archive size/SHA matched; HTTP/2 sent-header
   count is unproved. Original STOP record is immutable; a separate continuation
@@ -221,13 +232,20 @@ unchanged product source, not these edited documents or the new runtime.
 - BUILD02: one new build/install completed using the bounded, exact-transient
   du recheck; unrelated errors or repeated uncertainty still STOP.
 - VALIDATION01: new Ruby4.0.9/provider observation and885 source regressions.
-- PACKAGE01: this final document's package build/fresh offline install,
+- PACKAGE01: original validation snapshot's package build/fresh offline install,
   source/archive/installed13 and ordinary loaded10/installed52 verification;
   only the completed matching local report establishes those results.
 
-No current Git source commit or public report URL is claimed before publication.
-Report/source-manifest identity must be supplied together in any future public
-summary; absent, failed or mismatched results do not establish success.
+- PACKAGE02: this documentation-only identity correction is a distinct package;
+  source/archive/installed13, loaded10 and installed52 are checked again once.
+  Its final source commit/tree, report/manifest hashes and new artifact SHA/size
+  are recorded together in the PR174 public evidence summary. The immutable
+  VALIDATION01/PACKAGE01 pair above is not replaced;885 is not rerun.
+
+Public non-secret extraction and later PACKAGE02 identity mapping:
+https://github.com/cuichangquan/ap2-mandate-verifier/pull/174
+No local path is a public download. Missing, failed or mismatched report/source
+pairs are not success. Hashes identify bytes, not runtime/Host attestation.
 
 ### Historical Ruby4.0.8 records (unchanged observation identities)
 
