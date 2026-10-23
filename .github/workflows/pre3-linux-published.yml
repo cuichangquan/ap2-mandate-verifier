@@ -1,0 +1,128 @@
+name: Published pre3 Linux verification (manual only; approval B required)
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact independently reviewed and merged main commit
+        required: true
+        type: string
+      approval_b_confirmed:
+        description: Separate Owner approval B covers this exact run (not granted by preparation)
+        required: true
+        type: boolean
+        default: false
+      zero_cost_confirmed:
+        description: Public standard runner, no caches/artifacts or extra charges, verified now
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: pre3-published-linux-one-approved-run
+  cancel-in-progress: false
+env:
+  RUBYOPT: ''
+  RUBYLIB: ''
+  APPROVAL_B_CONFIRMED: ${{ inputs.approval_b_confirmed }}
+  ZERO_COST_CONFIRMED: ${{ inputs.zero_cost_confirmed }}
+jobs:
+  package:
+    if: github.repository == 'cuichangquan/ap2-mandate-verifier' && !github.event.repository.private && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Validate dispatch identity
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          test "$APPROVAL_B_CONFIRMED" = true
+          test "$ZERO_COST_CONFIRMED" = true
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$GITHUB_SHA" = "$EXPECTED_SHA"
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.expected_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          submodules: false
+          lfs: false
+      - name: Validate checkout
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Verify and expand the one official Ruby provider archive
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_TOOL_CACHE" = /opt/hostedtoolcache
+          prefix="$RUNNER_TOOL_CACHE/Ruby/4.0.9/x64"
+          test ! -e "$prefix" # Never replace an existing/unknown toolcache provider.
+          mkdir "$RUNNER_TEMP/ap2-pre3-published-ruby"
+          archive="$RUNNER_TEMP/ap2-pre3-published-ruby/provider.tar.gz"
+          curl --fail --silent --show-error --http1.1 --proto '=https' --proto-redir '=https' \
+            --tlsv1.2 --location --max-redirs 2 --connect-timeout 15 --max-time 120 --retry 0 \
+            --max-filesize 49100121 --dump-header "$RUNNER_TEMP/ap2-pre3-published-ruby/headers" \
+            --output "$archive" --write-out 'ruby body=%{size_download} sent_headers=%{size_request} received_headers=%{size_header}\n' \
+            https://github.com/ruby/ruby-builder/releases/download/ruby-4.0.9/ruby-4.0.9-ubuntu-24.04-x64.tar.gz
+          test "$(wc -c < "$archive")" -eq 49100121
+          echo "046d1422e1be5575eadd55323c85c3efbeaee8c8e1c1bfccee343e28619cb3b3  $archive" | sha256sum --check --status
+          # Official builder uses tar -C dirname(PREFIX) basename(PREFIX), i.e. x64/.
+          mkdir -p "$(dirname "$prefix")"
+          tar -xzf "$archive" -C "$(dirname "$prefix")"
+          test -x "$prefix/bin/ruby"
+          echo "$prefix/bin" >> "$GITHUB_PATH"
+      - name: Identify actual Ubuntu OpenSSL provider before Gem acquisition
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          echo "80d0f62c7010119db8d40ac4c5bc4d2772a806004d2d48020f302f516f911bb5  research/pre3_linux_published/verify_package.rb" | sha256sum --check --status
+          echo "51d1b2f24afdf70f4ae13cd5eca7834eba4a0922b086f2ffd25b260aeb2353d8  research/pre3_linux_published/CURRENT_MANIFEST.json" | sha256sum --check --status
+          timeout 45 ruby research/pre3_linux_published/verify_package.rb --provider-preflight
+      - name: Fixed dependency and published Gem archives (approval B required)
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          default_gems=$(ruby -e 'print Gem.default_dir')
+          export GEM_HOME="$RUNNER_TEMP/ap2-pre3-published-deps"
+          export GEM_PATH="$GEM_HOME:$default_gems"
+          mkdir "$GEM_HOME" "$RUNNER_TEMP/ap2-pre3-published-archives"
+          cd "$RUNNER_TEMP/ap2-pre3-published-archives"
+          # Four Gem bodies214528B; with Ruby total49314649B. Not all-network accounting.
+          while read -r name bytes sha; do
+            curl --fail --silent --show-error --http1.1 --proto '=https' --tlsv1.2 \
+              --connect-timeout 15 --max-time 45 --retry 0 --max-filesize "$bytes" \
+              --dump-header "$name.headers" --output "$name.gem" \
+              --write-out "$name body=%{size_download} sent_headers=%{size_request} received_headers=%{size_header}\n" \
+              "https://rubygems.org/gems/$name.gem"
+            test "$(wc -c < "$name.gem")" -eq "$bytes"
+            echo "$sha  $name.gem" | sha256sum --check --status
+          done <<'GEMS'
+          json-2.19.9 107008 9b9025b7cdddafa38d316eca0b2358488e42d417045c1b90d216a9fefe46b79a
+          jwt-3.3.0 57856 44cc34fbc341c148233cf66641522b4bce0dfb1ce55e8073f05c56f44f4ee546
+          base64-0.3.0 11776 27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
+          ap2_mandate_verifier-0.1.0.pre.3 37888 8ad627818dc69b450d0fba970dafaf368ec42dd64fb51eec631731027de3882c
+          GEMS
+          # One native JSON build at most,180s, no retry; other two are pure Ruby.
+          timeout 180 gem install --norc --local json-2.19.9.gem --ignore-dependencies --no-document
+          timeout 30 gem install --norc --local jwt-3.3.0.gem --ignore-dependencies --no-document
+          timeout 30 gem install --norc --local base64-0.3.0.gem --ignore-dependencies --no-document
+          echo "GEM_HOME=$GEM_HOME" >> "$GITHUB_ENV"
+          echo "GEM_PATH=$GEM_PATH" >> "$GITHUB_ENV"
+      - name: Published artifact audit and52 installed checks (no build; source885 NOT_RUN)
+        timeout-minutes: 7
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          timeout 420 ruby research/pre3_linux_published/verify_package.rb 51d1b2f24afdf70f4ae13cd5eca7834eba4a0922b086f2ffd25b260aeb2353d8 \
+            "$RUNNER_TEMP/ap2-pre3-published-archives/ap2_mandate_verifier-0.1.0.pre.3.gem"

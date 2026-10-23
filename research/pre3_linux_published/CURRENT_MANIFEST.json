@@ -1,0 +1,78 @@
+{
+  "scope": "PRE3_PUBLISHED_LINUX_NOT_HOST_ALLOW",
+  "preparation_base_main": "f7a2dab4775d1af6fbf6d840b2ad84feb991d0d8",
+  "payload_reference_commit": "20809b057c75d4145eff13e5c183d616c19ef696",
+  "reference_provenance": "PR177 MBA409-PRE3PACKAGE02-20261023; publication mapped all422 source blobs. Payload SHA256 derived from pinned GitHub source and Git blob identities, not current main or downloaded Gem self-assertion.",
+  "publication_evidence": "Owner 2026-10-23 official API/distributed Gem/MBA identity check; no new fetch in preparation.",
+  "published_artifact": {
+    "url": "https://rubygems.org/gems/ap2_mandate_verifier-0.1.0.pre.3.gem",
+    "bytes": 37888,
+    "sha256": "8ad627818dc69b450d0fba970dafaf368ec42dd64fb51eec631731027de3882c",
+    "version": "0.1.0.pre.3"
+  },
+  "dependencies": {
+    "base64": "= 0.3.0",
+    "json": "= 2.19.9",
+    "jwt": "= 3.3.0",
+    "openssl": "= 4.0.2",
+    "digest": "= 3.2.1"
+  },
+  "ruby_provider": {
+    "url": "https://github.com/ruby/ruby-builder/releases/download/ruby-4.0.9/ruby-4.0.9-ubuntu-24.04-x64.tar.gz",
+    "bytes": 49100121,
+    "sha256": "046d1422e1be5575eadd55323c85c3efbeaee8c8e1c1bfccee343e28619cb3b3"
+  },
+  "ubuntu_openssl_policy": {
+    "os_id": "ubuntu",
+    "os_version": "24.04",
+    "codename": "noble",
+    "package": "libssl3t64:amd64",
+    "source": "openssl",
+    "architecture": "amd64",
+    "package_version": "3.0.13-0ubuntu3.16",
+    "upstream_version": "3.0.13",
+    "security_notice": "https://ubuntu.com/security/notices/USN-8847-1"
+  },
+  "payload_sha256": {
+    "LICENSE": "1442143c4265d88eedfc14f25d04298449358c837b0bb58dfa825f84b36391c8",
+    "README.md": "395ea93a157ea5eacdc605e3c6b8d43abf82ecd1de0f77108be0ce9c2d085152",
+    "docs/SUPPORT_CONTRACT.md": "a2f27e74d668dcce97d99e6916ae6e2d453306389a91ad73d46eacd0f7241675",
+    "lib/ap2_mandate_verifier/host_binding.rb": "917a4c139accd77d5bbe9125c64ea258349b6854ac04e0fefe33536b9b88ec0a",
+    "lib/ap2_mandate_verifier/input_validator.rb": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+    "lib/ap2_mandate_verifier/purchase_binding.rb": "6f2108ac3298e4558fc053139d045d399687ccc3bf39c01945ed52d529dc26df",
+    "lib/ap2_mandate_verifier/research_result.rb": "02159d2f451461ef818d7b6c9d55349cdfb6e23d9ced7d688730d22c8e96827d",
+    "lib/ap2_mandate_verifier/result.rb": "fade8a1e922f7b4cf2439c120580160f85e0f22f6cfac9ff1ab1364d7b34d310",
+    "lib/ap2_mandate_verifier/root_disclosures.rb": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+    "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+    "lib/ap2_mandate_verifier/scoped_constraints.rb": "b2b5fa4cd1b4ce83cfc5ffc1be0a09ce57ad4a1b9be6778e581dd38f5ce5fd84",
+    "lib/ap2_mandate_verifier/trust_context.rb": "430eb9f9f3be4c0d7e799e95b68009c08582b6961aa954cc866ff012a3b2be36",
+    "lib/ap2_mandate_verifier.rb": "4824eeef1ce6c7833bcc24bc0bf9abc265df0b35ba135e54b4341b54c2f65ef2"
+  },
+  "payload_git_blobs": {
+    "LICENSE": "21d99e01be427495911e3e712515f118a43edb51",
+    "README.md": "68186b87657b5d3c302823fa7d24e90163b9c32e",
+    "docs/SUPPORT_CONTRACT.md": "d8fe6a8eec066e4b578978b0ee400618e25e2ec7",
+    "lib/ap2_mandate_verifier/host_binding.rb": "c7bcb36f700bd316011a5416ccf18159bb6b37f8",
+    "lib/ap2_mandate_verifier/input_validator.rb": "be061d351f26cdefcc0f934bf7edfb21dd7a1483",
+    "lib/ap2_mandate_verifier/purchase_binding.rb": "333050d09c7c9525a343e5b914552e4b5ec8e908",
+    "lib/ap2_mandate_verifier/research_result.rb": "9b08fe1e9615f23fd7522b737b892f452eb24b5b",
+    "lib/ap2_mandate_verifier/result.rb": "b758ba35e527354b7a34db9adf99527ccb82eae2",
+    "lib/ap2_mandate_verifier/root_disclosures.rb": "4a275b3639b3a96a0c7a1e909aa5ed5be78203a6",
+    "lib/ap2_mandate_verifier/root_signature.rb": "007f75ae0aadc77eeaaccfd8ec88f4d9ea420382",
+    "lib/ap2_mandate_verifier/scoped_constraints.rb": "18a52fe89a4ec3b2e231eca5805c6c617993e3e2",
+    "lib/ap2_mandate_verifier/trust_context.rb": "5b89376fa8f4b0242ef2a5c3be874550236cd494",
+    "lib/ap2_mandate_verifier.rb": "16f3a769fd4749af5e5d6263b70d6a5005e721d6"
+  },
+  "harness_files_sha256": {
+    "verify_package.rb": "80d0f62c7010119db8d40ac4c5bc4d2772a806004d2d48020f302f516f911bb5",
+    "installed_test.rb": "35e4b476de915ea8b29dea5423e6a689d28dd66c1df0868ccb7c6718570e8f08"
+  },
+  "data_files_sha256": {
+    "research/stage15/results/R3/INPUTS.json": "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1",
+    "research/stage15_linux/EXPECTED.json": "b8de794bc17c1093d070ed0e78a523ffa568c332bce5e89fe5b2503ee8783d7e"
+  },
+  "source_regressions": "NOT_RUN;885 omitted",
+  "oracle": "Saved42 MBA independent expectations replay; no regeneration or Linux Oracle rerun",
+  "archive_bodies": 49314649,
+  "holds": "approval B required; production/general AP2/Phase2B/Host atomic/resources/all-network128MiB remain unproved"
+}
