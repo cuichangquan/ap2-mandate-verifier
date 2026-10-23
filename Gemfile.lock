@@ -6,7 +6,7 @@ PATH
       digest (= 3.2.1)
       json (= 2.19.9)
       jwt (= 3.3.0)
-      openssl (= 4.0.0)
+      openssl (= 4.0.2)
 
 GEM
   remote: https://rubygems.org/
@@ -16,7 +16,7 @@ GEM
     json (2.19.9)
     jwt (3.3.0)
       base64
-    openssl (4.0.0)
+    openssl (4.0.2)
 
 PLATFORMS
   arm64-darwin-25
@@ -26,4 +26,4 @@ DEPENDENCIES
   ap2_mandate_verifier!
 
 BUNDLED WITH
-  4.0.3
+  4.0.20

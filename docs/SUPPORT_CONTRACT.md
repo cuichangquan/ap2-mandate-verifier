@@ -1,8 +1,8 @@
-# Unpublished fixed-profile Gem candidate — 0.1.0.pre.2
+# Fixed-profile research prerelease candidate — 0.1.0.pre.2
 
-This is a prerelease candidate, not a stable release or permission to publish/use
-in production. Production, RubyGems distribution, Phase2B and Stage16 GO remain
-HOLD. Evidence is not Host ALLOW, payment authorization or proof of consumption.
+The Owner accepted a fixed-profile research-only prerelease policy. Actual
+distribution still requires separate explicit approval and has not occurred. This
+is not a stable release, full Phase2-A PASS, production or Phase2B/E10 GO. Evidence is not Host ALLOW, payment authorization or proof of consumption.
 
 ## Supported proposition and environment
 
@@ -17,23 +17,34 @@ constraints, USD/EUR/JPY and empty links only. Other profiles/forms are rejected
 not accepted through a generic AP2/Schema fallback. This synthetic registered
 profile does not establish real Issuer enrollment or general interoperability.
 
-The supported baseline is MRI Ruby4.0.1 and JSON2.19.9/JWT3.3.0/base640.3.0/
-OpenSSL gem4.0.0/Digest3.2.1, all fixed in the gemspec. These versions must be available
+The supported baseline is MRI Ruby4.0.8 and JSON2.19.9/JWT3.3.0/base640.3.0/
+OpenSSL gem4.0.2/Digest3.2.1, all fixed in the gemspec. These versions must be available
 through normal RubyGems/Bundler resolution; source-loadpath bypass or dependency
-replacement is not a compatibility contract. MRI4.0.1 supplied OpenSSL4.0.0 as a
-default gem in the tested environments, using its existing native binding.
+replacement is not a compatibility contract. Ruby4.0.8 source declares OpenSSL4.0.2
+as a default gem; the R3 local installed runtime loaded OpenSSL4.0.2 linked
+against task-local OpenSSL library3.5.9 LTS. MRI4.0.8/Digest3.2.1/resolv0.7.2/
+zlib3.2.3/Bundler4.0.20 identities and885 source regressions were confirmed.
+Package/install52 results are recorded separately and are not historical Linux
+observations. The official --disable-dtrace build omits optional DTrace/USDT
+probes. R1 access denial and R2 monitor failure remain preserved failure records.
+The historical MRI4.0.1/OpenSSL4.0.0
+observations are retained separately.
 Digest3.2.1 is also a required default gem, used for SHA256 trust/wire identities;
-its existing native provider is reused and recorded, never silently substituted.
+its new default native provider was measured in the separate R3 provider report.
 The candidate contains no OpenSSL/JSON native binary and performs no dependency
 download/build itself. If the fixed OpenSSL/default/native provider is missing,
 a local offline validation must stop rather than download or rebuild it.
 The actual libcrypto and native file hashes are environment observations, not
-proved by the gem version. Bundler4.0.3 is a tested resolver, not a runtime gem.
+proved by the gem version. Bundler4.0.20 is the new resolver baseline, not a runtime gem. Bundler4.0.3
+belongs to the historical runtime observations.
 RubyGems' version requirement does not itself enforce the MRI engine or OS.
 
 Verifier-source observations exist for MBA Darwin arm64 and Ubuntu24.04 x86_64
-at base main8d9845ff4b5618b9e57eda86d3a1e447d4124b47. The new candidate's local
-packaging/install checks are separate; it is not a new Linux packaged-Gem run.
+at base main8d9845ff4b5618b9e57eda86d3a1e447d4124b47. The old pre.2 artifact was subsequently built/installed on Linux in
+run39869876461 (885 source checks,52 installed checks,13 payload/10 loaded).
+Stage19 records MBA7inputs x3 observations. See the commit-pinned Stage21
+supplement below. Those Ruby4.0.1 observations do not validate this Ruby4.0.8
+candidate, which requires new local evidence and has no new Linux run.
 Windows, Intel Mac, other Rubies/engines and all OS versions are unverified.
 No additional Actions run is authorized.
 
@@ -173,8 +184,26 @@ remain unproved; successful logic tests do not repair them.
 
 The package whitelist is lib/**/*.rb, README.md, LICENSE and this document.
 No fixtures/research JSON/test code/private keys/vendor/cache/raw logs/native
-extensions are included. Repository research JSON relocation is deferred.
+extensions are included. Repository research data/harnesses are now under
+research/; historical evidence bytes and logical pins were preserved.
 Local candidate installation can reuse existing fixed dependency homes/default
 OpenSSL: it proves installed candidate usability, not fresh offline installation
 of all dependencies or future download availability. Stable/public release,
 realIssuer/production/Phase2B/Stage16 GO require separate decisions.
+
+## Current candidate versus historical evidence
+
+This unpublished local runtime revision keeps version0.1.0.pre.2 pending an
+external same-version availability check; no claim of uploadability is made.
+JSON2.19.9 must override the vulnerable default JSON2.18.0 supplied in Ruby4.0.8.
+Measured additional providers are resolv0.7.2 and zlib3.2.3; actual identities,
+linked libcrypto, source/archive/installed hashes and test results belong to the
+separate new local validation report. Installed version assertions are not
+full native-library/runtime security attestation. Historical sources/results/pins
+remain unchanged and are not relabelled as this runtime.
+
+Historical validation/limitations supplement:
+https://github.com/cuichangquan/ap2-mandate-verifier/blob/c8d81eab49e37a1236a355d42cf667aab552392d/docs/STAGE21_VALIDATION_SUPPLEMENT.md
+E06 remains PARTIAL/OPEN; trusted-harness assumptions, genuine Host trust/clock/
+revocation, worst-case resource/concurrency guarantees and communication-accounting
+gaps remain unproved. Evidence is not Host ALLOW; no generic AP2 claim is made.
