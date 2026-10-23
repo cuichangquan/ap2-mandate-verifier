@@ -18,7 +18,8 @@
 
 本準備6ファイルのローカル作成・静的自己監査は完了。
 2026-10-24 08:01 JSTに対象6ファイルのGitHub反映・PR・Codexレビュー・未解決指摘0での統合を追加承認。
-PR／統合状態はGitHub原本で確認してください。実行Bは未承認のままです。
+[準備PR #179](https://github.com/cuichangquan/ap2-mandate-verifier/pull/179)のレビュー／統合状態をGitHub原本で確認してください。
+実行Bは未承認のままです。
 
 固定profile `ap2.checkout.single_merchant_sku` version1の研究用途限定・本番利用不可です。
 一般AP2互換性・Phase2-A全面PASS・E10全面GOは未成立、発行・提示生成・Rails SDKは未完成です。
