@@ -62,10 +62,14 @@ jobs:
           tar -xzf "$archive" -C "$(dirname "$prefix")"
           test -x "$prefix/bin/ruby"
           echo "$prefix/bin" >> "$GITHUB_PATH"
-      - name: Preflight already supplied default providers
+      - name: Identify actual Ubuntu OpenSSL provider before Gem acquisition
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
         run: |
           set -euo pipefail
-          ruby -e 'abort "Ruby" unless RUBY_ENGINE == "ruby" && RUBY_VERSION == "4.0.9"; {"openssl"=>"4.0.2","digest"=>"3.2.1"}.each { |n,v| s=Gem::Specification.find_by_name(n,"= #{v}"); abort "default provider" unless s.default_gem? }; Gem::Specification.find_by_name("bundler","= 4.0.20"); require "openssl"; require "resolv"; require "zlib"; require "bundler"; crypto=OpenSSL::OPENSSL_LIBRARY_VERSION.split.fetch(1); abort "unknown/mismatched libcrypto: #{OpenSSL::OPENSSL_LIBRARY_VERSION}" unless ["3.5.9","3.6.5"].include?(crypto) && crypto==OpenSSL::OPENSSL_VERSION.split.fetch(1); abort "auxiliary providers" unless Resolv::VERSION=="0.7.2" && Zlib::VERSION=="3.2.3" && Bundler::VERSION=="4.0.20"; puts [RUBY_DESCRIPTION, OpenSSL::VERSION, OpenSSL::OPENSSL_LIBRARY_VERSION, Resolv::VERSION, Zlib::VERSION, Bundler::VERSION]'
+          echo "ab162f7eeca50fac58584044ddb162350043d4c3e0d1ccb80e522a94108dda15  research/runtime409_linux_package/verify_package.rb" | sha256sum --check --status
+          echo "a7c295b2d05715a21bc042476f607c15dd43ad6ff8ae7a4d6d4f1861cca2ed0d  research/runtime409_linux_package/CURRENT_MANIFEST.json" | sha256sum --check --status
+          timeout 45 ruby research/runtime409_linux_package/verify_package.rb --provider-preflight
       - name: Fixed three archives only (requires separate execution approval)
         timeout-minutes: 5
         shell: bash
@@ -102,4 +106,4 @@ jobs:
           EXPECTED_SHA: ${{ inputs.expected_sha }}
         run: |
           set -euo pipefail
-          timeout 630 ruby research/runtime409_linux_package/verify_package.rb c9fd06494d05b9130dfa0d6bd3364e57e3982a1f5e0c95000ad1940d93ca7603
+          timeout 630 ruby research/runtime409_linux_package/verify_package.rb a7c295b2d05715a21bc042476f607c15dd43ad6ff8ae7a4d6d4f1861cca2ed0d
