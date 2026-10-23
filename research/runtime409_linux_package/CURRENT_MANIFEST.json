@@ -73,7 +73,7 @@
     "research/stage11/inputs/O2O5_PUBLIC_CASES.json": "be17fc33612ec561147100fbb901f5c2ef288d4535ed1aa69b56a61447fc8942",
     "research/stage15/results/R3/INPUTS.json": "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1",
     "research/stage15_linux/EXPECTED.json": "b8de794bc17c1093d070ed0e78a523ffa568c332bce5e89fe5b2503ee8783d7e",
-    "research/runtime409_linux_package/verify_package.rb": "737e35144429511159fbd5058dad494ad529e11d8026773e5d08927c8c181592",
+    "research/runtime409_linux_package/verify_package.rb": "ab162f7eeca50fac58584044ddb162350043d4c3e0d1ccb80e522a94108dda15",
     "research/runtime409_linux_package/installed_test.rb": "46751854d937d8b28f8436e5e50c07be70c3030741d51101153df7174c232b8f"
   },
   "package_files": [

@@ -67,8 +67,8 @@ jobs:
           EXPECTED_SHA: ${{ inputs.expected_sha }}
         run: |
           set -euo pipefail
-          echo "737e35144429511159fbd5058dad494ad529e11d8026773e5d08927c8c181592  research/runtime409_linux_package/verify_package.rb" | sha256sum --check --status
-          echo "62fdc4b4e0e889bae9cd6881e4cfbce59fa76b361c863970dd8f43e9f726cec7  research/runtime409_linux_package/CURRENT_MANIFEST.json" | sha256sum --check --status
+          echo "ab162f7eeca50fac58584044ddb162350043d4c3e0d1ccb80e522a94108dda15  research/runtime409_linux_package/verify_package.rb" | sha256sum --check --status
+          echo "a7c295b2d05715a21bc042476f607c15dd43ad6ff8ae7a4d6d4f1861cca2ed0d  research/runtime409_linux_package/CURRENT_MANIFEST.json" | sha256sum --check --status
           timeout 45 ruby research/runtime409_linux_package/verify_package.rb --provider-preflight
       - name: Fixed three archives only (requires separate execution approval)
         timeout-minutes: 5
@@ -106,4 +106,4 @@ jobs:
           EXPECTED_SHA: ${{ inputs.expected_sha }}
         run: |
           set -euo pipefail
-          timeout 630 ruby research/runtime409_linux_package/verify_package.rb 62fdc4b4e0e889bae9cd6881e4cfbce59fa76b361c863970dd8f43e9f726cec7
+          timeout 630 ruby research/runtime409_linux_package/verify_package.rb a7c295b2d05715a21bc042476f607c15dd43ad6ff8ae7a4d6d4f1861cca2ed0d

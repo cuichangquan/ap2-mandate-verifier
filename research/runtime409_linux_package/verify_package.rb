@@ -81,8 +81,10 @@ def provider_identity!
   maps = File.read("/proc/self/maps",1_048_577)
   need(maps.bytesize<=1_048_576, "process map limit")
   paths = maps.lines.map { |l| l.split(" ",6).last&.strip }.compact
-  need(!paths.any? { |v| v.match?(/lib(?:ssl|crypto)\.so.* \(deleted\)\z/) }, "deleted crypto mapping")
-  need(paths.include?(extension), "extension absent from process maps")
+  need(!paths.any? { |v| v.match?(/(?:openssl\.so|lib(?:ssl|crypto)\.so.*) \(deleted\)\z/) }, "deleted crypto mapping")
+  mapped_extensions = paths.select { |v| File.basename(v)=="openssl.so" }.uniq
+  need(mapped_extensions.size==1 && File.realpath(mapped_extensions.first)==extension,
+    "missing/ambiguous actual OpenSSL extension mapping")
   libraries = %w[libssl.so.3 libcrypto.so.3].map do |name|
     found = paths.select { |v| File.basename(v)==name }.uniq
     need(found.size==1, "missing/ambiguous actual library mapping")
