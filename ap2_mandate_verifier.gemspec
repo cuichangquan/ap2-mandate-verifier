@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.homepage = "https://github.com/cuichangquan/ap2-mandate-verifier"
   spec.files = Dir["lib/**/*.rb"] + %w[README.md LICENSE docs/SUPPORT_CONTRACT.md]
   spec.require_paths = ["lib"]
-  spec.required_ruby_version = "= 4.0.8"
+  spec.required_ruby_version = "= 4.0.9"
   spec.add_runtime_dependency "json", "= 2.19.9"
   spec.add_runtime_dependency "jwt", "= 3.3.0"
   spec.add_runtime_dependency "base64", "= 0.3.0"
