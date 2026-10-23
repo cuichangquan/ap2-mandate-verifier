@@ -20,8 +20,8 @@ def main():
         else:
             raise AssertionError('stale/incomplete evidence accepted')
     for name, module in modules.items():
-        replay = json.loads((ROOT / ('STAGE11_SNAPSHOT_GEM_REPLAY_6.json' if name == 'o1o3'
-                                     else 'STAGE11_SNAPSHOT_GEM_REPLAY_32.json')).read_text())
+        replay = json.loads((ROOT / ('research/stage11/archive/STAGE11_SNAPSHOT_GEM_REPLAY_6.json' if name == 'o1o3'
+                                     else 'research/stage11/archive/STAGE11_SNAPSHOT_GEM_REPLAY_32.json')).read_text())
         validate = module['validate_replay']
         args = (replay['fixture_sha256'], set(replay['cases']))
         validate(replay, *args); count += 1
@@ -51,8 +51,8 @@ def main():
             elif mutation == 'extra_loading': bad['source_loading']['extra'] = True
             rejected(lambda: validate(bad, *args))
     binding = modules['o2o5']
-    prior = json.loads((ROOT / 'STAGE11_SNAPSHOT_O2O5_REPORT.json').read_text())
-    replay_raw = (ROOT / 'STAGE11_SNAPSHOT_GEM_REPLAY_32.json').read_bytes()
+    prior = json.loads((ROOT / 'research/stage11/archive/STAGE11_SNAPSHOT_O2O5_REPORT.json').read_text())
+    replay_raw = (ROOT / 'research/stage11/archive/STAGE11_SNAPSHOT_GEM_REPLAY_32.json').read_bytes()
     replay = json.loads(replay_raw)
     adapter_sha = hashlib.sha256((ROOT / 'test/o2o5_compare.py').read_bytes()).hexdigest()
     validate = binding['validate_binding_report']
