@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name = "ap2_mandate_verifier"
-  spec.version = "0.1.0.pre.2"
+  spec.version = "0.1.0.pre.3"
   spec.summary = "Fixed-profile AP2 research prerelease candidate"
   spec.description = "Stateless fixed-profile verification and immutable research Evidence; not Host authorization or payment permission. Research-only prerelease candidate; actual distribution requires separate Owner approval."
   spec.authors = ["AP2 Mandate Verifier contributors"]
