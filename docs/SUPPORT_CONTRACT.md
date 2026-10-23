@@ -1,7 +1,8 @@
-# Fixed-profile research prerelease candidate — 0.1.0.pre.2
+# Fixed-profile research prerelease candidate — 0.1.0.pre.3
 
-The Owner accepted a fixed-profile research-only prerelease policy. Actual
-distribution still requires separate explicit approval and has not occurred. This
+The Owner accepted a fixed-profile research-only prerelease policy. GitHub pre2
+is published; this pre3 documentation/package revision is unpublished and requires
+separate distribution approval. RubyGems publication is not performed or confirmed. This
 is not a stable release, full Phase2-A PASS, production or Phase2B/E10 GO. Evidence is not Host ALLOW, payment authorization or proof of consumption.
 
 ## Supported proposition and environment
@@ -25,7 +26,9 @@ used official --disable-dtrace and reused the existing task-local OpenSSL3.5.9
 library. Loaded provider observations confirmed OpenSSL gem4.0.2/libcrypto3.5.9,
 Digest3.2.1/resolv0.7.2/zlib3.2.3/Bundler4.0.20;885 source regressions passed
 as MBA409-20261023-VALIDATION01. PACKAGE01 records the original validation snapshot's
-package/install checks; PACKAGE02 is the later evidence-reference correction. Linux4.0.9 is not yet observed.
+package/install checks; PACKAGE02 is the later evidence-reference correction.
+Linux4.0.9 was not yet observed at that packaging snapshot; the later pre2 run
+39939021098 is identified below, separately from this pre3 candidate.
 The candidate contains no OpenSSL/JSON native binary and performs no dependency
 download/build itself. Missing fixed/native providers must stop an offline
 validation rather than trigger extra download/build. Actual native paths/hashes
@@ -38,7 +41,8 @@ at base main8d9845ff4b5618b9e57eda86d3a1e447d4124b47. The old pre.2 artifact was
 run39869876461 (885 source checks,52 installed checks,13 payload/10 loaded).
 Stage19 records MBA7inputs x3 observations. See the commit-pinned Stage21
 supplement below. Those Ruby4.0.1 observations do not validate this Ruby4.0.9
-candidate, which requires new local evidence and has no new Linux run.
+candidate. The later pre2 Linux observation is separately identified below;
+this pre3 package has no Linux observation.
 Windows, Intel Mac, other Rubies/engines and all OS versions are unverified.
 No additional Actions run is authorized.
 
@@ -187,8 +191,13 @@ realIssuer/production/Phase2B/Stage16 GO require separate decisions.
 
 ## Current candidate versus historical evidence
 
-This unpublished local runtime revision keeps version0.1.0.pre.2 pending an
-external same-version availability check; no claim of uploadability is made.
+This unpublished README/package revision uses candidate version0.1.0.pre.3 pending
+an external same-version/ownership check; no claim of uploadability is made.
+The historical MBA409 VALIDATION01/PACKAGE01/PACKAGE02 records below identify pre2,
+not new pre3 execution. Product lib and dependency requirements remain unchanged.
+The later pre2 Linux run39939021098 passed885/52 and13/10 at commit
+f6d4f83d396b75505256dba5769a54a8f065eeea; it is not a pre3 Linux package run.
+Any new pre3 package/install report is separate and does not replace those records.
 JSON2.19.9 must override the vulnerable default JSON2.18.0 supplied in Ruby4.0.9.
 Measured additional providers are resolv0.7.2 and zlib3.2.3; actual identities,
 linked libcrypto, source/archive/installed hashes and test results belong to the

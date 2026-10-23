@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier for Ruby
 
-## 固定profile・研究用途限定pre-release候補 — 0.1.0.pre.2
+## 固定profile・研究用途限定pre-release候補 — 0.1.0.pre.3
 
 MRI Ruby4.0.9向け、固定profile `ap2.checkout.single_merchant_sku` version1の
 stateless verifierです。署名・原Root全域開示・委任・購入原文・Host binding・固定制約・
@@ -8,24 +8,122 @@ stateless verifierです。署名・原Root全域開示・委任・購入原文�
 **Evidenceは購入許可・nonce消費・決済完了ではありません。**
 
 候補の対応契約・入力・API・依存・資源境界は[SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md)を参照。
-Ownerは固定profile・研究用途限定の公開方針に同意済みです。実配布は別の明示承認待ちで、RubyGemsへ公開していません。stable release・本番・Phase2-A全面合格・Phase2B・E10全面GOではありません。
+GitHubでは固定profile・研究用途限定のpre2を公開済みです。RubyGemsへの公開と、このREADMEを含む新候補の実配布は別の明示承認待ちです。stable release・本番・Phase2-A全面合格・Phase2B・E10全面GOではありません。
 
 支持範囲はES256/P256、Root Open1→Agent terminal内Closed1、3開示位置、単一Merchant/SKU、
 USD/EUR/JPY、空links。一般AP2/全Schema/任意Issuerの互換性は保証しません。
 実Issuer/鍵/profile登録・最新性・信頼時計と、最新注文/challenge再照合＋原子的nonce消費・
 注文CAS・決済はHost責務です。GemはDB・ネットワーク・支払いを実行しません。
 
+## 導入方法 / Installation
+
+**研究用途限定・本番利用不可 / RESEARCH ONLY — NOT FOR PRODUCTION.**
+
+現在入手できるのは[GitHub pre-release v0.1.0.pre.2](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.1.0.pre.2)の添付Gemです。RubyGems.orgでの公開は未確認・未実施のため、現時点で通常の `gem install ap2_mandate_verifier` により取得できるとは案内しません。このREADMEを含むpre3は未公開のローカル候補で、公開済みpre2の同梱文書を置き換えるものではありません。
+
+The available artifact is the attached Gem in the [GitHub v0.1.0.pre.2 prerelease](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.1.0.pre.2). RubyGems publication has not been performed or confirmed, so a normal remote `gem install ap2_mandate_verifier` is not currently an installation route. This README belongs to the unpublished local pre3 candidate; it does not replace the documentation inside the published pre2 artifact.
+
+必要条件 / Requirements:
+
+| 項目 / Component | 条件 / Requirement |
+| --- | --- |
+| Ruby | MRI **4.0.9**。他のRuby版・engineは対象外 / Other versions and engines are outside this candidate's contract. |
+| Runtime Gems | `json = 2.19.9`, `jwt = 3.3.0`, `base64 = 0.3.0`, `openssl = 4.0.2`, `digest = 3.2.1` |
+| Native providers | 利用するRuby用のOpenSSL／JSON拡張が必要。Gem本体はnative binaryを含まない / Compatible OpenSSL and JSON extensions are required; this Gem contains no native binaries. |
+| 観測環境 / Observed systems | **pre3実パッケージ：MBA Darwin arm64のみ。pre3のLinux検証は未実施。** Ubuntu24.04 x86_64の成功run39939021098はpre2の歴史証拠であり、pre3の実行証拠ではない / **pre3 package: MBA Darwin arm64 only; pre3 Linux NOT_RUN.** Successful Ubuntu24.04 x86_64 run39939021098 is historical pre2 evidence, not a pre3 execution. No guarantee for every macOS/Linux configuration. |
+
+以下は利用者が実行する手順例です。既存のRuby4.0.9環境を使い、global環境を変更したくない場合は任意のRuby環境管理・Gem隔離方法を先に選んでください。最後の `gem install --local` はローカルの本体・導入済み依存／キャッシュだけを使います。不足する依存は自動取得せず失敗するため、上記の正確な依存を別途用意してから進めてください。ローカルの依存アーカイブからnative buildが必要になる場合があります。チェックサム不一致なら導入しません。
+
+The following commands are for the user to run with an existing MRI4.0.9 environment. Choose your normal Ruby/Gem isolation method first if you do not want to modify your default Gem environment. `gem install --local` uses the local Gem and installed/cached dependencies only. Missing dependencies cause failure rather than automatic download; prepare the exact dependencies separately before continuing. Local dependency archives may require native builds. Stop if the checksum does not match.
+
+```sh
+set -eu
+ruby --version # MRI 4.0.9 required; confirm before continuing
+curl --fail --location --proto '=https' --proto-redir '=https' \
+  --output ap2_mandate_verifier-0.1.0.pre.2.gem \
+  https://github.com/cuichangquan/ap2-mandate-verifier/releases/download/v0.1.0.pre.2/ap2_mandate_verifier-0.1.0.pre.2.gem
+printf '%s\n' 'e910659bbebda7aa5f00d63fb579f3b56819d59b5ee7d8b1734a6331f01d8de4  ap2_mandate_verifier-0.1.0.pre.2.gem' | shasum -a 256 -c -
+gem install --local ./ap2_mandate_verifier-0.1.0.pre.2.gem
+```
+
+Linuxで `shasum` がない場合は、上のチェック行末の `shasum -a 256 -c -` を `sha256sum -c -` に置き換えます。SHA256は配布bytesの同一性確認であり、Host信頼入力や実行環境の安全性を保証しません。
+
+On Linux without `shasum`, replace `shasum -a 256 -c -` with `sha256sum -c -`. The checksum identifies distribution bytes; it does not authenticate Host inputs or attest runtime safety.
+
+RubyGems公開後には、新候補の確定版を明示した `gem install ap2_mandate_verifier --version '<published-version>' --prerelease` と、対応するGemfile指定を案内する予定です。`<published-version>` は実行可能な版番号ではありません。次版候補 `0.1.0.pre.3` の空き・所有権・公開はまだ確認／承認されていません。
+
+After RubyGems publication, instructions will use an actual published version, for example `gem install ap2_mandate_verifier --version '<published-version>' --prerelease`, with a matching Gemfile entry. The placeholder is not an installable version. Availability, ownership and publication of a possible `0.1.0.pre.3` have not yet been confirmed or approved.
+
+## 保存済み合成入力で試す / Try the saved synthetic example
+
+以下は既存の合格済みinstalled検査と同じ公開 `FULL` 入力を読む例です。入力JSONはGemに含まれません。固定commitから取得し、SHA256を確認してから使います。fixtureに秘密鍵は含まれません。fixtureのtrust／Host入力は**テスト専用の合成値**であり、実Issuer登録・現在の注文・実時刻として再利用してはいけません。`verified_at = 1800000000` は保存シナリオの固定時刻です。
+
+This example reads the same public `FULL` input used by the successful installed-Gem checks. The input JSON is not packaged in the Gem. Fetch it from the pinned commit and verify its SHA256 first. It contains no private keys. Its trust/Host assertions are **synthetic test data**, not real Issuer enrollment, a current order or a live clock. `verified_at = 1800000000` is the saved scenario's fixed evaluation time.
+
+```sh
+set -eu
+curl --fail --location --proto '=https' --proto-redir '=https' \
+  --output AP2_RESEARCH_INPUTS.json \
+  https://raw.githubusercontent.com/cuichangquan/ap2-mandate-verifier/f6d4f83d396b75505256dba5769a54a8f065eeea/research/stage15/results/R3/INPUTS.json
+printf '%s\n' '41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1  AP2_RESEARCH_INPUTS.json' | shasum -a 256 -c -
+# Save the Ruby example below as research_example.rb, then:
+ruby research_example.rb
+```
+
 ```ruby
 require "ap2_mandate_verifier"
+require "json"
+require "digest"
 
-result = AP2MandateVerifier.verify_research(**inputs) # authenticated Host inputs + original signed wires
+raw = File.binread("AP2_RESEARCH_INPUTS.json")
+expected = "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1"
+raise "fixture checksum mismatch" unless Digest::SHA256.hexdigest(raw) == expected
+
+full = JSON.parse(raw).fetch("FULL")
+inputs = {
+  trust_json: full.fetch("trust_json"),
+  selection_json: full.fetch("selection_json"),
+  host_json: full.fetch("host_json"),
+  root_presentation: full.fetch("root_presentation"),
+  terminal_jws: full.fetch("terminal_jws"),
+  host_checkout_jws: full.fetch("host_checkout_jws"),
+  verified_at: full.fetch("verified_at")
+}
+
+result = AP2MandateVerifier.verify_research(**inputs)
+puts "status=#{result.status} code=#{result.code}"
 if result.success?
-  checked_facts = result.evidence.to_h # deeply frozen; in-process evidence only
-  # Host still must recheck latest state/time and atomically consume nonce/order.
+  checked_facts = result.evidence.to_h # Detached, deeply frozen in-process facts.
+  puts "Research verification succeeded; this is NOT purchase authorization."
+  # No payment, order update or nonce consumption is performed here.
 else
-  # rejected / unavailable: stop; result.evidence is nil
+  raise "Research verification did not succeed; stop."
 end
 ```
+
+この保存 `FULL` ケースの期待値は `status=:verified_research`、`code=:scoped_research_verified`、`success?=true` です。実入力・不支持入力・依存障害では同じ結果を期待しません。非成功ならEvidenceはnilです。例外やプロセス終了で結果がない場合も停止してください。Evidence全体やraw入力を安易にログへ出さないでください。
+
+For this saved `FULL` case, the expected result is `status=:verified_research`, `code=:scoped_research_verified`, `success?=true`. This is not the expected outcome for arbitrary real inputs, unsupported forms or dependency failures. Non-success results have nil Evidence. Exceptions or process termination without a result must also stop the caller. Avoid logging complete Evidence or raw inputs.
+
+## 実入力と責任境界 / Real inputs and responsibility boundaries
+
+| Keyword | 入力契約 / Input contract |
+| --- | --- |
+| `trust_json` | 認証済みHostの固定snapshot/profileと公開鍵登録を表すJSON原文String / Original JSON String for authenticated Host trust snapshot, profile and public-key registration. |
+| `selection_json` | 独立Hostが選択したtenant・profile版・Issuer/Agent/Merchantの識別／用途／鍵参照 / Independently selected tenant, profile version and role/identity/purpose/key references. |
+| `host_json` | 認証済み現在注文binding、issued challenge、発行元・時計識別 / Authenticated current order binding, issued challenge, expected issuer and clock identity. |
+| `root_presentation` | disclosure順と末尾`~`を維持した署名付きRoot提示原文String / Original signed Root presentation String, preserving disclosure order and trailing `~`. |
+| `terminal_jws` | Agent terminal compact JWS原文String / Original Agent terminal compact JWS String. |
+| `host_checkout_jws` | Hostが固定したMerchant Checkout compact JWT原文String / Original Merchant Checkout compact JWT String frozen by the Host. |
+| `verified_at` | 外部の信頼時計から供給する整数Unix秒 / Integer Unix seconds supplied by an external trusted clock. |
+
+正確な必須形状・型・上限は[SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md#full-entry-and-required-inputs)を参照してください。tokenからtrustを自己登録したり、署名原文をparse／再encode／並べ替えして渡したりしません。Host-onlyなBuyer/account等の一致はIssuer署名による本人認証を意味しません。
+
+See [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md#full-entry-and-required-inputs) for exact required shapes, types and limits. Do not register trust from the presented token or parse/re-encode/reorder signed wire input. Matching Host-only Buyer/account fields does not establish Issuer-signed identity authentication.
+
+`verify_research`の成功は固定profileにおける検証事実です。Hostは最新trust／失効／注文版／challenge／有効期限を再照合し、nonce原子消費＋注文CASを自身で成立させる必要があります。Gemはこれを実行しません。EvidenceをJSON化して再入力し、真正性を回復するAPIもありません。旧 `verify(presentation_json:)` はJSON構文境界だけで、成功Evidenceを返しません。
+
+A successful `verify_research` result establishes scoped verification facts. The Host still must recheck latest trust/revocation/order version/challenge/time and atomically consume the nonce with order CAS. The Gem does not perform those operations. Serializing Evidence to JSON does not preserve or reconstruct authenticity through this API. Legacy `verify(presentation_json:)` checks only the JSON syntax boundary and never returns successful Evidence.
 
 `inputs`はtrust_json/selection_json/host_json/root_presentation/terminal_jws/
 host_checkout_jws/verified_atです。前3つのJSONは認証済みの独立Host入力として渡し、
@@ -38,8 +136,13 @@ evidence=nilを維持します。呼出し例のsuccess?を旧APIへ流用して
 ## 支持環境・検証結果の区別
 
 本候補はMRI Ruby4.0.9、JSON2.19.9、JWT3.3.0、base640.3.0、OpenSSL gem4.0.2、Digest3.2.1を固定。
+以下のMBA409ランタイム導入・885回帰と後続Linuxの記録はpre2の歴史証拠です。pre3の包装／導入観測とは分けて扱います。
+The MBA409 runtime/885-regression records and subsequent Linux run below are historical pre2 evidence, separate from pre3 package/install observations.
+
 MBAの新RubyでOpenSSLとDigestのdefault gem、libcrypto3.5.9、resolv0.7.2、zlib3.2.3をロード確認し、ソース回帰885件が合格しました。JSON2.19.9を別導入して同梱JSON2.18.0を使用しません。この候補はnative binaryを同梱しません。
-Rubyの任意DTrace/USDT診断プローブは公式--disable-dtrace構成で無効です。今回の記録は`MBA409-20261023-BUILD01`（configure中の一時ファイル競合で監視停止）、`BUILD02`（導入成功）、`VALIDATION01`（新ランタイムの885回帰）、`PACKAGE01`（元の包装・導入検査）、`PACKAGE02`（証拠参照訂正後の包装・導入検査）として区別します。対応するローカルreport/source manifestは[契約文書の証拠識別表](docs/SUPPORT_CONTRACT.md#evidence-identifiers-for-this-runtime-update)を参照してください。旧MBA408・Ruby4.0.1の結果は別の歴史証拠です。Linuxでの4.0.9検証は未実施です。
+Rubyの任意DTrace/USDT診断プローブは公式--disable-dtrace構成で無効です。今回の記録は`MBA409-20261023-BUILD01`（configure中の一時ファイル競合で監視停止）、`BUILD02`（導入成功）、`VALIDATION01`（新ランタイムの885回帰）、`PACKAGE01`（元の包装・導入検査）、`PACKAGE02`（証拠参照訂正後の包装・導入検査）として区別します。対応するローカルreport/source manifestは[契約文書の証拠識別表](docs/SUPPORT_CONTRACT.md#evidence-identifiers-for-this-runtime-update)を参照してください。旧MBA408・Ruby4.0.1の結果は別の歴史証拠です。包装時点ではLinux4.0.9は未実施でした。その後[run39939021098 attempt1](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/39939021098)で885回帰・installed52・13payload/10loadedが合格し、MBAとpayload／依存metadataが一致しました。これは保存MBA期待値の再入力であり、Linuxで独立Oracleを再実行したものではありません。Ubuntu実ロードlibssl／libcryptoは`libssl3t64:amd64 3.0.13-0ubuntu3.16`の所有権・整合性まで確認しています。
+The packaged pre2 documents describe the MBA packaging snapshot. Subsequent [Linux run39939021098 attempt1](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/39939021098) passed885 source and52 installed checks,13 payload/10 loaded identities, with MBA payload/dependency metadata matching. These replayed saved MBA expectations; the Linux independent Oracle was not rerun. Actual mapped Ubuntu libraries were owned by verified `libssl3t64:amd64 3.0.13-0ubuntu3.16`. The attached Gem and tag remain unchanged.
+
 新候補の解決環境は同梱Bundler4.0.20です。Gemの追加runtime依存ではありません。Ruby4.0.1/Bundler4.0.3の保存観測は歴史証拠です。
 ライブラリのwall-clock/RSS/並行数上限はなく、Hostが運用上の制限を設ける必要があります。
 
@@ -47,7 +150,7 @@ Rubyの任意DTrace/USDT診断プローブは公式--disable-dtrace構成で無�
 Ubuntu24.04 x86_64で885回帰・42固定入力の再現を観測しました。
 [Linux run39774818984](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/39774818984)は
 MBA独立期待値30＋境界12のGem再入力であり、Linux Oracle再実行ではありません。
-8Schema対照はMBA根拠です。この未公開0.1.0.pre.2の包装/導入結果とは別の観測で、
+8Schema対照はMBA根拠です。これらは後にGitHub公開した0.1.0.pre.2の包装/導入結果とは別の観測で、
 旧manifest/pin/結果は更新していません。候補の新結果はローカル別保存、配布物には含めません。
 
 これまでの取得量未証明2件とLinux全通信128MiB未証明を保持します。今回のRuby4.0.9取得もHTTP/2送信ヘッダー量を計測できず、総HTTP量・128MiB遵守は未証明のまま、照合済み原本による後続処理だけ別途承認されました。追加Actionsは不許可。
@@ -109,7 +212,7 @@ A valid digital signature does **not** by itself establish that this Agent is au
 - Explore cryptographic verification, trusted issuer/keys, holder/Agent binding, transaction binding, Open/Closed mandate constraints, audience, time, and failure cases.
 - Compare behavior and test vectors with the official AP2 Python implementation before claiming interoperability.
 - Expose verified evidence to the **host**; do not replace the host's authorization or payment controls.
-- The fixed-profile implementation exists; this prerelease candidate is unpublished and production/distribution remain HOLD.
+- The fixed-profile pre2 Gem is published as a GitHub research prerelease. RubyGems publication and distribution of a revised candidate require separate approval; production remains HOLD.
 
 ## Explicit non-goals
 
@@ -190,7 +293,7 @@ Both are **separate projects**. Integration comes after the verification contrac
 
 ## 日本語
 
-分身AIが外部サービスに持ち込む**検証可能な委任証明**を、Ruby側でどこまで安全に検証できるかを研究するリポジトリです。AP2 v0.2のCheckout Mandateから調査します。署名確認だけで購入を許可したり、未知の発行者を無条件に信用したりしません。固定profileの限定Gem候補をローカル検証中です。配布・本番利用・Phase2BはHOLDです。
+分身AIが外部サービスに持ち込む**検証可能な委任証明**を、Ruby側でどこまで安全に検証できるかを研究するリポジトリです。AP2 v0.2のCheckout Mandateから調査します。署名確認だけで購入を許可したり、未知の発行者を無条件に信用したりしません。固定profileのpre2 GemはGitHubで研究用途限定公開済みです。RubyGems公開・改訂候補の配布は別承認待ちで、本番利用・Phase2BはHOLDです。
 
 ## License
 
