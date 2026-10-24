@@ -1,7 +1,7 @@
 # 現状メモ / Project status
 
-更新：2026-10-24 UTC（限定E06判断根拠・初回対応環境のOwner採用）。確認基準main：
-`c384043f5343be0a560c6271fb0f68fc4de781fa`（本追記前。最新mainは再確認）。
+更新：2026-10-24 UTC（研究用検証コア第一段階の完成判断記録）。確認基準main：
+`26cc5ce1c9bfc93be32dbba6e637b106d60cc68f`（本追記前。最新mainは再確認）。
 Linux実行SHA：`d34dbfa3a87a75360fb4bb14d535da8bc5e8cdc4`。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
@@ -16,7 +16,7 @@ Linux実行SHA：`d34dbfa3a87a75360fb4bb14d535da8bc5e8cdc4`。
 | ㉓ 初回pre-release公開 | 完了。[RubyGems0.1.0.pre.3](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0.pre.3)、研究用途限定 |
 | ㉔ 公開後の品質維持方針 | 完了。[PR #178](https://github.com/cuichangquan/ap2-mandate-verifier/pull/178)統合、Private vulnerability reporting有効。詳細は[整備文書](POST_RELEASE_MAINTENANCE.md)／[SECURITY.md](../SECURITY.md) |
 | 公開pre3のLinux検証 | 限定合格。[run40038620413](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/40038620413)、attempt1、13 payload／10 loaded／52 installed PASS。本番GOではない |
-| ㉕ 本番対応の残存課題解消 | 固定profile限定コアを当面の完成対象とする方針はOwner承認済み。[完成条件の判断案](VERIFIER_CORE_COMPLETION_CRITERIA.md)を整理。コア完成・Phase2-A全面PASS・本番GOは未成立 |
+| ㉕ 研究用検証コアの第一段階 | 完成判断をOwner承認済み。信頼するHost入力・Ruby環境を前提に固定profile・7支持形状・採用済み環境に限定。[完成判断と条件](VERIFIER_CORE_COMPLETION_CRITERIA.md)。元E06全体PASS・Phase2-A全面PASS・本番GOは未成立 |
 
 [準備PR #179](https://github.com/cuichangquan/ap2-mandate-verifier/pull/179)はmain統合済み。
 その後Ownerの実行B承認を受け、専用workflowを1回だけ実行しました。**1run枠は消費済み**です。
@@ -54,7 +54,7 @@ EvidenceはHost ALLOW・nonce消費・決済許可ではありません。
 
 ## 次の作業と未証明事項
 
-㉕は固定profile・認証済みHost入力・信頼するRuby環境を前提とする限定検証コアの完成条件を整理中。
+㉕の研究用検証コア第一段階は、固定profile・認証済みHost入力・信頼するRuby環境・採用済み環境の範囲でOwner完成判断済み。
 E06因果subsetに続き、Schema VALIDと固定profileの意味拒否を分ける4入力比較も個別承認下で1batch実施し、各4件一致を観測しました（別々の証拠、下記）。
 両比較の実行B枠はそれぞれ消費済みで、追加実行は未承認。初回対応環境・保証範囲は下記の限定範囲をOwner採用済みです。最悪CPU/RSS・並行性能は保証対象外で、利用側が実行制限を設定します。
 実Issuer信頼、Host最新状態・時計・失効・nonce原子消費／注文CAS、本番安全性、
@@ -88,7 +88,7 @@ PR統合、検証結果、公開、次作業／未検証事項の変更、作業
 秘密鍵は一時メモリのみ、通信0、追加取得/依存導入/build/CIなし。
 この追補の保存・静的確認では比較器/構文/試験を再実行していません。
 製品lib・歴史的Stage15証拠・公開Gem不変。Bの1batch枠は消費済みで再実行不可。
-**E06 PARTIAL/OPEN、限定コア完成判断・本番GO未承認**を維持します。
+**当該観測保存時点はE06 PARTIAL/OPEN・限定コア完成判断/本番GO未承認。後続の第一段階完成判断は下記、元E06全体と本番GOは引き続き未承認**。
 信頼するハーネス/実行環境の前提、terminal300/301比較の対象外、Host/資源/通信会計の未証明も残ります。
 
 ## E06意味subsetの限定観測（MBA、別の1batch）
@@ -113,7 +113,7 @@ PR統合、検証結果、公開、次作業／未検証事項の変更、作業
 原REPORTは保持し、公開版から不要なworker PIDだけを除去。保存作業で比較/構文/試験を再実行していません。
 前節の新規合成署名による因果subsetと、今回の保存wire再生、歴史的Stage11/15の実測は別証拠です。
 製品lib・旧pin/原本・公開Gemは不変。今回のB枠も消費済みで再実行不可。
-**E06 PARTIAL/OPEN、限定コア完成判断・本番GO未承認**を維持し、一般Schema/全制約対応とは称しません。
+**当該観測保存時点はE06 PARTIAL/OPEN・限定コア完成判断/本番GO未承認。後続の第一段階完成判断は下記、元E06全体と本番GOは引き続き未承認**。一般Schema/全制約対応とは称しません。
 信頼ハーネス/実行環境、実Host信頼/時計/失効、最悪資源/並行保証と過去の通信会計未証明は残ります。
 
 ## E06証拠対応の文書化（実行なし）
@@ -121,7 +121,7 @@ PR統合、検証結果、公開、次作業／未検証事項の変更、作業
 [7支持形状の条件→実装→試験→独立期待値→観測/限界](E06_SCOPED_EVIDENCE_MAP.md)を保存しました。
 具体的な追加必須試験は今回未特定。旧実測を現環境の再実行と扱わず、885/52/各比較件数を重複加算していません。
 静的対応・既存回帰・代表的独立因果観測は、7支持形状・固定profileのE06判断根拠としてOwner採用済みです。E06全体PASSではありません。
-E06 PARTIAL/OPEN、限定コア完成未判定・本番GO未承認を維持します。
+元E06全体はPARTIAL/OPEN・本番GO未承認を維持します。限定研究用コア第一段階の後続完成判断は下記。
 今回の作業は文書のみ。実装/原証拠/公開Gem不変、追加試験・取得・build・CI・再公開なし。
 
 ## 初回対応環境・保証範囲の採用（2026-10-24 UTC）
@@ -131,4 +131,21 @@ MRI4.0.9と検証済み固定依存、観測済みMBA/macOS arm64およびUbuntu
 最悪CPU/RSS・並行性能は保証対象外。実行時間・メモリ・同時実行制限は利用側が設定し、ハーネス期限を製品保証値へ転用しません。
 Gemの既存入力上限・署名/開示/Schema/制約・trust/Host binding・時刻/Evidence検査は引き続きGem責務です。
 実Hostの真正性/最新性・時計/失効・nonce原子消費/注文CAS・最終ALLOWは別責務/未実証のままです。
-限定コア全体完成・元E06全体PASS・一般AP2対応・本番GO・追加公開は未承認。今回も文書のみで追加実行・再公開なし。
+採用時点では完成未判定であり、その後の第一段階完成判断は下記に記録。元E06全体PASS・一般AP2対応・本番GO・追加公開は未承認のまま。今回も文書のみで追加実行・再公開なし。
+
+## 研究用検証コア第一段階の完成判断（Owner承認）
+
+2026-10-24 UTC、Ownerは、信頼できる独立Host入力と信頼するRuby実行環境を前提に、
+固定AP2 commit `b4587ac1d055888a73b4b21750973cffba961793`、
+`ap2.checkout.single_merchant_sku` v1・7支持形状・採用済み環境を対象とする
+**研究用検証コアの第一段階を完成と判断**した。
+対象sourceの読解・同一性確認基準は `26cc5ce1c9bfc93be32dbba6e637b106d60cc68f`。
+これは既存証拠・残余条件を採用した限定判断で、新しい試験結果や全パスの安全性証明ではない。
+一般AP2、発行・提示生成、実Host運用、最悪CPU/RSS・並行性能保証、
+元E06全体PASS、Phase2-A全面PASS、E10/本番GOは対象外。
+歴史的通信会計2件と後続送信header/全通信128MiB遵守の未証明も保持する。
+利用側の時間・メモリ・同時実行制限とGem自身の既存境界検査の責任分担は変わらない。
+公開Gem・実装・原証拠の変更、追加公開や次段階の実行を承認するものではない。
+
+既存885回帰・独立比較・PR182/183観測・MBA/Linuxの包装/導入証拠の意味と件数は変更しません。
+今回の文書記録・静的確認のための追加試験・取得・build・CI・Gem再公開はありません。
