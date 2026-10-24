@@ -1,7 +1,8 @@
 # 現状メモ / Project status
 
-更新：2026-10-24 08:19 JST。確認基準main／Linux実行SHA：
-`d34dbfa3a87a75360fb4bb14d535da8bc5e8cdc4`（結果記録前。最新mainは再確認）。
+更新：2026-10-24 10:51 JST。確認基準main：
+`64b67ac5541f01489f946b1ed1b334acafbfe967`（本追記前。最新mainは再確認）。
+Linux実行SHA：`d34dbfa3a87a75360fb4bb14d535da8bc5e8cdc4`。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
 [プロセス正本 Issue #101](https://github.com/cuichangquan/ap2-mandate-verifier/issues/101)を確認してください。
@@ -15,7 +16,7 @@
 | ㉓ 初回pre-release公開 | 完了。[RubyGems0.1.0.pre.3](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0.pre.3)、研究用途限定 |
 | ㉔ 公開後の品質維持方針 | 完了。[PR #178](https://github.com/cuichangquan/ap2-mandate-verifier/pull/178)統合、Private vulnerability reporting有効。詳細は[整備文書](POST_RELEASE_MAINTENANCE.md)／[SECURITY.md](../SECURITY.md) |
 | 公開pre3のLinux検証 | 限定合格。[run40038620413](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/40038620413)、attempt1、13 payload／10 loaded／52 installed PASS。本番GOではない |
-| ㉕ 本番対応の残存課題解消 | **残課題分割・検証コア完成条件の整理は未着手**。次の作業候補 |
+| ㉕ 本番対応の残存課題解消 | 固定profile限定コアを当面の完成対象とする方針はOwner承認済み。[完成条件の判断案](VERIFIER_CORE_COMPLETION_CRITERIA.md)を整理。コア完成・Phase2-A全面PASS・本番GOは未成立 |
 
 [準備PR #179](https://github.com/cuichangquan/ap2-mandate-verifier/pull/179)はmain統合済み。
 その後Ownerの実行B承認を受け、専用workflowを1回だけ実行しました。**1run枠は消費済み**です。
@@ -53,7 +54,9 @@ EvidenceはHost ALLOW・nonce消費・決済許可ではありません。
 
 ## 次の作業と未証明事項
 
-次の候補は㉕の残課題分割と検証コア完成条件の整理です。まだ着手していません。
+㉕は固定profile・認証済みHost入力・信頼するRuby環境を前提とする限定検証コアの完成条件を整理中。
+次の候補はE06/因果負例の不足だけを既存コード・固定Schema・保存証拠で対応付ける読み取り調査です。
+試験ケース実装・追加実行は未承認。将来サポート環境とCPU/RSS/並列予算はOwner未決定です。
 実Issuer信頼、Host最新状態・時計・失効・nonce原子消費／注文CAS、本番安全性、
 最悪CPU／RSS／並行安全性、過去の取得量・**全通信128MiB遵守は未証明**です。
 今回の固定profile／保存入力の限定合格をHost ALLOW・全面本番GOへ昇格させません。
