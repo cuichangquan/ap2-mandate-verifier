@@ -1,0 +1,125 @@
+{
+  "evidence_id": "E06-SEMANTIC-MBA-20261024-R1",
+  "baseline": "b858d2b37b529527307957335b722b88481d7fe7",
+  "official_ap2": "b4587ac1d055888a73b4b21750973cffba961793",
+  "original_sha256": {
+    "REPORT_json": "732e4f4e3e7659cb33ac48d1b84a6623df00add3c376e5d1e94fe2112323d064",
+    "BATCH_json": "74d2521064a6b10cb8e0fe5976ac402a3afde5441b469ea7aa2b8e8719c7a554",
+    "PUBLIC_INPUTS_json": "cc26cf7115c59c5e44c34a5a051f7dd17577958c32df7113ecbe022bb390a4f5",
+    "console_log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compare_py": "d6a5451eb4b9e5cc9309f83234e60d6cafe421622b7a15970597dcebdbc40334",
+    "observe_rb": "a9c88dba1afedf0d94fc7d5f39704b5c050acff8c4403142aac49ae4b46b785b"
+  },
+  "local_original_execution_receipt_sha256": "4bc3b24d4d39abb93dffb751df012170fd2b4f2d7e30b8d8efa2da3ea5b5f238",
+  "public_projection": {
+    "REPORT_json": "Only supervision.worker_pid removed; remaining values preserved. Original report retained locally.",
+    "BATCH_json": "Exact original bytes",
+    "PUBLIC_INPUTS_json": "Exact original bytes; public synthetic inputs and saved original signed wires",
+    "code": "Exact executed source bytes; SOURCE_ONLY comments describe preparation-time state, not this completed batch",
+    "original_console": "Empty stdout/stderr log retained locally; its hash is included, not a new run"
+  },
+  "execution": {
+    "batches": 1,
+    "ruby_invocations": 4,
+    "exec_exit_code": 0,
+    "total_seconds": 0.7031205422244966,
+    "worker_comparison_seconds": 0.6691130003891885,
+    "whole_deadline_seconds": 300,
+    "ruby_child_deadline_seconds": 10,
+    "individual_child_elapsed_seconds": "NOT_SEPARATELY_RECORDED",
+    "owned_group_recovered": true,
+    "network": "NONE",
+    "acquisition": "NONE",
+    "rerun": "NOT_PERFORMED_NOT_AUTHORIZED"
+  },
+  "runtime": {
+    "ruby": "4.0.9",
+    "platform": "arm64-darwin25",
+    "dependencies": {
+      "json": "2.19.9",
+      "jwt": "3.3.0",
+      "base64": "0.3.0",
+      "openssl": "4.0.2",
+      "digest": "3.2.1"
+    },
+    "libcrypto": "OpenSSL 3.5.9 29 Sep 2026"
+  },
+  "method": {
+    "fixture_sha256": "be17fc33612ec561147100fbb901f5c2ef288d4535ed1aa69b56a61447fc8942",
+    "case_origins": {
+      "FULL": "FULL",
+      "QUANTITY_FLOAT": "QUANTITY_TYPE",
+      "TOTALS_ONLY": "TOTALS",
+      "BAD_MERCHANT_BEFORE_TOTALS": "TOTALS"
+    },
+    "merchant_key_control_origin": "WRONG_MERCHANT_KEY saved public PEM; TOTALS signed wires unchanged",
+    "independence": "Pinned separate Python signature/graph/binding/subset and official 13-Schema registry, never expected values from Ruby",
+    "observation": "Signature call/normal-return/raise, exact signed-wire SHA, graph/binding return, actual content-check and rejection method/line"
+  },
+  "cases": {
+    "FULL": {
+      "expected_code": "scoped_research_verified",
+      "actual_code": "scoped_research_verified",
+      "comparison": "MATCH",
+      "evidence_present": true,
+      "schemas_all_valid": true,
+      "content_raises": []
+    },
+    "QUANTITY_FLOAT": {
+      "expected_code": "invalid_scoped_schema",
+      "actual_code": "invalid_scoped_schema",
+      "comparison": "MATCH",
+      "evidence_present": false,
+      "schemas_all_valid": true,
+      "content_raises": [
+        {
+          "kind": "content_raise",
+          "method": "quantity!",
+          "line": 93,
+          "code": "invalid_scoped_schema"
+        }
+      ]
+    },
+    "TOTALS_ONLY": {
+      "expected_code": "amount_mismatch",
+      "actual_code": "amount_mismatch",
+      "comparison": "MATCH",
+      "evidence_present": false,
+      "schemas_all_valid": true,
+      "content_raises": [
+        {
+          "kind": "content_raise",
+          "method": "totals!",
+          "line": 109,
+          "code": "amount_mismatch"
+        }
+      ]
+    },
+    "BAD_MERCHANT_BEFORE_TOTALS": {
+      "expected_code": "invalid_root_signature",
+      "actual_code": "invalid_root_signature",
+      "comparison": "MATCH",
+      "evidence_present": false,
+      "schemas_all_valid": true,
+      "content_raises": []
+    }
+  },
+  "private_keys": "NONE_READ_USED_OR_GENERATED",
+  "signed_wires": "EXACT_SAVED_SYNTHETIC_REPLAY",
+  "audit": {
+    "personal_paths": "None in public inputs/report",
+    "private_keys_credentials": "None found",
+    "product_historical_evidence_published_gem": "Unchanged",
+    "ci": "39 existing workflow event headers audited at baseline; these eight paths match no automatic trigger"
+  },
+  "gate": "E06_PARTIAL_OPEN",
+  "owner_core_go": "NOT_GRANTED",
+  "residuals": [
+    "E06 PARTIAL/OPEN; no core-completion or production GO",
+    "Fixed profile/four cases only, not general AP2/Schema conformance",
+    "Trusted harness/runtime/cooperative filesystem; no malicious same-user attestation",
+    "No real Host trust/current clock/revocation/nonce-order atomic processing/payment proof",
+    "No worst-case CPU/RSS/concurrency guarantee; terminal300/301 excluded",
+    "Historical communication-accounting gaps retained"
+  ]
+}
