@@ -49,7 +49,7 @@ JSON転送の真正性、悪意ある同一プロセスRuby、nonce消費・決�
 | 署名・元wire・閉包・因果 E02/E03/E04 | [RootDisclosures](https://github.com/cuichangquan/ap2-mandate-verifier/blob/64b67ac5541f01489f946b1ed1b334acafbfe967/lib/ap2_mandate_verifier/root_disclosures.rb)、[PurchaseBinding](https://github.com/cuichangquan/ap2-mandate-verifier/blob/64b67ac5541f01489f946b1ed1b334acafbfe967/lib/ap2_mandate_verifier/purchase_binding.rb) | 部分確認：既存独立比較あり、全パス証明ではない | 同じ候補SHAの正常例と有効署名の因果負例、原wire/hash、独立期待値、実到達stageを対応付ける。早期拒否を未実行stageの合格にしない。不足のみ試験候補 |
 | 登録選択・profile/key整合 E01/E05 | TrustContext（上記） | 部分確認：不明/曖昧/非active/期限外拒否。実Issuer出所・運用更新は未証明 | Gem側の参照/一意性/期限負例の既存証拠を照合し、不足だけ候補化。Hostの出所/最新性は前提として明示し、E01/E05原条件をPASSにしない |
 | 期限交差・challenge/注文照合 E05/E08 | [HostBinding](https://github.com/cuichangquan/ap2-mandate-verifier/blob/64b67ac5541f01489f946b1ed1b334acafbfe967/lib/ap2_mandate_verifier/host_binding.rb)、PurchaseBinding | 部分確認：渡された時刻で交差を検査。実時計・live失効・CASはHost責務/未証明 | 開始inclusive/終了exclusive、terminal age境界、challenge/B/鍵/nonce参照の既存証拠を照合。Host側実装の完成をGem単体の完成と混同しない。追加は不足確定後 |
-| Schema/制約と統合順序 E06 | [ScopedConstraints](https://github.com/cuichangquan/ap2-mandate-verifier/blob/64b67ac5541f01489f946b1ed1b334acafbfe967/lib/ap2_mandate_verifier/scoped_constraints.rb)、HostBinding | PARTIAL/OPEN：7形状の手書きsubset、固定Schema判断あり | pinned公式Schemaとの差分、支持形状の必須field/type/constraint全件、署名→閉包→binding/制約→Evidenceの実際の依存関係を対応付ける。因果を示せない負例を分離。追加試験の要否は次の読解で決定 |
+| Schema/制約と統合順序 E06 | [ScopedConstraints](https://github.com/cuichangquan/ap2-mandate-verifier/blob/64b67ac5541f01489f946b1ed1b334acafbfe967/lib/ap2_mandate_verifier/scoped_constraints.rb)、HostBinding | PARTIAL/OPEN：7形状の手書きsubset、証拠対応表を追補 | [E06証拠対応表](E06_SCOPED_EVIDENCE_MAP.md)で条件・実装・既存試験・独立期待値・実因果観測/限界を整理。具体的な追加必須試験は今回未特定。証拠水準のOwner採用判断は保留 |
 | 成功Evidence/失敗契約 E08 | [ResearchResult](https://github.com/cuichangquan/ap2-mandate-verifier/blob/64b67ac5541f01489f946b1ed1b334acafbfe967/lib/ap2_mandate_verifier/research_result.rb) | 部分確認：全検査後の不変Evidence、旧API非成功。Host ALLOWは未証明 | 必須fact/最短期限/nonce hash、非成功・結果なしで権限なし、constructor/外部再構成の境界を既存証拠へ対応付ける。不足のみ候補 |
 | 資源と環境 E07/E09 | InputValidator、SUPPORT_CONTRACT、Stage21追補 | 部分確認：有限入力とMBA直列観測。CPU/RSS/並列保証は未証明 | 将来サポート環境・Host外側制限・測定予算/入力/合格値はOwner未決定。数値決定と別承認前は追加測定しない。ハーネス期限を製品quotaと呼ばない |
 | 公開品同一性・限定再現 E09 | [公開品manifest](https://github.com/cuichangquan/ap2-mandate-verifier/blob/64b67ac5541f01489f946b1ed1b334acafbfe967/research/pre3_linux_published/CURRENT_MANIFEST.json)、現状メモ | 既証明（観測限定）：公開pre3のMBA/Linux 13 payload/10 loaded/52 installed一致。完全独立runtime証明は未証明 | 既存archive/source/installed/loadedのhashとrun/providerを保持。52は保存期待値の再生を含み独立Oracle再実行ではない。変更のない公開品を再取得・再ビルドしない |
@@ -78,7 +78,16 @@ MBA/Darwin arm64とUbuntu24.04 x86_64、MRI4.0.9と固定依存/providerは観�
 CPU/RSS・同時実行予算、将来の対応OS/provider、安定版の利用主張はOwner未決定。
 完全な独立runtime attestationを、合意のない新しい完成要件として追加しない。
 
-## 次の一件：E06/因果負例の不足調査（読み取りのみ）
+## E06証拠対応の追補（2026-10-24 UTC）
+
+上表と冒頭の64b67ac基準は完成条件を整理した時点の記録です。
+PR182/183統合後の `0b25529ea97967dbaf657bd8adb4eb26e98898a7` に対する
+[証拠対応表](E06_SCOPED_EVIDENCE_MAP.md)で、7支持形状の必須条件・実装・既存回帰・独立期待値・実因果観測と限界を整理しました。
+今回の読解では具体的な追加必須試験は未特定です。全fieldの新規独立因果traceや一般Schema適合を主張せず、
+この証拠水準のOwner採用判断は保留。E06 PARTIAL/OPEN・限定コア完成未判定・本番GO未承認は変わりません。
+文書化のための追加試験・再包装・CIは行っていません。
+
+## 不足調査の方法（既存の手順記録、追加実行の指示ではない）
 
 1. 既存7形状の各field/constraintを固定公式Schemaとコードへ対応付け、仕様差と未対応を区別する。
 2. 既存独立30契約+12境界比較、8 Schema判断、既存source試験から、同じ候補・元wire/hash・独立期待値・実到達stageの対応表を作る。885/52を加算せず、古い13ケース64判断も別証拠として保つ。
