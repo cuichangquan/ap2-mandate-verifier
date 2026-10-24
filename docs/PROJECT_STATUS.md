@@ -1,7 +1,7 @@
 # 現状メモ / Project status
 
-更新：2026-10-24 UTC（研究用検証コア第一段階の完成判断記録）。確認基準main：
-`26cc5ce1c9bfc93be32dbba6e637b106d60cc68f`（本追記前。最新mainは再確認）。
+更新：2026-10-24 UTC（合成Host handoff限定観測の保存）。確認基準main：
+`feb3c426365b5bb9d2fe2752a30f0e08f7eee48c`（本追記前。最新mainは再確認）。
 Linux実行SHA：`d34dbfa3a87a75360fb4bb14d535da8bc5e8cdc4`。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
@@ -149,3 +149,21 @@ Gemの既存入力上限・署名/開示/Schema/制約・trust/Host binding・�
 
 既存885回帰・独立比較・PR182/183観測・MBA/Linuxの包装/導入証拠の意味と件数は変更しません。
 今回の文書記録・静的確認のための追加試験・取得・build・CI・Gem再公開はありません。
+
+
+## ㉖ 最小契約と㉗ 合成Host handoffの限定観測
+
+[Issuer/Host最小契約](ISSUER_HOST_MINIMUM_CONTRACT.md)と[8シナリオの方法・限界](../research/host_handoff_subset/README.md)を保存。
+固有ID **HOST-HANDOFF-MBA-20261024-R1**、上記mainの製品10ソースhashを照合した固定コピーに対して実行しました。
+[原結果](../research/host_handoff_subset/results/R1/REPORT.json)、[起動receipt](../research/host_handoff_subset/results/R1/BATCH.json)、
+[回収・終了記録](../research/host_handoff_subset/results/R1/SUPERVISION.json)、[由来とhash](../research/host_handoff_subset/results/R1/PROVENANCE.json)を参照。
+1batch・Ruby子8回・全8シナリオが事前固定Host遷移表と一致。exit0、全体0.843462秒、所有プロセス群回収済み。
+全ケースで実Evidenceを同じ信頼Rubyプロセス内に生成してからHostモデルを判定しました。
+正常はMODEL_COMMIT、replayは追加消費拒否、生成後鍵失効/注文変更/旧鍵/rollbackは拒否、trust更新不能はHOLD、消費結果不明はPENDINGを維持。
+**MODEL_COMMITは合成状態遷移であり、実決済成功・Host本番ALLOWではありません。**
+通信0・追加取得/依存導入/build/CIなし。B枠消費済み、再実行なし。
+実DB原子性・並行性・durable rollback防止・実Issuer信頼・実失効運用・本番GOは未証明のままです。
+固定profile研究用コア第一段階の既存完成判断は変更せず、元E06/Phase2-A全面PASSには昇格しません。
+公開保存では実行コードをbyte不変で保持し、READMEと契約の作成時点NOT_RUNに後続観測を追補。
+製品・原証拠・公開Gem不変。この保存・PR作業で比較/構文/試験は再実行していません。
+
