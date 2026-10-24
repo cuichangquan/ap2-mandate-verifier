@@ -1,7 +1,7 @@
 # 現状メモ / Project status
 
-更新：2026-10-24 UTC（E06限定結果保存）。確認基準main：
-`53370a3c6e85ec7850166550e740f163122afafe`（本追記前。最新mainは再確認）。
+更新：2026-10-24 UTC（E06意味比較の限定結果保存）。確認基準main：
+`b858d2b37b529527307957335b722b88481d7fe7`（本追記前。最新mainは再確認）。
 Linux実行SHA：`d34dbfa3a87a75360fb4bb14d535da8bc5e8cdc4`。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
@@ -55,8 +55,8 @@ EvidenceはHost ALLOW・nonce消費・決済許可ではありません。
 ## 次の作業と未証明事項
 
 ㉕は固定profile・認証済みHost入力・信頼するRuby環境を前提とする限定検証コアの完成条件を整理中。
-E06の2命題に限る4入力比較をOwnerの個別承認下で1batch実施し、4件一致を観測しました（下記）。
-実行B枠は消費済みで、追加実行は未承認。将来サポート環境とCPU/RSS/並列予算はOwner未決定です。
+E06因果subsetに続き、Schema VALIDと固定profileの意味拒否を分ける4入力比較も個別承認下で1batch実施し、各4件一致を観測しました（別々の証拠、下記）。
+両比較の実行B枠はそれぞれ消費済みで、追加実行は未承認。将来サポート環境とCPU/RSS/並列予算はOwner未決定です。
 実Issuer信頼、Host最新状態・時計・失効・nonce原子消費／注文CAS、本番安全性、
 最悪CPU／RSS／並行安全性、過去の取得量・**全通信128MiB遵守は未証明**です。
 今回の固定profile／保存入力の限定合格をHost ALLOW・全面本番GOへ昇格させません。
@@ -90,3 +90,28 @@ PR統合、検証結果、公開、次作業／未検証事項の変更、作業
 製品lib・歴史的Stage15証拠・公開Gem不変。Bの1batch枠は消費済みで再実行不可。
 **E06 PARTIAL/OPEN、限定コア完成判断・本番GO未承認**を維持します。
 信頼するハーネス/実行環境の前提、terminal300/301比較の対象外、Host/資源/通信会計の未証明も残ります。
+
+## E06意味subsetの限定観測（MBA、別の1batch）
+
+固有ID **E06-SEMANTIC-MBA-20261024-R1**、対象source基準 `b858d2b37b529527307957335b722b88481d7fe7`。
+[方法・固定入力](../research/e06_semantic_subset/README.md)、
+[実測結果](../research/e06_semantic_subset/results/R1/REPORT.json)、
+[完了receipt](../research/e06_semantic_subset/results/R1/BATCH.json)、
+[原本hash・公開版の区別](../research/e06_semantic_subset/results/R1/PROVENANCE.json)を保存。
+
+| ケース | 独立期待値＝実測 | Evidenceと因果観測 |
+| --- | --- | --- |
+| FULL | scoped_research_verified | 3署名・graph/binding・内容検査が正常復帰し、独立期待Evidence全字段と一致 |
+| QUANTITY_FLOAT | invalid_scoped_schema | 保存quantity2.0は公式Schema VALID。3署名・binding正常復帰後、quantity! line93で厳格Integer違反として拒否、Evidenceなし |
+| TOTALS_ONLY | amount_mismatch | Checkout totalのみ201、積算/Host/line totalsは200。3署名・binding正常復帰後、totals! line109で拒否、Evidenceなし |
+| BAD_MERCHANT_BEFORE_TOTALS | invalid_root_signature | TOTALSと同じ署名wire、別の保存Merchant検証鍵。Issuer/Agent正常復帰後Merchantで例外、binding正常復帰・実内容checkなし、Evidenceなし |
+
+全4件MATCH、各ケースの独立5形状Schema判断はVALID。署名負例のSchema VALIDを真正性と混同しません。
+1batch・Ruby子4回・exit0、全体0.703秒、所有グループ回収済み。各子10秒/全体300秒の上限内。
+実測はMRI4.0.9 Darwin arm64、JSON2.19.9/JWT3.3.0/base640.3.0/OpenSSL gem4.0.2/Digest3.2.1/libcrypto3.5.9。
+保存済み公開合成wireをbyte不変で再生。新規署名・秘密鍵使用/生成はなく、比較実行の通信0・追加取得/導入/build/CIなし。
+原REPORTは保持し、公開版から不要なworker PIDだけを除去。保存作業で比較/構文/試験を再実行していません。
+前節の新規合成署名による因果subsetと、今回の保存wire再生、歴史的Stage11/15の実測は別証拠です。
+製品lib・旧pin/原本・公開Gemは不変。今回のB枠も消費済みで再実行不可。
+**E06 PARTIAL/OPEN、限定コア完成判断・本番GO未承認**を維持し、一般Schema/全制約対応とは称しません。
+信頼ハーネス/実行環境、実Host信頼/時計/失効、最悪資源/並行保証と過去の通信会計未証明は残ります。
