@@ -1,7 +1,7 @@
 # 現状メモ / Project status
 
-更新：2026-10-24 10:51 JST。確認基準main：
-`64b67ac5541f01489f946b1ed1b334acafbfe967`（本追記前。最新mainは再確認）。
+更新：2026-10-24 UTC（E06限定結果保存）。確認基準main：
+`53370a3c6e85ec7850166550e740f163122afafe`（本追記前。最新mainは再確認）。
 Linux実行SHA：`d34dbfa3a87a75360fb4bb14d535da8bc5e8cdc4`。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
@@ -55,8 +55,8 @@ EvidenceはHost ALLOW・nonce消費・決済許可ではありません。
 ## 次の作業と未証明事項
 
 ㉕は固定profile・認証済みHost入力・信頼するRuby環境を前提とする限定検証コアの完成条件を整理中。
-次の候補はE06/因果負例の不足だけを既存コード・固定Schema・保存証拠で対応付ける読み取り調査です。
-試験ケース実装・追加実行は未承認。将来サポート環境とCPU/RSS/並列予算はOwner未決定です。
+E06の2命題に限る4入力比較をOwnerの個別承認下で1batch実施し、4件一致を観測しました（下記）。
+実行B枠は消費済みで、追加実行は未承認。将来サポート環境とCPU/RSS/並列予算はOwner未決定です。
 実Issuer信頼、Host最新状態・時計・失効・nonce原子消費／注文CAS、本番安全性、
 最悪CPU／RSS／並行安全性、過去の取得量・**全通信128MiB遵守は未証明**です。
 今回の固定profile／保存入力の限定合格をHost ALLOW・全面本番GOへ昇格させません。
@@ -68,3 +68,25 @@ EvidenceはHost ALLOW・nonce消費・決済許可ではありません。
 PR統合、検証結果、公開、次作業／未検証事項の変更、作業終了時に内容を確認し、
 可能なら関連PR内で更新日・根拠リンクとともに更新します。予定と完了、NOT_RUNと観測結果を分離します。
 自動監視・定期実行の稼働やSLAを意味せず、更新／投稿の権限を新たに付与するものでもありません。
+
+## E06因果subsetの限定観測（MBA、1batchのみ）
+
+固有ID **E06-CAUSAL-MBA-20261024-R1**、対象source基準 `53370a3c6e85ec7850166550e740f163122afafe`。
+[比較器・方法と境界](../research/e06_causal_subset/README.md)、
+[結果](../research/e06_causal_subset/results/R1/REPORT.json)、
+[完了receipt](../research/e06_causal_subset/results/R1/BATCH.json)、
+[原本hash・公開projection](../research/e06_causal_subset/results/R1/PROVENANCE.json)を保存。
+4入力・Ruby子各1回、全4件が独立期待値と一致。終了code0、全体0.797秒、所有子グループ回収済み。
+
+- FULL：3署名とbinding・内容検査が正常復帰し、研究Evidence全字段が独立期待値と一致。
+- S01：Openの `constraints[0].items[0].id` 型違反。3署名とbinding正常復帰後、実内容checkに到達し `text!` で `invalid_scoped_schema`、Evidenceなし。
+- PRICE_STRING：Checkout Item.price文字列、全署名/Closed/Host hash整合。3署名とbinding正常復帰後、`amount!` で同拒否、Evidenceなし。
+- S01_BAD_AGENT：独立判定ではIssuer/Merchant署名有効・Agent署名無効。RubyはIssuer復帰後Agentで `invalid_root_signature`、Merchant/実内容check未到達、Evidenceなし。
+
+公式固定13Schema閉包を使う独立判断と実観測を分離し、前段拒否を内容検査の因果性合格には数えません。
+署名は新規合成鍵によるもので、保存署名byte再生・実Issuer/Host出所の証明ではありません。
+秘密鍵は一時メモリのみ、通信0、追加取得/依存導入/build/CIなし。
+この追補の保存・静的確認では比較器/構文/試験を再実行していません。
+製品lib・歴史的Stage15証拠・公開Gem不変。Bの1batch枠は消費済みで再実行不可。
+**E06 PARTIAL/OPEN、限定コア完成判断・本番GO未承認**を維持します。
+信頼するハーネス/実行環境の前提、terminal300/301比較の対象外、Host/資源/通信会計の未証明も残ります。

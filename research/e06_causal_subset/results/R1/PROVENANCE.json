@@ -1,0 +1,46 @@
+{
+  "id": "E06-CAUSAL-MBA-20261024-R1",
+  "baseline": "53370a3c6e85ec7850166550e740f163122afafe",
+  "execution": {
+    "batches": 1,
+    "ruby_children": 4,
+    "total_seconds": 0.796575749758631,
+    "exit_code": 0,
+    "deadline_seconds": 300,
+    "ruby_child_deadline_seconds": 10,
+    "network": "NONE",
+    "rerun_authorized": false,
+    "owned_group_recovered": true
+  },
+  "original_sha256": {
+    "REPORT_json": "fcd90c74bbfc1494b2055603006a7e67cc5b08351d95ecc52a06ae2e0cfe5069",
+    "BATCH_json": "74d2521064a6b10cb8e0fe5976ac402a3afde5441b469ea7aa2b8e8719c7a554",
+    "PUBLIC_INPUTS_json": "98d58c58bdd40adaf026e52035dd6463e2c9ca345fc55a23e37e7daeff696730",
+    "compare_py": "aba5d09b14733989a80c00324a1288043b4da332aef188ba5b3a0d45a7fb5b45",
+    "observe_rb": "a9c88dba1afedf0d94fc7d5f39704b5c050acff8c4403142aac49ae4b46b785b"
+  },
+  "public_projection": {
+    "REPORT_json": "Only supervision.worker_pid removed; other fields preserved. Original remains local, unmodified.",
+    "BATCH_json": "Exact original bytes",
+    "PUBLIC_INPUTS_json": "Exact original bytes; synthetic public keys and signed wires only",
+    "code": "Exact executed compare.py and observe.rb bytes; SOURCE_ONLY labels describe original preparation, not current run status"
+  },
+  "result": "FOUR_MATCH_LIMITED_TWO_PROPOSITIONS",
+  "gate": "E06_PARTIAL_OPEN",
+  "owner_core_go": "NOT_GRANTED",
+  "audit": {
+    "private_keys": "Ephemeral memory only; not exported or saved",
+    "personal_paths": "No user paths in public evidence",
+    "product_and_historical_evidence": "Unchanged",
+    "public_gem": "Unchanged",
+    "ci": "39 existing workflow event headers reviewed at baseline; changed paths match no automatic trigger; no new workflow"
+  },
+  "limitations": [
+    "Trusted harness/interpreter/cooperative filesystem; not malicious same-user or runtime attestation",
+    "New synthetic signatures, not saved signature replay or real Issuer/Host provenance",
+    "Fixed profile and four cases only; no generic Schema conformance or all-path claim",
+    "Terminal 300/301 boundary excluded",
+    "No Host ALLOW, nonce consumption, DB CAS or payment",
+    "No new resource/concurrency/production guarantee; historical communication accounting gaps retained"
+  ]
+}
