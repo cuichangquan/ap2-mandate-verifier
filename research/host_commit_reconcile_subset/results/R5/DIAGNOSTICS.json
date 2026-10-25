@@ -1,0 +1,29 @@
+{
+  "files": {
+    "/opt/hcr-gems/gems/json-2.19.9/ext/json/ext/parser/Makefile": {
+      "bytes": 8516,
+      "sha256": "726da66f332c66ab66bb1232ed3c77e3d88ef0007d9fc0a8fd91d185ac0448b0"
+    },
+    "/opt/hcr-gems/gems/json-2.19.9/ext/json/ext/generator/Makefile": {
+      "bytes": 8437,
+      "sha256": "7181304c603a7c9c8c22406ac739ed444a6f6e997eef19e114018a745b717d8c"
+    },
+    "/opt/hcr-gems/extensions/aarch64-linux/4.0.0/json-2.19.9/gem_make.out": {
+      "bytes": 1322,
+      "sha256": "b42f3b11f6639f57bbd6f496fed609a04f3dc5fe4e7707e052cf3ccb4af7cd2c"
+    },
+    "/opt/hcr-gems/extensions/aarch64-linux/4.0.0/json-2.19.9/mkmf.log": {
+      "bytes": 14101,
+      "sha256": "e43776ea0cc20def8bce085bc7a10526df0f4b5b084b79b905d746c719342762"
+    }
+  },
+  "required": [
+    "/opt/hcr-gems/extensions/aarch64-linux/4.0.0/json-2.19.9/mkmf.log",
+    "/opt/hcr-gems/extensions/aarch64-linux/4.0.0/json-2.19.9/gem_make.out"
+  ],
+  "missing": [],
+  "absence_reason": null,
+  "producer_outcome": "SUCCESS",
+  "terminal_record": true,
+  "host_readback": true
+}

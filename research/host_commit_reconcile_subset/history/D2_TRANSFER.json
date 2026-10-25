@@ -1,0 +1,23 @@
+{
+  "complete": true,
+  "failure": null,
+  "exit": 0,
+  "terminal": true,
+  "files": {
+    "DUMMY/known.txt": {
+      "bytes": 23,
+      "sha256": "9f3612ec680468b7f5d8819f96df49b31f015f55943a0a1fb526b4e2c8972e0e",
+      "host_readback": true
+    }
+  },
+  "missing": [
+    "DUMMY/not-created.txt"
+  ],
+  "seen": [
+    "DUMMY/known.txt",
+    "DUMMY/not-created.txt"
+  ],
+  "bytes_announced": 23,
+  "partial_file": null,
+  "rerun": false
+}

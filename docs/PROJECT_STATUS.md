@@ -1,7 +1,7 @@
 # 現状メモ / Project status
 
-更新：2026-10-25 UTC（実EvidenceとPostgreSQL transactionの限定観測保存）。確認基準main：
-`80ea13149543befe106a258d87d7131cc688a158`（本追記前。最新mainは再確認）。
+更新：2026-10-25 UTC（COMMIT回復境界のR5限定観測・停止履歴と再利用手順を保存）。確認基準main：
+`27445dafbca5ad9646249b008ce83a99348f9092`（本追記前。最新mainは再確認）。
 Linux実行SHA：`d34dbfa3a87a75360fb4bb14d535da8bc5e8cdc4`。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
@@ -176,3 +176,15 @@ Gemの既存入力上限・署名/開示/Schema/制約・trust/Host binding・�
 Ruby4.0.9・固定Gem依存、PostgreSQL16.15、pg1.7.0/libpq18.6、修正済みDebianOpenSSL3.5.7-1~deb13u3を確認。JSON native build1回、追加ダウンロード0。R1 provider停止、R2整合性確認停止、DIAG01文書欠落373件の診断は歴史記録として保持し、R3成功で上書きしない。
 
 実行から今回image清掃まで約234秒。専用container/一時DB/network/派生imageは清掃済み。base image・証拠と安全に特定不能な共有build cacheは保持。CPU/RAM設定は合計2/2GiB。**全期間8GiBの厳密な強制と総通信量は未証明のまま実行が進んだため、資源条件全面遵守とは扱わない。** 一般並行性能・耐障害性・不明COMMIT復旧・実Issuer信頼・本番GOも未証明。従来の『実DB未実証』は各過去時点の記録で、今回埋まったのは固定合成入力と一時DBの5制御scheduleだけ。Gem責務・公開pre3・元E06/Phase2A全面PASSの状態は変更しない。この保存作業で追加試験/構文/build/Docker/CI/再公開なし。
+
+
+
+## COMMIT結果不明時の限定回復境界（Docker R5）
+
+[方法・原結果と限界](../research/host_commit_reconcile_subset/README.md)、[再利用チェックリスト](../research/host_commit_reconcile_subset/REUSE_CHECKLIST.md)、[失敗履歴](../research/host_commit_reconcile_subset/history/ATTEMPTS.json)を保存。基準main27445daf…、保存済み合成wire・固定時計・同じ信頼Rubyプロセス内の実Evidenceを使用。1batch/4ケース/5workers、exit0、比較0.555096秒、全工程67.033秒。COMMIT後の通知抑止→既存完了照会、COMMIT前終了→元session消失とrollback状態確認後にgeneration2で単発再試行、処理中の空照会→PENDING/再試行なし、同一operation異binding→CONFLICTが固定期待値と一致。第三接続の全行照合と全worker/session回収を確認しました。
+
+[原REPORT](../research/host_commit_reconcile_subset/results/R5/REPORT.json) SHA256 `bb05bb10e2c331ec806a46c458c0627cdbc528df0733b1b5cd274d51626eedf9`、結果29ファイル72775Bと必須ビルド診断をSHA/host読戻し確認後に今回DB/container/networkを削除、残存0を確認。旧停止・欠落原本、base imageと共有cacheは保持。Ruby4.0.9/Linux arm64・PostgreSQL16.15・pg1.7.0/libpq18.6・OpenSSL gem4.0.2/Debian libcrypto3.5.7-1~deb13u3の固定構成です。追加取得/image build/Mac直接導入0、JSON native build1回。CPU/RAM合計2/2GiB、swap0を確認。8GiBはOwner採用の追加使用量の観測停止予算で、VM物理増分のhard quotaや全期間peak保証ではありません。最大観測proxy68935364B、host出力約4.93MB。
+
+R1未着手、R2導入失敗と詳細ログ欠落、R3 noexec事前HOLD、R4 batch exit0だがREPORT回収失敗、D1転送器不具合、D2小ダミー成功は別証拠として保持。R4を合格へ昇格せず、先の実DB handoff R3五ケースとも重複加算しません。今回埋まったのは、**DB内部ACK後にアプリ通知を抑止した4制御scheduleの限定観測**です。実TCP/DB protocol障害・crash耐久性・一般耐障害性・任意の旧writer競合・実Issuer/認証/時計/失効・決済・本番GOは未証明。元E06/Phase2-A全面PASSと既存の限定研究コア完成範囲は変更しません。
+
+保存・静的監査・PR作業では追加試験/構文実行/Docker/build/取得/Actions/再公開なし。再利用手順は新しい実行、exec設定変更、失敗後rerun、費用や本番への包括承認ではありません。

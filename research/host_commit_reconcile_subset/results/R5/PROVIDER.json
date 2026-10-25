@@ -1,0 +1,31 @@
+{
+  "ruby": "4.0.9",
+  "platform": "aarch64-linux",
+  "openssl": "OpenSSL 3.5.7 9 Jun 2026",
+  "libpq": 180006,
+  "gem_versions": {
+    "error_highlight": "0.7.2",
+    "did_you_mean": "2.0.0",
+    "syntax_suggest": "2.0.3",
+    "pg": "1.7.0",
+    "json": "2.19.9",
+    "base64": "0.3.0",
+    "jwt": "3.3.0",
+    "openssl": "4.0.2",
+    "digest": "3.2.1",
+    "io-nonblock": "0.3.2",
+    "ipaddr": "1.2.8",
+    "forwardable": "1.4.0"
+  },
+  "postgres_server": "16.15 (Debian 16.15-1.pgdg13+2)",
+  "libssl3t64_and_openssl": "3.5.7-1~deb13u3 arm64",
+  "pg_extension_sha256": "686aa34dbbd5f4083f92d5c6ed777d95be3966032fa84fd332a1eee2b30f9f5f",
+  "libpq_sha256": "2e1dc792b709ca06df230b50b1f14800b5887b5983ac75a046a0317cf8cc3afd",
+  "libcrypto_sha256": "809909371a1db7d2b9cac4c2fa2eff63eb6169d5979416d94155955a7ad32516",
+  "libssl_sha256": "b3b9a479537bded757b818bb787413d8f8f636135e6546c84e90688eca1dc842",
+  "postgres_expected_dpkg_difference_sha256": "7885584e3a7061ab47de8ddf86c54353610ef89cf28897b20ea1e17b32216ad1",
+  "difference_scope": "exact previously diagnosed373 missing documentation records only; no path-prefix exemption",
+  "raw_actual_load_sha256": "a1537bd83aba2469122a7d0cb184e1886ce223e5c5147fae5878b3493080136e",
+  "raw_ruby_provider_sha256": "7c6eb37de5203629c5d8305dbefb685324bea6f3f3254f507826f135fcde4eef",
+  "raw_postgres_provider_sha256": "42a7ef7681a5807c855b997ccc993619d64a2d1b9194a9078132e32c8dd460b5"
+}

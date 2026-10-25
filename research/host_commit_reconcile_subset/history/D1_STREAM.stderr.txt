@@ -1,0 +1,6 @@
+/supervision/stream_results.rb:34:in 'block in <main>': undefined local variable or method 'st' for main (NameError)
+
+  raise 'nonregular result' unless st.file?
+                                   ^^
+	from /supervision/stream_results.rb:16:in 'Array#each'
+	from /supervision/stream_results.rb:16:in '<main>'

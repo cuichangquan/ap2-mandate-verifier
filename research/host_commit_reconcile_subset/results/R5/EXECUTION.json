@@ -1,0 +1,27 @@
+{
+  "state": "LIMITED_OBSERVED",
+  "raw_final_sha256": "5e6f6bf914f838e99417a8381de933d27793d8b9284ca357079c2ed25e97ed8b",
+  "batch_pass": true,
+  "failure": null,
+  "elapsed_seconds": 67.03255724906921,
+  "downloads_bytes": 0,
+  "image_builds": 0,
+  "json_native_builds": 1,
+  "batch_count": 1,
+  "worker_count": 5,
+  "container_cleanup_confirmed": true,
+  "network_cleanup_confirmed": true,
+  "images_and_shared_cache_retained": true,
+  "resource_limits": {
+    "cpu_total": 2,
+    "memory_total_bytes": 2147483648,
+    "swap_bytes": 0,
+    "host_output_cap_bytes": 67108864,
+    "incremental_budget_observation_bytes": 8589934592
+  },
+  "capacity_samples": 7,
+  "max_observed_increment_proxy_bytes": 68935364,
+  "host_output_bytes_before_final": 4929878,
+  "scope": "logical filesystem delta plus bounded tmpfs and task output; sampled, not all-time physical VM increment or hard quota",
+  "cleanup_projection": "ephemeral container/network IDs omitted; raw local FINAL retained by hash"
+}

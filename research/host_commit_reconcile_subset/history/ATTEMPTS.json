@@ -1,0 +1,60 @@
+{
+  "scope": "COMMIT reconciliation attempts only; not the distinct prior host_db_handoff R1/R2/DIAG01/R3",
+  "attempts": [
+    {
+      "id": "R1",
+      "original_receipt": "AUTHORIZATION.json",
+      "original_receipt_sha256": "225035ea929d036e94f5aae59aee12cce249d39b706f9e7b754d542c51c39051",
+      "status": "Unstarted: connection wait consumed original time window; no RUN_ONCE, process or owned Docker resources",
+      "originals_retained": true
+    },
+    {
+      "id": "R2",
+      "original_receipt": "FINAL.json",
+      "original_receipt_sha256": "1f76529244c1caefbbf970d4634179026fe356ae23d0f1c4d65a72c3eccd653c",
+      "status": "JSON native install exit1; no DB/batch; generic compiler failure, detailed Gem tmpfs logs lost; exact cause not proved",
+      "originals_retained": true
+    },
+    {
+      "id": "R3",
+      "original_receipt": "FINAL.json",
+      "original_receipt_sha256": "f25b937c16e5b2f8ffc79b71a0cd244d8fc77f62762506763997cc12d7969013",
+      "status": "Effective Gem tmpfs noexec observed; HOLD before install/DB/batch; metadata retained",
+      "originals_retained": true
+    },
+    {
+      "id": "R4",
+      "original_receipt": "FINAL.json",
+      "original_receipt_sha256": "053a40cfe075d15f93a34638caf87ee9ff34b974a788d80b8f1c4319f07e327a",
+      "status": "Offline install/provider and batch exit0; docker cp did not preserve tmpfs result; EVIDENCE_INCOMPLETE, not accepted as4/4; cleanup under explicit loss contingency",
+      "originals_retained": true
+    },
+    {
+      "id": "D1",
+      "original_receipt": "FINAL.json",
+      "original_receipt_sha256": "4b3c0d1686b11c450d719f8055a21918e1aa2592f6ea4301120a1812f959483b",
+      "status": "One dummy stream failed with Ruby st NameError before payload; error/exit1 retained; own container removed",
+      "originals_retained": true
+    },
+    {
+      "id": "D2",
+      "original_receipt": "FINAL.json",
+      "original_receipt_sha256": "dd18a026fb7fa9961149f034319635dd2bffacb4611b74d739d5a81ec828eab2",
+      "status": "One23-byte known-content dummy stream passed size/SHA/readback and expected MISSING; own container removed",
+      "originals_retained": true
+    },
+    {
+      "id": "R5",
+      "original_receipt": "FINAL.json",
+      "original_receipt_sha256": "5e6f6bf914f838e99417a8381de933d27793d8b9284ca357079c2ed25e97ed8b",
+      "status": "One4-case batch completed with required result and diagnostic preservation; own resources removed",
+      "originals_retained": true
+    }
+  ],
+  "no_failed_attempt_promoted_by_R5_success": true,
+  "source_change_before_D2": "st declared in outer scope; zero-byte read uses empty binary; original D1 unchanged",
+  "D2_Ruby_sha256": "12b59e4b66dd0e5b125ce6caf8dcc728f5c20cb9e86029b77119a45cd66cd4f3",
+  "D2_Python_sha256": "41a63b1966c2048270bceb1646d6bca2652f77fe35efe790ceddc4a4e1fe28e2",
+  "D2_TRANSFER_sha256": "1955049eedf8d687940df3c96e03d67784cccc0b165110a64dace2cd9ac3549c",
+  "raw_R4_missing_record_sha256": "a001bef15b6725a6ede3bcce200715e2688abf62fae744118e5d01d39b951dd3"
+}
