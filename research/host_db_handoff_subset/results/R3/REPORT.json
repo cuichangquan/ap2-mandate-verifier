@@ -1,0 +1,477 @@
+{
+  "state": "LIMITED_OBSERVED",
+  "baseline": "80ea13149543befe106a258d87d7131cc688a158",
+  "completed": 5,
+  "results": [
+    {
+      "case_id": "NORMAL_REPLAY",
+      "observed": [
+        [
+          "COMMITTED",
+          "REJECT_REPLAY"
+        ],
+        "CONSUMED",
+        "RESERVED",
+        "order-v1",
+        1
+      ],
+      "workers": [
+        {
+          "event": "RESULT",
+          "verdicts": [
+            "COMMITTED",
+            "REJECT_REPLAY"
+          ],
+          "evidence": true,
+          "gem_code": "scoped_research_verified",
+          "runtime": {
+            "ruby": "4.0.9",
+            "pg": "1.7.0",
+            "libpq": 180006,
+            "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+          }
+        }
+      ],
+      "events": [
+        [
+          {
+            "event": "READY",
+            "evidence": true
+          },
+          {
+            "event": "TRY"
+          },
+          {
+            "event": "TRY"
+          },
+          {
+            "event": "RESULT",
+            "verdicts": [
+              "COMMITTED",
+              "REJECT_REPLAY"
+            ],
+            "evidence": true,
+            "gem_code": "scoped_research_verified",
+            "runtime": {
+              "ruby": "4.0.9",
+              "pg": "1.7.0",
+              "libpq": 180006,
+              "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+            }
+          }
+        ]
+      ],
+      "full_row_sha256": {
+        "policy": "2d2e921e2b1812b1d1c309b9d91a2cd52b0c0f5613a19e2ae10c73a59e8a41ba",
+        "orders": "ef80556dae9a072e7cc7a2a1b9999dc242908b2deeedd1d4093242d83eb5f3e3",
+        "challenges": "ef75fb6eeec31a56985ec6ba274fb6078ef3fa23d5e076405b1d904e3b60d8d5",
+        "operations": "9b4e9e24d0a80bd1824265f82fab4491e9260c261ab66384782bdad356df2e32"
+      },
+      "full_rows_matched": true,
+      "worker_sessions_closed": true,
+      "lock_wait_observed": false
+    },
+    {
+      "case_id": "SAME_EVIDENCE_RACE",
+      "observed": [
+        [
+          "COMMITTED",
+          "REJECT_REPLAY"
+        ],
+        "CONSUMED",
+        "RESERVED",
+        "order-v1",
+        1
+      ],
+      "workers": [
+        {
+          "event": "RESULT",
+          "verdicts": [
+            "COMMITTED"
+          ],
+          "evidence": true,
+          "gem_code": "scoped_research_verified",
+          "runtime": {
+            "ruby": "4.0.9",
+            "pg": "1.7.0",
+            "libpq": 180006,
+            "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+          }
+        },
+        {
+          "event": "RESULT",
+          "verdicts": [
+            "REJECT_REPLAY"
+          ],
+          "evidence": true,
+          "gem_code": "scoped_research_verified",
+          "runtime": {
+            "ruby": "4.0.9",
+            "pg": "1.7.0",
+            "libpq": 180006,
+            "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+          }
+        }
+      ],
+      "events": [
+        [
+          {
+            "event": "READY",
+            "evidence": true
+          },
+          {
+            "event": "TRY"
+          },
+          {
+            "event": "LOCKED"
+          },
+          {
+            "event": "RESULT",
+            "verdicts": [
+              "COMMITTED"
+            ],
+            "evidence": true,
+            "gem_code": "scoped_research_verified",
+            "runtime": {
+              "ruby": "4.0.9",
+              "pg": "1.7.0",
+              "libpq": 180006,
+              "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+            }
+          }
+        ],
+        [
+          {
+            "event": "READY",
+            "evidence": true
+          },
+          {
+            "event": "TRY"
+          },
+          {
+            "event": "RESULT",
+            "verdicts": [
+              "REJECT_REPLAY"
+            ],
+            "evidence": true,
+            "gem_code": "scoped_research_verified",
+            "runtime": {
+              "ruby": "4.0.9",
+              "pg": "1.7.0",
+              "libpq": 180006,
+              "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+            }
+          }
+        ]
+      ],
+      "full_row_sha256": {
+        "policy": "8ecbd43dee24b482a9613186c05bd8e3efea781c616a468e0dbe8dcbe0bac6de",
+        "orders": "cda0dcf24b53ce62deda9e7ca84e4ec67002a49fc80cc32d3887cd4a487d017c",
+        "challenges": "bfc4cd932142cdf8102f5cdcb682eb5528945a501cef96b0641e20ed172ae8f8",
+        "operations": "d02d4dd71363f75ad76c3043120977e8e447bc11ce14c4f03f23f03819f4fa7e"
+      },
+      "full_rows_matched": true,
+      "worker_sessions_closed": true,
+      "lock_wait_observed": true
+    },
+    {
+      "case_id": "EDIT_FIRST",
+      "observed": [
+        [
+          "EDITED",
+          "REJECT_ORDER"
+        ],
+        "ISSUED",
+        "OPEN",
+        "order-v2",
+        0
+      ],
+      "workers": [
+        {
+          "event": "RESULT",
+          "verdicts": [
+            "EDITED"
+          ],
+          "evidence": true,
+          "gem_code": "scoped_research_verified",
+          "runtime": {
+            "ruby": "4.0.9",
+            "pg": "1.7.0",
+            "libpq": 180006,
+            "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+          }
+        },
+        {
+          "event": "RESULT",
+          "verdicts": [
+            "REJECT_ORDER"
+          ],
+          "evidence": true,
+          "gem_code": "scoped_research_verified",
+          "runtime": {
+            "ruby": "4.0.9",
+            "pg": "1.7.0",
+            "libpq": 180006,
+            "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+          }
+        }
+      ],
+      "events": [
+        [
+          {
+            "event": "READY",
+            "evidence": true
+          },
+          {
+            "event": "TRY"
+          },
+          {
+            "event": "LOCKED"
+          },
+          {
+            "event": "RESULT",
+            "verdicts": [
+              "EDITED"
+            ],
+            "evidence": true,
+            "gem_code": "scoped_research_verified",
+            "runtime": {
+              "ruby": "4.0.9",
+              "pg": "1.7.0",
+              "libpq": 180006,
+              "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+            }
+          }
+        ],
+        [
+          {
+            "event": "READY",
+            "evidence": true
+          },
+          {
+            "event": "TRY"
+          },
+          {
+            "event": "RESULT",
+            "verdicts": [
+              "REJECT_ORDER"
+            ],
+            "evidence": true,
+            "gem_code": "scoped_research_verified",
+            "runtime": {
+              "ruby": "4.0.9",
+              "pg": "1.7.0",
+              "libpq": 180006,
+              "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+            }
+          }
+        ]
+      ],
+      "full_row_sha256": {
+        "policy": "a0b525265c0085dbb03d012a28ca808d6740f24dafe3972624f09668fe20d2e6",
+        "orders": "8b7c4ea9c8a53df54e8629f7b032eddfe4f16ec396fc734b27bfc28cb27f87cc",
+        "challenges": "b3e3341a2efffa1ad5ac4e2d3c8b639a8aa8b873bfd0d5c05ea31534864d57d8",
+        "operations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "full_rows_matched": true,
+      "worker_sessions_closed": true,
+      "lock_wait_observed": true
+    },
+    {
+      "case_id": "CONSUME_FIRST",
+      "observed": [
+        [
+          "COMMITTED",
+          "TOO_LATE"
+        ],
+        "CONSUMED",
+        "RESERVED",
+        "order-v1",
+        1
+      ],
+      "workers": [
+        {
+          "event": "RESULT",
+          "verdicts": [
+            "COMMITTED"
+          ],
+          "evidence": true,
+          "gem_code": "scoped_research_verified",
+          "runtime": {
+            "ruby": "4.0.9",
+            "pg": "1.7.0",
+            "libpq": 180006,
+            "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+          }
+        },
+        {
+          "event": "RESULT",
+          "verdicts": [
+            "TOO_LATE"
+          ],
+          "evidence": true,
+          "gem_code": "scoped_research_verified",
+          "runtime": {
+            "ruby": "4.0.9",
+            "pg": "1.7.0",
+            "libpq": 180006,
+            "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+          }
+        }
+      ],
+      "events": [
+        [
+          {
+            "event": "READY",
+            "evidence": true
+          },
+          {
+            "event": "TRY"
+          },
+          {
+            "event": "LOCKED"
+          },
+          {
+            "event": "RESULT",
+            "verdicts": [
+              "COMMITTED"
+            ],
+            "evidence": true,
+            "gem_code": "scoped_research_verified",
+            "runtime": {
+              "ruby": "4.0.9",
+              "pg": "1.7.0",
+              "libpq": 180006,
+              "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+            }
+          }
+        ],
+        [
+          {
+            "event": "READY",
+            "evidence": true
+          },
+          {
+            "event": "TRY"
+          },
+          {
+            "event": "RESULT",
+            "verdicts": [
+              "TOO_LATE"
+            ],
+            "evidence": true,
+            "gem_code": "scoped_research_verified",
+            "runtime": {
+              "ruby": "4.0.9",
+              "pg": "1.7.0",
+              "libpq": 180006,
+              "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+            }
+          }
+        ]
+      ],
+      "full_row_sha256": {
+        "policy": "4195012e1b415f17675ba8e7913bbf45856895edb30fd4a56239ba33c04bf835",
+        "orders": "1ce0421bf9f13becaa680ab4acb4a34968369197a55bcfd5745d23e544547a77",
+        "challenges": "3449debccd846a75294bc8306a7ba5e46770f85106dbf56d30b7fb6c47af5ce7",
+        "operations": "b0d846d9b38a7a384b54f15fcf02806264fafa06b0f123c8ea12e700cf39868d"
+      },
+      "full_rows_matched": true,
+      "worker_sessions_closed": true,
+      "lock_wait_observed": true
+    },
+    {
+      "case_id": "CAS_ZERO_ROLLBACK",
+      "observed": [
+        [
+          "REJECT_CAS"
+        ],
+        "ISSUED",
+        "OPEN",
+        "order-v1",
+        0
+      ],
+      "workers": [
+        {
+          "event": "RESULT",
+          "verdicts": [
+            "REJECT_CAS"
+          ],
+          "evidence": true,
+          "gem_code": "scoped_research_verified",
+          "runtime": {
+            "ruby": "4.0.9",
+            "pg": "1.7.0",
+            "libpq": 180006,
+            "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+          }
+        }
+      ],
+      "events": [
+        [
+          {
+            "event": "READY",
+            "evidence": true
+          },
+          {
+            "event": "TRY"
+          },
+          {
+            "event": "NONCE_TENTATIVE",
+            "rows": 1
+          },
+          {
+            "event": "ORDER_CAS",
+            "rows": 0
+          },
+          {
+            "event": "RESULT",
+            "verdicts": [
+              "REJECT_CAS"
+            ],
+            "evidence": true,
+            "gem_code": "scoped_research_verified",
+            "runtime": {
+              "ruby": "4.0.9",
+              "pg": "1.7.0",
+              "libpq": 180006,
+              "libcrypto": "OpenSSL 3.5.7 9 Jun 2026"
+            }
+          }
+        ]
+      ],
+      "full_row_sha256": {
+        "policy": "c1e47107440a75668278ade06f1f26a8844780c31f21afe0377a479edf110606",
+        "orders": "af020757092242ee8e192d5d304e498363667e4192c03075444ceb69cf951c52",
+        "challenges": "cd7b5b1f956a7fd2b7b4574c0c5d51299d2e99b1646e74c24e23834d40f9a524",
+        "operations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "full_rows_matched": true,
+      "worker_sessions_closed": true,
+      "lock_wait_observed": false
+    }
+  ],
+  "worker_sha256": "83f0f1239ed8e56ae308c08342f27972f013adda3561245894d1bbdaec92e875",
+  "schema_sha256": "a3b6de08bb44866f04d067a79a56220b9828b4cecdfb592eab20629ddd0d246d",
+  "input_sha256": "cc26cf7115c59c5e44c34a5a051f7dd17577958c32df7113ecbe022bb390a4f5",
+  "compare_sha256": "ca72876a395ea70ad144a406de5315d1429379d37fe50de97237dee8175291c0",
+  "product_sha256": {
+    "lib/ap2_mandate_verifier.rb": "4824eeef1ce6c7833bcc24bc0bf9abc265df0b35ba135e54b4341b54c2f65ef2",
+    "host_binding": "917a4c139accd77d5bbe9125c64ea258349b6854ac04e0fefe33536b9b88ec0a",
+    "input_validator": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+    "purchase_binding": "6f2108ac3298e4558fc053139d045d399687ccc3bf39c01945ed52d529dc26df",
+    "research_result": "02159d2f451461ef818d7b6c9d55349cdfb6e23d9ced7d688730d22c8e96827d",
+    "result": "fade8a1e922f7b4cf2439c120580160f85e0f22f6cfac9ff1ab1364d7b34d310",
+    "root_disclosures": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+    "root_signature": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+    "scoped_constraints": "b2b5fa4cd1b4ce83cfc5ffc1be0a09ce57ad4a1b9be6778e581dd38f5ce5fd84",
+    "trust_context": "430eb9f9f3be4c0d7e799e95b68009c08582b6961aa954cc866ff012a3b2be36"
+  },
+  "server": "16.15 (Debian 16.15-1.pgdg13+2)",
+  "pg": "1.7.0",
+  "libpq": 180006,
+  "clock": "fixed synthetic input time; not real clock attestation",
+  "production_go": false,
+  "seconds": 0.8206269589999238,
+  "group_recovered": true
+}

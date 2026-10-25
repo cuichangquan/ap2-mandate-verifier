@@ -1,0 +1,31 @@
+{
+  "ruby": "4.0.9",
+  "platform": "aarch64-linux",
+  "gem_versions": {
+    "error_highlight": "0.7.2",
+    "did_you_mean": "2.0.0",
+    "syntax_suggest": "2.0.3",
+    "pg": "1.7.0",
+    "json": "2.19.9",
+    "base64": "0.3.0",
+    "jwt": "3.3.0",
+    "openssl": "4.0.2",
+    "digest": "3.2.1",
+    "io-nonblock": "0.3.2",
+    "ipaddr": "1.2.8",
+    "forwardable": "1.4.0"
+  },
+  "pg_extension": "/opt/hdb-gems/gems/pg-1.7.0-aarch64-linux/lib/4.0/pg_ext.so",
+  "libpq": "/opt/hdb-gems/gems/pg-1.7.0-aarch64-linux/ports/aarch64-linux/lib/libpq-ruby-pg.so.1",
+  "libpq_version": 180006,
+  "ruby_openssl": "OpenSSL 3.5.7 9 Jun 2026",
+  "bundled_openssl": "upstream1.7.0 identifies3.6.5; native libpq hash matched; not separately called via Ruby OpenSSL",
+  "native_library_sha256": {
+    "pg_extension": "686aa34dbbd5f4083f92d5c6ed777d95be3966032fa84fd332a1eee2b30f9f5f",
+    "libpq": "2e1dc792b709ca06df230b50b1f14800b5887b5983ac75a046a0317cf8cc3afd",
+    "system_libcrypto": "809909371a1db7d2b9cac4c2fa2eff63eb6169d5979416d94155955a7ad32516",
+    "system_libssl": "b3b9a479537bded757b818bb787413d8f8f636135e6546c84e90688eca1dc842"
+  },
+  "debian_package": "libssl3t64/openssl 3.5.7-1~deb13u3 arm64",
+  "source_sha256": "a39edb4705df6472967e901d716812ff7f97c35dd2a1924d04f94d8cf5edfd6b"
+}

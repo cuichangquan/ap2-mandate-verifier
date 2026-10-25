@@ -1,0 +1,17 @@
+{
+  "scope": "one diagnostic execution; no DB startup",
+  "verify_exit": 0,
+  "missing_count": 373,
+  "categories": {
+    "man": 356,
+    "doc": 15,
+    "lintian": 2
+  },
+  "other_difference_count": 0,
+  "library_hashes_match_ruby_R2": true,
+  "original_stdout_sha256": "185dcd9f1ddec25dd6bfdd042626cd5ea7a6898576c4b75451de0bd7e2168360",
+  "original_result_sha256": "50a86295846f0c94d4c83830b60ad66138688a52692326da90572fbb882cdbad",
+  "container_removed": true,
+  "reference": "https://github.com/debuerreotype/debuerreotype/blob/master/scripts/.slimify-excludes",
+  "claim": "missing paths agree with official slim exclusions; not a general safety proof"
+}
