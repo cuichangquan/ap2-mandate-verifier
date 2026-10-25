@@ -1,0 +1,226 @@
+{
+  "state": "LIMITED_OBSERVED",
+  "completed": 4,
+  "workers": 5,
+  "baseline": "27445dafbca5ad9646249b008ce83a99348f9092",
+  "input_sha256": "cc26cf7115c59c5e44c34a5a051f7dd17577958c32df7113ecbe022bb390a4f5",
+  "results": [
+    {
+      "case_id": "COMMIT_NOTICE_LOST",
+      "observed": [
+        "COMMITTED_EXISTING",
+        "DONE",
+        "CONSUMED",
+        "RESERVED",
+        1,
+        1
+      ],
+      "lookups": [
+        {
+          "case_id": "COMMIT_NOTICE_LOST",
+          "decision": "COMMITTED_EXISTING",
+          "operation_digest_match": true,
+          "nonce": "CONSUMED",
+          "order_state": "RESERVED"
+        }
+      ],
+      "workers": [
+        {
+          "events": [
+            {
+              "event": "READY",
+              "evidence": true
+            },
+            {
+              "event": "CHANNEL_CLOSED"
+            }
+          ],
+          "reaped": true,
+          "session_absent": true
+        }
+      ],
+      "full_rows_matched": true,
+      "full_row_sha256": {
+        "policy": "20e8a7a41abdd9760735b29e2eb9302b45ae7aea22e5c75e6dced7a7392e4608",
+        "orders": "7502e1210f5d1c778b7917b109fd74af0c929864440ee71ce9e3d6548b9a4bbc",
+        "challenges": "187dd4545627aea82d08922ce0d2c1db5f05ffaa70eb39693545ccaadec62f60",
+        "requests": "7606e56548370f21f2534e7a81656009cd9fca4a5ed8672bd40836786c355f9e",
+        "operations": "3f94173b52088d1d7feee40f5fd7426208bfae0b352f8d8e0b5b2d128f281966"
+      }
+    },
+    {
+      "case_id": "ABORT_THEN_RETRY",
+      "observed": [
+        "RETRY_AUTHORIZED_THEN_COMMITTED",
+        "DONE",
+        "CONSUMED",
+        "RESERVED",
+        1,
+        2
+      ],
+      "lookups": [
+        {
+          "case_id": "ABORT_THEN_RETRY",
+          "decision": "RETRY_AUTHORIZED",
+          "original_session_absent": true,
+          "operation_absent": true,
+          "nonce": "ISSUED",
+          "order_state": "OPEN",
+          "binding_matched": true,
+          "generation_before": 1,
+          "generation_after": 2
+        },
+        {
+          "case_id": "ABORT_THEN_RETRY",
+          "decision": "COMMITTED_EXISTING",
+          "operation_digest_match": true,
+          "nonce": "CONSUMED",
+          "order_state": "RESERVED"
+        }
+      ],
+      "workers": [
+        {
+          "events": [
+            {
+              "event": "READY",
+              "evidence": true
+            },
+            {
+              "event": "CHANNEL_CLOSED"
+            }
+          ],
+          "reaped": true,
+          "session_absent": true
+        },
+        {
+          "events": [
+            {
+              "event": "READY",
+              "evidence": true
+            },
+            {
+              "event": "CHANNEL_CLOSED"
+            }
+          ],
+          "reaped": true,
+          "session_absent": true
+        }
+      ],
+      "full_rows_matched": true,
+      "full_row_sha256": {
+        "policy": "654cc7a8012bcf7be1037c531322dfb13c460f02ec2aaf46a85c2416487c40c8",
+        "orders": "4bcf19c97ac7e2f49e6fbaec8b94bc9e8494ddf54fe5f1cdc71ab061ff9a513e",
+        "challenges": "306d7966445139ff93a82582386ea33f525a9b9630e9a07ec9ecb658afdbc28d",
+        "requests": "ce24470023110e74eaf2f344dca5dbb5565098a23394d1cc10379d95df458f3a",
+        "operations": "f567b21baea34280015fc79e753f5037f3db1b487730f6b4beaf02e8766970a2"
+      }
+    },
+    {
+      "case_id": "INFLIGHT_EMPTY",
+      "observed": [
+        "PENDING",
+        "REGISTERED",
+        "ISSUED",
+        "OPEN",
+        0,
+        1
+      ],
+      "lookups": [
+        {
+          "case_id": "INFLIGHT_EMPTY",
+          "decision": "PENDING",
+          "reason": "registry lock unavailable or retry not authorized"
+        }
+      ],
+      "workers": [
+        {
+          "events": [
+            {
+              "event": "READY",
+              "evidence": true
+            },
+            {
+              "event": "LOCKED"
+            },
+            {
+              "event": "CHANNEL_CLOSED"
+            }
+          ],
+          "reaped": true,
+          "session_absent": true
+        }
+      ],
+      "full_rows_matched": true,
+      "full_row_sha256": {
+        "policy": "38402650d9b8bb3d502e67e84ea121719fddb5a6558f575ead2e86520f4fb165",
+        "orders": "f44b62470684b0839a9b81ca8ad84c664a75f600b8c53150063e9ae25628edd1",
+        "challenges": "fa1e7278fd2d2bd9790c21f02014e813c8adeb0b1c11df71abab5414e9c1ecf0",
+        "requests": "4fb1a76027e3600b3f24c954b7d8bd0be394b90e650626439c7f8537c12693b6",
+        "operations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    },
+    {
+      "case_id": "BINDING_CONFLICT",
+      "observed": [
+        "CONFLICT",
+        "DONE",
+        "CONSUMED",
+        "RESERVED",
+        1,
+        1
+      ],
+      "lookups": [
+        {
+          "case_id": "BINDING_CONFLICT",
+          "decision": "CONFLICT",
+          "reason": "tenant/principal/digest/full descriptor mismatch"
+        }
+      ],
+      "workers": [
+        {
+          "events": [
+            {
+              "event": "READY",
+              "evidence": true
+            },
+            {
+              "event": "CHANNEL_CLOSED"
+            }
+          ],
+          "reaped": true,
+          "session_absent": true
+        }
+      ],
+      "full_rows_matched": true,
+      "full_row_sha256": {
+        "policy": "8a52be9011b2aa05e5747c9c78963c63e241bd8ec5b76227c314d6d027a09edc",
+        "orders": "e5e27fab9501f898531a215e9550c8266193dbbfada6f63ed06e91e261ce2dd1",
+        "challenges": "da23ca16078effcceab952f2a985b7afee9c1b36b160820269ce73a316ffc249",
+        "requests": "1cfc91b6d3f4650f50b3a87d703effe870ca891ef5aa8f32b8610c29fe48b352",
+        "operations": "3e9118f46757e58e5451379e8bb75cfdd3dec11489cbdcfed4d8586fbd7fb6b0"
+      }
+    }
+  ],
+  "source_sha256": {
+    "worker": "ece24703b390c0544f8d53cf4613baf5570e53d17f8076d1d097c131efcbbcf3",
+    "schema": "b07a047e30853b5c1a50f4631ad0cb76a2ef4fd52a4ae765cda4a5c548ff0c24",
+    "compare": "2c256db33a2bedb6353205dc5930d88028d2e39e5d2f05a0de6b8cdbb6b92c80"
+  },
+  "product_sha256": {
+    "lib/ap2_mandate_verifier.rb": "4824eeef1ce6c7833bcc24bc0bf9abc265df0b35ba135e54b4341b54c2f65ef2",
+    "host_binding": "917a4c139accd77d5bbe9125c64ea258349b6854ac04e0fefe33536b9b88ec0a",
+    "input_validator": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+    "purchase_binding": "6f2108ac3298e4558fc053139d045d399687ccc3bf39c01945ed52d529dc26df",
+    "research_result": "02159d2f451461ef818d7b6c9d55349cdfb6e23d9ced7d688730d22c8e96827d",
+    "result": "fade8a1e922f7b4cf2439c120580160f85e0f22f6cfac9ff1ab1364d7b34d310",
+    "root_disclosures": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+    "root_signature": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+    "scoped_constraints": "b2b5fa4cd1b4ce83cfc5ffc1be0a09ce57ad4a1b9be6778e581dd38f5ce5fd84",
+    "trust_context": "430eb9f9f3be4c0d7e799e95b68009c08582b6961aa954cc866ff012a3b2be36"
+  },
+  "clock": "fixed synthetic",
+  "fault": "application notice suppressed after internal DB ACK; not TCP/DB protocol response fault",
+  "production_go": false,
+  "seconds": 0.5550963759999998,
+  "group_recovered": true
+}

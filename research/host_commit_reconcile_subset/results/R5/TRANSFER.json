@@ -1,0 +1,193 @@
+{
+  "complete": true,
+  "failure": null,
+  "exit": 0,
+  "terminal": true,
+  "files": {
+    "launch.pid": {
+      "bytes": 4,
+      "sha256": "0ef4e1a6f9e2e77d081c8943f03b3df5fc6339e2690024c928a14f3e04ea7954",
+      "host_readback": true
+    },
+    "install.supervisor": {
+      "bytes": 7,
+      "sha256": "9c63e9d6f76cd08714f297b9a7101453258b8fb45964e74e8cf2b5939dbe8010",
+      "host_readback": true
+    },
+    "install.json.group": {
+      "bytes": 10,
+      "sha256": "cfba3f0645b5b124b1d99be5e8c1d754bccdb8fc834c31e126f0ade87814763e",
+      "host_readback": true
+    },
+    "install.json.exit": {
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "host_readback": true
+    },
+    "install.other.group": {
+      "bytes": 12,
+      "sha256": "0b2db7143f9e91bf3acc28bf83a5ffe211291f126344b20e78d53880cc212bb5",
+      "host_readback": true
+    },
+    "install.other.exit": {
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "host_readback": true
+    },
+    "install.finished": {
+      "bytes": 12,
+      "sha256": "671d529dfe09ca01e5673f28b992ebb20825ae6b24d5d3bbe366be146245069a",
+      "host_readback": true
+    },
+    "BATCH01/BATCH.json": {
+      "bytes": 42,
+      "sha256": "fef6a9dfd2002d6a357ef4cd86e4249d9d33681f18b20fd4de479b1eec62a659",
+      "host_readback": true
+    },
+    "BATCH01/WORKER_REPORT.json": {
+      "bytes": 7126,
+      "sha256": "3d817ae873bb4b0c47467ea4db1bb4e19a809d5a3547d6d3d4887a9d1a75d2a9",
+      "host_readback": true
+    },
+    "BATCH01/SUPERVISION.json": {
+      "bytes": 114,
+      "sha256": "0d9daa70eedb71c747d1943d2303f0f018959a35b224f39f2a45dc6c9421762d",
+      "host_readback": true
+    },
+    "BATCH01/REPORT.json": {
+      "bytes": 7184,
+      "sha256": "bb05bb10e2c331ec806a46c458c0627cdbc528df0733b1b5cd274d51626eedf9",
+      "host_readback": true
+    },
+    "BATCH01/controller.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "host_readback": true
+    },
+    "BATCH01/controller.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "host_readback": true
+    },
+    "BATCH01/worker.rb": {
+      "bytes": 6989,
+      "sha256": "ece24703b390c0544f8d53cf4613baf5570e53d17f8076d1d097c131efcbbcf3",
+      "host_readback": true
+    },
+    "BATCH01/source/lib/ap2_mandate_verifier/host_binding.rb": {
+      "bytes": 6867,
+      "sha256": "917a4c139accd77d5bbe9125c64ea258349b6854ac04e0fefe33536b9b88ec0a",
+      "host_readback": true
+    },
+    "BATCH01/source/lib/ap2_mandate_verifier/input_validator.rb": {
+      "bytes": 3466,
+      "sha256": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+      "host_readback": true
+    },
+    "BATCH01/source/lib/ap2_mandate_verifier/purchase_binding.rb": {
+      "bytes": 5643,
+      "sha256": "6f2108ac3298e4558fc053139d045d399687ccc3bf39c01945ed52d529dc26df",
+      "host_readback": true
+    },
+    "BATCH01/source/lib/ap2_mandate_verifier/research_result.rb": {
+      "bytes": 3122,
+      "sha256": "02159d2f451461ef818d7b6c9d55349cdfb6e23d9ced7d688730d22c8e96827d",
+      "host_readback": true
+    },
+    "BATCH01/source/lib/ap2_mandate_verifier/result.rb": {
+      "bytes": 2939,
+      "sha256": "fade8a1e922f7b4cf2439c120580160f85e0f22f6cfac9ff1ab1364d7b34d310",
+      "host_readback": true
+    },
+    "BATCH01/source/lib/ap2_mandate_verifier/root_disclosures.rb": {
+      "bytes": 4768,
+      "sha256": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+      "host_readback": true
+    },
+    "BATCH01/source/lib/ap2_mandate_verifier/root_signature.rb": {
+      "bytes": 4895,
+      "sha256": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+      "host_readback": true
+    },
+    "BATCH01/source/lib/ap2_mandate_verifier/scoped_constraints.rb": {
+      "bytes": 5440,
+      "sha256": "b2b5fa4cd1b4ce83cfc5ffc1be0a09ce57ad4a1b9be6778e581dd38f5ce5fd84",
+      "host_readback": true
+    },
+    "BATCH01/source/lib/ap2_mandate_verifier/trust_context.rb": {
+      "bytes": 7556,
+      "sha256": "430eb9f9f3be4c0d7e799e95b68009c08582b6961aa954cc866ff012a3b2be36",
+      "host_readback": true
+    },
+    "BATCH01/source/lib/ap2_mandate_verifier.rb": {
+      "bytes": 6575,
+      "sha256": "4824eeef1ce6c7833bcc24bc0bf9abc265df0b35ba135e54b4341b54c2f65ef2",
+      "host_readback": true
+    },
+    "BATCH01/COMMIT_NOTICE_LOST-commit_hide.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "host_readback": true
+    },
+    "BATCH01/ABORT_THEN_RETRY-abort_before_commit.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "host_readback": true
+    },
+    "BATCH01/ABORT_THEN_RETRY-retry.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "host_readback": true
+    },
+    "BATCH01/INFLIGHT_EMPTY-hold_abort.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "host_readback": true
+    },
+    "BATCH01/BINDING_CONFLICT-commit_hide.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "host_readback": true
+    }
+  },
+  "missing": [
+    "BATCH01/STOP.json",
+    "BATCH01/CONTROLLER_STOP.json"
+  ],
+  "seen": [
+    "BATCH01/ABORT_THEN_RETRY-abort_before_commit.stderr",
+    "BATCH01/ABORT_THEN_RETRY-retry.stderr",
+    "BATCH01/BATCH.json",
+    "BATCH01/BINDING_CONFLICT-commit_hide.stderr",
+    "BATCH01/COMMIT_NOTICE_LOST-commit_hide.stderr",
+    "BATCH01/CONTROLLER_STOP.json",
+    "BATCH01/INFLIGHT_EMPTY-hold_abort.stderr",
+    "BATCH01/REPORT.json",
+    "BATCH01/STOP.json",
+    "BATCH01/SUPERVISION.json",
+    "BATCH01/WORKER_REPORT.json",
+    "BATCH01/controller.stderr",
+    "BATCH01/controller.stdout",
+    "BATCH01/source/lib/ap2_mandate_verifier.rb",
+    "BATCH01/source/lib/ap2_mandate_verifier/host_binding.rb",
+    "BATCH01/source/lib/ap2_mandate_verifier/input_validator.rb",
+    "BATCH01/source/lib/ap2_mandate_verifier/purchase_binding.rb",
+    "BATCH01/source/lib/ap2_mandate_verifier/research_result.rb",
+    "BATCH01/source/lib/ap2_mandate_verifier/result.rb",
+    "BATCH01/source/lib/ap2_mandate_verifier/root_disclosures.rb",
+    "BATCH01/source/lib/ap2_mandate_verifier/root_signature.rb",
+    "BATCH01/source/lib/ap2_mandate_verifier/scoped_constraints.rb",
+    "BATCH01/source/lib/ap2_mandate_verifier/trust_context.rb",
+    "BATCH01/worker.rb",
+    "install.finished",
+    "install.json.exit",
+    "install.json.group",
+    "install.other.exit",
+    "install.other.group",
+    "install.supervisor",
+    "launch.pid"
+  ],
+  "bytes_announced": 72775,
+  "partial_file": null,
+  "rerun": false
+}

@@ -1,0 +1,29 @@
+{
+  "id": "HOST-COMMIT-RECONCILE-DOCKER-20261025-R5",
+  "baseline_main": "27445dafbca5ad9646249b008ce83a99348f9092",
+  "raw_report_sha256": "bb05bb10e2c331ec806a46c458c0627cdbc528df0733b1b5cd274d51626eedf9",
+  "report_publication": "byte-identical raw report; no fields removed",
+  "input_path_at_baseline": "research/e06_semantic_subset/results/R1/PUBLIC_INPUTS.json",
+  "input_sha256": "cc26cf7115c59c5e44c34a5a051f7dd17577958c32df7113ecbe022bb390a4f5",
+  "executed_sources_sha256": {
+    "compare.rb": "2c256db33a2bedb6353205dc5930d88028d2e39e5d2f05a0de6b8cdbb6b92c80",
+    "schema.sql": "b07a047e30853b5c1a50f4631ad0cb76a2ef4fd52a4ae765cda4a5c548ff0c24",
+    "worker.rb": "ece24703b390c0544f8d53cf4613baf5570e53d17f8076d1d097c131efcbbcf3",
+    "supervision/collect_diagnostics.rb": "111bba0e54c788f99a29dfe8c2dc205cc56c5da5a75bc5a554f63bea9cfe74ba",
+    "supervision/offline_install.rb": "9ff9376e74044b837c4565b016fc3a5b8ee1ca565f7fb9141ead4b820b0ad8d9",
+    "supervision/stream_results.rb": "12b59e4b66dd0e5b125ce6caf8dcc728f5c20cb9e86029b77119a45cd66cd4f3",
+    "supervision/run_supervised.py": "3a4d4364eea49f0aefc81bef5f7bfc65f601495ff61a6a0470b580162e40f371",
+    "supervision/stream_results.py": "41a63b1966c2048270bceb1646d6bca2652f77fe35efe790ceddc4a4e1fe28e2"
+  },
+  "raw_batch_sha256": "fef6a9dfd2002d6a357ef4cd86e4249d9d33681f18b20fd4de479b1eec62a659",
+  "raw_supervision_sha256": "0d9daa70eedb71c747d1943d2303f0f018959a35b224f39f2a45dc6c9421762d",
+  "raw_transfer_sha256": "a70eef6a54819c9493435f84bbddb3151057b833a74bd2d0427d62998272408c",
+  "raw_diagnostics_sha256": "45186324afc2fd8c8d192108547c390d3ce50d680d93e5b68cd1c684cdac5cd4",
+  "raw_sha_manifest_sha256": "4290a8f21d69fec9a55852e0215648de7eedde2a34480af3b621168f4271cf4e",
+  "raw_inputs_and_full_local_logs_retained": true,
+  "public_scope": "raw REPORT/BATCH/SUPERVISION/TRANSFER/DIAGNOSTICS plus selected provider/execution projections; no archives, credentials, host mountinfo or personal paths",
+  "semantic_code_changes_after_measurement": false,
+  "not_a_production_or_general_fault_tolerance_claim": true,
+  "D2_dummy_source_sha256": "0d6916d5a2dd6b46966eee704d1b0ea78a259560433c3168ad19b6b93b795f6d",
+  "D2_dummy_source_execution": "separate D2 transfer, not executed in R5"
+}
