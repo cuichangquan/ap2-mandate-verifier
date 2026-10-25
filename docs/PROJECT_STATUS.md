@@ -1,7 +1,7 @@
 # 現状メモ / Project status
 
-更新：2026-10-24 UTC（合成Host handoff限定観測の保存）。確認基準main：
-`feb3c426365b5bb9d2fe2752a30f0e08f7eee48c`（本追記前。最新mainは再確認）。
+更新：2026-10-25 UTC（実EvidenceとPostgreSQL transactionの限定観測保存）。確認基準main：
+`80ea13149543befe106a258d87d7131cc688a158`（本追記前。最新mainは再確認）。
 Linux実行SHA：`d34dbfa3a87a75360fb4bb14d535da8bc5e8cdc4`。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
@@ -167,3 +167,12 @@ Gemの既存入力上限・署名/開示/Schema/制約・trust/Host binding・�
 公開保存では実行コードをbyte不変で保持し、READMEと契約の作成時点NOT_RUNに後続観測を追補。
 製品・原証拠・公開Gem不変。この保存・PR作業で比較/構文/試験は再実行していません。
 
+
+
+## ㉗ 実Evidence→PostgreSQL transaction限定観測（Docker R3）
+
+[方法・停止履歴・限界](../research/host_db_handoff_subset/README.md)、[原REPORT](../research/host_db_handoff_subset/results/R3/REPORT.json)、[来歴](../research/host_db_handoff_subset/results/R3/PROVENANCE.json)を保存。基準main80ea131…の製品10ソースは不変。保存合成wire・固定合成時計を使う新Linux arm64環境で、5ケース1batch/8workers、exit0、0.820627秒、所有プロセス群回収済み。正常/再使用、同Evidence2接続競合、注文変更先行、消費先行、nonce更新後CAS0全rollbackが独立期待値と一致。競合3件で実ロック待ち、全5件で第三接続全行照合とworker DBセッション終了を観測。COMMITTEDは研究用operation記録で、決済/本番ALLOWではない。
+
+Ruby4.0.9・固定Gem依存、PostgreSQL16.15、pg1.7.0/libpq18.6、修正済みDebianOpenSSL3.5.7-1~deb13u3を確認。JSON native build1回、追加ダウンロード0。R1 provider停止、R2整合性確認停止、DIAG01文書欠落373件の診断は歴史記録として保持し、R3成功で上書きしない。
+
+実行から今回image清掃まで約234秒。専用container/一時DB/network/派生imageは清掃済み。base image・証拠と安全に特定不能な共有build cacheは保持。CPU/RAM設定は合計2/2GiB。**全期間8GiBの厳密な強制と総通信量は未証明のまま実行が進んだため、資源条件全面遵守とは扱わない。** 一般並行性能・耐障害性・不明COMMIT復旧・実Issuer信頼・本番GOも未証明。従来の『実DB未実証』は各過去時点の記録で、今回埋まったのは固定合成入力と一時DBの5制御scheduleだけ。Gem責務・公開pre3・元E06/Phase2A全面PASSの状態は変更しない。この保存作業で追加試験/構文/build/Docker/CI/再公開なし。

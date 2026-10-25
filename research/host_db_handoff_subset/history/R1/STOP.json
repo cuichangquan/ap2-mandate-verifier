@@ -1,0 +1,28 @@
+{
+  "state": "STOP_PROVIDER_NOT_ADMITTED",
+  "seconds": 197.81112599372864,
+  "test_batches": 0,
+  "case_count": 0,
+  "json_native_builds": 0,
+  "gem_installs": 0,
+  "db_started": false,
+  "ruby": "4.0.9",
+  "platform": "aarch64-linux",
+  "openssl_gem": "4.0.2",
+  "openssl_library": "OpenSSL 3.0.22 25 Aug 2026",
+  "debian_package": "3.0.22-1~deb12u1",
+  "unresolved_provider_cves": [
+    "CVE-2026-84782",
+    "CVE-2026-77696",
+    "CVE-2026-75806",
+    "CVE-2026-75805",
+    "CVE-2026-54872",
+    "CVE-2026-35189"
+  ],
+  "source": "https://security-tracker.debian.org/tracker/source-package/openssl",
+  "exploit_in_this_poc": "NOT_DEMONSTRATED; fixed-input/no-TLS reachability not comprehensively admitted",
+  "rerun": false,
+  "actual_all_network_bytes": null,
+  "transfer_budget_proven": false,
+  "production_go": false
+}

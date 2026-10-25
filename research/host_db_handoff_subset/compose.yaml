@@ -1,0 +1,57 @@
+name: ap2-hdb-20261025-r3
+services:
+  db:
+    image: postgres@sha256:d735d89e0f050dd5efa611ad633e44e06b526da77b04a7501cece311cd032375
+    platform: linux/arm64
+    hostname: hdb-db
+    networks:
+      isolated:
+        aliases: [hdb-db]
+    cpus: 1.0
+    mem_limit: 512m
+    memswap_limit: 512m
+    pids_limit: 128
+    shm_size: 64m
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /var/lib/postgresql/data:size=268435456,uid=999,gid=999,mode=0700
+    environment:
+      POSTGRES_PASSWORD: ${HDB_PASSWORD:?required}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    labels:
+      ap2.hdb.owner: ap2-hdb-20261025-r3
+  worker:
+    image: ap2-hdb-worker:20261025-r3
+    platform: linux/arm64
+    networks: [isolated]
+    cpus: 1.0
+    mem_limit: 1536m
+    memswap_limit: 1536m
+    pids_limit: 128
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: [/tmp:size=268435456,mode=1777]
+    volumes:
+      - ${HDB_PRODUCT:?required}:/product:ro
+      - ${HDB_SAVED_INPUT:?required}:/inputs/PUBLIC_INPUTS.json:ro
+      - ${HDB_RESULTS:?required}:/results:rw
+    environment:
+      HDB_PG_VERSION: 1.7.0
+      HDB_LIBPQ_VERSION: '180006'
+      HDB_SERVER_VERSION: ${HDB_SERVER_VERSION:?required}
+      HDB_OPENSSL_LIBRARY: ${HDB_OPENSSL_LIBRARY:?required}
+      HDB_SOCKET: hdb-db
+      HDB_PORT: '5432'
+      HDB_PASSWORD: ${HDB_PASSWORD:?required}
+      HDB_SOURCE_ROOT: /product
+      HDB_INPUTS: /inputs/PUBLIC_INPUTS.json
+      HDB_OUT: /results/BATCH01
+    labels:
+      ap2.hdb.owner: ap2-hdb-20261025-r3
+networks:
+  isolated:
+    internal: true
+    labels:
+      ap2.hdb.owner: ap2-hdb-20261025-r3
+

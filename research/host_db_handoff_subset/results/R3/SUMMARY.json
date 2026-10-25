@@ -1,0 +1,105 @@
+{
+  "state": "LIMITED_OBSERVED_5_OF_5",
+  "batch_count": 1,
+  "workers": 8,
+  "batch_seconds": 0.8206269589999238,
+  "execution_to_container_network_cleanup_seconds": 199.49854826927185,
+  "execution_to_image_cleanup_seconds": 233.916335105896,
+  "cases": [
+    {
+      "case_id": "NORMAL_REPLAY",
+      "observed": [
+        [
+          "COMMITTED",
+          "REJECT_REPLAY"
+        ],
+        "CONSUMED",
+        "RESERVED",
+        "order-v1",
+        1
+      ],
+      "full_rows_matched": true,
+      "worker_sessions_closed": true,
+      "lock_wait_observed": false
+    },
+    {
+      "case_id": "SAME_EVIDENCE_RACE",
+      "observed": [
+        [
+          "COMMITTED",
+          "REJECT_REPLAY"
+        ],
+        "CONSUMED",
+        "RESERVED",
+        "order-v1",
+        1
+      ],
+      "full_rows_matched": true,
+      "worker_sessions_closed": true,
+      "lock_wait_observed": true
+    },
+    {
+      "case_id": "EDIT_FIRST",
+      "observed": [
+        [
+          "EDITED",
+          "REJECT_ORDER"
+        ],
+        "ISSUED",
+        "OPEN",
+        "order-v2",
+        0
+      ],
+      "full_rows_matched": true,
+      "worker_sessions_closed": true,
+      "lock_wait_observed": true
+    },
+    {
+      "case_id": "CONSUME_FIRST",
+      "observed": [
+        [
+          "COMMITTED",
+          "TOO_LATE"
+        ],
+        "CONSUMED",
+        "RESERVED",
+        "order-v1",
+        1
+      ],
+      "full_rows_matched": true,
+      "worker_sessions_closed": true,
+      "lock_wait_observed": true
+    },
+    {
+      "case_id": "CAS_ZERO_ROLLBACK",
+      "observed": [
+        [
+          "REJECT_CAS"
+        ],
+        "ISSUED",
+        "OPEN",
+        "order-v1",
+        0
+      ],
+      "full_rows_matched": true,
+      "worker_sessions_closed": true,
+      "lock_wait_observed": false
+    }
+  ],
+  "json_native_builds": 1,
+  "pg_source_builds": 0,
+  "new_download_bytes": 0,
+  "network_total_bytes": null,
+  "cpu_config_total": 2,
+  "memory_config_total_bytes": 2147483648,
+  "worker_process_group_recovered": true,
+  "report_sha256": "7464ec9e4bf0fda1773bf8f9838f3b4150a0dee0d9d1e49b06985e174b25f939",
+  "disk_accounting": "derived image1154126474B; source/results about5MB; aggregate shared build cache3.313GB after cleanup is a conservative upper bound for retained R3 cache, but no continuous hard8GiB quota proof; shared cache retained without prune",
+  "scope_limits": [
+    "fixed synthetic clock/input and dedicated PostgreSQL16.15, not real Issuer/production",
+    "tmpfs DB, no crash durability or unknown COMMIT recovery proof",
+    "controlled five schedules, not arbitrary concurrency/throughput guarantee"
+  ],
+  "historical_evidence_preserved": true,
+  "public_gem_product_unchanged": true
+}

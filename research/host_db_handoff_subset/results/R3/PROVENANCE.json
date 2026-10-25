@@ -1,0 +1,44 @@
+{
+  "baseline_main": "80ea13149543befe106a258d87d7131cc688a158",
+  "tested_source_sha256": {
+    "compare.rb": "ca72876a395ea70ad144a406de5315d1429379d37fe50de97237dee8175291c0",
+    "worker.rb": "83f0f1239ed8e56ae308c08342f27972f013adda3561245894d1bbdaec92e875",
+    "schema.sql": "a3b6de08bb44866f04d067a79a56220b9828b4cecdfb592eab20629ddd0d246d",
+    "Dockerfile": "35504d531204f9eca87bedef435873d6eed9212f2fb972d939fc3aaa833bbbc3",
+    "compose.yaml": "4f0f4292972bec6120997bdb6904b63d0c7ff4b29f78280f6f6c91db55f6279b"
+  },
+  "source_code_projection": "compare/worker/schema/Dockerfile/compose copied byte-for-byte from R3; README is publication explanation, not tested code",
+  "report_original_preserved": true,
+  "report_sha256": "7464ec9e4bf0fda1773bf8f9838f3b4150a0dee0d9d1e49b06985e174b25f939",
+  "local_original_hashes": {
+    "AUTHORIZATION.json": "761c5cec1d7548e389b6adb48d2eb1c795138d89c4f01d73fd730568dd74c198",
+    "BUILD_ONCE.json": "0f00af131d5e22710f449f9cc55260ef4220c8076380ae99abf3df7e7b04fced",
+    "BUILD_END.json": "466d9fd786be55bdf8ab8817c3a5617cbcc5286e8cea0789211600805b1f7e59",
+    "build.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build.stderr": "1047ad0d84387b1634eeee28e99d501a089afaa2118bcd7cfb0085fb88acab90",
+    "LOADCHECK_ONCE.json": "91f1161bb376ebd006d85dfc3af9c689457a3c68e4f78890a012478acd800220",
+    "loadcheck.stdout": "a39edb4705df6472967e901d716812ff7f97c35dd2a1924d04f94d8cf5edfd6b",
+    "loadcheck.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "LOADCHECK_END.json": "a08a2098c3cbf63df37476e17e5c09f2916eb4bc5bf5d617a02787506b3454f8",
+    "ruby-preflight.stdout": "79bb4b590ce3367a083fdccb34f2a4a8c042be077ff87214c8131cc069501927",
+    "ruby-preflight.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "ruby-preflight-end.json": "7d70deb5b93f2bb29f6984be4003cac295b0e165e0acf72a32949dcd06fd590c",
+    "postgres-preflight.stdout": "5a755f201758d90ee198ade5642b4f2307aab2cdd670d9d243bab9b3c0a08ac5",
+    "postgres-preflight.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "postgres-preflight-end.json": "e2be3e8cfb049416b334c61f5dd502070293743cd07ea91a7a7f6a2144158d51",
+    "BATCH_DISPATCH_ONCE.json": "6a94552262b6c7a18d22c4e65e29907b773dc53e2efde78984630aa4ebb1b8ec",
+    "batch.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "batch.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "db-version.stdout": "57604faffb7210e92e660f6f6beec5cf3e49a3f9f06261518db247e873a431d6",
+    "db-final-sessions.stdout": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "EXECUTION_END.json": "c4d777c7778952b7879af733936f6186af198e1910b5c50d3aff3b15458eff36",
+    "FINAL_CLEANUP.json": "236e4b9e53c766fff323b9acb812f49fb574fc04f9a738c6c346f50038869212",
+    "SUMMARY.json": "308b5b2ba0efe4c16382340cdab85eb9f37f3ad0b8ec42f5ea83f31cfdaee6fc"
+  },
+  "projection": "REPORT/BATCH/SUPERVISION and historical STOP bytes unchanged; PROVIDER removes virtual addresses, CLEANUP removes ephemeral derived image ID; other records summarize originals. No claim of raw HTTP originals. No credentials/archive binaries/full local inspect records published.",
+  "input": {
+    "path": "research/e06_semantic_subset/results/R1/PUBLIC_INPUTS.json",
+    "sha256": "cc26cf7115c59c5e44c34a5a051f7dd17577958c32df7113ecbe022bb390a4f5"
+  },
+  "reproduction": "commands source paths were local execution coordinates, not logical identity; use baseline source lib pins and input hash. No replay was performed for publication."
+}
