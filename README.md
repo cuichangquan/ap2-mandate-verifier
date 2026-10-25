@@ -34,7 +34,7 @@ USD/EUR/JPY、空links。一般AP2/全Schema/任意Issuerの互換性は保証�
 | Ruby | MRI **4.0.9**。他のRuby版・engineは対象外 / Other versions and engines are outside this release's contract. |
 | Runtime Gems | `json = 2.19.9`, `jwt = 3.3.0`, `base64 = 0.3.0`, `openssl = 4.0.2`, `digest = 3.2.1` |
 | Native providers | 利用するRuby用のOpenSSL／JSON拡張が必要。Gem本体はnative binaryを含まない / Compatible OpenSSL and JSON extensions are required; this Gem contains no native binaries. |
-| 観測環境 / Observed systems | **pre3実パッケージ：MBA Darwin arm64のみ。pre3のLinux検証は未実施。** Ubuntu24.04 x86_64の成功run39939021098はpre2の歴史証拠であり、pre3の実行証拠ではない / **pre3 package: MBA Darwin arm64 only; pre3 Linux NOT_RUN.** Successful Ubuntu24.04 x86_64 run39939021098 is historical pre2 evidence, not a pre3 execution. No guarantee for every macOS/Linux configuration. |
+| 観測環境 / Observed systems | **公開pre3：MBA Darwin arm64とUbuntu24.04 x86_64で実パッケージの13 payload／10 loaded／52 installedを確認。** [pre3 Linux run40038620413 attempt1](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/40038620413)は公開archiveを確認し、885 source回帰・独立Linux Oracleは再実行していません。run39939021098はpre2の歴史証拠です / **Published pre3: actual-package13 payload/10 loaded/52 installed checks on MBA Darwin arm64 and Ubuntu24.04 x86_64.** The linked pre3 Linux run checked the published archive;885 source regressions and the independent Linux Oracle were not rerun. Run39939021098 is historical pre2 evidence. These observations do not cover every macOS/Linux configuration. |
 
 以下は利用者が実行する手順例です。既存のMRI Ruby4.0.9と任意のGem隔離環境を使ってください。通常のRubyGems導入はネットワーク取得や依存のnative buildを伴う場合があります。固定依存と実ロードproviderを確認し、未知・不一致なら停止してください。本整備ではコマンドを実行していません。
 
@@ -127,6 +127,10 @@ See [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md#full-entry-and-required-inputs) 
 `verify_research`の成功は固定profileにおける検証事実です。Hostは最新trust／失効／注文版／challenge／有効期限を再照合し、nonce原子消費＋注文CASを自身で成立させる必要があります。Gemはこれを実行しません。EvidenceをJSON化して再入力し、真正性を回復するAPIもありません。旧 `verify(presentation_json:)` はJSON構文境界だけで、成功Evidenceを返しません。
 
 A successful `verify_research` result establishes scoped verification facts. The Host still must recheck latest trust/revocation/order version/challenge/time and atomically consume the nonce with order CAS. The Gem does not perform those operations. Serializing Evidence to JSON does not preserve or reconstruct authenticity through this API. Legacy `verify(presentation_json:)` checks only the JSON syntax boundary and never returns successful Evidence.
+
+連携前に[Issuer登録前チェックリスト](docs/ISSUER_ONBOARDING_CHECKLIST.md)と[Issuer/Host最小契約](docs/ISSUER_HOST_MINIMUM_CONTRACT.md)を参照してください。Issuerは未定・実Issuer信頼は未証明・本番HOLDです。契約と`research/`のHost/DBコードは合成研究の設計・限定観測であり、本番adapterとして提供するものではありません。
+
+Before integration, consult the [Issuer onboarding checklist](docs/ISSUER_ONBOARDING_CHECKLIST.md) and [Issuer/Host minimum contract](docs/ISSUER_HOST_MINIMUM_CONTRACT.md). No real Issuer has been selected or authenticated; production remains HOLD. The contract and Host/DB code under `research/` describe synthetic research designs and limited observations, not a production adapter.
 
 `inputs`はtrust_json/selection_json/host_json/root_presentation/terminal_jws/
 host_checkout_jws/verified_atです。前3つのJSONは認証済みの独立Host入力として渡し、
@@ -307,3 +311,4 @@ Both are **separate projects**. Integration comes after the verification contrac
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
