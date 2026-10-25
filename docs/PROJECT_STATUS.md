@@ -1,7 +1,7 @@
 # 現状メモ / Project status
 
-更新：2026-10-25 UTC（COMMIT回復境界のR5限定観測・停止履歴と再利用手順を保存）。確認基準main：
-`27445dafbca5ad9646249b008ce83a99348f9092`（本追記前。最新mainは再確認）。
+更新：2026-10-25 UTC（Issuer登録前チェックリストを整理）。確認基準main：
+`4eb061ca3edd949b605f66eafe176710ec2533bb`（本追記前）。
 Linux実行SHA：`d34dbfa3a87a75360fb4bb14d535da8bc5e8cdc4`。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
@@ -188,3 +188,10 @@ Ruby4.0.9・固定Gem依存、PostgreSQL16.15、pg1.7.0/libpq18.6、修正済み
 R1未着手、R2導入失敗と詳細ログ欠落、R3 noexec事前HOLD、R4 batch exit0だがREPORT回収失敗、D1転送器不具合、D2小ダミー成功は別証拠として保持。R4を合格へ昇格せず、先の実DB handoff R3五ケースとも重複加算しません。今回埋まったのは、**DB内部ACK後にアプリ通知を抑止した4制御scheduleの限定観測**です。実TCP/DB protocol障害・crash耐久性・一般耐障害性・任意の旧writer競合・実Issuer/認証/時計/失効・決済・本番GOは未証明。元E06/Phase2-A全面PASSと既存の限定研究コア完成範囲は変更しません。
 
 保存・静的監査・PR作業では追加試験/構文実行/Docker/build/取得/Actions/再公開なし。再利用手順は新しい実行、exec設定変更、失敗後rerun、費用や本番への包括承認ではありません。
+
+## Issuer登録前の利用者向け整理
+
+[登録前チェックリスト兼記入票](ISSUER_ONBOARDING_CHECKLIST.md)を準備。Issuerは未定で、承認根拠・真正な鍵配布元と主体の紐付け・失効更新の正本/鮮度・Owner判断は未決です。既存Gemの入力項目とHost側の承認/運用メタデータを分離し、新しい登録APIは設けません。鍵の登録だけでは信頼は成立せず、Gemは外部信頼/失効の最新性を独立証明しません。不明時はHost HOLD、EvidenceはALLOWではありません。
+
+この追記と記入票は文書整理のみ。実Issuer未証明・本番HOLD、限定研究コアの既存完成範囲と原証拠は不変。実装変更・追加試験・構文実行・Docker・取得/導入・build・CI・Gem再公開なし。
+
