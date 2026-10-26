@@ -1,6 +1,8 @@
 # 0.1.0 release-facing archive R2 — validation record
 
-**Release not yet published; S7 and specific Host production GO remain HOLD.**
+**0.1.0 is published on RubyGems under the exact-artifact S7 approval. Specific Host production GO remains HOLD.**
+
+The preparation and validation sections below retain their historical execution scopes; their statements about publication being unapproved describe those earlier stages, not the current distribution status.
 
 R2 is a new archive after consumer-only README/SUPPORT_CONTRACT/gemspec-description edits:
 **34,304B**, SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`.
@@ -42,3 +44,13 @@ Provider policy matched actual openssl.so/libssl/libcrypto paths/hashes, ownersh
 Archive bodies49,276,761B; measurable HTTP bodies/request/response headers49,287,629B; sample task disk149,648KiB. All traffic (setup/checkout/input/DNS/TLS) and physical peak/strict CPU/RAM quotas are unproved. No cache/artifact upload or extra fee was introduced. GitHub input/run history remains potentially visible and is not erased.
 
 Preparation PR199 reviewed HEAD8e9c2aa50f965496cc721af5516cc39e0c6a1471 clean; [receipt](https://github.com/cuichangquan/ap2-mandate-verifier/pull/199#issuecomment-6410916715). The result-addendum latest HEAD still requires its own review before merge. Neither merge authorizes S7 Gem publication, a GitHub Release/tag or a specific Host's production operation. No extra build, Mac rerun,885 or Oracle regeneration was performed.
+
+## RubyGems publication verified
+
+[Official 0.1.0 page](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0). Published at 2026-10-26 08:35:32 UTC; verified at 08:37:27 UTC after the Owner completed the supported Terminal/passkey flow. The earlier one-shot POST stopped on HTTP 401/MFA with no retry; postpublication verification did not upload again.
+
+Official versions metadata identifies stable `0.1.0`, platform `ruby`, owner API identifies `cuichangquan`, and the official SHA matches the actual downloaded distribution and retained R2: **34,304 bytes**, SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`. All 13 payload hashes match the frozen source manifest; all 18 source manifest entries were rechecked. Reviewed release source main: `bf996c00dc78fa7dd20db388e307beb4e4f82d76`. No rebuild, install, tests or Actions were performed for publication readback.
+
+[Sanitized verification receipt](results/R2/PUBLICATION_VERIFIED.json), SHA256 `a7ff9338fdef41af8e127b00873d956c1954916516829579c287a8f9c5d881d8`. The version-specific v2 API initially returned 404 during propagation; verification used the official v1 versions listing, owners API and downloaded Gem. The receipt contains no credentials or WebAuthn URL.
+
+Repository README language/layout changes after publication are documentation-only and are not the packaged README bytes. Frozen manifests, original reports and the RubyGems archive remain unchanged. GitHub source snapshots, if provided, are repository snapshots rather than byte-identical Gem distributions. S7 publication does not establish real Issuer trust, actual Host production GO, general AP2/full SDK conformance, all Phase2-A gates or worst-resource guarantees.

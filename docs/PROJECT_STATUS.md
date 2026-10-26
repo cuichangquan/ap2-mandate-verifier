@@ -1,15 +1,24 @@
 # 現状メモ / Project status
 
-更新：2026-10-26 UTC（0.1.0候補source・Mac/Ubuntu検証結果を記録）。確認基準main：
-`5d2c089d9705b1f90822ee50b19ab656f00b9690`（PR #195後、本追記前）。
-Linux実行SHA：`d34dbfa3a87a75360fb4bb14d535da8bc5e8cdc4`。
+更新：2026-10-26 UTC（固定profile検証専用0.1.0の公開確認）。確認基準main：
+`bf996c00dc78fa7dd20db388e307beb4e4f82d76`（PR #200後、本更新前）。
+安定版R2のLinux実行SHA：`4ab7ceea46f477eb60f7b0d436e3afd434a0ff6c`。
+以下の旧pre3・R1・準備段階のNOT_RUN/HOLDは各時点の履歴で、現在の公開状態は直下の記録を正本とします。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
 [プロセス正本 Issue #101](https://github.com/cuichangquan/ap2-mandate-verifier/issues/101)を確認してください。
 このメモは更新日時点の案内で、最新GitHub main／PR／レビュー／ActionsとRubyGems原本の確認を置き換えません。
 承認・制限の記載は現状記録であり、新たな権限を付与しません。
 
-## 現在地
+## 0.1.0公開済み — 現在の配布状態
+
+Ownerの対象版・SHAを指定したS7承認後、[RubyGems 0.1.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0)を公開。公式登録時刻は2026-10-26 08:35:32 UTC、照合は08:37:27 UTC。所有者`cuichangquan`、安定版`0.1.0`、platform `ruby`、34,304B、SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`。公式版一覧のSHA・実配布Gem・保持R2が一致し、13 payloadとsource manifest18ファイルも照合済みです。[公開receiptと境界](../research/stable010_release_linux_package/README.md#rubygems-publication-verified)を参照。
+
+初回送信はMFA要求で停止し、Ownerが本人のTerminalとパスキーで公開。その後の照合ではpushを再実行していません。版別APIは初回404だったため、公式版一覧・所有者API・実配布物を根拠としました。S7はこの固定profile検証専用Gemの公開に限って成立し、特定Host本番GO、実Issuer信頼、一般AP2/全Schema、発行・提示生成、Phase2-A全面PASSは成立しません。用途・実Issuer未定と既存の資源/通信・provider証拠の限界を維持します。
+
+リポジトリREADMEは公開後に日英分離・画像表示を整理したため、公開Gem同梱READMEとbyte同一ではありません。公開Gem・原検証証拠・旧R1/pre3は変更せず、再build・追加試験・Actions・RubyGems再公開は行っていません。
+
+## 以前の現在地・検証経緯（各記録時点）
 
 | 項目 | 状態・根拠 |
 | --- | --- |
@@ -22,7 +31,7 @@ Linux実行SHA：`d34dbfa3a87a75360fb4bb14d535da8bc5e8cdc4`。
 その後Ownerの実行B承認を受け、専用workflowを1回だけ実行しました。**1run枠は消費済み**です。
 追加実測・修復・rerun／attempt2は承認されていません。
 
-固定profile `ap2.checkout.single_merchant_sku` version1の研究用途限定・本番利用不可です。
+このpre3記録時点では固定profile `ap2.checkout.single_merchant_sku` version1の研究用途限定・本番利用不可でした。現在の0.1.0公開範囲は上記を参照してください。
 一般AP2互換性・Phase2-A全面PASS・E10全面GOは未成立、発行・提示生成・Rails SDKは未完成です。
 EvidenceはHost ALLOW・nonce消費・決済許可ではありません。
 
