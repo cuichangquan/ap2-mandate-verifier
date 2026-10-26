@@ -54,3 +54,10 @@ Owner `cuichangquan` remains the initial contact through the routes above. For t
 
 pre3の歴史的範囲は保持します。0.1.0は限定検証済み・未公開候補です。初回安定系列の最新修正版のみを保守対象とする条件を採用済みですが、公開GOとは別です。担当/窓口は上記、月次・関連勧告判明時・次版前に手動確認し、自動監視/SLA/一定年数/旧版backportを約束しません。重大未対処問題・保守不能はHOLD。更新/廃止は対象版・理由・移行を明示します。
 
+
+
+## 0.1.0 release-facing documentation / 公開向け文書のR2
+
+The0.1.0 consumer documentation now describes the fixed verification contract and installation only after official listing, without declaring publication. Earlier candidate/R1/pre3 descriptions above are historical. A newly built R2 archive has separate [source and validation evidence](research/stable010_release_linux_package/README.md); R1's43,008B archive and observations are not reused as new-byte validation. Existing maintenance scope/reporting routes/exclusions remain unchanged. RubyGems publication and specific Host production GO still require separate authorization.
+
+0.1.0の公開向け文書を整理しましたが、公開済みとは表示しません。旧candidate/R1/pre3は履歴として保持し、新R2は別archive・別証拠です。採用済み保守条件・窓口・保証除外は不変で、Gem公開GO・特定Host本番GOは別途必要です。

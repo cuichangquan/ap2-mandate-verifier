@@ -111,3 +111,10 @@ Provider/component確認と全面安全性は別です。D1/D2停止とD3限定�
 
 The public-artifact table still lists pre3/pre2 only. Candidate0.1.0 has separate Mac/Ubuntu evidence; its packaging snapshots are supplemented externally without rebuilding. Adopted maintenance covers the latest patch in the initial stable series, with manual monthly/advisory/pre-release review, existing reporting routes and explicit update/deprecation notices; no backport/fixed-term/SLA/24-hour promises or automatic monitoring. Diff-based historical evidence reuse is not a fresh885 run. Publication and specific Host production GO remain separate and unapproved.
 
+
+
+## 0.1.0 release-facing documentation / 公開向け文書のR2
+
+The0.1.0 consumer documentation now describes the fixed verification contract and installation only after official listing, without declaring publication. Earlier candidate/R1/pre3 descriptions above are historical. A newly built R2 archive has separate [source and validation evidence](../research/stable010_release_linux_package/README.md); R1's43,008B archive and observations are not reused as new-byte validation. Existing maintenance scope/reporting routes/exclusions remain unchanged. RubyGems publication and specific Host production GO still require separate authorization.
+
+0.1.0の公開向け文書を整理しましたが、公開済みとは表示しません。旧candidate/R1/pre3は履歴として保持し、新R2は別archive・別証拠です。採用済み保守条件・窓口・保証除外は不変で、Gem公開GO・特定Host本番GOは別途必要です。

@@ -171,3 +171,10 @@ workspaceの`.agents`/`.codex`ディレクトリは不存在。固定remote tree
 
 この追補は旧観測/失敗を成功に書き換えない。D1/D2 STOP、D3 limited identity、Mac/Ubuntu packagingを別ID・原本hashで保持し、個人task pathの公開版置換を明示する。過去通信/容量不足、実Issuer/Host・最悪資源等の未証明も残す。追加試験、Gem再build、Actions再実行、公開は今回行わない。
 
+
+
+## 文言整理後の新archive R2（2026-10-26 UTC）
+
+R1統合後、公開向け文書の整理だけを別承認し、新R2を作成しました。README/SUPPORT_CONTRACT/gemspec説明文だけを変更し、API・依存・製品10件は不変です。新SHA `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32` / 34,304B、[R2 source/原結果/由来](../research/stable010_release_linux_package/README.md)を正本とし、R1結果を新bytesの証拠へ転用しません。MBA13/10/52は1回PASS、R2 Ubuntuは準備時点で未実施。新workflowはmanual-onlyで、当該HEADレビュー/統合後に承認済み1runのみ実行します。
+
+S1は日英の現行導入/利用契約へ整理、S2の限界付き既存証拠採用とS3/S4の範囲は不変。S5は新archiveに対して環境別に判定し、S6は各準備/結果追補の最新HEADレビューが必要、S7は別Owner公開GO待ち。全Phase2A/実Issuer/Host運用/最悪資源保証へ昇格しません。既存885は製品/固定依存同一性により再利用し、今回再実行しません。

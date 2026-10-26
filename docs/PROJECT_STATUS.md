@@ -224,3 +224,12 @@ S3は実ロードcomponent/providerの出所・hash・修正版等を限定確�
 
 次は最新HEADレビューとsource同一性を確認後、正確な候補・配布先・保証範囲・残余を提示してS7判断を求める段階です。本記録・統合自体はGem公開・Tag/Release作成・本番GOを許可しません。今回追加build/試験/Actions/取得/公開なし。
 
+
+
+## 公開向け文言整理・新archive R2（2026-10-26 UTC）
+
+0.1.0の公開向けREADME/契約/説明文を整理し、新archive R2を別途build・検証しています。API・依存・製品10件は不変。旧R1の43,008BとそのMac/Ubuntu成功は[旧候補記録](../research/stable010_candidate/README.md)として保持し、R2へ流用しません。
+
+R2は34,304B、SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`。MBAの新archive13/10/52は各1回PASS、実行約0.627秒、一時導入/展開先はhash読戻し後に削除。追加取得/native buildなし。[R2の検証正本](../research/stable010_release_linux_package/README.md)を参照。準備PR時点ではR2 Ubuntuは未実施で、最新HEADレビュー/統合後に承認済み1runを行います。旧run40274002891はR1です。
+
+公開済みと誤認しないよう導入例は0.1.0の公式掲載後に使用と明記しました。S7公開GO・特定Host本番GOは未承認/HOLD。885/147/旧runtime独立比較の扱いとS3残余は不変です。
