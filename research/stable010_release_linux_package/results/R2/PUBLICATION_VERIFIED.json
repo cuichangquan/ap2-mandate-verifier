@@ -1,0 +1,29 @@
+{
+  "status": "VERIFIED_PUBLISHED",
+  "verified_at_utc": "2026-10-26T08:37:27.955437+00:00",
+  "public_url": "https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0",
+  "version": "0.1.0",
+  "prerelease": false,
+  "owner": "cuichangquan",
+  "published_at": "2026-10-26T08:35:32.165Z",
+  "bytes": 34304,
+  "sha256": "37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32",
+  "official_sha256": "37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32",
+  "retained_archive_byte_identical": true,
+  "payload_files": 13,
+  "payload_source_hashes_match": true,
+  "source_manifest_files": 18,
+  "source_manifest_all_match": true,
+  "source_manifest_sha256": "54fe255401393a30ff493636731d6ee5bd4de8fdb71940eb9537d43a1004cf41",
+  "reviewed_main": "bf996c00dc78fa7dd20db388e307beb4e4f82d76",
+  "version_specific_api_initial_status": 404,
+  "metadata_basis": "official v1 versions listing",
+  "new_push_calls_this_verification": 0,
+  "tests_builds_installs": 0,
+  "scope": "fixed-profile verifier-only stable release; no actual Host production GO or general AP2 conformance",
+  "evidence_hashes": {
+    "PUBLISHED_VERSIONS.json": "63afe2af6f1a4674d87fba4762a5f70d8758584faccc22fd2643ea8dea9b4363",
+    "PUBLISHED_OWNERS.json": "dbccf69449f9d80cf2a6f87c91c5474bca2cd465a037da3a2dfb950a038bd5c9",
+    "PUBLISHED.gem": "37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32"
+  }
+}
