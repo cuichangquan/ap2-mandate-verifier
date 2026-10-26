@@ -1,0 +1,35 @@
+{
+  "scope": "RELEASE-R2; no publication or specific Host production GO",
+  "base_main": "2546d112b4bd4eaaf0a55b502f1c40b1fd61be65",
+  "artifact": {
+    "bytes": 34304,
+    "sha256": "37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32"
+  },
+  "source_manifest_sha256": "54fe255401393a30ff493636731d6ee5bd4de8fdb71940eb9537d43a1004cf41",
+  "three_tested_source_files": {
+    "README.md": "d5db66b0a22d6ea7a53ee5181e13eef269b527b15f49262fa05e3316f814853f",
+    "docs/SUPPORT_CONTRACT.md": "c868913e4973535a4c2b90a39c9ba22575de858bc74c8c82f25d26ab22414834",
+    "ap2_mandate_verifier.gemspec": "fafecbcf224a5bbee0bcf95ed29c5a00c67eb57bc519d79753eb576e8fcd0f9a"
+  },
+  "mba": {
+    "original_report_sha256": "a9b45412dfdc8d1b2571dea574e1d9ab346137c6625e9ff04b10f172d25c4498",
+    "public_report_sha256": "77fab83f43a6b080d5d3e1d287702cab6cb6ba25ad0d608b4a44bae8e89755a6",
+    "transform": "literal private task-path prefixes replaced with logical placeholders; no observation values changed",
+    "receipt_sha256": "300614bc2f663846879e7f4d4c9d5be10e7563827682175d8aa682f4944bb4c3",
+    "exit": 0,
+    "group_clear": true,
+    "temporary_install_extract_removed": true,
+    "builds": 1,
+    "installed52_runs": 1,
+    "downloads": 0,
+    "native_builds": 0
+  },
+  "ubuntu": {
+    "status": "NOT_RUN_AT_PREPARATION",
+    "dispatch_max": 1,
+    "attempt": 1
+  },
+  "old_archive": "R1 SHA0553645fa6c067dd8d7a7a1a7cdf13799370393e76dc3bc4ba161ab2ca5981b0 retained; not new-byte evidence",
+  "holds": "S7 final release GO and specific Host production GO; no885/Oracle rerun",
+  "originals": "retained locally, not overwritten"
+}

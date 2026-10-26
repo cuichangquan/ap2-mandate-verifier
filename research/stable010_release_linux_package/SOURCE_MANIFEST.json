@@ -1,0 +1,80 @@
+{
+  "base_main": "2546d112b4bd4eaaf0a55b502f1c40b1fd61be65",
+  "candidate": "0.1.0",
+  "attempt": "RELEASE-R2",
+  "product_library_unchanged": true,
+  "files": {
+    "LICENSE": {
+      "sha256": "1442143c4265d88eedfc14f25d04298449358c837b0bb58dfa825f84b36391c8",
+      "bytes": 1090
+    },
+    "README.md": {
+      "sha256": "d5db66b0a22d6ea7a53ee5181e13eef269b527b15f49262fa05e3316f814853f",
+      "bytes": 17849
+    },
+    "ap2_mandate_verifier.gemspec": {
+      "sha256": "fafecbcf224a5bbee0bcf95ed29c5a00c67eb57bc519d79753eb576e8fcd0f9a",
+      "bytes": 1005
+    },
+    "Gemfile": {
+      "sha256": "e2a21f75233d22b155710c04856ed18dc1d21e9d980196243d2f0e3f8123761f",
+      "bytes": 98
+    },
+    "Gemfile.lock": {
+      "sha256": "6d2ffeb5719b9d3448038744aa68a53dd9769322d6977fd69f9110704751e017",
+      "bytes": 419
+    },
+    "test/packaged_gem_test.rb": {
+      "sha256": "55076268e790a74a444b8a0ea71829414b3b4aef4dc48c212d90981abcdb99b4",
+      "bytes": 5924
+    },
+    "test/package_contents_audit.rb": {
+      "sha256": "12cbec375ed179342c870ce709ae8a65b0e5fc6f5e0902ecf29e25071c73954a",
+      "bytes": 1642
+    },
+    "docs/SUPPORT_CONTRACT.md": {
+      "sha256": "c868913e4973535a4c2b90a39c9ba22575de858bc74c8c82f25d26ab22414834",
+      "bytes": 23426
+    },
+    "lib/ap2_mandate_verifier.rb": {
+      "sha256": "4824eeef1ce6c7833bcc24bc0bf9abc265df0b35ba135e54b4341b54c2f65ef2",
+      "bytes": 6575
+    },
+    "lib/ap2_mandate_verifier/input_validator.rb": {
+      "sha256": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+      "bytes": 3466
+    },
+    "lib/ap2_mandate_verifier/host_binding.rb": {
+      "sha256": "917a4c139accd77d5bbe9125c64ea258349b6854ac04e0fefe33536b9b88ec0a",
+      "bytes": 6867
+    },
+    "lib/ap2_mandate_verifier/purchase_binding.rb": {
+      "sha256": "6f2108ac3298e4558fc053139d045d399687ccc3bf39c01945ed52d529dc26df",
+      "bytes": 5643
+    },
+    "lib/ap2_mandate_verifier/result.rb": {
+      "sha256": "fade8a1e922f7b4cf2439c120580160f85e0f22f6cfac9ff1ab1364d7b34d310",
+      "bytes": 2939
+    },
+    "lib/ap2_mandate_verifier/research_result.rb": {
+      "sha256": "02159d2f451461ef818d7b6c9d55349cdfb6e23d9ced7d688730d22c8e96827d",
+      "bytes": 3122
+    },
+    "lib/ap2_mandate_verifier/scoped_constraints.rb": {
+      "sha256": "b2b5fa4cd1b4ce83cfc5ffc1be0a09ce57ad4a1b9be6778e581dd38f5ce5fd84",
+      "bytes": 5440
+    },
+    "lib/ap2_mandate_verifier/root_disclosures.rb": {
+      "sha256": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+      "bytes": 4768
+    },
+    "lib/ap2_mandate_verifier/trust_context.rb": {
+      "sha256": "430eb9f9f3be4c0d7e799e95b68009c08582b6961aa954cc866ff012a3b2be36",
+      "bytes": 7556
+    },
+    "lib/ap2_mandate_verifier/root_signature.rb": {
+      "sha256": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+      "bytes": 4895
+    }
+  }
+}

@@ -1,10 +1,11 @@
-# Fixed-profile verification — unpublished stable candidate 0.1.0
+# Fixed-profile AP2 verification — 0.1.0
 
-**Candidate only; not published or approved for production deployment.**
-Owner adopted the existing fixed-profile verification API and concrete stable-release conditions. Candidate packaging/install verification is separately authorized; no RubyGems publication or specific Host production GO is granted.
+**Fixed-profile verification contract; Evidence is not Host ALLOW or payment permission.**
+Distribution availability is determined by the official RubyGems version listing, not by this document. Specific Host production GO remains separate.
+Owner adopted the existing verification API and bounded stable-release conditions below. Publication and a specific Host's production operation are separate decisions; this contract does not authorize either.
 Published research-only pre3 remains unchanged. Its historical observations below do not certify this new archive.
 
-## Adopted candidate contract
+## Verification contract
 
 Preserve `verify_research`, its seven keyword inputs, existing status/code and Evidence v2 identifiers, and legacy APIs' non-success behavior. No API rename, new trust enrollment, remote lookup, DB or payment operation is added. Fixed AP2 commit b4587ac1d055888a73b4b21750973cffba961793 and the exact profile v1 body/hash, seven supported shapes, ES256/P256 and existing bounds remain unchanged.
 Gem-owned signature/original-wire/closure, delegation, binding, supplied-trust selection, constraints, time intersection and fail-closed checks remain Gem responsibilities. Unsupported forms are rejected; do not claim generic AP2/full Schema conformance or real-Issuer interoperability.
@@ -12,18 +13,18 @@ Gem-owned signature/original-wire/closure, delegation, binding, supplied-trust s
 Host inputs must be authenticated, independent of the token and current: trust/keys/profile/revocation/rollback protection, clock and order/challenge state. Recheck before use; atomically consume nonce with order CAS, reconcile unknown results as PENDING, and decide final ALLOW/payment separately.
 Evidence is immutable checked facts in the same trusted Ruby process, not ALLOW or a transport credential. JSON/Hash reconstruction does not authenticate it. Rejection, unavailability, exceptions and no result never authorize an operation. Trusted Ruby is a precondition, not a malicious-Ruby sandbox.
 
-No worst-case CPU/RSS/concurrency or numeric SLA is promised. Host process/time/memory/concurrency limits supplement, not replace, Gem finite input bounds. Issuance, presentation generation, Receipt, Rails adapter, real payments and Host DB operations are outside this candidate.
+No worst-case CPU/RSS/concurrency or numeric SLA is promised. Host process/time/memory/concurrency limits supplement, not replace, Gem finite input bounds. Issuance, presentation generation, Receipt, Rails adapter, real payments and Host DB operations are outside this verifier.
 Supported-input semantics and existing API/status/code/Evidence contracts must not change silently. Security-driven acceptance narrowing requires impact/reason/migration disclosure; breaking required-field/profile/API changes must be explicit. Dependency updates are not automatically compatible.
 
 The proposed baseline remains MRI4.0.9 plus JSON2.19.9/JWT3.3.0/base640.3.0/OpenSSL gem4.0.2/Digest3.2.1, with the exact observed MBA arm64-darwin25 and Ubuntu24.04/x86_64 configurations. RubyGems version constraints do not enforce MRI/OS/provider identity. All OS versions, other engines/architectures and arbitrary provider updates are not supported by past observations.
-D3 observed the current MBA component identities and four selected crypto symbol sources; OS dyld hashes/all symbol bindings/global runtime security remain unproved. JSON2.19.9 official IO-buffer fix/tag/source identity is adopted static evidence; inconsistent GHSA patched-version metadata remains recorded. Neither observation is global S3 PASS. Candidate Ubuntu validation is NOT_RUN at packaging time.
+Historical D3 observed MBA component identities and four selected crypto symbol sources; OS dyld hashes/all symbol bindings/global runtime security remain unproved. JSON2.19.9 official IO-buffer fix/tag/source identity is adopted static evidence; inconsistent GHSA patched-version metadata remains recorded. Neither observation is global S3 PASS. The earlier R1 archive subsequently passed Mac/Ubuntu packaging checks. It is a different archive; see the separate release-package record for current bytes and observations.
 
 Initial maintenance contact: Owner cuichangquan via repository Issues for ordinary bugs and private vulnerability reporting for vulnerabilities. No secrets, real Mandates or personal data in reports. Maintain only the latest patch in the selected initial stable series; no prerelease/old-series backport, fixed support years, response/fix/disclosure deadline or 24/7 promise.
 Manual dependency/provider review is adopted monthly, on relevant advisories and before releases; no active automatic monitor is implied. Updates/deprecation/end of support must identify affected versions, reason and migration path without inventing a fixed notice period. Known major unaddressed issues or inability to maintain mean HOLD, not a blanket disclaimer.
 
 ## Existing API/limits and historical evidence baseline
 
-The API/limit specification below is retained from the existing main contract. All pre2/pre3/MBA409 results are historical identifiers, not results of this 0.1.0 archive. New source/archive/installed identities and results must be recorded separately. Packaging-time status for the new artifact: NOT_RUN until its independent evidence is saved; no old result is relabelled.
+The API/limit specification below preserves the existing contract. All pre2/pre3/MBA409/R1 observations are historical, not proof of a newly built archive. Exact current source/archive/installed identities and observations are recorded externally in [release-package evidence](../research/stable010_release_linux_package/README.md); no old result is relabelled.
 
 ## Supported proposition and environment
 
@@ -48,8 +49,8 @@ Digest3.2.1/resolv0.7.2/zlib3.2.3/Bundler4.0.20;885 source regressions passed
 as MBA409-20261023-VALIDATION01. PACKAGE01 records the original validation snapshot's
 package/install checks; PACKAGE02 is the later evidence-reference correction.
 Linux4.0.9 was not yet observed at that packaging snapshot; the later pre2 run
-39939021098 is identified below, separately from this pre3 candidate.
-The candidate contains no OpenSSL/JSON native binary and performs no dependency
+39939021098 is identified below as historical pre2 evidence.
+The Gem contains no OpenSSL/JSON native binary and performs no dependency
 download/build itself. Missing fixed/native providers must stop an offline
 validation rather than trigger extra download/build. Actual native paths/hashes
 are environment observations, not proved by gem versions. Bundler4.0.20 is the
@@ -62,7 +63,7 @@ run39869876461 (885 source checks,52 installed checks,13 payload/10 loaded).
 Stage19 records MBA7inputs x3 observations. See the commit-pinned Stage21
 supplement below. Those Ruby4.0.1 observations do not validate this Ruby4.0.9
 candidate. The later pre2 Linux observation is separately identified below;
-this pre3 package has no Linux observation.
+the old pre3 NOT_RUN wording was subsequently superseded by run40038620413. Neither earlier archive supplies new-archive evidence.
 Windows, Intel Mac, other Rubies/engines and all OS versions are unverified.
 No additional Actions run is authorized.
 
