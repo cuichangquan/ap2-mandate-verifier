@@ -44,6 +44,10 @@ Bundler 4.0.20は既存resolver基準でruntime依存ではありません。Gem
 
 初回安定系列の最新修正版のみを保守対象とし、月次・関連勧告判明時・次版前に手動確認します。旧版backport・固定保守年数・受付/修正期限・24時間対応は約束しません。[SECURITY](SECURITY.md)と[保守方針](docs/POST_RELEASE_MAINTENANCE.md)を参照し、秘密鍵・実Mandate・個人情報を報告しないでください。
 
+## ローカルデモ
+
+[AP2 Mandate Verifier Demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo)では、正常・改ざん・期限切れの合成入力を実際の検証器へ渡し、Dockerでローカル起動できます。公開ホスト型のデモサイト・本番決済・Hostの業務許可を提供するものではありません。
+
 ## 保存済み合成入力で試す
 
 以下は既存の合格済みinstalled検査と同じ公開 `FULL` 入力を読む例です。入力JSONはGemに含まれません。固定commitから取得し、SHA256を確認してから使います。fixtureに秘密鍵は含まれません。fixtureのtrust／Host入力は**テスト専用の合成値**であり、実Issuer登録・現在の注文・実時刻として再利用してはいけません。`verified_at = 1800000000` は保存シナリオの固定時刻です。
