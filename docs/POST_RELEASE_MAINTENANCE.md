@@ -29,7 +29,7 @@ publication validation.
 `MBA409-PRE3PACKAGE02-20261023`: MBA Darwin arm64, MRI4.0.9,13 payload identities,
 10 loaded libraries and52 installed checks (42 saved independent expectations,
 7 legacy APIs,2 input rejections,1 constructor rejection). It did not rerun885
-source regressions. **pre3 Linux: NOT_RUN.** The successful pre2 Linux
+source regressions. **pre3 Linux subsequently passed [run40038620413 attempt1](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/40038620413).** The earlier NOT_RUN status was historical and is superseded by that pre3 observation. The successful pre2 Linux
 [run39939021098 attempt1](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/39939021098)
 is historical pre2 evidence, not a pre3 package or independent Linux Oracle run.
 Unknown safety, runtime/native attestation and worst-case CPU/RSS/concurrency
@@ -97,3 +97,17 @@ runtime/provider, inputs/expectations, environment and run. Saved-expectation
 replays are not independent Oracle reruns. Failure, uncertainty or mismatch means
 STOP/HOLD. Builds, installs, dynamic tests, Actions, dependency changes and releases
 need their own explicit scope/approval; this document grants none.
+
+
+## 未公開0.1.0候補の現在地と採用済み保守条件（2026-10-26 UTC）
+
+公開物の表はpre3/pre2のままです。**0.1.0は未公開候補**であり、[候補source・Mac/Ubuntu結果](../research/stable010_candidate/README.md)を別記録に保存します。候補43,008B / SHA256 `0553645fa6c067dd8d7a7a1a7cdf13799370393e76dc3bc4ba161ab2ca5981b0`、両環境13 payload/10 loaded/52 installedが確認済み。候補内の未実施記述は包装時点snapshotで、後続Ubuntu成功は外部追補を参照してください。再包装や公開済みGem/tag/Releaseの上書きはしません。
+
+前節の月次/勧告時/次版前の手動見直しをOwnerが具体条件として採用しました。担当はOwner/保守者、通常不具合はIssues、脆弱性はSECURITYの非公開窓口です。初回安定系列の最新修正版のみを対象とし、pre/旧系列backport・一定年数・受付/修正期限・24時間対応は約束しません。更新/廃止/保守終了は対象版・理由・移行先と状態を告知し、固定猶予期間は設けません。自動監視は稼働中と扱わず、担当不在/保守不能/重大未対処問題はHOLDです。
+
+上記の一般的な回帰計画は全件再実行の義務ではありません。今回の版/文書/包装期待値の差分では、製品10件・固定依存と既存証拠を照合して885を再利用し、新候補の包装/導入を両環境各1回確認しました。147は885の内数、旧runtime独立比較や保存期待値再生は新独立Oracleではありません。追加検証は具体的不足に応じ別承認とし、今回追加試験/取得/build/Actions/公開はなしです。
+
+Provider/component確認と全面安全性は別です。D1/D2停止とD3限定成功、JSON公式修正ソース根拠とGHSA metadata不整合、OS dyld/全binding・通信全量・物理容量peak等の未証明を保持します。最後にexact archive・配布先・保証範囲・残余を示すS7公開GOが必要で、特定Host本番GOは別/HOLDです。
+
+The public-artifact table still lists pre3/pre2 only. Candidate0.1.0 has separate Mac/Ubuntu evidence; its packaging snapshots are supplemented externally without rebuilding. Adopted maintenance covers the latest patch in the initial stable series, with manual monthly/advisory/pre-release review, existing reporting routes and explicit update/deprecation notices; no backport/fixed-term/SLA/24-hour promises or automatic monitoring. Diff-based historical evidence reuse is not a fresh885 run. Publication and specific Host production GO remain separate and unapproved.
+

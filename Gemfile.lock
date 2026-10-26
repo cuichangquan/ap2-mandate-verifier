@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ap2_mandate_verifier (0.1.0.pre.3)
+    ap2_mandate_verifier (0.1.0)
       base64 (= 0.3.0)
       digest (= 3.2.1)
       json (= 2.19.9)

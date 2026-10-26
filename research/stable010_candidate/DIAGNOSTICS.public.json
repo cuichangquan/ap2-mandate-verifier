@@ -1,0 +1,222 @@
+{
+  "scope": "historical provider diagnostics, no new execution; original failures preserved",
+  "redaction": "Only task-local path prefixes replaced with logical placeholders. Selected D3 observations, not full dyld inventory.",
+  "diagnostics": {
+    "D1": {
+      "final": {
+        "id": "STABLE010-PROVIDER-D1",
+        "status": "DIAGNOSTIC_COMPLETE_STOP_NO_CONTINUATION",
+        "attempts": 1,
+        "elapsed_execution": 0.2135319709777832,
+        "elapsed_total": 41.755775928497314,
+        "within_300_seconds": true,
+        "exit": 1,
+        "owned_group_clear": true,
+        "predicates": {
+          "runtime": true,
+          "gems": true,
+          "crypto_count": false,
+          "crypto_version": true,
+          "historical_files": true,
+          "crypto_hash": false,
+          "native_hash_collection": false
+        },
+        "cause": "Process-wide libcrypto count was 2, not 1. Dedicated OpenSSL version and historical file hashes match. System dyld image paths for libcrypto.46/libssl.48 could not be opened as ordinary files (ENOENT).",
+        "linked_extension": "OPENSSL_LINKAGE.txt records dedicated openssl.bundle linked to dedicated libssl.3/libcrypto.3. It does not prove all transitive symbol bindings or system image safety.",
+        "next_proposal": "Revise future provider identity policy to target the Ruby OpenSSL extension and its linked/loaded dependencies, with a separate explicit system-dyld-image category. Do not allow arbitrary extra libraries or claim unhashable system images were hash-verified. Static design review first; no retry under this authorization.",
+        "gem_builds": 0,
+        "installed52_runs": 0,
+        "actions_dispatches": 0,
+        "downloads": 0,
+        "native_builds": 0,
+        "cleanup": "No installation/container/network created. Evidence retained.",
+        "source_R1_unchanged": true
+      },
+      "original_files_sha256": {
+        "FINAL.json": "4bc30ea6bf22a8fc79cb51fc503d0f91d0d82b2e5c29f8fb74e938d8833a3f27",
+        "OBSERVATIONS.json": "d77f060c71017dd9b0707a08d242967b1e9b52f67c3cf5ff637daebcd248631c",
+        "diagnostic.receipt.json": "eca117056bc0dda979a3f1f2f1dfe457397698761e181b395f75a9601316bbe9",
+        "diagnose.rb": "96146be1de9d4f85ca923bf292e6a28e1a679845c175d44d5d60809b1ccb5d07"
+      }
+    },
+    "D2": {
+      "final": {
+        "id": "STABLE010-PROVIDER-D2",
+        "status": "STOP_OBSERVER_IMAGE_CHANGE",
+        "attempts": 1,
+        "elapsed_execution": 0.20746922492980957,
+        "elapsed_total": 29.03635001182556,
+        "within_300_seconds": true,
+        "exit": 1,
+        "owned_group_clear": true,
+        "predicates": {
+          "runtime": true,
+          "gems": true,
+          "version": true,
+          "component_hashes": true,
+          "direct_dependencies": true,
+          "dedicated_providers_mapped": true,
+          "no_unknown_provider": true,
+          "historical_files": true,
+          "observed_symbol_sources": true,
+          "no_new_image_on_reopen": false
+        },
+        "observed_passes": 9,
+        "predicate_count": 10,
+        "added_images": [
+          "<TASK_ROOT>/ap2-runtime409-validation/prefix/ruby-BUILD02/lib/ruby/4.0.0/arm64-darwin25/digest/sha2.bundle"
+        ],
+        "added_image_hashes": {
+          "<TASK_ROOT>/ap2-runtime409-validation/prefix/ruby-BUILD02/lib/ruby/4.0.0/arm64-darwin25/digest/sha2.bundle": "9b643d75bd04d4763e902e22f07f5ac63bdd8e42412ddc26c0ff4eda7e786005"
+        },
+        "analysis": "Only failed predicate is no_new_image_on_reopen. Its baseline was captured before Digest::SHA256.file hash collection; diagnostic hashing lazily loads digest/sha2.bundle during this interval. Not evidence that reopening openssl.bundle introduced a new crypto provider. No retry or policy change executed.",
+        "limits": "OS dyld image hashes remain NOT_VERIFIED. Four symbol origins do not prove all symbol bindings or general runtime safety. S3 overall not passed.",
+        "next_minimum": "Static correction: explicitly prepare/hash the already installed SHA256 helper before the image baseline, save helper effects, then snapshot immediately before/after extension-handle reopening; unknown additions still STOP. Current evidence may be evaluated separately without relabelling this run PASS. Any rerun requires separate authorization.",
+        "builds": 0,
+        "installed52": 0,
+        "actions": 0,
+        "downloads": 0,
+        "cleanup": "No temporary installation, container or network created. Existing environments, R1, D1 and preparation originals retained."
+      },
+      "original_files_sha256": {
+        "FINAL.json": "36a5c8fb78fede5a0ddffda431805a54dc14cc32b77b77e20c84ce1c7fa508fd",
+        "OBSERVATIONS.json": "d34d7ab706e0e253f01d0b32d387fa1c8bd3ccc5b3422154eac4a4335179c932",
+        "diagnostic.receipt.json": "f2eeff61a6714dcc630dcb589d64fc0a60dd09b1a2f03933aee5cb4bdf9e72be",
+        "diagnose.rb": "d018986e5e178167d44cef695cd47b5d6d735b288e18328e9e4bdf9a17fc1c15"
+      }
+    },
+    "D3": {
+      "final": {
+        "id": "STABLE010-PROVIDER-D3",
+        "status": "COMPONENT_IDENTITY_PREDICATES_PASS",
+        "source_base": "a6a303f7fe7bf4ef6b4e24744b0fa23d9580fb61",
+        "diagnostic_attempts": 1,
+        "exit": 0,
+        "execution_seconds": 0.2037639617919922,
+        "elapsed_total": 23.733133792877197,
+        "within_300_seconds": true,
+        "owned_group_clear": true,
+        "predicates": {
+          "runtime": true,
+          "gems": true,
+          "version": true,
+          "component_hashes": true,
+          "direct_dependencies": true,
+          "dedicated_providers_mapped": true,
+          "no_unknown_provider": true,
+          "historical_files": true,
+          "observed_symbol_sources": true,
+          "no_new_image_on_reopen": true
+        },
+        "static_review": "Small diff read before execution: SHA256 helper is loaded before image baselines; before/after observations immediately bracket exact extension handle acquisition. Fixed policy and all fail-closed checks unchanged. No syntax test or diagnostic preview run.",
+        "changes": "D1/D2/R1 and prep originals retained. This D3 does not relabel earlier failures.",
+        "limits": [
+          "OS dyld image hashes remain NOT_VERIFIED",
+          "Only four symbol origins sampled, not every binding",
+          "Component identity observation is not global runtime security or full S3 approval",
+          "GHSA metadata mismatch remains recorded; adopted official fix/source identity is static evidence"
+        ],
+        "following_execution": {
+          "gem_build": 0,
+          "installed52": 0,
+          "actions": 0,
+          "downloads": 0,
+          "installs": 0,
+          "comparisons": 0
+        },
+        "remaining_blockers": [
+          "Candidate creation must be explicitly resumed under a valid execution scope; this approval ends at diagnostic",
+          "Existing Ubuntu pre3 workflow cannot receive unpublished candidate archive; scoped transfer/workflow permissions remain unresolved"
+        ],
+        "cleanup": "No temporary installation, container, DB or network created; no cleanup required beyond process termination. All evidence retained."
+      },
+      "original_files_sha256": {
+        "FINAL.json": "4c22b143084bd56e4b4a59cb3fbd57753111a3a5d7bb69dfe220cfa433573b3b",
+        "OBSERVATIONS.json": "814aad49c48cfd7a3493d0d956f70b70f0972220a33d8eda1a84e340da39c54d",
+        "diagnostic.receipt.json": "b1dadf1f4488c11d3f4fd148f435c688977fb86bc8d159837bd59beae1c6da59",
+        "diagnose.rb": "875bea81e6ff51d43a7c4d25fa973cf921e6366938d5093e706efbfdf85b03ca"
+      },
+      "selected_observations": {
+        "component_files": [
+          {
+            "path": "<TASK_ROOT>/ap2-runtime409-validation/prefix/ruby-BUILD02/lib/ruby/4.0.0/arm64-darwin25/openssl.bundle",
+            "realpath": "<TASK_ROOT>/ap2-runtime409-validation/prefix/ruby-BUILD02/lib/ruby/4.0.0/arm64-darwin25/openssl.bundle",
+            "expected": "b6ca988599f818461c39cede3f668f4e3e20487e50fa7389f378166ca1d3e8b5",
+            "actual": "b6ca988599f818461c39cede3f668f4e3e20487e50fa7389f378166ca1d3e8b5",
+            "match": true
+          },
+          {
+            "path": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libcrypto.3.dylib",
+            "realpath": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libcrypto.3.dylib",
+            "expected": "528a8186515056d37ae6a8ae472890607b0560ae40df8ab19913ab4d710da552",
+            "actual": "528a8186515056d37ae6a8ae472890607b0560ae40df8ab19913ab4d710da552",
+            "match": true
+          },
+          {
+            "path": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libssl.3.dylib",
+            "realpath": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libssl.3.dylib",
+            "expected": "da04f42eeaff8f085041ccc82b11258cf280a8b593c377b27fefa6889b5c530d",
+            "actual": "da04f42eeaff8f085041ccc82b11258cf280a8b593c377b27fefa6889b5c530d",
+            "match": true
+          }
+        ],
+        "symbol_sources": [
+          {
+            "symbol": "OpenSSL_version",
+            "dladdr_result": 1,
+            "source": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libcrypto.3.dylib",
+            "expected": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libcrypto.3.dylib",
+            "match": true
+          },
+          {
+            "symbol": "EVP_DigestVerifyFinal",
+            "dladdr_result": 1,
+            "source": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libcrypto.3.dylib",
+            "expected": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libcrypto.3.dylib",
+            "match": true
+          },
+          {
+            "symbol": "EVP_PKEY_verify",
+            "dladdr_result": 1,
+            "source": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libcrypto.3.dylib",
+            "expected": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libcrypto.3.dylib",
+            "match": true
+          },
+          {
+            "symbol": "d2i_PUBKEY",
+            "dladdr_result": 1,
+            "source": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libcrypto.3.dylib",
+            "expected": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libcrypto.3.dylib",
+            "match": true
+          }
+        ],
+        "provider_images": [
+          {
+            "path": "/usr/lib/libcrypto.46.dylib",
+            "category": "OS_DYLD_IMAGE_UNVERIFIED",
+            "hash_status": "NOT_VERIFIED",
+            "hash_error": "No such file or directory @ rb_sysopen - /usr/lib/libcrypto.46.dylib"
+          },
+          {
+            "path": "/usr/lib/libssl.48.dylib",
+            "category": "OS_DYLD_IMAGE_UNVERIFIED",
+            "hash_status": "NOT_VERIFIED",
+            "hash_error": "No such file or directory @ rb_sysopen - /usr/lib/libssl.48.dylib"
+          },
+          {
+            "path": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libssl.3.dylib",
+            "category": "DEDICATED_PROVIDER"
+          },
+          {
+            "path": "<TASK_ROOT>/ap2-runtime408-validation/prefix/openssl/lib/libcrypto.3.dylib",
+            "category": "DEDICATED_PROVIDER"
+          }
+        ],
+        "actual_version": "OpenSSL 3.5.9 29 Sep 2026",
+        "expected_version": "OpenSSL 3.5.9 29 Sep 2026",
+        "added_images_after_handle": []
+      }
+    }
+  }
+}
+

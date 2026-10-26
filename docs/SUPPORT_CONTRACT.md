@@ -1,18 +1,29 @@
-# Fixed-profile research prerelease — 0.1.0.pre.3
+# Fixed-profile verification — unpublished stable candidate 0.1.0
 
-The Owner published research-only `0.1.0.pre.3` on RubyGems on 2026-10-23.
-GitHub Release remains pre2. This is not a stable release, general AP2 conformance,
-full Phase2-A PASS, production or Phase2B/E10 GO. Issuance, presentation generation
-and a Rails SDK are not completed. Evidence is not Host ALLOW, payment authorization
-or proof of consumption.
+**Candidate only; not published or approved for production deployment.**
+Owner adopted the existing fixed-profile verification API and concrete stable-release conditions. Candidate packaging/install verification is separately authorized; no RubyGems publication or specific Host production GO is granted.
+Published research-only pre3 remains unchanged. Its historical observations below do not certify this new archive.
 
-This main-branch contract and README are post-publication supplements. The documents
-inside the published Gem remain the packaging snapshot, including unpublished
-wording. No published artifact/tag is replaced. Current main differs from those
-packaged documents; a same-version rebuild is not the published Gem and cannot
-inherit its archive SHA or package validation. See
-[post-release maintenance](POST_RELEASE_MAINTENANCE.md) for artifact identities,
-pre3 MBA observations and pre3 Linux NOT_RUN.
+## Adopted candidate contract
+
+Preserve `verify_research`, its seven keyword inputs, existing status/code and Evidence v2 identifiers, and legacy APIs' non-success behavior. No API rename, new trust enrollment, remote lookup, DB or payment operation is added. Fixed AP2 commit b4587ac1d055888a73b4b21750973cffba961793 and the exact profile v1 body/hash, seven supported shapes, ES256/P256 and existing bounds remain unchanged.
+Gem-owned signature/original-wire/closure, delegation, binding, supplied-trust selection, constraints, time intersection and fail-closed checks remain Gem responsibilities. Unsupported forms are rejected; do not claim generic AP2/full Schema conformance or real-Issuer interoperability.
+
+Host inputs must be authenticated, independent of the token and current: trust/keys/profile/revocation/rollback protection, clock and order/challenge state. Recheck before use; atomically consume nonce with order CAS, reconcile unknown results as PENDING, and decide final ALLOW/payment separately.
+Evidence is immutable checked facts in the same trusted Ruby process, not ALLOW or a transport credential. JSON/Hash reconstruction does not authenticate it. Rejection, unavailability, exceptions and no result never authorize an operation. Trusted Ruby is a precondition, not a malicious-Ruby sandbox.
+
+No worst-case CPU/RSS/concurrency or numeric SLA is promised. Host process/time/memory/concurrency limits supplement, not replace, Gem finite input bounds. Issuance, presentation generation, Receipt, Rails adapter, real payments and Host DB operations are outside this candidate.
+Supported-input semantics and existing API/status/code/Evidence contracts must not change silently. Security-driven acceptance narrowing requires impact/reason/migration disclosure; breaking required-field/profile/API changes must be explicit. Dependency updates are not automatically compatible.
+
+The proposed baseline remains MRI4.0.9 plus JSON2.19.9/JWT3.3.0/base640.3.0/OpenSSL gem4.0.2/Digest3.2.1, with the exact observed MBA arm64-darwin25 and Ubuntu24.04/x86_64 configurations. RubyGems version constraints do not enforce MRI/OS/provider identity. All OS versions, other engines/architectures and arbitrary provider updates are not supported by past observations.
+D3 observed the current MBA component identities and four selected crypto symbol sources; OS dyld hashes/all symbol bindings/global runtime security remain unproved. JSON2.19.9 official IO-buffer fix/tag/source identity is adopted static evidence; inconsistent GHSA patched-version metadata remains recorded. Neither observation is global S3 PASS. Candidate Ubuntu validation is NOT_RUN at packaging time.
+
+Initial maintenance contact: Owner cuichangquan via repository Issues for ordinary bugs and private vulnerability reporting for vulnerabilities. No secrets, real Mandates or personal data in reports. Maintain only the latest patch in the selected initial stable series; no prerelease/old-series backport, fixed support years, response/fix/disclosure deadline or 24/7 promise.
+Manual dependency/provider review is adopted monthly, on relevant advisories and before releases; no active automatic monitor is implied. Updates/deprecation/end of support must identify affected versions, reason and migration path without inventing a fixed notice period. Known major unaddressed issues or inability to maintain mean HOLD, not a blanket disclaimer.
+
+## Existing API/limits and historical evidence baseline
+
+The API/limit specification below is retained from the existing main contract. All pre2/pre3/MBA409 results are historical identifiers, not results of this 0.1.0 archive. New source/archive/installed identities and results must be recorded separately. Packaging-time status for the new artifact: NOT_RUN until its independent evidence is saved; no old result is relabelled.
 
 ## Supported proposition and environment
 
@@ -296,3 +307,4 @@ https://github.com/cuichangquan/ap2-mandate-verifier/pull/173
 The summary must explicitly identify the completed observation; a missing,
 failed or mismatched report is not success. No local path is a public evidence
 URL. Raw local environment logs are not published by this package.
+

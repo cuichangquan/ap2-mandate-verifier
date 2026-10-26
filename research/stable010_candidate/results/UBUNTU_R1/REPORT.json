@@ -1,0 +1,382 @@
+{
+  "scope": "STABLE010_CANDIDATE_LINUX_NOT_HOST_ALLOW",
+  "github_sha": "2fbfd49a80a1ff8c7d10070ef10ef63c48a5a084",
+  "run_url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/40274002891",
+  "run_attempt": "1",
+  "manifest_sha256": "017d4d221a2fbf8295e5d18068abd56a4ea055fa84fab8c9b687c8a042f8a447",
+  "candidate_artifact": {
+    "version": "0.1.0",
+    "bytes": 43008,
+    "sha256": "0553645fa6c067dd8d7a7a1a7cdf13799370393e76dc3bc4ba161ab2ca5981b0",
+    "transport": "workflow_dispatch base64 input; possible third-party visibility approved; not RubyGems/Release publication"
+  },
+  "product_reference_commit": "a6a303f7fe7bf4ef6b4e24744b0fa23d9580fb61",
+  "provider": {
+    "policy": {
+      "os_id": "ubuntu",
+      "os_version": "24.04",
+      "codename": "noble",
+      "package": "libssl3t64:amd64",
+      "source": "openssl",
+      "architecture": "amd64",
+      "package_version": "3.0.13-0ubuntu3.16",
+      "upstream_version": "3.0.13",
+      "security_notice": "https://ubuntu.com/security/notices/USN-8847-1"
+    },
+    "package_fields": [
+      "libssl3t64:amd64",
+      "3.0.13-0ubuntu3.16",
+      "amd64",
+      "installed",
+      "openssl",
+      "3.0.13-0ubuntu3.16"
+    ],
+    "dpkg_verify": "PASS",
+    "libcrypto": "OpenSSL 3.0.13 30 Jan 2024",
+    "compiled_openssl": "OpenSSL 3.0.13 30 Jan 2024",
+    "extension": {
+      "path": "/opt/hostedtoolcache/Ruby/4.0.9/x64/lib/ruby/4.0.0/x86_64-linux/openssl.so",
+      "sha256": "efb13ec4c71e8538125167486adb0171c83d2d5114c7934b537dbe55829da372",
+      "origin": "verified official Ruby archive, not dpkg"
+    },
+    "actual_mapped_libraries": {
+      "/usr/lib/x86_64-linux-gnu/libssl.so.3": {
+        "sha256": "a40e7b67489bbd257e432c700ff8f6a1ad796425b5eccecdc2930127fdd86624",
+        "package": "libssl3t64:amd64",
+        "package_version": "3.0.13-0ubuntu3.16",
+        "architecture": "amd64",
+        "package_md5_match": true
+      },
+      "/usr/lib/x86_64-linux-gnu/libcrypto.so.3": {
+        "sha256": "6866ed711dab8927e1bf82bf1cd30e828bdfc34f3cc1e83b1c9eb01ce6c37d9a",
+        "package": "libssl3t64:amd64",
+        "package_version": "3.0.13-0ubuntu3.16",
+        "architecture": "amd64",
+        "package_md5_match": true
+      }
+    },
+    "trust_boundary": "trusted runner and dpkg database, not runtime attestation",
+    "ruby_executable": {
+      "path": "/opt/hostedtoolcache/Ruby/4.0.9/x64/bin/ruby",
+      "sha256": "c78c8cc230628bf561555c38fbfe5b1eb4744589130c17ed4460f573d03176a8"
+    }
+  },
+  "json_provider": {
+    "/home/runner/work/_temp/ap2-stable010-deps/gems/json-2.19.9/lib/json/ext/parser.so": "4b3d2ee0d8819f6c8cf666d0ecd1f20d0b188ed38b276fdc38318ea287f7a241",
+    "/home/runner/work/_temp/ap2-stable010-deps/gems/json-2.19.9/lib/json/ext/generator.so": "cf1c83f2824a2e9ef1c109d7e13d8c6bf12181ac9666b0ded99439c860677e18"
+  },
+  "ruby_provider_archive": {
+    "url": "https://github.com/ruby/ruby-builder/releases/download/ruby-4.0.9/ruby-4.0.9-ubuntu-24.04-x64.tar.gz",
+    "bytes": 49100121,
+    "sha256": "046d1422e1be5575eadd55323c85c3efbeaee8c8e1c1bfccee343e28619cb3b3"
+  },
+  "source_regressions": "NOT_RUN (885 omitted)",
+  "independent_oracle": "NOT_RERUN; saved MBA expectations",
+  "payload_files": 13,
+  "payload_sha256": {
+    "LICENSE": "1442143c4265d88eedfc14f25d04298449358c837b0bb58dfa825f84b36391c8",
+    "README.md": "274ee29aceda7df0ef05878a820ee93c23d6e869413f19940ef564d047488306",
+    "docs/SUPPORT_CONTRACT.md": "ce19afaaba66d85d76b463d066a2a3bebdc373ba389b0f9e59ca60388ac409ff",
+    "lib/ap2_mandate_verifier.rb": "4824eeef1ce6c7833bcc24bc0bf9abc265df0b35ba135e54b4341b54c2f65ef2",
+    "lib/ap2_mandate_verifier/host_binding.rb": "917a4c139accd77d5bbe9125c64ea258349b6854ac04e0fefe33536b9b88ec0a",
+    "lib/ap2_mandate_verifier/input_validator.rb": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+    "lib/ap2_mandate_verifier/purchase_binding.rb": "6f2108ac3298e4558fc053139d045d399687ccc3bf39c01945ed52d529dc26df",
+    "lib/ap2_mandate_verifier/research_result.rb": "02159d2f451461ef818d7b6c9d55349cdfb6e23d9ced7d688730d22c8e96827d",
+    "lib/ap2_mandate_verifier/result.rb": "fade8a1e922f7b4cf2439c120580160f85e0f22f6cfac9ff1ab1364d7b34d310",
+    "lib/ap2_mandate_verifier/root_disclosures.rb": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+    "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+    "lib/ap2_mandate_verifier/scoped_constraints.rb": "b2b5fa4cd1b4ce83cfc5ffc1be0a09ce57ad4a1b9be6778e581dd38f5ce5fd84",
+    "lib/ap2_mandate_verifier/trust_context.rb": "430eb9f9f3be4c0d7e799e95b68009c08582b6961aa954cc866ff012a3b2be36"
+  },
+  "archive_installed_reference_match": true,
+  "installed": {
+    "scope": "STABLE010_CANDIDATE_LINUX_INSTALLED_NOT_HOST_ALLOW",
+    "provider_identity": {
+      "policy": {
+        "os_id": "ubuntu",
+        "os_version": "24.04",
+        "codename": "noble",
+        "package": "libssl3t64:amd64",
+        "source": "openssl",
+        "architecture": "amd64",
+        "package_version": "3.0.13-0ubuntu3.16",
+        "upstream_version": "3.0.13",
+        "security_notice": "https://ubuntu.com/security/notices/USN-8847-1"
+      },
+      "package_fields": [
+        "libssl3t64:amd64",
+        "3.0.13-0ubuntu3.16",
+        "amd64",
+        "installed",
+        "openssl",
+        "3.0.13-0ubuntu3.16"
+      ],
+      "dpkg_verify": "PASS",
+      "libcrypto": "OpenSSL 3.0.13 30 Jan 2024",
+      "compiled_openssl": "OpenSSL 3.0.13 30 Jan 2024",
+      "extension": {
+        "path": "/opt/hostedtoolcache/Ruby/4.0.9/x64/lib/ruby/4.0.0/x86_64-linux/openssl.so",
+        "sha256": "efb13ec4c71e8538125167486adb0171c83d2d5114c7934b537dbe55829da372",
+        "origin": "verified official Ruby archive, not dpkg"
+      },
+      "actual_mapped_libraries": {
+        "/usr/lib/x86_64-linux-gnu/libssl.so.3": {
+          "sha256": "a40e7b67489bbd257e432c700ff8f6a1ad796425b5eccecdc2930127fdd86624",
+          "package": "libssl3t64:amd64",
+          "package_version": "3.0.13-0ubuntu3.16",
+          "architecture": "amd64",
+          "package_md5_match": true
+        },
+        "/usr/lib/x86_64-linux-gnu/libcrypto.so.3": {
+          "sha256": "6866ed711dab8927e1bf82bf1cd30e828bdfc34f3cc1e83b1c9eb01ce6c37d9a",
+          "package": "libssl3t64:amd64",
+          "package_version": "3.0.13-0ubuntu3.16",
+          "architecture": "amd64",
+          "package_md5_match": true
+        }
+      },
+      "trust_boundary": "trusted runner and dpkg database, not runtime attestation",
+      "ruby_executable": {
+        "path": "/opt/hostedtoolcache/Ruby/4.0.9/x64/bin/ruby",
+        "sha256": "c78c8cc230628bf561555c38fbfe5b1eb4744589130c17ed4460f573d03176a8"
+      }
+    },
+    "json_provider_identity": {
+      "/home/runner/work/_temp/ap2-stable010-deps/gems/json-2.19.9/lib/json/ext/parser.so": "4b3d2ee0d8819f6c8cf666d0ecd1f20d0b188ed38b276fdc38318ea287f7a241",
+      "/home/runner/work/_temp/ap2-stable010-deps/gems/json-2.19.9/lib/json/ext/generator.so": "cf1c83f2824a2e9ef1c109d7e13d8c6bf12181ac9666b0ded99439c860677e18"
+    },
+    "candidate_version": "0.1.0",
+    "ruby": "4.0.9",
+    "ruby_platform": "x86_64-linux",
+    "dependencies": {
+      "json": "2.19.9",
+      "jwt": "3.3.0",
+      "base64": "0.3.0",
+      "openssl": "4.0.2",
+      "digest": "3.2.1"
+    },
+    "openssl_default": true,
+    "digest_default": true,
+    "libcrypto": "OpenSSL 3.0.13 30 Jan 2024",
+    "installed_lib_files": 10,
+    "ordinary_entry": true,
+    "independent_research_comparisons": [
+      {
+        "name": "FULL",
+        "code": "scoped_research_verified",
+        "result": "MATCH"
+      },
+      {
+        "name": "HIDDEN",
+        "code": "missing_disclosure",
+        "result": "MATCH"
+      },
+      {
+        "name": "UNKNOWN",
+        "code": "unsupported_disclosure_profile",
+        "result": "MATCH"
+      },
+      {
+        "name": "DUPLICATE",
+        "code": "duplicate_commitment",
+        "result": "MATCH"
+      },
+      {
+        "name": "EXTRA",
+        "code": "extra_disclosure",
+        "result": "MATCH"
+      },
+      {
+        "name": "DECOY",
+        "code": "missing_disclosure",
+        "result": "MATCH"
+      },
+      {
+        "name": "WRONG_AGENT_KEY",
+        "code": "agent_key_mismatch",
+        "result": "MATCH"
+      },
+      {
+        "name": "TAMPERED_AGENT_SIGNATURE",
+        "code": "invalid_root_signature",
+        "result": "MATCH"
+      },
+      {
+        "name": "ROOT_BINDING",
+        "code": "root_binding_mismatch",
+        "result": "MATCH"
+      },
+      {
+        "name": "NONCE",
+        "code": "nonce_mismatch",
+        "result": "MATCH"
+      },
+      {
+        "name": "WRONG_MERCHANT_KEY",
+        "code": "invalid_root_signature",
+        "result": "MATCH"
+      },
+      {
+        "name": "S01",
+        "code": "invalid_scoped_schema",
+        "result": "MATCH"
+      },
+      {
+        "name": "AMOUNT",
+        "code": "amount_mismatch",
+        "result": "MATCH"
+      },
+      {
+        "name": "TOTALS",
+        "code": "amount_mismatch",
+        "result": "MATCH"
+      },
+      {
+        "name": "CONSUMED",
+        "code": "challenge_state_mismatch",
+        "result": "MATCH"
+      },
+      {
+        "name": "CHALLENGE_EXPIRED",
+        "code": "challenge_time_mismatch",
+        "result": "MATCH"
+      },
+      {
+        "name": "CHALLENGE_START",
+        "code": "scoped_research_verified",
+        "result": "MATCH"
+      },
+      {
+        "name": "SHORT_CHALLENGE",
+        "code": "scoped_research_verified",
+        "result": "MATCH"
+      },
+      {
+        "name": "BUYER_SPLIT",
+        "code": "host_binding_mismatch",
+        "result": "MATCH"
+      },
+      {
+        "name": "ORDER_VERSION_SPLIT",
+        "code": "host_binding_mismatch",
+        "result": "MATCH"
+      },
+      {
+        "name": "TENANT_REBOUND",
+        "code": "host_binding_mismatch",
+        "result": "MATCH"
+      },
+      {
+        "name": "ROOT_REBOUND",
+        "code": "host_binding_mismatch",
+        "result": "MATCH"
+      },
+      {
+        "name": "AGENT_REBOUND",
+        "code": "host_binding_mismatch",
+        "result": "MATCH"
+      },
+      {
+        "name": "REVOKED_KEY",
+        "code": "inactive_trust_key",
+        "result": "MATCH"
+      },
+      {
+        "name": "KEY_EXPIRED",
+        "code": "trust_key_time_mismatch",
+        "result": "MATCH"
+      },
+      {
+        "name": "SHORT_KEY",
+        "code": "scoped_research_verified",
+        "result": "MATCH"
+      },
+      {
+        "name": "SNAPSHOT_REVOKED",
+        "code": "inactive_trust_snapshot",
+        "result": "MATCH"
+      },
+      {
+        "name": "AMBIGUOUS_KEY",
+        "code": "ambiguous_trust_key",
+        "result": "MATCH"
+      },
+      {
+        "name": "UNKNOWN_KEY",
+        "code": "trust_key_not_found",
+        "result": "MATCH"
+      },
+      {
+        "name": "PROFILE_VERSION",
+        "code": "unsupported_trust_profile",
+        "result": "MATCH"
+      },
+      {
+        "name": "root_presentation_over",
+        "code": "input_too_large",
+        "result": "MATCH"
+      },
+      {
+        "name": "terminal_jws_over",
+        "code": "input_too_large",
+        "result": "MATCH"
+      },
+      {
+        "name": "host_checkout_jws_over",
+        "code": "input_too_large",
+        "result": "MATCH"
+      },
+      {
+        "name": "trust_json_over",
+        "code": "input_too_large",
+        "result": "MATCH"
+      },
+      {
+        "name": "selection_json_over",
+        "code": "input_too_large",
+        "result": "MATCH"
+      },
+      {
+        "name": "host_json_over",
+        "code": "input_too_large",
+        "result": "MATCH"
+      },
+      {
+        "name": "HOST_DEPTH24",
+        "code": "invalid_host_context",
+        "result": "MATCH"
+      },
+      {
+        "name": "HOST_DEPTH25",
+        "code": "input_too_deep",
+        "result": "MATCH"
+      },
+      {
+        "name": "HOST_DUPLICATE",
+        "code": "duplicate_key",
+        "result": "MATCH"
+      },
+      {
+        "name": "HOST_AT_CAP",
+        "code": "invalid_host_context",
+        "result": "MATCH"
+      },
+      {
+        "name": "HOST_INVALID_TYPE",
+        "code": "invalid_input_type",
+        "result": "MATCH"
+      },
+      {
+        "name": "HOST_BOM",
+        "code": "invalid_json",
+        "result": "MATCH"
+      }
+    ],
+    "legacy_api_checks": 7,
+    "input_rejections": 2,
+    "constructor_rejections": 1,
+    "total_cases": 52,
+    "holds": "production/distribution/Phase2B/Hostatomic/Stage16; old acquisition gaps and Linuxalltraffic unproved"
+  },
+  "holds": "unpublished stable candidate only; E06 PARTIAL/OPEN; general AP2/production/Phase2B/Host atomic processing/resources unproved; prior acquisition and all-network128MiB gaps retained"
+}

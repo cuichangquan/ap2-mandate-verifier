@@ -1,6 +1,6 @@
 # 現状メモ / Project status
 
-更新：2026-10-26 UTC（S1〜S7判断基準の採用と現状を記録）。確認基準main：
+更新：2026-10-26 UTC（0.1.0候補source・Mac/Ubuntu検証結果を記録）。確認基準main：
 `5d2c089d9705b1f90822ee50b19ab656f00b9690`（PR #195後、本追記前）。
 Linux実行SHA：`d34dbfa3a87a75360fb4bb14d535da8bc5e8cdc4`。
 
@@ -210,3 +210,17 @@ Ownerは初回候補を既存固定profileの検証専用Gemとする範囲を�
 [採用後の現状表](FIRST_PRODUCTION_STATIC_AUDIT.md#採用後の現状と次の作業2026-10-26-utc)を現在地の正本とする。S1は保証/互換性条件、S2は候補全体の証拠採用、S3は候補時点環境/依存、S4は安定版保守条件が残る。S5の安定版実体・差分検証、S6の候補最新HEADレビュー、S7の明示公開GOは未了。最初の一件はS1/S2の既存契約・証拠水準の具体的な採用案を整理すること。既存計画の「まず静的監査」はPR #195で文書化済みであり、同じ調査を繰り返さない。
 
 147件は885回帰の内数、独立比較はRuby4.0.1時点で4.0.9再実行ではない。追加必須試験は今回未特定であり、必要性未確定の試験を必須としない。旧結果・原Gate・研究用コア完成判断の範囲は不変。今回の判断基準採用/文書保存はAPI/製品変更、追加試験・Docker・導入/build・Actions・Gem作成/公開を承認せず、今回はいずれも実施しない。
+
+
+## 0.1.0候補の統合と現状（2026-10-26 UTC）
+
+これ以前の「版未確定・候補未検証・条件採用待ち」は各時点の履歴。現在はOwnerがS1/S2/S4の具体条件を採用し、0.1.0候補を作成・限定検証済みです。**安定版未公開、S7公開GO・特定Host本番GOはHOLD**。用途・実Issuerは未定です。
+
+[候補sourceと結果の正本](../research/stable010_candidate/README.md)に、43,008B / SHA256 `0553645fa6c067dd8d7a7a1a7cdf13799370393e76dc3bc4ba161ab2ca5981b0`、製品10ファイル不変、包装13/ロード10/installed52のMBA・Ubuntu各1回の結果、provider診断D1〜D3と供給工程の限界を記録しました。[Ubuntu run40274002891 attempt1](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/40274002891)は成功。PR197は検証基盤のみであり、今回の候補source統合とは別です。
+
+候補のREADME・SUPPORT_CONTRACT・gemspec・lock・包装検査2件は検証時bytesを保持します。同梱「Ubuntu NOT_RUN」は包装時点snapshotで、後続成功を上記外部記録で追補。再build・885再実行・独立Oracle再生成は行っていません。既存147は885の内数、旧独立比較のruntime差は維持します。
+
+S3は実ロードcomponent/providerの出所・hash・修正版等を限定確認しましたが、OS dyld全hash/全binding・全面安全性は未証明。JSON公式修正履歴/ソース一致の採用とGHSA metadata不整合を併記します。S5の同一archive検証は完了、S6はこの統合PRの最新HEADレビューで判定し、S7とは分けます。追加必須試験を今回新たに特定していません。通信全量・物理容量peak・最悪性能等を保証せず、実Issuer/Host前提は残ります。
+
+次は最新HEADレビューとsource同一性を確認後、正確な候補・配布先・保証範囲・残余を提示してS7判断を求める段階です。本記録・統合自体はGem公開・Tag/Release作成・本番GOを許可しません。今回追加build/試験/Actions/取得/公開なし。
+

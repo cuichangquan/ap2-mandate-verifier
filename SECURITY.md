@@ -44,3 +44,13 @@ Dependency review and validation boundaries are in
 [post-release maintenance](docs/POST_RELEASE_MAINTENANCE.md).
 This policy does not authorize tests against real users, payments, external
 services or production systems.
+
+
+## Unpublished 0.1.0 candidate / 未公開候補の採用済み保守条件
+
+The pre3 description above remains its historical scope. Candidate0.1.0 is validated but **not published**, and no specific Host production GO is granted. Its fixed-profile verification contract, exact environment evidence and exclusions are in [candidate evidence](research/stable010_candidate/README.md) and [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md). Publication requires separate S7 approval; no general AP2/real-Issuer/global-runtime safety guarantee follows.
+
+Owner `cuichangquan` remains the initial contact through the routes above. For the initial stable series once separately released, support covers its latest patch only; no prerelease/older-series backport, fixed support term, response/fix/disclosure deadline or 24/7 service is promised. Manual Ruby/Gem/native/provider review is adopted monthly, on relevant advisory discovery and before a release. This is not an active automatic monitor or an unlimited approval to run tools. Security updates, deprecation and end of support identify affected versions, reasons and migration in release documentation; no fixed notice period is promised. Known major unaddressed issues or inability to maintain mean HOLD. New code, execution and publication retain their own approval boundaries.
+
+pre3の歴史的範囲は保持します。0.1.0は限定検証済み・未公開候補です。初回安定系列の最新修正版のみを保守対象とする条件を採用済みですが、公開GOとは別です。担当/窓口は上記、月次・関連勧告判明時・次版前に手動確認し、自動監視/SLA/一定年数/旧版backportを約束しません。重大未対処問題・保守不能はHOLD。更新/廃止は対象版・理由・移行を明示します。
+
