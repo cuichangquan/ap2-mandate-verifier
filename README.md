@@ -1,5 +1,9 @@
 # AP2 Mandate Verifier for Ruby
 
+> **0.1.0 未公開安定版候補 / Unpublished stable candidate 0.1.0.**
+> このarchiveは候補確認用で、安定版公開・本番GOは未承認です。以下の導入コマンド・公開SHA・歴史観測は公開済み研究用pre3の案内です。候補0.1.0の配布や検証済みSHAを示しません。
+> This archive is for candidate validation only. Stable publication/production GO remain pending. Installation commands, published SHA and historical results below describe research-only pre3, not availability or validated identity of candidate0.1.0.
+
 ## 固定profile・研究用途限定pre-release — 0.1.0.pre.3
 
 MRI Ruby4.0.9向け、固定profile `ap2.checkout.single_merchant_sku` version1の
@@ -14,6 +18,35 @@ stateless verifierです。署名・原Root全域開示・委任・購入原文�
 USD/EUR/JPY、空links。一般AP2/全Schema/任意Issuerの互換性は保証しません。
 実Issuer/鍵/profile登録・最新性・信頼時計と、最新注文/challenge再照合＋原子的nonce消費・
 注文CAS・決済はHost責務です。GemはDB・ネットワーク・支払いを実行しません。
+
+## 次の安定版に向けた採用済み条件 / Adopted conditions for the next stable release
+
+**安定版は未公開です。候補版は0.1.0、候補Gemの同一性・検証結果と公開GOは別確認です。** 現在導入できるのは上記の研究用途限定pre3です。以下は次版の条件であり、公開pre3の利用制限や包装済みbytesを変更しません。導入コマンド・合成例は引き続きpre3向けです。
+
+**No stable release is published. The candidate version is0.1.0; archive identity, validation results and publication GO require separate confirmation.** The installable artifact above is research-only pre3. These adopted conditions describe the next release and do not change pre3 restrictions or published bytes. Installation commands and the synthetic example still target pre3.
+
+| 条件 / Condition | 次版の範囲 / Next-release scope |
+| --- | --- |
+| 検証 / Verification | 既存`verify_research`の7入力・status/code・Evidence契約、固定profile v1・7支持形状と有限入力上限を維持。全条件成立前は成功させず、未知/非対応は拒否 / Preserve the existing seven inputs, status/code/Evidence contract, fixed profile v1, seven supported shapes and finite input bounds. No success before all checks; reject unknown/unsupported forms. |
+| 責任 / Responsibility | 署名・原wire/全域閉包・委任・購入/Host binding・制約・期限・供給trustの検査はGem。真正/最新の登録・失効・時計・注文、利用直前再照合、nonce原子消費/注文CAS・PENDING回復・最終ALLOWはHost / The Gem checks signatures, original wire/closure, delegation, purchase/Host binding, constraints, time and supplied trust. The Host authenticates current trust/revocation/clock/order state, rechecks before use, handles atomic consumption/order CAS and PENDING, and makes final ALLOW decisions. |
+| 非保証 / Exclusions | 一般AP2/全Schema、任意の実Issuer互換性、実Host運用・決済、発行/提示、最悪CPU/RSS/並行性能・数値SLAは対象外。Hostは外側の実行制限を設ける / No general AP2/full Schema, arbitrary real-Issuer interoperability, live Host/payment operations, issuance/presentation, worst-case CPU/RSS/concurrency or numeric SLA. Hosts provide outer execution limits. |
+| Evidence | 同一の信頼Rubyプロセス内の不変な検査事実。ALLOWではなく、Hash/JSON転送で真正性を復元しない。拒否/不能/例外/結果なしは許可にしない / Immutable checked facts inside the same trusted Ruby process, not ALLOW. Hash/JSON transport does not reconstruct authenticity. Rejection, unavailability, exceptions and missing results never grant permission. |
+| 互換性 / Compatibility | 支持入力の判定意味・既存APIを黙って変更しない。安全性修正で受理を狭める場合は理由・影響・移行を告知。API/必須field/profileの破壊的変更は明示し、依存更新を自動互換としない / No silent changes to supported-input semantics or the existing API. Announce reasons, impact and migration for security-driven acceptance narrowing. Identify breaking API/required-field/profile changes; dependency updates are not automatically compatible. |
+| 保守 / Maintenance | 初回安定系列の最新修正版のみを対象とし、pre版/旧系列のbackportや保守年数は約束しない。月次・関連勧告判明時・次版前に手動確認。既存GitHub窓口を利用し受付/修正期限・24時間対応は約束しない / Support the latest patch of the initial stable series only, without prerelease/old-series backport or fixed-term promises. Manual review monthly, on relevant advisories and before releases, through existing GitHub reporting routes; no response/fix deadline or 24/7 commitment. |
+
+対応環境の基礎はMRI4.0.9と下記固定依存、MBAの`arm64-darwin25`観測構成とUbuntu24.04/x86_64の記録に限定します。[正確な環境・provider記録](docs/VERIFIER_CORE_COMPLETION_CRITERIA.md#初回の対応環境保証範囲owner採用済み)を参照してください。過去のlibcrypto3.5.9／Ubuntu `3.0.13-0ubuntu3.16`等は現在の安全なprovider一覧ではありません。次候補時点の公式勧告・実ロード版/出所/修正状態は別確認が必要です。OS全版・任意provider更新・他engine/architectureは保証しません。無欠陥・全パス安全性の証明を主張せず、既知重大問題やGem自身の検査欠落を非保証表示で補いません。
+
+Environment baselines are MRI4.0.9 with the fixed dependencies below, the observed MBA `arm64-darwin25` configuration and Ubuntu24.04/x86_64 records. See the [exact environment/provider evidence](docs/VERIFIER_CORE_COMPLETION_CRITERIA.md#初回の対応環境保証範囲owner採用済み). Historical libcrypto3.5.9/Ubuntu `3.0.13-0ubuntu3.16` observations are not a current safe-provider list. Official advisories and actual loaded versions, provenance and patch status require candidate-time checks. All OS versions, arbitrary provider updates and other engines/architectures are not covered. No defect-free/all-path safety proof is claimed; exclusions cannot excuse known major defects or missing Gem checks.
+
+### 安定版公開時の切替確認 / Stable-publication checklist
+
+以下は未完了の切替事項です。条件採用だけでは試験・候補作成・公開を開始しません。
+These items remain pending; adopting conditions does not authorize tests, candidate builds or publication.
+
+- 候補版/source/依存・provider・同梱文書と新archive SHAを確定し、承認された差分検証・最新HEADレビューを完了する / Fix candidate version/source/dependencies/providers/packaged docs and new archive SHA, then complete approved validation and latest-HEAD review.
+- README・SUPPORT_CONTRACT・gemspec・SECURITY/保守文書の対象版/研究限定表示を、各歴史記録を保持して候補と整合させる / Align README, SUPPORT_CONTRACT, gemspec and security/maintenance policy with the candidate while preserving historical records.
+- 最終公開GOと公開bytesを確認してから、安定版導入コマンド・Gemfile例・版/サイズ/SHA・リリースリンクを切り替える / Switch stable installation/Gemfile examples, version/size/SHA and release links only after final GO and distribution-byte verification.
+- 公開pre3 Gemと既存のtag/Releaseは上書きせず、885（147は内数）・旧runtime独立比較・包装/導入証拠を新候補実測へ読み替えない / Never overwrite the published pre3 Gem or existing tags/releases or relabel 885 regressions (including147), old-runtime independent comparisons or package/install evidence as new candidate observations.
 
 ## 導入方法 / Installation
 
@@ -311,4 +344,5 @@ Both are **separate projects**. Integration comes after the verification contrac
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
 

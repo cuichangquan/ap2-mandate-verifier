@@ -15,7 +15,7 @@ def deep_frozen(value)
   end
 end
 spec = Gem.loaded_specs.fetch("ap2_mandate_verifier")
-need(spec.version.to_s == "0.1.0.pre.3" && RUBY_VERSION == "4.0.9" && RUBY_ENGINE == "ruby", "candidate runtime")
+need(spec.version.to_s == "0.1.0" && RUBY_VERSION == "4.0.9" && RUBY_ENGINE == "ruby", "candidate runtime")
 versions = {"json"=>"2.19.9","jwt"=>"3.3.0","base64"=>"0.3.0","openssl"=>"4.0.2","digest"=>"3.2.1"}
 need(versions.all? { |k,v| Gem.loaded_specs.fetch(k).version.to_s == v }, "runtime dependencies")
 root = File.realpath(spec.full_gem_path)
@@ -71,7 +71,7 @@ begin
  raise "non-success constructor bypass"
 rescue ArgumentError
 end
-puts JSON.pretty_generate(scope:"INSTALLED_PRERELEASE_MBA_ONLY_NOT_HOST_ALLOW",candidate_version:spec.version.to_s,
+puts JSON.pretty_generate(scope:"STABLE010_CANDIDATE_MBA_ONLY_NOT_HOST_ALLOW",candidate_version:spec.version.to_s,
  ruby:RUBY_VERSION,ruby_platform:RUBY_PLATFORM,dependencies:versions,openssl_default:Gem.loaded_specs.fetch("openssl").default_gem?,
  digest_default:Gem.loaded_specs.fetch("digest").default_gem?,libcrypto:OpenSSL::OPENSSL_LIBRARY_VERSION,installed_lib_files:loaded.size,ordinary_entry:true,
  independent_research_comparisons:rows,legacy_api_checks:legacy.size,input_rejections:2,constructor_rejections:1,total_cases:52,

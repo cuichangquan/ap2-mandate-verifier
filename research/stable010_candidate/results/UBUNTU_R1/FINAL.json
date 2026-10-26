@@ -1,0 +1,39 @@
+{
+  "status": "PASS_LIMITED_CANDIDATE_VALIDATION",
+  "pr": "https://github.com/cuichangquan/ap2-mandate-verifier/pull/197",
+  "review_receipt": "https://github.com/cuichangquan/ap2-mandate-verifier/pull/197#issuecomment-6408858675",
+  "reviewed_head": "a788c577a525785bc4c815dc615141fe6d8680b0",
+  "main": "2fbfd49a80a1ff8c7d10070ef10ef63c48a5a084",
+  "tree": "61d97512fac1c95f79e6eda27902eb98a91586a9",
+  "candidate_bytes": 43008,
+  "candidate_sha256": "0553645fa6c067dd8d7a7a1a7cdf13799370393e76dc3bc4ba161ab2ca5981b0",
+  "run_url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/40274002891",
+  "attempt": 1,
+  "dispatches": 1,
+  "job_seconds": 19,
+  "candidate_audit_step_seconds": 2,
+  "passed": {
+    "payload": 13,
+    "loaded_product_files": 10,
+    "installed_checks": 52,
+    "evidence_files_readback_verified": 92
+  },
+  "report_sha256": "fc7a5dcf456739066e775de79679500361650923fe871dc6f8082af2710db064",
+  "measured_http_bytes": 49287628,
+  "task_disk_kib_sample": 149720,
+  "cleanup": "all five run-owned roots removed; local dispatch input removed",
+  "not_run": [
+    "candidate rebuild",
+    "885 rerun",
+    "independent Oracle regeneration",
+    "RubyGems publication",
+    "GitHub Release publication"
+  ],
+  "limitations": [
+    "S3 not globally passed: trusted runner/dpkg boundary and recorded provider only",
+    "JSON official fix/source static evidence adopted; conflicting GHSA metadata retained",
+    "all network bytes and physical peak disk/CPU/RAM hard limits unproved",
+    "real Issuer/Host production and full Phase2A GO not established",
+    "GitHub input/log history not erased or promised private"
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "scope": "candidate source/evidence integration only; no release or Host production GO",
+  "source_baseline": "a6a303f7fe7bf4ef6b4e24744b0fa23d9580fb61",
+  "validation_workflow_main": "2fbfd49a80a1ff8c7d10070ef10ef63c48a5a084",
+  "candidate": {
+    "version": "0.1.0",
+    "bytes": 43008,
+    "sha256": "0553645fa6c067dd8d7a7a1a7cdf13799370393e76dc3bc4ba161ab2ca5981b0",
+    "archive_committed": false,
+    "input_blob_committed": false
+  },
+  "six_tested_source_files": {
+    "README.md": "274ee29aceda7df0ef05878a820ee93c23d6e869413f19940ef564d047488306",
+    "docs/SUPPORT_CONTRACT.md": "ce19afaaba66d85d76b463d066a2a3bebdc373ba389b0f9e59ca60388ac409ff",
+    "ap2_mandate_verifier.gemspec": "9d73f19d6802c6dd83108bbb559c50551aae431ab05b2dd9f17b8f3870420ea4",
+    "Gemfile.lock": "6d2ffeb5719b9d3448038744aa68a53dd9769322d6977fd69f9110704751e017",
+    "test/packaged_gem_test.rb": "55076268e790a74a444b8a0ea71829414b3b4aef4dc48c212d90981abcdb99b4",
+    "test/package_contents_audit.rb": "12cbec375ed179342c870ce709ae8a65b0e5fc6f5e0902ecf29e25071c73954a"
+  },
+  "evidence": {
+    "SOURCE_MANIFEST.json": {
+      "original_sha256": "041265abe1dcf486b64147aeed15d6f4955657b1ca01e3f18ab53f7758189eba",
+      "public_sha256": "041265abe1dcf486b64147aeed15d6f4955657b1ca01e3f18ab53f7758189eba",
+      "transform": "byte-for-byte original"
+    },
+    "results/MBA_R1/REPORT.public.json": {
+      "original_sha256": "36125626d8251895975be043bbac13170c428b0df45750f1e4db5ae5a6ba4742",
+      "public_sha256": "4c574a61dee01187ee5c1149032b7d139f80abdf2e1ef5bf59b862f030f40d36",
+      "transform": "literal task-local path-prefix replacement only"
+    },
+    "results/MBA_R1/FINAL.public.json": {
+      "original_sha256": "52882c52e59e01e5fdb999d1795e6f1a199fd389ebd15a5003c54d6c44f07e46",
+      "public_sha256": "52882c52e59e01e5fdb999d1795e6f1a199fd389ebd15a5003c54d6c44f07e46",
+      "transform": "literal task-local path-prefix replacement only"
+    },
+    "results/UBUNTU_R1/REPORT.json": {
+      "original_sha256": "fc7a5dcf456739066e775de79679500361650923fe871dc6f8082af2710db064",
+      "public_sha256": "fc7a5dcf456739066e775de79679500361650923fe871dc6f8082af2710db064",
+      "transform": "byte-for-byte original"
+    },
+    "results/UBUNTU_R1/FINAL.json": {
+      "original_sha256": "bfc92355314611621bae35e3f8ffaa9a8ed40540321c2e4ccc5ee39f5f4943e7",
+      "public_sha256": "bfc92355314611621bae35e3f8ffaa9a8ed40540321c2e4ccc5ee39f5f4943e7",
+      "transform": "byte-for-byte original"
+    }
+  },
+  "diagnostics": {
+    "public_file": "DIAGNOSTICS.public.json",
+    "public_sha256": "9d66441f2c7789b9148205a285235194e5312c5491eeb50e84317cc6a6fa155d",
+    "transform": "selected final records and D3 component/symbol observations; personal task path prefixes replaced; original hashes embedded"
+  },
+  "original_ubuntu_job_log_sha256": "642da7b788ce7fc211d58d5a4ff6aed9a9accd539908e654bcd144a0015a349b",
+  "ubuntu_run": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/40274002891",
+  "ubuntu_attempt": 1,
+  "validation_pr": "https://github.com/cuichangquan/ap2-mandate-verifier/pull/197",
+  "redaction_placeholders": {
+    "<TASK_ROOT>": "private local task directory",
+    "<MBA_PACKAGE_R1>": "local candidate execution/evidence directory",
+    "<PROVIDER_D1>": "local D1 directory",
+    "<PROVIDER_D2>": "local D2 directory",
+    "<PROVIDER_D3>": "local D3 directory"
+  },
+  "retention": "Original reports/logs/diagnostics/archive/source remain local and unmodified. Public summaries do not provide the omitted full dyld inventory or original pathnames. Public hashes are not substituted for original hashes."
+}

@@ -1,7 +1,7 @@
 # 初回本番候補：主張と既存証拠の静的監査
 
 監査日：2026-10-26 UTC。基準main：`2dcd8ddb03e8da2aec4568de1d4b549f97f877da`（PR194後）。
-状態：**静的監査・S1〜S7判断基準Owner採用済み／各Gate合格未判定・本番HOLD**。用途・実Issuerは未定。
+状態：**過去の静的監査と採用判断を保持。現在の候補統合・Gate整理は末尾追補を参照／公開・本番HOLD**。用途・実Issuerは未定。
 対象は既存固定profileの検証専用Gem。Host運用・決済・発行/提示生成は候補Gem外だが、Host前提は外さない。
 Ownerは次のリリースで追加pre版ではなく**安定版を目指す**と明示した。版番号・公開GOは未承認。pre接尾辞を外すだけで十分とはせず、一般AP2対応やHost運用を追加必須対象にもしない。
 本書は[計画G1](FIRST_PRODUCTION_CANDIDATE_PLAN.md)の読解結果で、[原Gate](PHASE2A_EXIT_GATE_DECISION_CHECKLIST.md)を上書きせず、新たなPASS/実行/公開を承認しない。
@@ -153,3 +153,21 @@ Gem自身が約束する検査の欠落/失敗は非保証表示で補えない�
 主張と既存資料/製品/試験source/保存REPORTの静的照合まで。候補runtime起動、旧ローカル原ログの直接再照合、現在の脆弱性調査、性能実測、実Issuer照会/外部連絡は行っていない。
 workspaceの`.agents`/`.codex`ディレクトリは不存在。固定remote treeにも追加AGENTSや`.agents/skills`なし、root AGENTSとIssue101を適用した。
 監査・文書保存では追加試験・構文実行・Docker・取得/導入・Gem build・製品コード変更・Actions・Gem公開なし。本番HOLDを継続。
+
+
+## 0.1.0候補検証後の追補（2026-10-26 UTC）
+
+上記の未決/未実施は各監査時点の記録であり、現在地は本節と[候補証拠](../research/stable010_candidate/README.md)を参照する。Ownerは既存APIを維持する固定profile検証専用Gemの具体条件（保証/非保証、Host前提、対応観測環境、互換性、初回安定系列の最新修正版のみ・月次/勧告時/次版前の手動保守、期限SLAなし）と限界付き既存証拠を採用した。0.1.0は候補番号として承認され、公開GOではない。
+
+| Gate | 確認済み・現在の判定材料 | 残余/次工程 |
+| --- | --- | --- |
+| S1 | 採用済み条件を候補README/SUPPORTへ記載。既存7入力/status/code/Evidence/旧API非成功・製品10件は不変 | 今回のsource統合レビューで記述と実体の一致を確認。新API/改名は不要 |
+| S2 | 885（147を含む）、旧Ruby4.0.1独立比較、限定E06因果/意味を限界付き採用。同一製品/固定依存と新候補の13/10/52を対応 | code一致を全拒否stageの因果証明にしない。新たな追加必須試験は今回未特定 |
+| S3 | MBA D3の10component identity predicates、Ubuntu実ロード/出所/完全package版/所有/整合性、JSON native identityを保存 | 全runtime安全性PASSではない。OS dyld hash/全binding未証明、JSON勧告metadata不整合を保持。範囲・残余をS7で提示 |
+| S4 | 保守担当/窓口、最新patchのみ、手動見直し、更新/廃止告知、期限SLAなしを採用しSECURITY/保守文書へ反映 | 自動監視の稼働や将来の無制限実行承認を意味しない |
+| S5 | 0.1.0、43,008B、SHA256 `0553645fa6c067dd8d7a7a1a7cdf13799370393e76dc3bc4ba161ab2ca5981b0`をMBA/Ubuntuで各1回13/10/52確認。source manifestと同梱bytes一致 | 今回source保存で新archiveを作らない。同梱NOT_RUNは包装時点の履歴、後続成功は外部追補 |
+| S6 | PR197の検証基盤レビューは完了 | 候補sourceを含む今回の最新HEADレビュー・未解決0が別途必要。過去receiptで代替しない |
+| S7 | 未承認/HOLD | exact archive・配布先・主張/残余と供給工程条件を示したOwner最終公開GO。特定Host運用GOはさらに別 |
+
+この追補は旧観測/失敗を成功に書き換えない。D1/D2 STOP、D3 limited identity、Mac/Ubuntu packagingを別ID・原本hashで保持し、個人task pathの公開版置換を明示する。過去通信/容量不足、実Issuer/Host・最悪資源等の未証明も残す。追加試験、Gem再build、Actions再実行、公開は今回行わない。
+
