@@ -1,0 +1,269 @@
+name: Stable010 candidate Linux verification (manual only; approval B required)
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact independently reviewed and merged main commit
+        required: true
+        type: string
+      candidate_base64:
+        description: Exact43008B candidate archive, canonical base64; potential visibility approved
+        required: true
+        type: string
+      approval_b_confirmed:
+        description: Separate Owner approval B covers this exact run (not granted by preparation)
+        required: true
+        type: boolean
+        default: false
+      zero_cost_confirmed:
+        description: Public standard runner, no caches/artifacts or extra charges, verified now
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: stable010-linux-one-approved-run
+  cancel-in-progress: false
+env:
+  EXPECTED_SHA: ${{ inputs.expected_sha }}
+  RUBYOPT: ''
+  RUBYLIB: ''
+  APPROVAL_B_CONFIRMED: ${{ inputs.approval_b_confirmed }}
+  ZERO_COST_CONFIRMED: ${{ inputs.zero_cost_confirmed }}
+jobs:
+  package:
+    if: github.repository == 'cuichangquan/ap2-mandate-verifier' && !github.event.repository.private && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Validate dispatch identity
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          test "$APPROVAL_B_CONFIRMED" = true
+          test "$ZERO_COST_CONFIRMED" = true
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$GITHUB_SHA" = "$EXPECTED_SHA"
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+          test "${RUNNER_DEBUG:-0}" != 1
+          python3 - <<'PY'
+          import os,json,base64,hashlib,pathlib,time
+          event=pathlib.Path(os.environ['GITHUB_EVENT_PATH'])
+          if event.stat().st_size>131072:raise SystemExit('event size limit')
+          data=json.loads(event.read_text())
+          text=data['inputs']['candidate_base64']
+          if not isinstance(text,str) or len(text)!=57344 or not text.isascii():raise SystemExit('candidate encoding length')
+          raw=base64.b64decode(text,validate=True)
+          if base64.b64encode(raw).decode()!=text:raise SystemExit('noncanonical candidate')
+          if len(raw)!=43008 or hashlib.sha256(raw).hexdigest()!='0553645fa6c067dd8d7a7a1a7cdf13799370393e76dc3bc4ba161ab2ca5981b0':raise SystemExit('candidate identity')
+          work=pathlib.Path(os.environ['RUNNER_TEMP'])/'ap2-stable010-work'
+          work.mkdir(exist_ok=False)
+          (work/'OWNED_ROOTS').write_text(str(work)+'\n')
+          (work/'candidate.gem').write_bytes(raw)
+          (work/'START.json').write_text(json.dumps({'run_id':os.environ['GITHUB_RUN_ID'],'attempt':os.environ['GITHUB_RUN_ATTEMPT'],'started_epoch':time.time(),'candidate_bytes':len(raw),'candidate_sha256':hashlib.sha256(raw).hexdigest(),'status':'INPUT_MATCH','input_history_privacy':'NOT_GUARANTEED'})+'\n')
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('STABLE010_WORK='+str(work)+'\n')
+              f.write('STABLE010_DEADLINE='+str(int(time.time())+780)+'\n')
+          print('Exact candidate decoded and SHA matched; input omitted')
+          PY
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.expected_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          submodules: false
+          lfs: false
+      - name: Validate checkout
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Verify and expand the one official Ruby provider archive
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          left=$((STABLE010_DEADLINE-$(date +%s)))
+          test "$left" -gt 0
+          timeout --kill-after=3 "$left" bash <<'STABLE010_STAGE'
+          set -euo pipefail
+          test "$RUNNER_TOOL_CACHE" = /opt/hostedtoolcache
+          prefix="$RUNNER_TOOL_CACHE/Ruby/4.0.9/x64"
+          test ! -e "$prefix" # Never replace an existing/unknown toolcache provider.
+          mkdir "$RUNNER_TEMP/ap2-stable010-ruby"
+          printf '%s\n' "$RUNNER_TEMP/ap2-stable010-ruby" >> "$STABLE010_WORK/OWNED_ROOTS"
+          archive="$RUNNER_TEMP/ap2-stable010-ruby/provider.tar.gz"
+          curl --fail --silent --show-error --http1.1 --proto '=https' --proto-redir '=https' \
+            --tlsv1.2 --location --max-redirs 2 --connect-timeout 15 --max-time 120 --retry 0 \
+            --max-filesize 49100121 --dump-header "$RUNNER_TEMP/ap2-stable010-ruby/headers" \
+            --output "$archive" --write-out 'ruby body=%{size_download} sent_headers=%{size_request} received_headers=%{size_header}\n' \
+            https://github.com/ruby/ruby-builder/releases/download/ruby-4.0.9/ruby-4.0.9-ubuntu-24.04-x64.tar.gz > "$STABLE010_WORK/ruby.metrics"
+          cat "$STABLE010_WORK/ruby.metrics"
+          test "$(wc -c < "$archive")" -eq 49100121
+          echo "046d1422e1be5575eadd55323c85c3efbeaee8c8e1c1bfccee343e28619cb3b3  $archive" | sha256sum --check --status
+          # Official builder uses tar -C dirname(PREFIX) basename(PREFIX), i.e. x64/.
+          mkdir -p "$(dirname "$prefix")"
+          mkdir "$prefix"
+          printf '%s\n' "$prefix" >> "$STABLE010_WORK/OWNED_ROOTS"
+          tar -xzf "$archive" -C "$(dirname "$prefix")"
+          test -x "$prefix/bin/ruby"
+          echo "$prefix/bin" >> "$GITHUB_PATH"
+          STABLE010_STAGE
+      - name: Identify actual Ubuntu OpenSSL provider before Gem acquisition
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          left=$((STABLE010_DEADLINE-$(date +%s)))
+          test "$left" -gt 0
+          timeout --kill-after=3 "$left" bash <<'STABLE010_STAGE'
+          set -euo pipefail
+          echo "cf7ac93688ab1da448ce8aa3fd5b525c43a8fb22ffc3fc1df361029c1d2406d1  research/stable010_linux_package/verify_package.rb" | sha256sum --check --status
+          echo "017d4d221a2fbf8295e5d18068abd56a4ea055fa84fab8c9b687c8a042f8a447  research/stable010_linux_package/CURRENT_MANIFEST.json" | sha256sum --check --status
+          timeout 45 ruby research/stable010_linux_package/verify_package.rb --provider-preflight
+          STABLE010_STAGE
+      - name: Three fixed dependency archives (approval B required)
+        timeout-minutes: 6
+        shell: bash
+        run: |
+          left=$((STABLE010_DEADLINE-$(date +%s)))
+          test "$left" -gt 0
+          timeout --kill-after=3 "$left" bash <<'STABLE010_STAGE'
+          set -euo pipefail
+          default_gems=$(ruby -e 'print Gem.default_dir')
+          export GEM_HOME="$RUNNER_TEMP/ap2-stable010-deps"
+          export GEM_PATH="$GEM_HOME:$default_gems"
+          mkdir "$GEM_HOME"
+          printf '%s\n' "$GEM_HOME" >> "$STABLE010_WORK/OWNED_ROOTS"
+          mkdir "$RUNNER_TEMP/ap2-stable010-archives"
+          printf '%s\n' "$RUNNER_TEMP/ap2-stable010-archives" >> "$STABLE010_WORK/OWNED_ROOTS"
+          cd "$RUNNER_TEMP/ap2-stable010-archives"
+          # Three Gem bodies176640B; with Ruby total49276761B. Candidate arrives via event input.
+          while read -r name bytes sha; do
+            curl --fail --silent --show-error --http1.1 --proto '=https' --tlsv1.2 \
+              --connect-timeout 15 --max-time 45 --retry 0 --max-filesize "$bytes" \
+              --dump-header "$name.headers" --output "$name.gem" \
+              --write-out "$name body=%{size_download} sent_headers=%{size_request} received_headers=%{size_header}\n" \
+              "https://rubygems.org/gems/$name.gem" > "$STABLE010_WORK/$name.metrics"
+            cat "$STABLE010_WORK/$name.metrics"
+            test "$(wc -c < "$name.gem")" -eq "$bytes"
+            echo "$sha  $name.gem" | sha256sum --check --status
+          done <<'GEMS'
+          json-2.19.9 107008 9b9025b7cdddafa38d316eca0b2358488e42d417045c1b90d216a9fefe46b79a
+          jwt-3.3.0 57856 44cc34fbc341c148233cf66641522b4bce0dfb1ce55e8073f05c56f44f4ee546
+          base64-0.3.0 11776 27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
+          GEMS
+          python3 - <<'PY'
+          import pathlib,os,re,json
+          work=pathlib.Path(os.environ['STABLE010_WORK']);rows=[]
+          for name in ['ruby','json-2.19.9','jwt-3.3.0','base64-0.3.0']:
+              p=work/(name+'.metrics')
+              if p.stat().st_size>1024:raise SystemExit('metric size')
+              text=p.read_text().strip()
+              m=re.fullmatch(r'[^ ]+ body=([0-9]+) sent_headers=([0-9]+) received_headers=([0-9]+)',text)
+              if not m:raise SystemExit('HTTP metric unknown')
+              body,sent,received=map(int,m.groups())
+              if sent<=0 or received<=0:raise SystemExit('HTTP header metric unknown')
+              rows.append({'archive':name,'body':body,'sent_headers':sent,'received_headers':received})
+          total=sum(r['body']+r['sent_headers']+r['received_headers'] for r in rows)
+          report={'archives':rows,'measured_http_bytes':total,'all_network':'UNPROVEN; setup/checkout/input/DNS/TLS not included'}
+          (work/'HTTP_ACCOUNTING.json').write_text(json.dumps(report)+'\n')
+          print(json.dumps(report))
+          if total>134217728:raise SystemExit('HTTP observed budget exceeded')
+          PY
+          # One native JSON build at most180s; bounded regular-file failure logs.
+          ruby "$GITHUB_WORKSPACE/research/stable010_linux_package/verify_package.rb" --install-dependencies
+          used=$(timeout --kill-after=2 10 du -sk "$STABLE010_WORK" "$RUNNER_TEMP/ap2-stable010-ruby" "$RUNNER_TEMP/ap2-stable010-archives" "$RUNNER_TEMP/ap2-stable010-deps" /opt/hostedtoolcache/Ruby/4.0.9/x64 2>"$STABLE010_WORK/du.stderr" | awk '{s+=$1} END{printf "%.0f",s}')
+          test ! -s "$STABLE010_WORK/du.stderr"
+          test "$used" -le 8388608
+          echo "observed_task_kib=$used"
+          echo "GEM_HOME=$GEM_HOME" >> "$GITHUB_ENV"
+          echo "GEM_PATH=$GEM_PATH" >> "$GITHUB_ENV"
+          STABLE010_STAGE
+      - name: Exact candidate audit and52 installed checks (no build; source885 NOT_RUN)
+        timeout-minutes: 7
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          left=$((STABLE010_DEADLINE-$(date +%s)))
+          test "$left" -gt 0
+          timeout --kill-after=3 "$left" bash <<'STABLE010_STAGE'
+          set -euo pipefail
+          timeout --kill-after=3 390 ruby research/stable010_linux_package/verify_package.rb 017d4d221a2fbf8295e5d18068abd56a4ea055fa84fab8c9b687c8a042f8a447 \
+            "$STABLE010_WORK/candidate.gem"
+          STABLE010_STAGE
+      - name: Preserve bounded evidence and remove task-only temporary files
+        if: always()
+        timeout-minutes: 2
+        env:
+          PRIOR_STATUS: ${{ job.status }}
+        run: |
+          python3 - <<'PY'
+          import os,pathlib,json,hashlib,base64,shutil,time,subprocess
+          temp=pathlib.Path(os.environ['RUNNER_TEMP'])
+          work=temp/'ap2-stable010-work'
+          rows=[];missing=[];complete=True
+          owned=[]
+          try:
+              start=json.loads((work/'START.json').read_text())
+              if start['run_id']!=os.environ['GITHUB_RUN_ID'] or start['attempt']!=os.environ['GITHUB_RUN_ATTEMPT']:raise ValueError('ownership run mismatch')
+              allowed={str(work),str(temp/'ap2-stable010-ruby'),str(temp/'ap2-stable010-archives'),str(temp/'ap2-stable010-deps'),'/opt/hostedtoolcache/Ruby/4.0.9/x64'}
+              owned=(work/'OWNED_ROOTS').read_text().splitlines()
+              if len(set(owned))!=len(owned) or not set(owned)<=allowed or str(work) not in owned:raise ValueError('ownership roots invalid')
+          except Exception as e:
+              owned=[];complete=False;missing.append({'file':'ownership','reason':str(e)})
+          if str(work) in owned and work.is_dir() and not work.is_symlink():
+              selected=[p for p in work.iterdir() if p.is_file() and (p.suffix in ['.stdout','.stderr','.receipt','.metrics'] or p.name in ['OWNED_ROOTS','REPORT.json','HTTP_ACCOUNTING.json','START.json','json-install-started','json-install-completed','jwt-install-started','jwt-install-completed','base64-install-started','base64-install-completed'])]
+              deps=temp/'ap2-stable010-deps'
+              for name in ['mkmf.log','gem_make.out']:
+                  found=list(deps.rglob(name)) if deps.is_dir() else []
+                  found=[p for p in found if 'json-2.19.9' in str(p)]
+                  if not found and (work/'json-install-started').exists():complete=False
+                  if not found:missing.append({'file':name,'reason':'NOT_REACHED_OR_NOT_EMITTED','json_install_started':(work/'json-install-started').exists(),'json_install_completed':(work/'json-install-completed').exists()})
+                  selected+=found
+              total=0
+              for p in sorted(set(selected)):
+                  try:
+                      if p.is_symlink():raise ValueError('diagnostic symlink')
+                      n=p.stat().st_size
+                      if n>131072 or total+n>1048576:raise ValueError('diagnostic cap')
+                      raw=p.read_bytes();digest=hashlib.sha256(raw).hexdigest()
+                      if len(raw)!=n or hashlib.sha256(p.read_bytes()).hexdigest()!=digest:raise ValueError('readback mismatch')
+                      row={'path':str(p.relative_to(temp)),'bytes':n,'sha256':digest};rows.append(row);total+=n
+                      print('STABLE010_FILE_BEGIN '+json.dumps(row))
+                      text=base64.b64encode(raw).decode()
+                      for i in range(0,len(text),120):print(text[i:i+120])
+                      print('STABLE010_FILE_END')
+                  except Exception as e:complete=False;missing.append({'file':p.name,'reason':str(e)})
+              if not (work/'REPORT.json').is_file():complete=False;missing.append({'file':'REPORT.json','reason':'validation not completed'})
+          else:complete=False;missing.append({'file':'work','reason':'input step not completed'})
+          prefix=pathlib.Path('/opt/hostedtoolcache/Ruby/4.0.9/x64')
+          cleanup=[]
+          roots=[pathlib.Path(p) for p in owned if p!=str(work)]
+          observation={'physical_peak':'UNPROVEN'}
+          try:
+              existing=[str(p) for p in roots+([work] if str(work) in owned else []) if p.is_dir()]
+              if not existing:raise ValueError('no owned roots to observe')
+              q=subprocess.run(['du','-sk',*existing],capture_output=True,text=True,timeout=10)
+              if q.returncode!=0:raise ValueError('du observation failed')
+              kib=sum(int(line.split()[0]) for line in q.stdout.splitlines())
+              observation['task_kib']=kib
+              if kib>8388608:raise ValueError('observed disk budget exceeded')
+          except Exception as e:complete=False;observation['error']=str(e)
+          # Evidence was emitted/read back above; input Gem is never printed.
+          for p in roots:
+              if p.exists():
+                  if p.is_symlink():complete=False;cleanup.append({'path':str(p),'status':'NOT_REMOVED_SYMLINK'});continue
+                  try:shutil.rmtree(p);cleanup.append({'path':str(p),'removed':not p.exists()})
+                  except Exception as e:complete=False;cleanup.append({'path':str(p),'error':str(e)})
+          if str(work) in owned and work.exists() and not work.is_symlink():
+              try:shutil.rmtree(work);cleanup.append({'path':str(work),'removed':not work.exists()})
+              except Exception as e:complete=False;cleanup.append({'path':str(work),'error':str(e)})
+          record={'status':'EVIDENCE_EMITTED' if complete else 'EVIDENCE_INCOMPLETE','prior_status':os.environ['PRIOR_STATUS'],'files':rows,'missing':missing,'cleanup':cleanup,'capacity_observation':observation,'github_input_history':'not erased or proven private','limits':'bounded logs, not all traffic/physical peak/CPU/RAM hard quotas'}
+          print('STABLE010_FINAL '+json.dumps(record))
+          if not complete:raise SystemExit(1)
+          PY
+

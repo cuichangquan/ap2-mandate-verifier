@@ -1,0 +1,63 @@
+{
+  "scope": "STABLE010_CANDIDATE_LINUX_NOT_HOST_ALLOW",
+  "product_reference_commit": "a6a303f7fe7bf4ef6b4e24744b0fa23d9580fb61",
+  "provenance": "STABLE010-MBA-PACKAGE-R1 source/archive/installed13 loaded10 installed52. Product source unchanged. This is the exact retained candidate; no rebuild.",
+  "mba_report_sha256": "36125626d8251895975be043bbac13170c428b0df45750f1e4db5ae5a6ba4742",
+  "mba_source_manifest_sha256": "041265abe1dcf486b64147aeed15d6f4955657b1ca01e3f18ab53f7758189eba",
+  "candidate_artifact": {
+    "version": "0.1.0",
+    "bytes": 43008,
+    "sha256": "0553645fa6c067dd8d7a7a1a7cdf13799370393e76dc3bc4ba161ab2ca5981b0",
+    "transport": "workflow_dispatch base64 input; possible third-party visibility approved; not RubyGems/Release publication"
+  },
+  "dependencies": {
+    "base64": "= 0.3.0",
+    "json": "= 2.19.9",
+    "jwt": "= 3.3.0",
+    "openssl": "= 4.0.2",
+    "digest": "= 3.2.1"
+  },
+  "ruby_provider": {
+    "url": "https://github.com/ruby/ruby-builder/releases/download/ruby-4.0.9/ruby-4.0.9-ubuntu-24.04-x64.tar.gz",
+    "bytes": 49100121,
+    "sha256": "046d1422e1be5575eadd55323c85c3efbeaee8c8e1c1bfccee343e28619cb3b3"
+  },
+  "ubuntu_openssl_policy": {
+    "os_id": "ubuntu",
+    "os_version": "24.04",
+    "codename": "noble",
+    "package": "libssl3t64:amd64",
+    "source": "openssl",
+    "architecture": "amd64",
+    "package_version": "3.0.13-0ubuntu3.16",
+    "upstream_version": "3.0.13",
+    "security_notice": "https://ubuntu.com/security/notices/USN-8847-1"
+  },
+  "payload_sha256": {
+    "LICENSE": "1442143c4265d88eedfc14f25d04298449358c837b0bb58dfa825f84b36391c8",
+    "README.md": "274ee29aceda7df0ef05878a820ee93c23d6e869413f19940ef564d047488306",
+    "docs/SUPPORT_CONTRACT.md": "ce19afaaba66d85d76b463d066a2a3bebdc373ba389b0f9e59ca60388ac409ff",
+    "lib/ap2_mandate_verifier.rb": "4824eeef1ce6c7833bcc24bc0bf9abc265df0b35ba135e54b4341b54c2f65ef2",
+    "lib/ap2_mandate_verifier/host_binding.rb": "917a4c139accd77d5bbe9125c64ea258349b6854ac04e0fefe33536b9b88ec0a",
+    "lib/ap2_mandate_verifier/input_validator.rb": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+    "lib/ap2_mandate_verifier/purchase_binding.rb": "6f2108ac3298e4558fc053139d045d399687ccc3bf39c01945ed52d529dc26df",
+    "lib/ap2_mandate_verifier/research_result.rb": "02159d2f451461ef818d7b6c9d55349cdfb6e23d9ced7d688730d22c8e96827d",
+    "lib/ap2_mandate_verifier/result.rb": "fade8a1e922f7b4cf2439c120580160f85e0f22f6cfac9ff1ab1364d7b34d310",
+    "lib/ap2_mandate_verifier/root_disclosures.rb": "55e97aa3b606eee64afbf929941fabb24286755297e1ed5bf48a5066e1352df6",
+    "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+    "lib/ap2_mandate_verifier/scoped_constraints.rb": "b2b5fa4cd1b4ce83cfc5ffc1be0a09ce57ad4a1b9be6778e581dd38f5ce5fd84",
+    "lib/ap2_mandate_verifier/trust_context.rb": "430eb9f9f3be4c0d7e799e95b68009c08582b6961aa954cc866ff012a3b2be36"
+  },
+  "harness_files_sha256": {
+    "verify_package.rb": "cf7ac93688ab1da448ce8aa3fd5b525c43a8fb22ffc3fc1df361029c1d2406d1",
+    "installed_test.rb": "b4f8d15de74af00fa649cb1d7388cd341309d4b08f86113e1dc01b6c6be70734"
+  },
+  "data_files_sha256": {
+    "research/stage15/results/R3/INPUTS.json": "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1",
+    "research/stage15_linux/EXPECTED.json": "b8de794bc17c1093d070ed0e78a523ffa568c332bce5e89fe5b2503ee8783d7e"
+  },
+  "download_bodies": 49276761,
+  "source_regressions": "885 NOT_RUN; historical evidence reuse only",
+  "oracle": "saved42 expectations replay, no independent Oracle regeneration",
+  "holds": "Candidate only; production/realIssuer/generalAP2/Phase2A full PASS not established. JSON official2.19.9 fix/source adopted static evidence with GHSA metadata conflict retained. Global runtime safety/all traffic/physical disk peak unproved."
+}
