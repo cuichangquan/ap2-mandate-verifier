@@ -178,3 +178,12 @@ workspaceの`.agents`/`.codex`ディレクトリは不存在。固定remote tree
 R1統合後、公開向け文書の整理だけを別承認し、新R2を作成しました。README/SUPPORT_CONTRACT/gemspec説明文だけを変更し、API・依存・製品10件は不変です。新SHA `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32` / 34,304B、[R2 source/原結果/由来](../research/stable010_release_linux_package/README.md)を正本とし、R1結果を新bytesの証拠へ転用しません。MBA13/10/52は1回PASS、R2 Ubuntuは準備時点で未実施。新workflowはmanual-onlyで、当該HEADレビュー/統合後に承認済み1runのみ実行します。
 
 S1は日英の現行導入/利用契約へ整理、S2の限界付き既存証拠採用とS3/S4の範囲は不変。S5は新archiveに対して環境別に判定し、S6は各準備/結果追補の最新HEADレビューが必要、S7は別Owner公開GO待ち。全Phase2A/実Issuer/Host運用/最悪資源保証へ昇格しません。既存885は製品/固定依存同一性により再利用し、今回再実行しません。
+
+
+## R2両環境の限定検証完了（2026-10-26 UTC）
+
+[新R2の原結果と来歴](../research/stable010_release_linux_package/README.md)でS5の新bytesをMac/Ubuntu各1回で確認。Ubuntu run40288305150 attempt1が成功し、13/10/52とMac payload/依存metadataが一致しました。34,304B、SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`。旧R1の結果とは別です。
+
+S1/S2/S4は採用済み範囲を現行利用文書に反映、S3は固定component/native/providerの出所/修正版/所有/整合性を限定観測、S5は同一archiveの包装/導入確認済み。S6準備PR199はHEAD `8e9c2aa50f965496cc721af5516cc39e0c6a1471` の[完了receipt](https://github.com/cuichangquan/ap2-mandate-verifier/pull/199#issuecomment-6410916715)・未解決0で統合。この結果追補は自身の最新HEADレビューを要し、S7公開GOは別途未承認です。全Phase2A・実Issuer/Host本番・全面安全性・最悪性能の保証へ広げません。
+
+92ファイルの回収とsize/SHA/読戻し・今回一時root清掃を確認。総通信/physical peak、OS dyld全hash/全binding、JSON公式修正履歴とGHSA metadata不整合の残余は保持します。製品/source同一性による885再利用（147は内数）であり、新885/独立比較再実行・新たな公開は行いません。

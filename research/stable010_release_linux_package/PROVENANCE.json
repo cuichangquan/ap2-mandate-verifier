@@ -25,11 +25,56 @@
     "native_builds": 0
   },
   "ubuntu": {
-    "status": "NOT_RUN_AT_PREPARATION",
-    "dispatch_max": 1,
-    "attempt": 1
+    "status": "LIMITED_PACKAGE_PASS",
+    "run_url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/40288305150",
+    "head_sha": "4ab7ceea46f477eb60f7b0d436e3afd434a0ff6c",
+    "dispatches": 1,
+    "attempt": 1,
+    "report_sha256": "e16de2c82744184f797f9eb8a769c843a52b559767d9f81f61962eec23a7649c",
+    "original_job_log_sha256": "61890d8b4003764896fd9dab1b0ef4108a004d699f4f0afd0cdb4a738e940950",
+    "recovered_files": 92,
+    "all_sizes_sha_host_readback": "PASS",
+    "payload": 13,
+    "loaded": 10,
+    "installed_checks": 52,
+    "mba_payload_and_dependencies_match": true,
+    "job_seconds": 17,
+    "candidate_audit_step_seconds": 2,
+    "measured_http_bytes": 49287629,
+    "download_body_bytes": 49276761,
+    "capacity_task_kib_sample": 149648,
+    "all_network": "UNPROVEN; setup/checkout/input/DNS/TLS excluded",
+    "physical_peak": "UNPROVEN",
+    "cleanup_all_five_run_owned_roots_removed": true,
+    "json_native_builds": 1,
+    "candidate_rebuilds": 0,
+    "source885_reruns": 0,
+    "independent_oracle_regeneration": 0,
+    "public_artifact_or_cache_uploads": 0
   },
   "old_archive": "R1 SHA0553645fa6c067dd8d7a7a1a7cdf13799370393e76dc3bc4ba161ab2ca5981b0 retained; not new-byte evidence",
-  "holds": "S7 final release GO and specific Host production GO; no885/Oracle rerun",
-  "originals": "retained locally, not overwritten"
+  "holds": "S7 final release GO and specific Host production GO; S3 global safety unproved, D3 OS dyld/all bindings and JSON GHSA metadata conflict retained; no885/Oracle rerun",
+  "originals": "retained locally, not overwritten",
+  "preparation_review": {
+    "pr": "https://github.com/cuichangquan/ap2-mandate-verifier/pull/199",
+    "reviewed_head": "8e9c2aa50f965496cc721af5516cc39e0c6a1471",
+    "receipt": "https://github.com/cuichangquan/ap2-mandate-verifier/pull/199#issuecomment-6410916715",
+    "merge": "4ab7ceea46f477eb60f7b0d436e3afd434a0ff6c",
+    "recovery_review_requests": 1,
+    "history": "Initial summary remained Running from07:03UTC; one authorized recovery request07:47UTC, same HEAD completed07:49UTC. No extra build or Mac check."
+  },
+  "execution_windows": {
+    "old_window": "Mac/preparation completed; Ubuntu not started because of review wait/time reserve. Original authorization/HOLD retained.",
+    "resumed_after_clean_review": {
+      "id": "R2-REMAINING-WINDOW",
+      "start_epoch": 1793000979.969302,
+      "deadline_epoch": 1793003379.969302,
+      "reviewed_head": "8e9c2aa50f965496cc721af5516cc39e0c6a1471",
+      "review_receipt": "https://github.com/cuichangquan/ap2-mandate-verifier/pull/199#issuecomment-6410916715",
+      "builds_allowed": 0,
+      "mac52_allowed": 0,
+      "ubuntu_dispatch_max": 1,
+      "publication_allowed": false
+    }
+  }
 }

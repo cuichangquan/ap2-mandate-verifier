@@ -233,3 +233,14 @@ S3は実ロードcomponent/providerの出所・hash・修正版等を限定確�
 R2は34,304B、SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`。MBAの新archive13/10/52は各1回PASS、実行約0.627秒、一時導入/展開先はhash読戻し後に削除。追加取得/native buildなし。[R2の検証正本](../research/stable010_release_linux_package/README.md)を参照。準備PR時点ではR2 Ubuntuは未実施で、最新HEADレビュー/統合後に承認済み1runを行います。旧run40274002891はR1です。
 
 公開済みと誤認しないよう導入例は0.1.0の公式掲載後に使用と明記しました。S7公開GO・特定Host本番GOは未承認/HOLD。885/147/旧runtime独立比較の扱いとS3残余は不変です。
+
+
+## R2 Ubuntu完了の追補（2026-10-26 UTC）
+
+新R2の[run40288305150 attempt1](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/40288305150)は成功。実行mainは `4ab7ceea46f477eb60f7b0d436e3afd434a0ff6c`、準備PR199のレビュー済みtreeと一致します。34,304B / SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32` の同じ新archiveで13包装/10ロード/52件一致、Macとのpayload・依存metadata一致を確認しました。job17秒、候補audit step2秒。原REPORT SHA256 `e16de2c82744184f797f9eb8a769c843a52b559767d9f81f61962eec23a7649c`。
+
+[結果・provider・来歴の正本](../research/stable010_release_linux_package/README.md)を参照。92ファイルをサイズ/SHA/host読戻し確認し、今回の5一時rootとローカル入力JSONを清掃。原本・旧候補・旧停止履歴・新archive/sourceは保持します。計測HTTP49,287,629B、archive本文49,276,761B、task disk sample149,648KiB。setup/checkout/input/DNS/TLSを含む総通信、全期間physical peak、厳密CPU/RAM上限は未証明です。
+
+追加build/Mac再検査/885/独立Oracle再実行なし。最初のreview待ちではUbuntu未着手でHOLDし、同HEADへの承認済み回復依頼1回後に有効な完了receiptを受領。別承認の新40分枠をその後07:49:39 UTCから記録しました。重複Running表示を追加ゲートにせず、完了した正確なHEADレビューと未解決0を確認して準備PRを統合しています。
+
+この結果追補は公開GOではありません。S6は追補の最新HEADレビューで確認し、S7の正確な版/配布先/残余を指定したOwner公開GO・特定Host本番GOは引き続きHOLD。製品10件と包装3ファイルは検証時bytesのままです。

@@ -61,3 +61,10 @@ pre3の歴史的範囲は保持します。0.1.0は限定検証済み・未公�
 The0.1.0 consumer documentation now describes the fixed verification contract and installation only after official listing, without declaring publication. Earlier candidate/R1/pre3 descriptions above are historical. A newly built R2 archive has separate [source and validation evidence](research/stable010_release_linux_package/README.md); R1's43,008B archive and observations are not reused as new-byte validation. Existing maintenance scope/reporting routes/exclusions remain unchanged. RubyGems publication and specific Host production GO still require separate authorization.
 
 0.1.0の公開向け文書を整理しましたが、公開済みとは表示しません。旧candidate/R1/pre3は履歴として保持し、新R2は別archive・別証拠です。採用済み保守条件・窓口・保証除外は不変で、Gem公開GO・特定Host本番GOは別途必要です。
+
+
+## R2 validation supplement / R2検証追補
+
+The new34,304B R2 archive (SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`) passed Mac and [Ubuntu run40288305150 attempt1](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/40288305150) payload13/loaded10/installed52 checks with matching payload/dependency identities. See [exact results and limitations](research/stable010_release_linux_package/README.md). This is distinct from R1/pre3, not a new885 or independent Oracle run. Source/packaged bytes remain frozen. No Gem, tag or Release publication occurred; S7 and specific Host production GO remain HOLD. Existing maintenance policy and reporting routes are unchanged.
+
+新R2はMac/Ubuntuで限定包装検証済みですが未公開です。provider確認を全面安全性へ昇格せず、JSON勧告metadata不整合、OS dyld/全binding、総通信/physical peak等の未証明を保持します。原結果のhash/読戻し後に今回分だけを清掃し、旧停止履歴・証拠・archiveは保持。追加build/試験/Actions/取得はこの追補作業では行いません。
