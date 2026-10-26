@@ -44,6 +44,10 @@ Supported-input semantics and APIs do not change silently. Security-driven narro
 
 Maintenance covers the latest patch in the initial stable series, with manual monthly/advisory/pre-release review. No old-series backport, fixed support term, response/fix deadline or 24/7 promise. See [SECURITY](SECURITY.md) and [maintenance](docs/POST_RELEASE_MAINTENANCE.md); never report private keys, real Mandates or personal data.
 
+## Local demo
+
+The [AP2 Mandate Verifier Demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo) calls the real verifier on synthetic valid, tampered and expired examples, with Docker local-startup instructions; it is not a hosted demo site, production payments or Host authorization.
+
 ## Try the saved synthetic example
 
 This example reads the same public `FULL` input used by the successful installed-Gem checks. The input JSON is not packaged in the Gem. Fetch it from the pinned commit and verify its SHA256 first. It contains no private keys. Its trust/Host assertions are **synthetic test data**, not real Issuer enrollment, a current order or a live clock. `verified_at = 1800000000` is the saved scenario's fixed evaluation time.
