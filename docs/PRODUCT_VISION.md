@@ -1,7 +1,7 @@
 # AP2 Ruby Gemの目指す姿
 
 状態：将来ビジョン。実装計画・機能やGemの公開承認・納期の約束ではありません。
-読解基準main：`676ffb9fccf5f575f85cedb0c7dc44416b4ae4d6`。
+初稿時の歴史的な読解基準main：`676ffb9fccf5f575f85cedb0c7dc44416b4ae4d6`。最新の状態と証拠は[PROJECT_STATUS](PROJECT_STATUS.md)を参照してください。
 
 ## Ruby開発者に届けたい価値
 
@@ -49,11 +49,11 @@ Gem自身が実装済みの検査をHostへ移して省略する方針ではあ�
 
 | 現在確認・承認されていること | 今後目指すこと／未決事項 |
 | --- | --- |
-| 研究用途限定`0.1.0.pre.3`を公開済み。固定profile `ap2.checkout.single_merchant_sku` v1・7支持形状・採用済み環境での研究用検証コア第一段階はOwner完成判断済み。最初の本番候補は既存固定profileの検証専用Gemとする範囲をOwner決定済み | Host運用・決済・発行/提示生成は最初の本番候補の対象外。利用サービス・用途・実Issuerは未定。必要な安全性証拠と利用側の前提を整理し、本番GO・公開判断は別途行う |
+| [安定版`0.1.0`](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0)を固定profile検証専用Gemとして公開済み。固定profile `ap2.checkout.single_merchant_sku` v1・7支持形状・採用済み環境に限定。旧研究版pre.3と研究用検証コア第一段階の完成判断は歴史記録として保持 | Host運用・決済・発行/提示生成は本版の対象外。利用サービス・用途・実Issuerは未定。実Issuer信頼・特定Host本番GO・Phase 2-BはHOLD。今後の拡張・新公開は別判断 |
 | 合成入力での独立比較、公開GemのMBA/Linux包装・導入確認、限定Host/DB研究を保存済み | 実Issuerは未定・信頼未証明、本番HOLD。研究用Host/DBコードは本番adapterではない |
 | 固定AP2参照は `b4587ac1d055888a73b4b21750973cffba961793`。現在の支持範囲は既存契約に限定 | 一般AP2/全profile互換、本番安全性、最悪資源・並行性能は証明済みではない |
 
-今後は、検証コアと利用契約を必要な品質で固め、用途と根拠が揃った拡張から発行・提示生成・Receipt等へ段階的に検討します。検証専用Gemの本番候補、特定Hostサービスの本番運用、発行/提示を含むフルSDKの完成は、それぞれ別の判断です。
+今後は、検証コアと利用契約を必要な品質で固め、用途と根拠が揃った拡張から発行・提示生成・Receipt等へ段階的に検討します。固定profile検証専用Gemの公開判断、特定Hostサービスの本番運用、発行/提示を含むフルSDKの完成は、それぞれ別の判断です。0.1.0の公開確認は[既存の公開記録](../research/stable010_release_linux_package/README.md#rubygems-publication-verified)に従い、全面AP2対応・実Issuer信頼・Host本番GOを意味しません。
 この方向性は将来機能・互換性・提供時期を確約せず、追加実装・試験・環境導入・公開を承認しません。実装言語やnative coreの新しい選定も行いません。
 
 ## 既存文書との関係
