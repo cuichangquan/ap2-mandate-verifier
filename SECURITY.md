@@ -1,6 +1,16 @@
 # Security policy / 脆弱性の報告
 
-## 対象と限界 / Scope
+## 現在の対象と限界 / Current scope
+
+[Stable 0.1.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0) is published as a fixed-profile, verifier-only Gem. Support covers the latest patch of the initial stable series under the adopted manual maintenance policy below; prereleases and older versions carry no backport promise. See [verified R2 publication and limitations](research/stable010_release_linux_package/README.md#rubygems-publication-verified) and [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md).
+
+固定profileの検証専用安定版0.1.0は公開済みです。初回安定系列の最新修正版のみを採用済み手動保守方針の対象とし、pre/旧版backportは約束しません。旧pre.3・候補R1・R2準備/公開待ちの記述は以下の歴史記録であり、現在の未公開状態を意味しません。
+
+Evidence is not Host ALLOW or payment permission. Real Issuer trust, specific Host production GO and Phase 2-B remain HOLD; general AP2/full Schema, full Phase2-A PASS, worst-resource/concurrency and global native/runtime safety are not established. No SLA, fixed support term or response/fix deadline is promised. Existing provider/JSON advisory-metadata and communication-accounting limitations remain recorded; publication does not erase them. New execution, changes or releases require their own approval.
+
+EvidenceはHost ALLOW・決済許可ではありません。実Issuer信頼、特定Host本番GO、Phase 2-BはHOLDを維持し、一般AP2/全Schema・Phase2-A全面PASS・最悪資源/並行性能・native/runtime全面安全性は未証明です。SLA・固定保守年数・受付/修正期限は約束せず、既存のprovider/JSON勧告metadata・通信会計の限界を保持します。本記録は新たな実行・変更・公開を許可しません。
+
+## 歴史記録：pre.3の対象と限界 / Historical pre.3 scope
 
 `ap2_mandate_verifier 0.1.0.pre.3` is a fixed-profile research prerelease,
 not a production or stable product. General AP2 compatibility and full Phase2-A
@@ -46,7 +56,7 @@ This policy does not authorize tests against real users, payments, external
 services or production systems.
 
 
-## Unpublished 0.1.0 candidate / 未公開候補の採用済み保守条件
+## Historical candidate stage / 歴史記録：未公開候補の採用済み保守条件
 
 The pre3 description above remains its historical scope. Candidate0.1.0 is validated but **not published**, and no specific Host production GO is granted. Its fixed-profile verification contract, exact environment evidence and exclusions are in [candidate evidence](research/stable010_candidate/README.md) and [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md). Publication requires separate S7 approval; no general AP2/real-Issuer/global-runtime safety guarantee follows.
 
@@ -56,14 +66,14 @@ pre3の歴史的範囲は保持します。0.1.0は限定検証済み・未公�
 
 
 
-## 0.1.0 release-facing documentation / 公開向け文書のR2
+## Historical R2 preparation / 歴史記録：公開向け文書のR2
 
 The0.1.0 consumer documentation now describes the fixed verification contract and installation only after official listing, without declaring publication. Earlier candidate/R1/pre3 descriptions above are historical. A newly built R2 archive has separate [source and validation evidence](research/stable010_release_linux_package/README.md); R1's43,008B archive and observations are not reused as new-byte validation. Existing maintenance scope/reporting routes/exclusions remain unchanged. RubyGems publication and specific Host production GO still require separate authorization.
 
 0.1.0の公開向け文書を整理しましたが、公開済みとは表示しません。旧candidate/R1/pre3は履歴として保持し、新R2は別archive・別証拠です。採用済み保守条件・窓口・保証除外は不変で、Gem公開GO・特定Host本番GOは別途必要です。
 
 
-## R2 validation supplement / R2検証追補
+## Historical prepublication supplement / 歴史記録：公開前R2検証追補
 
 The new34,304B R2 archive (SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`) passed Mac and [Ubuntu run40288305150 attempt1](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/40288305150) payload13/loaded10/installed52 checks with matching payload/dependency identities. See [exact results and limitations](research/stable010_release_linux_package/README.md). This is distinct from R1/pre3, not a new885 or independent Oracle run. Source/packaged bytes remain frozen. No Gem, tag or Release publication occurred; S7 and specific Host production GO remain HOLD. Existing maintenance policy and reporting routes are unchanged.
 
