@@ -4,6 +4,12 @@
 
 A Rails-independent Ruby Gem for a deliberately fixed AP2 verification profile. **A valid signature alone never authorizes a purchase.** Successful checks produce immutable Evidence; the Host makes the final business decision.
 
+## Start with the local demo
+
+The [AP2 Mandate Verifier Demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo) calls the real verifier on synthetic valid, tampered and expired examples, with Docker local-startup instructions; it is not a hosted demo site, production payments or Host authorization.
+
+For Ruby-only usage, follow the [saved synthetic example](#try-the-saved-synthetic-example); see the [supported contract](#supported-contract) for the exact scope.
+
 ## Distribution and installation
 
 [0.1.0 is published on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0). This is the fixed-profile, verifier-only stable release; the research prerelease pre3 is a separate artifact.
@@ -43,10 +49,6 @@ The baseline is MRI 4.0.9 with fixed dependencies and the exact observed MBA/mac
 Supported-input semantics and APIs do not change silently. Security-driven narrowing identifies reason, impact and migration; breaking API/required-field/profile changes are explicit. Dependency updates are not automatically compatible.
 
 Maintenance covers the latest patch in the initial stable series, with manual monthly/advisory/pre-release review. No old-series backport, fixed support term, response/fix deadline or 24/7 promise. See [SECURITY](SECURITY.md) and [maintenance](docs/POST_RELEASE_MAINTENANCE.md); never report private keys, real Mandates or personal data.
-
-## Local demo
-
-The [AP2 Mandate Verifier Demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo) calls the real verifier on synthetic valid, tampered and expired examples, with Docker local-startup instructions; it is not a hosted demo site, production payments or Host authorization.
 
 ## Try the saved synthetic example
 
