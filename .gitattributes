@@ -1,0 +1,3 @@
+# Keep research sources and evidence visible; focus language statistics on the packaged verifier and tests.
+# Treat all research languages equally without changing normal diff presentation.
+research/** linguist-detectable=false
