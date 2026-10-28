@@ -8,6 +8,8 @@ A Rails-independent Ruby Gem for a deliberately fixed AP2 verification profile. 
 
 The [AP2 Mandate Verifier Demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo) calls the real verifier on synthetic valid, tampered and expired examples, with Docker local-startup instructions; it is not a hosted demo site, production payments or Host authorization.
 
+For a Japanese walkthrough of the three demo scenarios, see the [Zenn article](https://zenn.dev/ccq/articles/7f9643f96fe5c7).
+
 For Ruby-only usage, follow the [saved synthetic example](#try-the-saved-synthetic-example); see the [supported contract](#supported-contract) for the exact scope.
 
 ## Distribution and installation
