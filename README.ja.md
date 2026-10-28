@@ -6,6 +6,15 @@ RubyでAP2の固定profileを検証する、Rails非依存のGemです。**署�
 
 購入委任の正常・改ざん・期限切れを試すには、[ローカルRailsデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo)と[Zennの解説記事](https://zenn.dev/ccq/articles/7f9643f96fe5c7)をご覧ください。
 
+## 導入経路を選ぶ
+
+| 経路 | 最初に見る場所 |
+| --- | --- |
+| Dockerデモ：3つの合成ケースを比較 | [デモREADME](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)のローカル起動手順と正常／改ざん／期限切れの例を参照。Dockerコマンドはデモ側で管理します。 |
+| デモを使わないRuby単体：既存のMRI 4.0.9 | 下記の[導入](#配布と導入)から[保存済み合成入力の例](#保存済み合成入力で試す)へ進みます。 |
+
+どちらも固定profileの検証器を使う経路であり、決済実行やHostの業務許可を提供しません。範囲は[対応契約](#対応範囲)を参照してください。5分程度で選択肢を理解できる説明を目指すもので、導入やbuildが5分で完了する保証ではありません。
+
 ## 配布と導入
 
 [0.1.0はRubyGemsで公開済み](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0)です。固定profileの検証専用安定版であり、旧研究版pre3は別の成果物です。
@@ -96,6 +105,16 @@ end
 ```
 
 この保存 `FULL` ケースの期待値は `status=:verified_research`、`code=:scoped_research_verified`、`success?=true` です。実入力・不支持入力・依存障害では同じ結果を期待しません。非成功ならEvidenceはnilです。例外やプロセス終了で結果がない場合も停止してください。Evidence全体やraw入力を安易にログへ出さないでください。
+
+## 結果の読み方
+
+| 分類 | `status`と判定メソッド | Evidenceと扱い |
+| --- | --- | --- |
+| 固定範囲の検証成功 | `:verified_research`、`success? == true`、`code == :scoped_research_verified` | あり。検査事実であり、**購入許可ではありません**。Host側の責任は残ります。 |
+| 拒否 | `:rejected`、`rejected? == true` | なし（`nil`）。停止し、`result.code`で拒否理由を確認します。 |
+| 検証不能 | `:unavailable`、`unavailable? == true` | なし（`nil`）。停止します。依存や検証処理の失敗だけで、入力が不正と断定しません。 |
+
+例外・プロセス終了・結果なしの場合も、購入を許可せず停止します。上の例は意図的にすべての非成功で停止します。詳細は[Result and Evidence](docs/SUPPORT_CONTRACT.md#result-and-evidence)を参照してください。
 
 ## 実入力と責任境界
 

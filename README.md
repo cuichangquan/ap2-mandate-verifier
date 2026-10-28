@@ -10,7 +10,14 @@ The [AP2 Mandate Verifier Demo](https://github.com/cuichangquan/ap2-mandate-veri
 
 For a Japanese walkthrough of the three demo scenarios, see the [Zenn article](https://zenn.dev/ccq/articles/7f9643f96fe5c7).
 
-For Ruby-only usage, follow the [saved synthetic example](#try-the-saved-synthetic-example); see the [supported contract](#supported-contract) for the exact scope.
+## Choose your starting point
+
+| Route | Start here |
+| --- | --- |
+| Docker demo: compare three synthetic cases | Follow the [demo README](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme) for local startup and valid / tampered / expired examples. Docker commands are maintained there. |
+| Ruby without the demo: existing MRI 4.0.9 | Follow [installation](#distribution-and-installation), then the [saved synthetic example](#try-the-saved-synthetic-example) below. |
+
+Both routes use the fixed-profile verifier, not payment execution or Host authorization. See the [supported contract](#supported-contract) for the scope. The goal is to make the choices understandable in about five minutes, not to promise a five-minute installation or build.
 
 ## Distribution and installation
 
@@ -98,6 +105,16 @@ end
 ```
 
 For this saved `FULL` case, the expected result is `status=:verified_research`, `code=:scoped_research_verified`, `success?=true`. This is not the expected outcome for arbitrary real inputs, unsupported forms or dependency failures. Non-success results have nil Evidence. Exceptions or process termination without a result must also stop the caller. Avoid logging complete Evidence or raw inputs.
+
+## Understanding the result
+
+| Outcome | `status` and predicate | Evidence and handling |
+| --- | --- | --- |
+| Successful scoped verification | `:verified_research`; `success? == true`; `code == :scoped_research_verified` | Present: checked facts, **not purchase authorization**. Host responsibilities still apply. |
+| Rejected | `:rejected`; `rejected? == true` | Absent (`nil`). Stop; inspect `result.code` for the rejection reason. |
+| Verification unavailable | `:unavailable`; `unavailable? == true` | Absent (`nil`). Stop; a dependency or verification failure does not by itself establish that the input is invalid. |
+
+An exception, process termination or missing result must also stop the caller without authorizing a purchase. The example above deliberately stops on every non-success result. See [Result and Evidence](docs/SUPPORT_CONTRACT.md#result-and-evidence) for details.
 
 ## Real inputs and responsibility boundaries
 
