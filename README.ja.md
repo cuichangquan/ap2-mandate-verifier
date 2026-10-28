@@ -4,6 +4,8 @@
 
 RubyでAP2の固定profileを検証する、Rails非依存のGemです。**署名の正しさだけで購入を許可しません。** 必要な検査が成立した場合に不変のEvidenceを返し、最終業務判断はHostが行います。
 
+購入委任の正常・改ざん・期限切れを試すには、[ローカルRailsデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo)と[Zennの解説記事](https://zenn.dev/ccq/articles/7f9643f96fe5c7)をご覧ください。
+
 ## 配布と導入
 
 [0.1.0はRubyGemsで公開済み](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0)です。固定profileの検証専用安定版であり、旧研究版pre3は別の成果物です。
