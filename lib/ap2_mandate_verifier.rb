@@ -125,4 +125,7 @@ module AP2MandateVerifier
   # All older methods continue to return non-success Result values.
   def self.verify_research(**inputs) = ResearchResult.verify(**inputs)
 
+  # Fixed-profile checkout verification; Evidence is not Host ALLOW or payment permission.
+  def self.verify_checkout(**inputs) = ResearchResult.verify(**inputs)
+
 end
