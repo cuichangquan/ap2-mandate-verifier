@@ -15,7 +15,7 @@ def deep_frozen(value)
   end
 end
 spec = Gem.loaded_specs.fetch("ap2_mandate_verifier")
-need(spec.version.to_s == "0.1.0" && RUBY_VERSION == "4.0.9" && RUBY_ENGINE == "ruby", "candidate runtime")
+need(spec.version.to_s == "0.2.0" && RUBY_VERSION == "4.0.9" && RUBY_ENGINE == "ruby", "candidate runtime")
 versions = {"json"=>"2.19.9","jwt"=>"3.3.0","base64"=>"0.3.0","openssl"=>"4.0.2","digest"=>"3.2.1"}
 need(versions.all? { |k,v| Gem.loaded_specs.fetch(k).version.to_s == v }, "runtime dependencies")
 root = File.realpath(spec.full_gem_path)
@@ -31,12 +31,15 @@ need(Digest::SHA256.hexdigest(expected_raw) == "b8de794bc17c1093d070ed0e78a523ff
 inputs=JSON.parse(input_raw); expected=JSON.parse(expected_raw).fetch("cases")
 need(inputs.keys.sort == expected.keys.sort && expected.size==42, "complete42")
 rows=[]
+checkout_rows=[]
+# Each entry gets fresh strings and is checked against the saved oracle.
+%i[verify_research verify_checkout].each do |entry|
 expected.each do |name,e|
   args=inputs.fetch(name).to_h { |k,v| [k.to_sym, v.instance_of?(String) ? v.dup : v] }
-  r=AP2MandateVerifier.verify_research(**args)
+  r=AP2MandateVerifier.public_send(entry, **args)
   good=e.fetch("code")=="scoped_research_verified"
   need([r.code.to_s,r.status.to_s,r.success?,r.evidence&.to_h] == [e["code"],good ? "verified_research" : "rejected",good,e["evidence"]], "installed comparison "+name)
-  need(r.frozen?, "immutable result")
+  need(r.frozen? && r.instance_of?(good ? AP2MandateVerifier::ResearchResult : AP2MandateVerifier::Result), "immutable result type")
   if good
     facts=r.evidence.to_h; before=JSON.generate(facts)
     need(deep_frozen(facts) && r.evidence.frozen? && !facts.fetch("verified_challenge").key?("nonce"), "immutable projected evidence")
@@ -45,9 +48,32 @@ expected.each do |name,e|
   else
     need(r.evidence.nil?, "failure Evidence")
   end
-  rows << {name:name,code:r.code,result:"MATCH"}
+  (entry == :verify_research ? rows : checkout_rows) << {name:name,code:r.code,result:"MATCH"}
+end
 end
 full=inputs.fetch("FULL");host=JSON.parse(full.fetch("host_json"));binding=host.fetch("binding")
+
+# Seven missing keywords plus empty/unknown/mixed/injected keyword boundaries.
+# No fabricated trust or wall-clock fallback; all must be unavailable.
+full_args=full.transform_keys(&:to_sym)
+keyword_cases=full_args.keys.map { |missing| ["missing "+missing.to_s, full_args.reject { |k,_| k==missing }] }
+keyword_cases += [
+ ["empty", {}], ["unknown", full_args.merge(unknown: true)],
+ ["syntax mixed", full_args.merge(presentation_json: "{}")],
+ ["syntax only", {presentation_json: "{}"}], ["Evidence injection", full_args.merge(evidence: {})]
+]
+unavailable_rows=[]
+%i[verify_research verify_checkout].each do |entry|
+ keyword_cases.each do |name,args|
+  r=AP2MandateVerifier.public_send(entry, **args)
+  need(r.instance_of?(AP2MandateVerifier::Result) && r.status==:unavailable &&
+    r.code==:research_verification_unavailable && !r.success? && r.evidence.nil? && r.frozen?,
+    "installed unavailable "+entry.to_s+"/"+name)
+  unavailable_rows << {entry:entry,name:name,result:"MATCH"}
+ end
+end
+need(keyword_cases.size==12 && unavailable_rows.size==24, "keyword case accounting")
+
 records=JSON.parse(JSON.parse(full.fetch("trust_json")).fetch("snapshot").fetch("body")).fetch("records")
 key=->(role) { records.find { |v| v["role"]==role }.fetch("public_key_pem") }
 common={root_presentation:full.fetch("root_presentation"),terminal_jws:full.fetch("terminal_jws"),host_checkout_jws:full.fetch("host_checkout_jws"),trusted_issuer_public_key_pem:key.call("Issuer"),expected_agent_public_key_pem:key.call("Agent"),trusted_merchant_public_key_pem:key.call("Merchant"),expected_aud:binding.fetch("audience"),expected_nonce:host.fetch("challenge").fetch("nonce"),verified_at:full.fetch("verified_at"),expected_checkout_id:binding.fetch("order_id"),expected_merchant_id:binding.fetch("merchant_id")}
@@ -71,8 +97,8 @@ begin
  raise "non-success constructor bypass"
 rescue ArgumentError
 end
-puts JSON.pretty_generate(scope:"STABLE010_CANDIDATE_MBA_ONLY_NOT_HOST_ALLOW",candidate_version:spec.version.to_s,
+puts JSON.pretty_generate(scope:"UNRELEASED020_CANDIDATE_NOT_HOST_ALLOW",candidate_version:spec.version.to_s,
  ruby:RUBY_VERSION,ruby_platform:RUBY_PLATFORM,dependencies:versions,openssl_default:Gem.loaded_specs.fetch("openssl").default_gem?,
  digest_default:Gem.loaded_specs.fetch("digest").default_gem?,libcrypto:OpenSSL::OPENSSL_LIBRARY_VERSION,installed_lib_files:loaded.size,ordinary_entry:true,
- independent_research_comparisons:rows,legacy_api_checks:legacy.size,input_rejections:2,constructor_rejections:1,total_cases:52,
+ independent_research_comparisons:rows,independent_checkout_comparisons:checkout_rows,unavailable_comparisons:unavailable_rows,legacy_api_checks:legacy.size,input_rejections:2,constructor_rejections:1,total_cases:118,
  holds:"production/distribution/Phase2B/Hostatomic/Stage16; old acquisition gaps and Linuxalltraffic unproved")
