@@ -39,6 +39,26 @@ gem "ap2_mandate_verifier", "= 0.1.0"
 Fixed runtime dependencies: JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1.
 Bundler 4.0.20 is the observed resolver baseline, not a runtime dependency. Gem version constraints alone do not enforce the MRI engine, OS or native-provider provenance.
 
+## Verification APIs: published 0.1.0 and unreleased 0.2.0
+
+**The installation instructions and saved example use published 0.1.0 and `verify_research`.** `verify_checkout` has been added to repository source for v0.2.0, which is **not published**; installing 0.1.0 does not provide this method.
+
+| Entry | Availability and contract |
+| --- | --- |
+| `verify_checkout(**inputs)` | Recommended full-verification entry for unreleased v0.2.0 source. Delegates directly to `ResearchResult.verify` without changing inputs or the verification pipeline. |
+| `verify_research(**inputs)` | Full-verification entry in published 0.1.0; retained unchanged in v0.2.0, without a deprecation warning. |
+| `verify(presentation_json:)` | Existing JSON syntax check only. Valid JSON returns `:unverified` / `:verification_not_implemented`, never successful Evidence. It is not a substitute for full verification. |
+
+For unreleased v0.2.0 source only, use the same seven `inputs` shown in the saved example:
+
+```ruby
+result = AP2MandateVerifier.verify_checkout(**inputs)
+```
+
+Both full-verification entries require all seven inputs listed under [responsibility boundaries](#real-inputs-and-responsibility-boundaries): six original Strings and externally supplied integer Unix seconds. Seven inputs and seven supported shapes are different concepts. Neither entry broadens the fixed profile below or supplies missing trust, Host state or time. Missing or unknown keywords return `:unavailable` / `:research_verification_unavailable`, with `success? == false` and `evidence == nil`; positional arguments or invalid keyword expansion can raise before verification begins.
+
+The [result handling](#understanding-the-result) is unchanged: success remains `ResearchResult` with `:verified_research` / `:scoped_research_verified` and immutable Evidence v2; rejected and unavailable results have no Evidence. Evidence is checked facts, **not purchase authorization**. Exceptions or missing results must also stop the caller. See the [API migration plan](docs/V0_2_0_API_PLAN.md) for design history; its earlier implementation gates do not describe the published 0.1.0 artifact or replace this availability distinction.
+
 ## Supported contract
 
 - AP2 pinned source `b4587ac1d055888a73b4b21750973cffba961793`, registered profile `ap2.checkout.single_merchant_sku` v1: exact body/hash and seven supported shapes.
@@ -47,7 +67,7 @@ Bundler 4.0.20 is the observed resolver baseline, not a runtime dependency. Gem 
 
 - The Gem checks strict bounded inputs, supplied trust selection, signed Root wire and full supported closure, Agent/Merchant signatures, delegation, purchase/Host binding, types, constraints and time.
 
-- The existing `verify_research` entry, `verified_research` / `scoped_research_verified` result names and Evidence v2 contract remain unchanged; a stable version does not imply generic AP2 support or Host authorization.
+- Both full-verification entries above preserve `verified_research` / `scoped_research_verified` result names and the Evidence v2 contract; a stable version does not imply generic AP2 support or Host authorization.
 
 See [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md) for exact required shapes, bounds and failure codes.
 
@@ -130,7 +150,7 @@ An exception, process termination or missing result must also stop the caller wi
 
 See [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md#full-entry-and-required-inputs) for exact required shapes, types and limits. Do not register trust from the presented token or parse/re-encode/reorder signed wire input. Matching Host-only Buyer/account fields does not establish Issuer-signed identity authentication.
 
-A successful `verify_research` result establishes scoped verification facts. The Host still must recheck latest trust/revocation/order version/challenge/time and atomically consume the nonce with order CAS. The Gem does not perform those operations. Serializing Evidence to JSON does not preserve or reconstruct authenticity through this API. Legacy `verify(presentation_json:)` checks only the JSON syntax boundary and never returns successful Evidence.
+A successful result from either full-verification entry establishes scoped verification facts. The Host still must recheck latest trust/revocation/order version/challenge/time and atomically consume the nonce with order CAS. The Gem does not perform those operations. Serializing Evidence to JSON does not preserve or reconstruct authenticity through this API. Legacy `verify(presentation_json:)` checks only the JSON syntax boundary and never returns successful Evidence.
 
 Before integration, consult the [Issuer onboarding checklist](docs/ISSUER_ONBOARDING_CHECKLIST.md) and [Issuer/Host minimum contract](docs/ISSUER_HOST_MINIMUM_CONTRACT.md). Real-Issuer trust and a specific Host's production GO are not established by this Gem version or verification success. The contract and Host/DB code under `research/` describe synthetic research designs and limited observations, not a production adapter.
 
