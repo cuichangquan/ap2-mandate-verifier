@@ -35,6 +35,26 @@ gem "ap2_mandate_verifier", "= 0.1.0"
 固定runtime依存：JSON 2.19.9、JWT 3.3.0、base64 0.3.0、OpenSSL gem 4.0.2、Digest 3.2.1。
 Bundler 4.0.20は既存resolver基準でruntime依存ではありません。Gemの版制約だけではMRI engine、OSや実native/providerの出所を保証しません。
 
+## 検証API：公開済み0.1.0と未公開0.2.0
+
+**本書の導入手順と保存済み入力の例は、公開済み0.1.0の `verify_research` を使います。** `verify_checkout` はv0.2.0向けにリポジトリのソースへ追加済みですが、v0.2.0は**未公開**です。0.1.0をインストールしてもこのメソッドは使えません。
+
+| 入口 | 利用可能な版と契約 |
+| --- | --- |
+| `verify_checkout(**inputs)` | 未公開v0.2.0ソースでの推奨完全検証入口。入力を加工せず `ResearchResult.verify` に直接委譲し、検証経路を変更しません。 |
+| `verify_research(**inputs)` | 公開済み0.1.0の完全検証入口。v0.2.0でも変更せず維持し、非推奨警告も追加しません。 |
+| `verify(presentation_json:)` | 既存のJSON構文検査のみ。有効なJSONでも `:unverified` / `:verification_not_implemented` を返し、成功Evidenceを返しません。完全検証の代用にはなりません。 |
+
+未公開v0.2.0ソースに限り、保存済み入力の例と同じ7つの `inputs` を次の入口へ渡します。
+
+```ruby
+result = AP2MandateVerifier.verify_checkout(**inputs)
+```
+
+両完全検証入口とも、[責任境界](#実入力と責任境界)に示す7入力（原文String 6つと外部から供給される整数Unix秒）がすべて必要です。7入力と7支持形状は別の数え方です。下記の固定profileを広げたり、不足したtrust・Host状態・時刻を補完したりしません。不足・未知keywordは `:unavailable` / `:research_verification_unavailable`、`success? == false`、`evidence == nil` になります。位置引数や不正なkeyword展開は検証開始前に例外となり得ます。
+
+[結果の扱い](#結果の読み方)も不変です。成功は `ResearchResult` の `:verified_research` / `:scoped_research_verified` と不変のEvidence v2、拒否・検証不能はEvidenceなしです。Evidenceは検査事実であり、**購入許可ではありません**。例外・無結果でも呼出し側を停止します。設計経緯は[API移行計画](docs/V0_2_0_API_PLAN.md)を参照してください。同書の過去の実装承認待ち記録と、公開済み0.1.0の成果物・本書の利用可能版の区別を混同しないでください。
+
 ## 対応範囲
 
 - AP2固定source `b4587ac1d055888a73b4b21750973cffba961793`、登録profile `ap2.checkout.single_merchant_sku` v1の正確なbody/hash・7支持形状
@@ -43,7 +63,7 @@ Bundler 4.0.20は既存resolver基準でruntime依存ではありません。Gem
 
 - 厳格入力と有限上限、供給trust選択、Root原文署名と全域閉包、Agent/Merchant署名・委任・購入/Host binding、型/制約/期限をGemが検査
 
-- 入口は既存 `verify_research`。名前と `verified_research/scoped_research_verified`・Evidence v2契約を維持。安定版番号でも一般AP2対応やHost許可へ昇格しない
+- 上記の両完全検証入口で `verified_research/scoped_research_verified`・Evidence v2契約を維持。安定版番号でも一般AP2対応やHost許可へ昇格しない
 
 正確な必須形状・全上限・失敗codeは[SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md)を参照してください。
 
@@ -130,7 +150,7 @@ end
 
 正確な必須形状・型・上限は[SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md#full-entry-and-required-inputs)を参照してください。tokenからtrustを自己登録したり、署名原文をparse／再encode／並べ替えして渡したりしません。Host-onlyなBuyer/account等の一致はIssuer署名による本人認証を意味しません。
 
-`verify_research`の成功は固定profileにおける検証事実です。Hostは最新trust／失効／注文版／challenge／有効期限を再照合し、nonce原子消費＋注文CASを自身で成立させる必要があります。Gemはこれを実行しません。EvidenceをJSON化して再入力し、真正性を回復するAPIもありません。旧 `verify(presentation_json:)` はJSON構文境界だけで、成功Evidenceを返しません。
+両完全検証入口の成功は固定profileにおける検証事実です。Hostは最新trust／失効／注文版／challenge／有効期限を再照合し、nonce原子消費＋注文CASを自身で成立させる必要があります。Gemはこれを実行しません。EvidenceをJSON化して再入力し、真正性を回復するAPIもありません。旧 `verify(presentation_json:)` はJSON構文境界だけで、成功Evidenceを返しません。
 
 連携前に[Issuer登録前チェックリスト](docs/ISSUER_ONBOARDING_CHECKLIST.md)と[Issuer/Host最小契約](docs/ISSUER_HOST_MINIMUM_CONTRACT.md)を参照してください。実Issuerの信頼と特定Hostの本番運用GOは、このGemの版番号や検証成功では成立しません。契約と`research/`のHost/DBコードは合成研究の設計・限定観測であり、本番adapterとして提供するものではありません。
 
