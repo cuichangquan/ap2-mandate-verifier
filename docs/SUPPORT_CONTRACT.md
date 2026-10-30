@@ -1,13 +1,13 @@
-# Fixed-profile AP2 verification — 0.1.0 baseline / 0.2.0 candidate
+# Fixed-profile AP2 verification — 0.2.0 / historical 0.1.0 baseline
 
 **Fixed-profile verification contract; Evidence is not Host ALLOW or payment permission.**
 Distribution availability is determined by the official RubyGems version listing, not by this document. Specific Host production GO remains separate.
 Owner adopted the existing verification API and bounded stable-release conditions below. Publication and a specific Host's production operation are separate decisions; this contract does not authorize either.
 Published research-only pre3 remains unchanged. Its historical observations below do not certify this new archive.
 
-## Unreleased 0.2.0 candidate API addition
+## Published 0.2.0 API
 
-Repository candidate metadata is 0.2.0; this is not a publication or validated-archive claim. Published 0.1.0 and its historical evidence below remain unchanged. The initial source-only NOT_RUN record was followed by the limited candidate observation below; it does not validate later packaged-document changes.
+[0.2.0 is published on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.0). The published artifact and final packaging observation are identified below; 0.1.0 and earlier candidate evidence retain their historical identities.
 
 `verify_checkout(**inputs)` delegates directly to `ResearchResult.verify(**inputs)` without input transformation. It requires the same seven inputs listed below (six original Strings and externally supplied integer Unix seconds), fixed profile, bounds and trusted Host preconditions. `verify_research` is retained unchanged without deprecation warnings; `verify(presentation_json:)` remains syntax-only and never produces successful Evidence.
 
@@ -19,7 +19,15 @@ Both full entries preserve Result/ResearchResult, status/code and immutable Evid
 
 The limited Debian 12/arm64 observation used MRI 4.0.9 and the fixed Gem dependencies, OpenSSL library 3.0.22 / OS package `libssl3:arm64 3.0.22-1~deb12u2`. All 13 payload files matched source/archive/installed bytes, ordinary RubyGems require loaded 10 product Ruby files, and 118 logical cases passed: research42 + checkout42 + unavailable24 + legacy7 + input rejection2 + constructor rejection1. Saved inputs/independent expected values were reused; source190/885 were not rerun in this attempt. Earlier auxiliary-diagnostic STOP records remain preserved in PR #213.
 
-This is an additional bounded observation, not adoption of Debian as a supported platform or proof of general runtime security, symbol binding, whole-wire accounting or resource performance. The 0.1.0 baseline and historical evidence below retain their own artifact identities. README.md and this contract are packaged; editing them creates different candidate bytes. The documentation-final candidate build/install, 13-payload/10-loaded identity checks and 118 installed cases are pending separate approval and NOT_RUN. Final dependency/provider advisory review and exact-artifact publication approval remain required. Real Issuer trust/revocation, actual Host operation, performance and production GO remain HOLD.
+This is an additional bounded observation, not adoption of Debian as a supported platform or proof of general runtime security, symbol binding, whole-wire accounting or resource performance. The 0.1.0 baseline and historical evidence below retain their own artifact identities. README.md and this contract are packaged; editing them creates different candidate bytes. The preparation-time NOT_RUN statement applied before the separately approved final observation below; prior candidate results were not reused as validation of the final bytes. Real Issuer trust/revocation, actual Host operation, performance and production GO remain HOLD.
+
+## Published 0.2.0 artifact and final observation
+
+Published 2026-10-30 06:43:10 UTC, verified 06:44:48 UTC: owner `cuichangquan`, version `0.2.0`, platform `ruby`, non-prerelease. Official RubyGems SHA, distributed Gem and retained Gem matched: **33,280 bytes**, SHA256 `9a52e802de5a0564c34d198f4c4ad2c2b60791a8f1eb6e31db14c49e28e91f16`. Source `9b2e28d91fc4886722de7b9c39a5422e966953a9`, tree `a7739f966416bdbc18cfee266efc93223a587407`.
+
+This final candidate separately passed the limited Debian 12/arm64 / MRI 4.0.9 observation: all 13 payload files matched source/archive/installation, 10 product Ruby files loaded through ordinary require, and 118 installed cases passed (42 research +42 checkout +24 unavailable +7 legacy +2 invalid inputs +1 constructor). Fixed dependencies and saved inputs/expected values were reused; source190/885 were NOT_RUN in this packaging step. Final report SHA256 `4348837cc153c65633e36c83c7939540819f164f43588d8140656e5ab50c2ccd`; publication receipt SHA256 `4b8264c5b990b10ad76a3fa3f01fc4ca94e6a828664ab3cefe11e6792c94a139`. These identify retained local records, not public downloads.
+
+Publication does not expand supported-platform guarantees or establish real Issuer trust, revocation, actual Host operation, performance, production GO or Phase 2-B. The published Gem's documents are the pre-publication snapshot. Repository-only follow-up edits do not alter its bytes and require no rebuild; rebuilt artifacts do not inherit its validation. GitHub source archives differ from the RubyGems Gem. See [current status](PROJECT_STATUS.md#020公開済み--現在の配布状態).
 
 ## Verification contract
 
