@@ -1,9 +1,17 @@
-# Fixed-profile AP2 verification — 0.2.0 / historical 0.1.0 baseline
+# Fixed-profile AP2 verification — 0.2.1 candidate / published 0.2.0
 
 **Fixed-profile verification contract; Evidence is not Host ALLOW or payment permission.**
 Distribution availability is determined by the official RubyGems version listing, not by this document. Specific Host production GO remains separate.
 Owner adopted the existing verification API and bounded stable-release conditions below. Publication and a specific Host's production operation are separate decisions; this contract does not authorize either.
 Published research-only pre3 remains unchanged. Its historical observations below do not certify this new archive.
+
+## Unpublished 0.2.1 compatibility candidate
+
+The candidate's formal runtime targets are exactly MRI 3.4.12 and MRI 4.0.9, with JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1 unchanged. Bundler 4.0.20 is the resolver validation baseline, not a runtime dependency. The Gem's installation requirement `>= 3.4.12, < 4.1` is an interval for dependency resolution; it does not certify other Ruby versions or engines.
+
+Initial validation targets Debian 12/arm64 with official Ruby bookworm images. Actual runtime/OS/native-provider identities, source regressions, ordinary installed-Gem checks and exact artifact identity are tracked in the [compatibility record](RUBY_3_4_12_COMPATIBILITY.md). Fresh source regressions passed on both versions; exact-archive packaging checks are recorded there separately. Historical observations below do not validate the new candidate. Platform/provider observations remain limited to their recorded configuration.
+
+The candidate retains the seven inputs, fixed profile, Fail Closed behavior, Result/Evidence v2 and `verify_checkout` / `verify_research` / legacy `verify` meanings described below. Candidate implementation, completed validation, publication readiness and completed publication are separate states. RubyGems publication, a public tag and GitHub Release await a separate Owner decision. Real Issuer trust and Host production GO remain separate and HOLD.
 
 ## Published 0.2.0 API
 
@@ -40,7 +48,7 @@ Evidence is immutable checked facts in the same trusted Ruby process, not ALLOW 
 No worst-case CPU/RSS/concurrency or numeric SLA is promised. Host process/time/memory/concurrency limits supplement, not replace, Gem finite input bounds. Issuance, presentation generation, Receipt, Rails adapter, real payments and Host DB operations are outside this verifier.
 Supported-input semantics and existing API/status/code/Evidence contracts must not change silently. Security-driven acceptance narrowing requires impact/reason/migration disclosure; breaking required-field/profile/API changes must be explicit. Dependency updates are not automatically compatible.
 
-The proposed baseline remains MRI4.0.9 plus JSON2.19.9/JWT3.3.0/base640.3.0/OpenSSL gem4.0.2/Digest3.2.1, with the exact observed MBA arm64-darwin25 and Ubuntu24.04/x86_64 configurations. RubyGems version constraints do not enforce MRI/OS/provider identity. All OS versions, other engines/architectures and arbitrary provider updates are not supported by past observations.
+The published 0.2.0 and historical baseline below is MRI4.0.9 plus JSON2.19.9/JWT3.3.0/base640.3.0/OpenSSL gem4.0.2/Digest3.2.1, with the exact observed MBA arm64-darwin25 and Ubuntu24.04/x86_64 configurations. RubyGems version constraints do not enforce MRI/OS/provider identity. All OS versions, other engines/architectures and arbitrary provider updates are not supported by past observations.
 Historical D3 observed MBA component identities and four selected crypto symbol sources; OS dyld hashes/all symbol bindings/global runtime security remain unproved. JSON2.19.9 official IO-buffer fix/tag/source identity is adopted static evidence; inconsistent GHSA patched-version metadata remains recorded. Neither observation is global S3 PASS. The earlier R1 archive subsequently passed Mac/Ubuntu packaging checks. It is a different archive; see the separate release-package record for current bytes and observations.
 
 Initial maintenance contact: Owner cuichangquan via repository Issues for ordinary bugs and private vulnerability reporting for vulnerabilities. No secrets, real Mandates or personal data in reports. Maintain only the latest patch in the selected initial stable series; no prerelease/old-series backport, fixed support years, response/fix/disclosure deadline or 24/7 promise.
@@ -48,7 +56,7 @@ Manual dependency/provider review is adopted monthly, on relevant advisories and
 
 ## Existing API/limits and historical evidence baseline
 
-The API/limit specification below preserves the existing contract. All pre2/pre3/MBA409/R1 observations are historical, not proof of a newly built archive. Exact current source/archive/installed identities and observations are recorded externally in [release-package evidence](../research/stable010_release_linux_package/README.md); no old result is relabelled.
+The API/limit specification below preserves the existing contract. All pre2/pre3/MBA409/R1 observations are historical, not proof of a newly built archive. Historical release source/archive/installed identities and observations are recorded in [release-package evidence](../research/stable010_release_linux_package/README.md); the 0.2.1 candidate has its separate compatibility record above. No old result is relabelled.
 
 ## Supported proposition and environment
 
@@ -63,7 +71,7 @@ constraints, USD/EUR/JPY and empty links only. Other profiles/forms are rejected
 not accepted through a generic AP2/Schema fallback. This synthetic registered
 profile does not establish real Issuer enrollment or general interoperability.
 
-The supported baseline is MRI Ruby4.0.9 and JSON2.19.9/JWT3.3.0/base640.3.0/
+The historical baseline described in this section is MRI Ruby4.0.9 and JSON2.19.9/JWT3.3.0/base640.3.0/
 OpenSSL gem4.0.2/Digest3.2.1, all fixed in the gemspec. These versions must be
 available through normal RubyGems/Bundler resolution; source-loadpath bypass
 or dependency replacement is not a compatibility contract. MBA409-20261023-BUILD02

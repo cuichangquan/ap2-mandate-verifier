@@ -2,7 +2,7 @@
 
 # Fail before fixtures execute if the already-installed baseline is unavailable.
 # This script never installs dependencies or establishes native-provider identity.
-abort "MRI 4.0.9 required; no dependency acquisition" unless RUBY_ENGINE == "ruby" && RUBY_VERSION == "4.0.9"
+abort "MRI 3.4.12 or 4.0.9 required; no dependency acquisition" unless RUBY_ENGINE == "ruby" && %w[3.4.12 4.0.9].include?(RUBY_VERSION)
 {"json" => "2.19.9", "jwt" => "3.3.0", "openssl" => "4.0.2",
  "base64" => "0.3.0", "digest" => "3.2.1"}.each { |name, version| gem name, "= #{version}" }
 

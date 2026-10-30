@@ -1,4 +1,4 @@
-# AP2 Mandate Verifier — 0.2.0
+# AP2 Mandate Verifier — 0.2.1候補／公開済み0.2.0
 
 [English](README.md)
 
@@ -34,6 +34,21 @@ gem "ap2_mandate_verifier", "= 0.2.0"
 
 固定runtime依存：JSON 2.19.9、JWT 3.3.0、base64 0.3.0、OpenSSL gem 4.0.2、Digest 3.2.1。
 Bundler 4.0.20は既存resolver基準でruntime依存ではありません。Gemの版制約だけではMRI engine、OSや実native/providerの出所を保証しません。
+
+## 未公開0.2.1候補：Ruby 3.4.12対応
+
+0.2.1は準備中です。RubyGems公開・公開tag・GitHub ReleaseにはOwnerの別承認が必要です。上記の公開済み0.2.0導入コマンドは引き続きMRI 4.0.9専用です。
+
+候補の正式対応対象はMRI 3.4.12とMRI 4.0.9の2版とし、固定5依存を維持します。導入metadataの範囲 `>= 3.4.12, < 4.1` は、その間のすべてのRuby版や他engineへの対応宣言ではありません。初回検証は公式Ruby bookworm imageを使うDebian 12/arm64です。実build・実ロードprovider・通常導入後の結果は[互換性記録](docs/RUBY_3_4_12_COMPATIBILITY.md)で管理します。両版のsource回帰は新たに合格し、正確なarchiveの包装検証は同記録で別に扱います。過去のmacOS／Ubuntu観測を候補の検証結果へ転記しません。
+
+準備された候補Gemを入手し、同記録のSHA256と照合してから、選択した隔離環境へ導入します。
+
+```sh
+ruby --version # MRI 3.4.12 or MRI 4.0.9
+gem install ./ap2_mandate_verifier-0.2.1.gem --no-document
+```
+
+候補ファイルからの通常導入であり、固定依存の取得・buildを伴い得ます。7入力・固定profile・Fail Closed・Result/Evidence v2・既存APIの意味は維持します。候補準備完了・公開完了・Host本番GOは別の判断です。
 
 ## 検証API：0.2.0と互換性
 
@@ -77,7 +92,7 @@ result = AP2MandateVerifier.verify_checkout(
 
 ## 環境・互換性・保守
 
-対象はMRI 4.0.9と固定依存、観測されたMBA/macOS arm64 (`arm64-darwin25`) およびUbuntu 24.04/x86_64の正確な構成です。[現行版の包装・provider証拠](research/stable010_release_linux_package/README.md)と[過去の環境記録](docs/VERIFIER_CORE_COMPLETION_CRITERIA.md#初回の対応環境保証範囲owner採用済み)を区別してください。OS全版・他engine/architecture・任意provider更新は保証しません。
+公開済み0.2.0の対象はMRI 4.0.9と固定依存、観測されたMBA/macOS arm64 (`arm64-darwin25`) およびUbuntu 24.04/x86_64の正確な構成です。0.2.1候補の対象はMRI 3.4.12と4.0.9で、Debian 12/arm64の検証状態は上記の候補記録で区別します。[現行版の包装・provider証拠](research/stable010_release_linux_package/README.md)と[過去の環境記録](docs/VERIFIER_CORE_COMPLETION_CRITERIA.md#初回の対応環境保証範囲owner採用済み)を区別してください。OS全版・他engine/architecture・任意provider更新は保証しません。
 
 支持入力の判定意味・APIを黙って変更しません。安全性修正で受理を狭める場合は理由・影響・移行を明示し、破壊的なAPI/必須field/profile変更を区別します。依存更新は自動互換ではありません。
 

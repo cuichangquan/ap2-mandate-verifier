@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 — Unreleased
+
+- Adds MRI 3.4.12 as a candidate supported runtime alongside MRI 4.0.9; installation metadata permits `>= 3.4.12, < 4.1`, without claiming every version in that interval is supported.
+- Retains JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1; preserves seven inputs, fixed profile, Fail Closed, Result/Evidence v2 and existing API meanings.
+- Fresh source regressions passed on both versions in Debian 12/arm64 with official Ruby bookworm images. Ordinary installation, actual loaded providers and exact candidate artifact identity are tracked separately in the [compatibility record](docs/RUBY_3_4_12_COMPATIBILITY.md); prior PASS results are historical.
+- RubyGems publication, public tag and GitHub Release remain pending separate Owner approval.
+
 ## 0.2.0 — 2026-10-30
 
 - Adds `verify_checkout(**inputs)` as the recommended full-verification entry, delegating directly to `ResearchResult.verify` without transforming the seven inputs.

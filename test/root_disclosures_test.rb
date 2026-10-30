@@ -6,7 +6,7 @@ require "openssl"
 require "digest"
 require_relative "../lib/ap2_mandate_verifier"
 
-raise "unexpected runtime" unless RUBY_VERSION == "4.0.9" && JSON::VERSION == "2.19.9"
+raise "unexpected runtime" unless %w[3.4.12 4.0.9].include?(RUBY_VERSION) && JSON::VERSION == "2.19.9"
 
 module DisclosureTest
   @cases = 0
