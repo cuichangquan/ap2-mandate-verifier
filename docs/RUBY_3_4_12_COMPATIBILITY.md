@@ -1,9 +1,41 @@
-# MRI 3.4.12 / 4.0.9 compatibility — unpublished 0.2.1
+# MRI 3.4.12 / 4.0.9 compatibility — published 0.2.1
 
-Owner authorized implementation, isolated zero-cost testing, independent review,
-conditional squash merge and final Gem preparation. RubyGems publication, public
-tag and GitHub Release require the next Owner approval. Real Issuer and Host
-production/Phase 2-B HOLDs remain.
+[0.2.1 is published on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.1).
+The Owner published the exact prepared Gem; official metadata, distributed bytes
+and the retained candidate matched on 2026-10-30. This repository follow-up
+records the final observations without changing the packaged documents or
+rebuilding/re-uploading the Gem. Real Issuer and Host production/Phase 2-B
+HOLDs remain.
+
+## Published artifact and final-source observations
+
+- Published: `2026-10-30T11:51:55.894Z`; readback: `2026-10-30T11:53:55.141693+00:00`.
+- Owner `cuichangquan`, platform `ruby`, prerelease false, yanked false.
+- Source/[v0.2.1 tag and Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.2.1): `5a02bc3a192e16aa3628cf7899617623b0aed78c`.
+- Tree `f4b3617772908dd70d528120dabadae877ebffc4` matches reviewed HEAD
+  `704170574493bae8c9382d4db7417c3158563dc1`.
+- Gem **34,816 bytes**, SHA256
+  `a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114`.
+
+The Gem built from that final source was normally installed on **each** MRI
+3.4.12 and 4.0.9 in Debian 12/arm64. The same final archive passed all 13
+payload/source/installed comparisons, ordinary loading of ten product Ruby
+files and 118 installed cases per version. These are final-source observations,
+separate from the premerge archive below. Source885 + checkout190 + metadata7
+also passed per Ruby; no new source test was run for this publication update.
+
+[Public final-package/publication evidence](evidence/0.2.1_publication.json)
+records both final-stage artifact hashes and observations, readback checks and
+retained-record hashes. [PR #216's final result](https://github.com/cuichangquan/ap2-mandate-verifier/pull/216#issuecomment-6521084431)
+identifies the same archive. The earlier premerge Gem had SHA256
+`6835eab5ccb5e9659c8a1bdbf6fde97b82a3590150f575fb13e6a9a751f5d445`;
+it is not the published Gem. Final build used `SOURCE_DATE_EPOCH=1793357979`.
+
+The published Gem contains the preparation-time README/contract snapshot;
+this external record supersedes its pending-publication/packaging wording.
+Repository documentation edits do not alter published bytes. GitHub source
+ZIP/tar archives are source snapshots, not the RubyGems Gem. Do not rebuild
+and reuse this artifact's identity or validation for different bytes.
 
 ## Scope and design
 
@@ -91,7 +123,7 @@ concerns PowerPC signing, outside this arm64/P256 observation. OpenSSL Gem 4.0.2
 is distinct from the native OpenSSL 3.0 library. Package-database verification
 is a trusted-container observation, not an independent runtime attestation.
 
-## Candidate packaging and release boundary
+## Preserved packaging procedure and release boundary
 
 Build one Gem from the final source and run that same archive through ordinary
 `gem install --local`, payload audit and detached installed tests on both Rubies:
@@ -99,9 +131,13 @@ Build one Gem from the final source and run that same archive through ordinary
 The existing installed suite checks 118 logical cases: research42 + checkout42 +
 unavailable24 + legacy7 + invalid2 + constructor1. Payload/source/installation
 hashes and ordinary loading of all ten product Ruby files are checked separately.
-Final source SHA, archive bytes/SHA256, fresh packaging results and latest-HEAD
-review must be recorded before declaring publication readiness. Until then this
-section is a checklist, not a packaging PASS. No publication is performed here.
+Final source/archive identities and successful packaging/readback are now recorded
+above. The procedure describes the completed preparation; this documentation
+update did not rerun it. RubyGems publication is complete. The public [tag/Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.2.1)
+was created after separate explicit Owner approval and independent review of its
+body; its tag target was read back and matched the published source. This
+documentation follow-up has separate Owner approval, which does not authorize
+real Issuer/Host production operations.
 
 ## Primary sources and limits
 

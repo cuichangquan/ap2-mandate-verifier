@@ -1,17 +1,19 @@
-# Fixed-profile AP2 verification — 0.2.1 candidate / published 0.2.0
+# Fixed-profile AP2 verification — published 0.2.1 / historical 0.2.0
 
 **Fixed-profile verification contract; Evidence is not Host ALLOW or payment permission.**
 Distribution availability is determined by the official RubyGems version listing, not by this document. Specific Host production GO remains separate.
 Owner adopted the existing verification API and bounded stable-release conditions below. Publication and a specific Host's production operation are separate decisions; this contract does not authorize either.
 Published research-only pre3 remains unchanged. Its historical observations below do not certify this new archive.
 
-## Unpublished 0.2.1 compatibility candidate
+## Published 0.2.1 compatibility and artifact
 
-The candidate's formal runtime targets are exactly MRI 3.4.12 and MRI 4.0.9, with JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1 unchanged. Bundler 4.0.20 is the resolver validation baseline, not a runtime dependency. The Gem's installation requirement `>= 3.4.12, < 4.1` is an interval for dependency resolution; it does not certify other Ruby versions or engines.
+[0.2.1 is published on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.1). Formal runtime support is exactly MRI 3.4.12 and MRI 4.0.9, with JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1 unchanged. Bundler 4.0.20 is the resolver validation baseline, not a runtime dependency. The installation requirement `>= 3.4.12, < 4.1` is a resolution interval, not certification of other Ruby versions or engines.
 
-Initial validation targets Debian 12/arm64 with official Ruby bookworm images. Actual runtime/OS/native-provider identities, source regressions, ordinary installed-Gem checks and exact artifact identity are tracked in the [compatibility record](RUBY_3_4_12_COMPATIBILITY.md). Fresh source regressions passed on both versions; exact-archive packaging checks are recorded there separately. Historical observations below do not validate the new candidate. Platform/provider observations remain limited to their recorded configuration.
+Both versions passed source885 + additional checkout190 + metadata7 on Debian 12/arm64 with official Ruby bookworm images. The same final artifact passed ordinary installation, 13 payload-file comparisons, 10 normally loaded product Ruby files and 118 installed cases per Ruby. Actual OS/native-provider identities and evidence are in the [compatibility record](RUBY_3_4_12_COMPATIBILITY.md). These measurements cover their exact recorded configurations; historical macOS/Ubuntu evidence below does not validate 0.2.1 there.
 
-The candidate retains the seven inputs, fixed profile, Fail Closed behavior, Result/Evidence v2 and `verify_checkout` / `verify_research` / legacy `verify` meanings described below. Candidate implementation, completed validation, publication readiness and completed publication are separate states. RubyGems publication, a public tag and GitHub Release await a separate Owner decision. Real Issuer trust and Host production GO remain separate and HOLD.
+Published 2026-10-30 11:51:55.894 UTC; verified 11:53:55 UTC: owner `cuichangquan`, platform `ruby`, non-prerelease, not yanked at verification. Official metadata, distributed Gem and retained artifact matched: **34,816 bytes**, SHA256 `a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114`, source `5a02bc3a192e16aa3628cf7899617623b0aed78c`. The [v0.2.1 GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.2.1) tag points to that exact source.
+
+Seven inputs, fixed profile, Fail Closed, Result/Evidence v2 and `verify_checkout` / `verify_research` / legacy `verify` meanings remain unchanged; product `lib/` is unchanged. Packaged README/contract retain the preparation snapshot. Repository publication updates do not rebuild or replace those bytes. GitHub source archives differ from the RubyGems Gem. Publication does not establish real Issuer trust, Host production GO or Phase 2-B; existing HOLDs remain.
 
 ## Published 0.2.0 API
 
@@ -35,7 +37,7 @@ Published 2026-10-30 06:43:10 UTC, verified 06:44:48 UTC: owner `cuichangquan`, 
 
 This final candidate separately passed the limited Debian 12/arm64 / MRI 4.0.9 observation: all 13 payload files matched source/archive/installation, 10 product Ruby files loaded through ordinary require, and 118 installed cases passed (42 research +42 checkout +24 unavailable +7 legacy +2 invalid inputs +1 constructor). Fixed dependencies and saved inputs/expected values were reused; source190/885 were NOT_RUN in this packaging step. Final report SHA256 `4348837cc153c65633e36c83c7939540819f164f43588d8140656e5ab50c2ccd`; publication receipt SHA256 `4b8264c5b990b10ad76a3fa3f01fc4ca94e6a828664ab3cefe11e6792c94a139`. These identify retained local records, not public downloads.
 
-Publication does not expand supported-platform guarantees or establish real Issuer trust, revocation, actual Host operation, performance, production GO or Phase 2-B. The published Gem's documents are the pre-publication snapshot. Repository-only follow-up edits do not alter its bytes and require no rebuild; rebuilt artifacts do not inherit its validation. GitHub source archives differ from the RubyGems Gem. See [current status](PROJECT_STATUS.md#020公開済み--現在の配布状態).
+Publication does not expand supported-platform guarantees or establish real Issuer trust, revocation, actual Host operation, performance, production GO or Phase 2-B. The published Gem's documents are the pre-publication snapshot. Repository-only follow-up edits do not alter its bytes and require no rebuild; rebuilt artifacts do not inherit its validation. GitHub source archives differ from the RubyGems Gem. See [0.2.0 publication record](PROJECT_STATUS.md#020公開済み--現在の配布状態).
 
 ## Verification contract
 
@@ -56,7 +58,7 @@ Manual dependency/provider review is adopted monthly, on relevant advisories and
 
 ## Existing API/limits and historical evidence baseline
 
-The API/limit specification below preserves the existing contract. All pre2/pre3/MBA409/R1 observations are historical, not proof of a newly built archive. Historical release source/archive/installed identities and observations are recorded in [release-package evidence](../research/stable010_release_linux_package/README.md); the 0.2.1 candidate has its separate compatibility record above. No old result is relabelled.
+The API/limit specification below preserves the existing contract. All pre2/pre3/MBA409/R1 observations are historical, not proof of a newly built archive. Historical release source/archive/installed identities and observations are recorded in [release-package evidence](../research/stable010_release_linux_package/README.md); 0.2.1 has its separate compatibility record above. No old result is relabelled.
 
 ## Supported proposition and environment
 

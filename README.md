@@ -1,4 +1,4 @@
-# AP2 Mandate Verifier — 0.2.1 candidate / published 0.2.0
+# AP2 Mandate Verifier — 0.2.1
 
 [Japanese / 日本語](README.ja.md)
 
@@ -15,53 +15,48 @@ For a Japanese walkthrough of the three demo scenarios, see the [Zenn article](h
 | Route | Start here |
 | --- | --- |
 | Docker demo: compare three synthetic cases | Follow the [demo README](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme) for local startup and valid / tampered / expired examples. Docker commands are maintained there. |
-| Ruby without the demo: existing MRI 4.0.9 | Follow [installation](#distribution-and-installation), then the [saved synthetic example](#try-the-saved-synthetic-example) below. |
+| Ruby without the demo: MRI 3.4.12 or 4.0.9 | Follow [installation](#distribution-and-installation), then the [saved synthetic example](#try-the-saved-synthetic-example) below. |
 
 Both routes use the fixed-profile verifier, not payment execution or Host authorization. See the [supported contract](#supported-contract) for the scope. The goal is to make the choices understandable in about five minutes, not to promise a five-minute installation or build.
 
 ## Distribution and installation
 
-[0.2.0 is published on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.0). This is the fixed-profile, verifier-only stable release; the research prerelease pre3 is a separate artifact.
+[0.2.1 is published on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.1). This is the fixed-profile, verifier-only stable release; the research prerelease pre3 is a separate artifact.
 
-Use an existing MRI 4.0.9 environment and your chosen Gem isolation. Normal installation may fetch dependencies and build JSON native extensions. Stop on conflicts or unknown providers rather than relaxing pins.
+Use an MRI 3.4.12 or MRI 4.0.9 environment and your chosen Gem isolation. Normal installation may fetch dependencies and build JSON native extensions. Stop on conflicts or unknown providers rather than relaxing pins.
 
 ```sh
-ruby --version # MRI 4.0.9 required
-gem install ap2_mandate_verifier --version 0.2.0
+ruby --version # MRI 3.4.12 or MRI 4.0.9
+gem install ap2_mandate_verifier --version 0.2.1
 ```
 
 Bundler Gemfile:
 
 ```ruby
-gem "ap2_mandate_verifier", "= 0.2.0"
+gem "ap2_mandate_verifier", "= 0.2.1"
 ```
 
 Fixed runtime dependencies: JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1.
 Bundler 4.0.20 is the observed resolver baseline, not a runtime dependency. Gem version constraints alone do not enforce the MRI engine, OS or native-provider provenance.
 
-## Unpublished 0.2.1 candidate: Ruby 3.4.12 compatibility
+## Ruby 3.4.12 compatibility and published artifact
 
-0.2.1 is being prepared; RubyGems publication, a public tag and GitHub Release require a separate Owner decision. The published 0.2.0 commands above continue to require MRI 4.0.9.
+0.2.1 formally supports exactly MRI 3.4.12 and MRI 4.0.9 with the same five fixed dependencies. Its installation metadata permits Ruby `>= 3.4.12, < 4.1`; that interval does not declare every intermediate version or another engine supported.
 
-The candidate targets exactly MRI 3.4.12 and MRI 4.0.9 with the same five fixed dependencies. Its installation metadata permits Ruby `>= 3.4.12, < 4.1`; that interval does not declare every intermediate Ruby version or another engine supported. Initial validation uses Debian 12/arm64 and official Ruby bookworm images. Actual build, loaded-provider and installed-Gem results are tracked in the [compatibility record](docs/RUBY_3_4_12_COMPATIBILITY.md); fresh source regressions passed on both versions; exact-archive packaging checks are recorded there separately. Historical macOS/Ubuntu observations do not validate the candidate.
+Both versions were measured on Debian 12/arm64 with official Ruby bookworm images: 885 source regressions, 190 additional checkout cases and 7 metadata cases passed per Ruby. The same final Gem passed ordinary installation, all 13 payload-file comparisons, 10 normally loaded product files and 118 installed cases on each version. Exact providers and evidence are in the [compatibility record](docs/RUBY_3_4_12_COMPATIBILITY.md). Historical macOS/Ubuntu observations are separate and do not establish 0.2.1 compatibility there.
 
-After obtaining the prepared candidate Gem and checking its SHA256 against that record, install it in your chosen isolated environment:
+Published 2026-10-30 11:51:55.894 UTC; verified 11:53:55 UTC. Official RubyGems metadata, distribution bytes and the retained final Gem matched: **34,816 bytes**, SHA256 `a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114`, source `5a02bc3a192e16aa3628cf7899617623b0aed78c`. Owner `cuichangquan`, platform `ruby`, non-prerelease, not yanked at verification. The [v0.2.1 GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.2.1) uses that exact source tag.
 
-```sh
-ruby --version # MRI 3.4.12 or MRI 4.0.9
-gem install ./ap2_mandate_verifier-0.2.1.gem --no-document
-```
+The Gem's packaged README/contract retain their preparation snapshot. These repository updates do not rebuild or replace the published bytes. GitHub source archives differ from the RubyGems Gem. Seven inputs, fixed profile, Fail Closed, Result/Evidence v2 and existing API meanings remain unchanged; publication does not establish Host production GO.
 
-This is ordinary installation from the candidate file and may fetch/build the fixed dependencies. Seven inputs, the fixed profile, Fail Closed behavior, Result/Evidence v2 and all existing API meanings are retained. Candidate preparation is separate from publication and Host production GO.
+## Verification APIs: 0.2.1 and compatibility
 
-## Verification APIs: 0.2.0 and compatibility
-
-**The installation commands and saved example use published 0.2.0 and its recommended `verify_checkout` entry.** Existing 0.1.0 applications can continue using `verify_research`; it remains available in 0.2.0 without a deprecation warning. Installing 0.1.0 does not provide `verify_checkout`.
+**The installation commands and saved example use published 0.2.1 and its recommended `verify_checkout` entry.** Existing 0.1.0 applications can continue using `verify_research`; it remains available in 0.2.1 without a deprecation warning. Installing 0.1.0 does not provide `verify_checkout`.
 
 | Entry | Availability and contract |
 | --- | --- |
-| `verify_checkout(**inputs)` | Recommended full-verification entry in 0.2.0. Delegates directly to `ResearchResult.verify` without changing inputs or the verification pipeline. |
-| `verify_research(**inputs)` | Full-verification entry in published 0.1.0; retained unchanged in v0.2.0, without a deprecation warning. |
+| `verify_checkout(**inputs)` | Recommended full-verification entry since 0.2.0, retained in 0.2.1. Delegates directly to `ResearchResult.verify` without changing inputs or the verification pipeline. |
+| `verify_research(**inputs)` | Full-verification entry in published 0.1.0; retained unchanged in v0.2.1, without a deprecation warning. |
 | `verify(presentation_json:)` | Existing JSON syntax check only. Valid JSON returns `:unverified` / `:verification_not_implemented`, never successful Evidence. It is not a substitute for full verification. |
 
 The recommended entry takes all seven inputs. In the saved example below, these values come from `full`; real integrations must supply the authenticated Host inputs described below:
@@ -96,7 +91,7 @@ See [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md) for exact required shapes, boun
 
 ## Environment, compatibility and maintenance
 
-The published 0.2.0 baseline is MRI 4.0.9 with fixed dependencies and the exact observed MBA/macOS arm64 and Ubuntu 24.04/x86_64 configurations. The 0.2.1 candidate targets MRI 3.4.12 and 4.0.9; its Debian 12/arm64 validation status is tracked separately above. Distinguish [release-package/provider evidence](research/stable010_release_linux_package/README.md) from [historical environment records](docs/VERIFIER_CORE_COMPLETION_CRITERIA.md#初回の対応環境保証範囲owner採用済み). Other OS versions, engines, architectures and arbitrary provider updates are not covered.
+The supported MRI versions are 3.4.12 and 4.0.9 with fixed dependencies; current 0.2.1 measurements cover the exact Debian 12/arm64 configurations in the compatibility record above. Earlier MRI 4.0.9 MBA/macOS arm64 and Ubuntu 24.04/x86_64 observations retain their historical scope. Distinguish [historical release-package/provider evidence](research/stable010_release_linux_package/README.md) from the current artifact. Other OS versions, engines, architectures and arbitrary provider updates are not covered.
 
 Supported-input semantics and APIs do not change silently. Security-driven narrowing identifies reason, impact and migration; breaking API/required-field/profile changes are explicit. Dependency updates are not automatically compatible.
 
@@ -187,7 +182,7 @@ The Host supplies authenticated token-independent trust/keys/profile and current
 
 ## Evidence and history
 
-The published 0.2.0 Gem is **33,280 bytes**, SHA256 `9a52e802de5a0564c34d198f4c4ad2c2b60791a8f1eb6e31db14c49e28e91f16`, from source commit `9b2e28d91fc4886722de7b9c39a5422e966953a9`. Publication on 2026-10-30 was verified against official RubyGems metadata, distribution bytes and the retained Gem. Its final Debian 12/arm64 / MRI 4.0.9 packaging observation matched all 13 payload files across source/archive/installation, loaded 10 product Ruby files normally and passed 118 installed cases using saved inputs/expected values. This is a limited observation, not a supported-platform expansion; source190/885 were not rerun in that packaging step. See [current publication status](docs/PROJECT_STATUS.md#020公開済み--現在の配布状態).
+The published 0.2.0 Gem is **33,280 bytes**, SHA256 `9a52e802de5a0564c34d198f4c4ad2c2b60791a8f1eb6e31db14c49e28e91f16`, from source commit `9b2e28d91fc4886722de7b9c39a5422e966953a9`. Publication on 2026-10-30 was verified against official RubyGems metadata, distribution bytes and the retained Gem. Its final Debian 12/arm64 / MRI 4.0.9 packaging observation matched all 13 payload files across source/archive/installation, loaded 10 product Ruby files normally and passed 118 installed cases using saved inputs/expected values. This is a limited observation, not a supported-platform expansion; source190/885 were not rerun in that packaging step. See [historical 0.2.0 publication record](docs/PROJECT_STATUS.md#020公開済み--現在の配布状態).
 
 The packaged README and contract are snapshots from before publication. These repository documentation updates do not change the published Gem, require no rebuild, and do not transfer its validation to a rebuilt artifact. GitHub source archives contain repository source, not the RubyGems binary.
 

@@ -1,26 +1,29 @@
 # 現状メモ / Project status
 
-更新：2026-10-30 UTC（0.2.0公開確認）。公開元main：
-`9b2e28d91fc4886722de7b9c39a5422e966953a9`（PR #214統合後、以下の文書追補前）。
-安定版R2のLinux実行SHA：`4ab7ceea46f477eb60f7b0d436e3afd434a0ff6c`。
-以下の旧pre3・R1・準備段階のNOT_RUN/HOLDは各時点の履歴で、現在の公開状態は直下の記録を正本とします。
+更新：2026-10-30 UTC（0.2.1公開確認）。0.2.1公開元source：
+`5a02bc3a192e16aa3628cf7899617623b0aed78c`。公開後の本リポジトリ文書更新は公開Gemのbytesを変更しません。
+以下の旧pre3・R1・候補段階のNOT_RUN/HOLDは各時点の履歴で、現在の配布状態は直下の0.2.1記録を正本とします。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
 [プロセス正本 Issue #101](https://github.com/cuichangquan/ap2-mandate-verifier/issues/101)を確認してください。
 このメモは更新日時点の案内で、最新GitHub main／PR／レビュー／ActionsとRubyGems原本の確認を置き換えません。
 承認・制限の記載は現状記録であり、新たな権限を付与しません。
 
-## 0.2.1候補 — Ruby 3.4.12互換対応を準備中
+## 0.2.1公開済み — 現在の配布状態
 
-最新main基準 `d13eb28d33594d1b1f185bc857211951842055e5` から、MRI 3.4.12対応追加とMRI 4.0.9互換維持を進めています。固定5依存・7入力・固定profile・Fail Closed・Result/Evidence v2・既存APIの意味を維持します。候補versionは0.2.1、導入metadataは `>= 3.4.12, < 4.1`、正式対応対象はMRI 3.4.12と4.0.9の2版です。metadata範囲全体の対応保証ではありません。
+[RubyGems 0.2.1](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.1)は登録2026-10-30 11:51:55.894 UTC、照合11:53:55 UTC。owner `cuichangquan`、platform `ruby`、prerelease false、照合時yanked false、**34,816 bytes**、SHA256 `a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114`。公式metadata・実配布・保存最終Gemが一致しました。公開元sourceは `5a02bc3a192e16aa3628cf7899617623b0aed78c`です。
 
-初回実測対象は公式Ruby bookworm imageを使うDebian 12/arm64です。両Rubyでsource885＋checkout190＋metadata7、同一候補Gemの通常導入後118ケース、13 payload／10製品ファイル一致を新たに確認しました。実ロードprovider・成果物SHAと独立レビューは[互換性記録](RUBY_3_4_12_COMPATIBILITY.md)で管理します。独立レビューと最終sourceでの包装確認は後続条件です。過去の885／190／118 PASSを今回の結果として転記しません。
+正式対応はMRI 3.4.12と4.0.9の2版、導入metadataは `>= 3.4.12, < 4.1`です。範囲内全版や他engineへの保証ではありません。固定5依存・7入力・固定profile・Fail Closed・Result/Evidence v2・既存APIの意味・製品libは変更していません。
 
-Ownerは関連実装・隔離環境検証・独立レビュー・条件充足時のmain統合・最終Gem候補準備を承認済みです。RubyGems公開・公開tag・GitHub Releaseは次の承認待ちで実施しません。実Issuer・実Host・本番GOなど既存HOLDは維持します。以下は公開済み0.2.0と過去成果物の記録です。
+公式Ruby bookworm imageのDebian 12/arm64で、両Rubyにsource885＋追加checkout190＋metadata7、同一最終Gemの通常導入後118ケース・13 payload一致・10製品ファイル通常読込みを確認しました。実provider・最終source／成果物・独立レビューは[互換性記録](RUBY_3_4_12_COMPATIBILITY.md)を参照してください。過去のmacOS／Ubuntu実測を今回の成果物の保証に転記しません。
 
-## 0.2.0公開済み — 現在の配布状態
+Ownerの明示承認とRelease草案の独立レビュー後に[v0.2.1 tag／GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.2.1)を公開し、tagが公開元 `5a02bc3a192e16aa3628cf7899617623b0aed78c` を指すことを読戻し確認しました。公開状態の文書更新は最新HEAD独立レビュー・保護条件充足後にSquash Mergeする範囲です。Gem再build・再push・追加実行はしていません。同梱README／契約は準備時点snapshotを維持し、リポジトリ文書追補とは区別します。GitHub source archiveとRubyGems Gemは別成果物です。実Issuer・実Host・性能・本番GO・Phase 2-Bなど既存HOLDは維持します。
 
-[RubyGems 0.2.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.0)をOwner本人のTerminal/passkeyで公開。登録2026-10-30 06:43:10.743 UTC、照合06:44:48 UTC。owner `cuichangquan`、platform `ruby`、prerelease false、**33,280 bytes**、SHA256 `9a52e802de5a0564c34d198f4c4ad2c2b60791a8f1eb6e31db14c49e28e91f16`。公式SHA・配布Gem・MBA保存Gemが一致しました。公開元は上記main、tree `a7739f966416bdbc18cfee266efc93223a587407`です。以前の自動pushの終了不明記録は履歴として保持し、今回の本人公開成功とは区別します。
+<a id="020公開済み--現在の配布状態"></a>
+
+## 0.2.0公開済み — 過去の配布記録
+
+[RubyGems 0.2.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.0)をOwner本人のTerminal/passkeyで公開。登録2026-10-30 06:43:10.743 UTC、照合06:44:48 UTC。owner `cuichangquan`、platform `ruby`、prerelease false、**33,280 bytes**、SHA256 `9a52e802de5a0564c34d198f4c4ad2c2b60791a8f1eb6e31db14c49e28e91f16`。公式SHA・配布Gem・MBA保存Gemが一致しました。公開元はmain `9b2e28d91fc4886722de7b9c39a5422e966953a9`、tree `a7739f966416bdbc18cfee266efc93223a587407`です。以前の自動pushの終了不明記録は履歴として保持し、今回の本人公開成功とは区別します。
 
 推奨入口は `verify_checkout(**inputs)`。7入力・固定profile・Result/ResearchResult/Evidence v2を維持し、`verify_research` は非推奨警告なし、旧 `verify` は構文検査・非成功のままです。
 

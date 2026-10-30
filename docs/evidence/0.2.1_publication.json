@@ -1,0 +1,195 @@
+{
+  "scope": "PUBLISHED_021_EXACT_ARTIFACT_READBACK_NOT_HOST_ALLOW",
+  "source_sha": "5a02bc3a192e16aa3628cf7899617623b0aed78c",
+  "source_tree": "f4b3617772908dd70d528120dabadae877ebffc4",
+  "reviewed_head": "704170574493bae8c9382d4db7417c3158563dc1",
+  "reviewed_tree_matches_main": true,
+  "gem": {
+    "filename": "ap2_mandate_verifier-0.2.1.gem",
+    "bytes": 34816,
+    "sha256": "a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114",
+    "source_date_epoch": 1793357979,
+    "built_on": "MRI3.4.12 Debian12 arm64",
+    "same_archive_both_rubies": true
+  },
+  "publication": {
+    "checked_at_utc": "2026-10-30T11:53:55.141693+00:00",
+    "published_at_utc": "2026-10-30T11:51:55.894Z",
+    "owners": [
+      {
+        "handle": "cuichangquan",
+        "id": 251922
+      }
+    ],
+    "platform": "ruby",
+    "prerelease": false,
+    "yanked": false,
+    "gem_bytes": 34816,
+    "gem_sha256": "a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114",
+    "official_sha256": "a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114",
+    "retained_sha256": "a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114",
+    "checks": {
+      "name": true,
+      "version": true,
+      "platform": true,
+      "nonprerelease": true,
+      "not_yanked": true,
+      "official_sha": true,
+      "retained_sha": true,
+      "distributed_sha": true,
+      "both_sizes": true,
+      "exact_bytes": true,
+      "fixed_dependencies": true,
+      "ruby_interval": true,
+      "owner": true
+    },
+    "official_urls": {
+      "metadata": "https://rubygems.org/api/v2/rubygems/ap2_mandate_verifier/versions/0.2.1.json",
+      "gem": "https://rubygems.org/gems/ap2_mandate_verifier-0.2.1.gem",
+      "owners": "https://rubygems.org/api/v1/gems/ap2_mandate_verifier/owners.json"
+    }
+  },
+  "final_package_observations": {
+    "3.4.12": {
+      "runtime": {
+        "ruby": "ruby 3.4.12 (2026-10-23 revision 366f5fdc00) +PRISM [aarch64-linux]",
+        "engine": "ruby",
+        "executable": "/usr/local/bin/ruby",
+        "platform": "aarch64-linux",
+        "os": "PRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"12\"\nVERSION=\"12 (bookworm)\"\nVERSION_CODENAME=bookworm\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n",
+        "bundler": "4.0.20",
+        "dependencies": {
+          "json": {
+            "version": "2.19.9",
+            "default_gem": false,
+            "path": "/usr/local/bundle/gems/json-2.19.9"
+          },
+          "jwt": {
+            "version": "3.3.0",
+            "default_gem": false,
+            "path": "/usr/local/bundle/gems/jwt-3.3.0"
+          },
+          "base64": {
+            "version": "0.3.0",
+            "default_gem": false,
+            "path": "/usr/local/bundle/gems/base64-0.3.0"
+          },
+          "openssl": {
+            "version": "4.0.2",
+            "default_gem": false,
+            "path": "/usr/local/bundle/gems/openssl-4.0.2"
+          },
+          "digest": {
+            "version": "3.2.1",
+            "default_gem": false,
+            "path": "/usr/local/bundle/gems/digest-3.2.1"
+          }
+        },
+        "compiled_openssl": "OpenSSL 3.0.22 25 Aug 2026",
+        "loaded_openssl": "OpenSSL 3.0.22 25 Aug 2026",
+        "native_package": "libssl3|3.0.22-1~deb12u2|arm64|install ok installed",
+        "native_package_verify": "PASS",
+        "native_files_sha256": {
+          "/usr/local/bundle/gems/openssl-4.0.2/lib/openssl.so": "5eabc0cd0103ae34813ae4a2ee778828caa630080eb11a711cf4f63d2213e42c",
+          "/usr/lib/aarch64-linux-gnu/libcrypto.so.3": "322b1a55dbc35b68c19a72fea768c97a1b38e6afa72b84627327a443ee74912e",
+          "/usr/lib/aarch64-linux-gnu/libssl.so.3": "7b23bf339ecd38c0ad436243ab78ce0e748a3026c8d91fb45b72700546dbb9fe"
+        }
+      },
+      "artifact_sha256": "a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114",
+      "artifact_bytes": 34816,
+      "payload_files": 13,
+      "source_archive_installed_all_files_match": true,
+      "ordinary_entry": true,
+      "loaded_product_files": 10,
+      "installed_cases": 118,
+      "source_cases": 885,
+      "checkout_cases": 190,
+      "metadata_cases": 7,
+      "frozen_bundle_check": "PASS"
+    },
+    "4.0.9": {
+      "runtime": {
+        "ruby": "ruby 4.0.9 (2026-10-23 revision 3e93b23afc) +PRISM [aarch64-linux]",
+        "engine": "ruby",
+        "executable": "/usr/local/bin/ruby",
+        "platform": "aarch64-linux",
+        "os": "PRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"12\"\nVERSION=\"12 (bookworm)\"\nVERSION_CODENAME=bookworm\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n",
+        "bundler": "4.0.20",
+        "dependencies": {
+          "json": {
+            "version": "2.19.9",
+            "default_gem": false,
+            "path": "/usr/local/bundle/gems/json-2.19.9"
+          },
+          "jwt": {
+            "version": "3.3.0",
+            "default_gem": false,
+            "path": "/usr/local/bundle/gems/jwt-3.3.0"
+          },
+          "base64": {
+            "version": "0.3.0",
+            "default_gem": false,
+            "path": "/usr/local/lib/ruby/gems/4.0.0/gems/base64-0.3.0"
+          },
+          "openssl": {
+            "version": "4.0.2",
+            "default_gem": false,
+            "path": "/usr/local/bundle/gems/openssl-4.0.2"
+          },
+          "digest": {
+            "version": "3.2.1",
+            "default_gem": false,
+            "path": "/usr/local/bundle/gems/digest-3.2.1"
+          }
+        },
+        "compiled_openssl": "OpenSSL 3.0.22 25 Aug 2026",
+        "loaded_openssl": "OpenSSL 3.0.22 25 Aug 2026",
+        "native_package": "libssl3|3.0.22-1~deb12u2|arm64|install ok installed",
+        "native_package_verify": "PASS",
+        "native_files_sha256": {
+          "/usr/local/bundle/gems/openssl-4.0.2/lib/openssl.so": "86992173d3367e917084783f533125f739666c5b3833c6f547b89c597b2e18c9",
+          "/usr/lib/aarch64-linux-gnu/libcrypto.so.3": "322b1a55dbc35b68c19a72fea768c97a1b38e6afa72b84627327a443ee74912e",
+          "/usr/lib/aarch64-linux-gnu/libssl.so.3": "7b23bf339ecd38c0ad436243ab78ce0e748a3026c8d91fb45b72700546dbb9fe"
+        }
+      },
+      "artifact_sha256": "a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114",
+      "artifact_bytes": 34816,
+      "payload_files": 13,
+      "source_archive_installed_all_files_match": true,
+      "ordinary_entry": true,
+      "loaded_product_files": 10,
+      "installed_cases": 118,
+      "source_cases": 885,
+      "checkout_cases": 190,
+      "metadata_cases": 7,
+      "frozen_bundle_check": "PASS"
+    }
+  },
+  "retained_record_sha256": {
+    "FINAL_MANIFEST.json": "192039511073ba39fb9ee2cc03a6f494afd761010f7186dee1401fd0babd69c4",
+    "PUBLICATION_READBACK.json": "efaa39bcd1832d5271273d683914a84bceebebbaa2c1a2bfc851df4d0c431c49"
+  },
+  "limits": [
+    "single Linux Debian12 arm64 configuration",
+    "synthetic saved independent expectations; no new external Python/schema oracle run",
+    "no new macOS/Windows/x86 observations",
+    "no worst-case performance or total traffic guarantee",
+    "known upstream JSON advisory metadata discrepancies remain",
+    "real Issuer/Host production/Phase2B HOLD unchanged"
+  ],
+  "new_build_install_test": "NONE; records existing final-source runs and publication-only byte readback",
+  "packaged_documents": "Preserved publication-time bytes; repository follow-up is separate",
+  "github_release": {
+    "url": "https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.2.1",
+    "published_at": "2026-10-30T11:57:48Z",
+    "tag": "refs/tags/v0.2.1",
+    "tag_type": "commit",
+    "tag_sha": "5a02bc3a192e16aa3628cf7899617623b0aed78c",
+    "target_commitish": "5a02bc3a192e16aa3628cf7899617623b0aed78c",
+    "draft": false,
+    "prerelease": false,
+    "body_sha256": "84996118fdd9fe6a9df856ca7065a6daeb73978aa51a6dc9cdf8532550e07974",
+    "independent_draft_review": "zero substantive findings; exact body SHA reviewed before publication",
+    "body_readback_matches_reviewed_draft": true
+  }
+}
