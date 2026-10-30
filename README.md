@@ -1,4 +1,4 @@
-# AP2 Mandate Verifier — 0.2.0
+# AP2 Mandate Verifier — 0.2.1 candidate / published 0.2.0
 
 [Japanese / 日本語](README.ja.md)
 
@@ -38,6 +38,21 @@ gem "ap2_mandate_verifier", "= 0.2.0"
 
 Fixed runtime dependencies: JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1.
 Bundler 4.0.20 is the observed resolver baseline, not a runtime dependency. Gem version constraints alone do not enforce the MRI engine, OS or native-provider provenance.
+
+## Unpublished 0.2.1 candidate: Ruby 3.4.12 compatibility
+
+0.2.1 is being prepared; RubyGems publication, a public tag and GitHub Release require a separate Owner decision. The published 0.2.0 commands above continue to require MRI 4.0.9.
+
+The candidate targets exactly MRI 3.4.12 and MRI 4.0.9 with the same five fixed dependencies. Its installation metadata permits Ruby `>= 3.4.12, < 4.1`; that interval does not declare every intermediate Ruby version or another engine supported. Initial validation uses Debian 12/arm64 and official Ruby bookworm images. Actual build, loaded-provider and installed-Gem results are tracked in the [compatibility record](docs/RUBY_3_4_12_COMPATIBILITY.md); fresh source regressions passed on both versions; exact-archive packaging checks are recorded there separately. Historical macOS/Ubuntu observations do not validate the candidate.
+
+After obtaining the prepared candidate Gem and checking its SHA256 against that record, install it in your chosen isolated environment:
+
+```sh
+ruby --version # MRI 3.4.12 or MRI 4.0.9
+gem install ./ap2_mandate_verifier-0.2.1.gem --no-document
+```
+
+This is ordinary installation from the candidate file and may fetch/build the fixed dependencies. Seven inputs, the fixed profile, Fail Closed behavior, Result/Evidence v2 and all existing API meanings are retained. Candidate preparation is separate from publication and Host production GO.
 
 ## Verification APIs: 0.2.0 and compatibility
 
@@ -81,7 +96,7 @@ See [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md) for exact required shapes, boun
 
 ## Environment, compatibility and maintenance
 
-The baseline is MRI 4.0.9 with fixed dependencies and the exact observed MBA/macOS arm64 and Ubuntu 24.04/x86_64 configurations. Distinguish [release-package/provider evidence](research/stable010_release_linux_package/README.md) from [historical environment records](docs/VERIFIER_CORE_COMPLETION_CRITERIA.md#初回の対応環境保証範囲owner採用済み). Other OS versions, engines, architectures and arbitrary provider updates are not covered.
+The published 0.2.0 baseline is MRI 4.0.9 with fixed dependencies and the exact observed MBA/macOS arm64 and Ubuntu 24.04/x86_64 configurations. The 0.2.1 candidate targets MRI 3.4.12 and 4.0.9; its Debian 12/arm64 validation status is tracked separately above. Distinguish [release-package/provider evidence](research/stable010_release_linux_package/README.md) from [historical environment records](docs/VERIFIER_CORE_COMPLETION_CRITERIA.md#初回の対応環境保証範囲owner採用済み). Other OS versions, engines, architectures and arbitrary provider updates are not covered.
 
 Supported-input semantics and APIs do not change silently. Security-driven narrowing identifies reason, impact and migration; breaking API/required-field/profile changes are explicit. Dependency updates are not automatically compatible.
 
