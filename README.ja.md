@@ -1,4 +1,4 @@
-# AP2 Mandate Verifier — 0.2.1候補／公開済み0.2.0
+# AP2 Mandate Verifier — 0.2.1
 
 [English](README.md)
 
@@ -11,53 +11,48 @@ RubyでAP2の固定profileを検証する、Rails非依存のGemです。**署�
 | 経路 | 最初に見る場所 |
 | --- | --- |
 | Dockerデモ：3つの合成ケースを比較 | [デモREADME](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)のローカル起動手順と正常／改ざん／期限切れの例を参照。Dockerコマンドはデモ側で管理します。 |
-| デモを使わないRuby単体：既存のMRI 4.0.9 | 下記の[導入](#配布と導入)から[保存済み合成入力の例](#保存済み合成入力で試す)へ進みます。 |
+| デモを使わないRuby単体：MRI 3.4.12または4.0.9 | 下記の[導入](#配布と導入)から[保存済み合成入力の例](#保存済み合成入力で試す)へ進みます。 |
 
 どちらも固定profileの検証器を使う経路であり、決済実行やHostの業務許可を提供しません。範囲は[対応契約](#対応範囲)を参照してください。5分程度で選択肢を理解できる説明を目指すもので、導入やbuildが5分で完了する保証ではありません。
 
 ## 配布と導入
 
-[0.2.0はRubyGemsで公開済み](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.0)です。固定profileの検証専用安定版であり、旧研究版pre3は別の成果物です。
+[0.2.1はRubyGemsで公開済み](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.1)です。固定profileの検証専用安定版であり、旧研究版pre3は別の成果物です。
 
-既存のMRI 4.0.9環境と利用者が選ぶGem隔離環境で使用します。通常の導入は依存取得・JSON native buildを伴い得ます。依存衝突や未知providerを許容するために固定条件を緩めないでください。
+MRI 3.4.12またはMRI 4.0.9環境と利用者が選ぶGem隔離環境で使用します。通常の導入は依存取得・JSON native buildを伴い得ます。依存衝突や未知providerを許容するために固定条件を緩めないでください。
 
 ```sh
-ruby --version # MRI 4.0.9 required
-gem install ap2_mandate_verifier --version 0.2.0
+ruby --version # MRI 3.4.12 or MRI 4.0.9
+gem install ap2_mandate_verifier --version 0.2.1
 ```
 
 BundlerのGemfile：
 
 ```ruby
-gem "ap2_mandate_verifier", "= 0.2.0"
+gem "ap2_mandate_verifier", "= 0.2.1"
 ```
 
 固定runtime依存：JSON 2.19.9、JWT 3.3.0、base64 0.3.0、OpenSSL gem 4.0.2、Digest 3.2.1。
 Bundler 4.0.20は既存resolver基準でruntime依存ではありません。Gemの版制約だけではMRI engine、OSや実native/providerの出所を保証しません。
 
-## 未公開0.2.1候補：Ruby 3.4.12対応
+## Ruby 3.4.12対応と公開成果物
 
-0.2.1は準備中です。RubyGems公開・公開tag・GitHub ReleaseにはOwnerの別承認が必要です。上記の公開済み0.2.0導入コマンドは引き続きMRI 4.0.9専用です。
+0.2.1の正式対応はMRI 3.4.12とMRI 4.0.9の2版で、固定5依存を維持します。導入metadataの範囲 `>= 3.4.12, < 4.1` は、その間の全Ruby版や他engineへの対応宣言ではありません。
 
-候補の正式対応対象はMRI 3.4.12とMRI 4.0.9の2版とし、固定5依存を維持します。導入metadataの範囲 `>= 3.4.12, < 4.1` は、その間のすべてのRuby版や他engineへの対応宣言ではありません。初回検証は公式Ruby bookworm imageを使うDebian 12/arm64です。実build・実ロードprovider・通常導入後の結果は[互換性記録](docs/RUBY_3_4_12_COMPATIBILITY.md)で管理します。両版のsource回帰は新たに合格し、正確なarchiveの包装検証は同記録で別に扱います。過去のmacOS／Ubuntu観測を候補の検証結果へ転記しません。
+公式Ruby bookworm imageを使うDebian 12/arm64で、各Rubyのsource885件・追加checkout190件・metadata7件が合格しました。同一の最終Gemについて、両Rubyで通常導入・13 payload一致・10製品Rubyファイルの通常読込み・installed118件も確認しました。実providerと証拠は[互換性記録](docs/RUBY_3_4_12_COMPATIBILITY.md)を参照してください。過去のmacOS／Ubuntu観測は別記録で、0.2.1の同環境対応を証明しません。
 
-準備された候補Gemを入手し、同記録のSHA256と照合してから、選択した隔離環境へ導入します。
+公開登録2026-10-30 11:51:55.894 UTC、照合11:53:55 UTC。公式RubyGems metadata・実配布・保存最終Gemは**34,816 bytes**、SHA256 `a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114`、source `5a02bc3a192e16aa3628cf7899617623b0aed78c`で一致しました。owner `cuichangquan`、platform `ruby`、prerelease false、照合時yanked falseです。[v0.2.1 GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.2.1)のtagは、この公開元sourceに固定しています。
 
-```sh
-ruby --version # MRI 3.4.12 or MRI 4.0.9
-gem install ./ap2_mandate_verifier-0.2.1.gem --no-document
-```
+同梱README／契約は準備時点のsnapshotを保持し、このリポジトリ文書更新で公開bytesを再build・置換しません。GitHub source archiveとRubyGems Gemは別成果物です。7入力・固定profile・Fail Closed・Result/Evidence v2・既存APIの意味は不変です。公開完了とHost本番GOは別判断です。
 
-候補ファイルからの通常導入であり、固定依存の取得・buildを伴い得ます。7入力・固定profile・Fail Closed・Result/Evidence v2・既存APIの意味は維持します。候補準備完了・公開完了・Host本番GOは別の判断です。
+## 検証API：0.2.1と互換性
 
-## 検証API：0.2.0と互換性
-
-**下記の導入コマンドと保存済み入力の例は、公開済み0.2.0の推奨入口 `verify_checkout` を使います。** 0.1.0の既存利用者は `verify_research` を継続でき、0.2.0でも非推奨警告なしで維持します。0.1.0には `verify_checkout` はありません。
+**下記の導入コマンドと保存済み入力の例は、公開済み0.2.1の推奨入口 `verify_checkout` を使います。** 0.1.0の既存利用者は `verify_research` を継続でき、0.2.1でも非推奨警告なしで維持します。0.1.0には `verify_checkout` はありません。
 
 | 入口 | 利用可能な版と契約 |
 | --- | --- |
-| `verify_checkout(**inputs)` | 0.2.0の推奨完全検証入口。入力を加工せず `ResearchResult.verify` に直接委譲し、検証経路を変更しません。 |
-| `verify_research(**inputs)` | 公開済み0.1.0の完全検証入口。v0.2.0でも変更せず維持し、非推奨警告も追加しません。 |
+| `verify_checkout(**inputs)` | 0.2.0で導入し、0.2.1でも維持する推奨完全検証入口。入力を加工せず `ResearchResult.verify` に直接委譲し、検証経路を変更しません。 |
+| `verify_research(**inputs)` | 公開済み0.1.0の完全検証入口。v0.2.1でも変更せず維持し、非推奨警告も追加しません。 |
 | `verify(presentation_json:)` | 既存のJSON構文検査のみ。有効なJSONでも `:unverified` / `:verification_not_implemented` を返し、成功Evidenceを返しません。完全検証の代用にはなりません。 |
 
 推奨入口には7入力すべてを渡します。下記の保存済み入力例では `full` から読み、実連携では認証済みHost入力契約に従います。
@@ -92,7 +87,7 @@ result = AP2MandateVerifier.verify_checkout(
 
 ## 環境・互換性・保守
 
-公開済み0.2.0の対象はMRI 4.0.9と固定依存、観測されたMBA/macOS arm64 (`arm64-darwin25`) およびUbuntu 24.04/x86_64の正確な構成です。0.2.1候補の対象はMRI 3.4.12と4.0.9で、Debian 12/arm64の検証状態は上記の候補記録で区別します。[現行版の包装・provider証拠](research/stable010_release_linux_package/README.md)と[過去の環境記録](docs/VERIFIER_CORE_COMPLETION_CRITERIA.md#初回の対応環境保証範囲owner採用済み)を区別してください。OS全版・他engine/architecture・任意provider更新は保証しません。
+正式対応はMRI 3.4.12と4.0.9および固定依存です。0.2.1の実測は上記互換性記録の正確なDebian 12/arm64構成に限ります。過去のMRI 4.0.9 MBA/macOS arm64 (`arm64-darwin25`) およびUbuntu 24.04/x86_64観測は、それぞれの履歴として保持します。[過去の包装・provider証拠](research/stable010_release_linux_package/README.md)と今回の成果物を区別してください。OS全版・他engine/architecture・任意provider更新は保証しません。
 
 支持入力の判定意味・APIを黙って変更しません。安全性修正で受理を狭める場合は理由・影響・移行を明示し、破壊的なAPI/必須field/profile変更を区別します。依存更新は自動互換ではありません。
 
@@ -193,7 +188,7 @@ Hostはtokenから独立した認証済みtrust/鍵/profile・最新失効/時�
 
 ## 証拠と履歴
 
-公開済み0.2.0は**33,280 bytes**、SHA256 `9a52e802de5a0564c34d198f4c4ad2c2b60791a8f1eb6e31db14c49e28e91f16`、公開元commit `9b2e28d91fc4886722de7b9c39a5422e966953a9`です。2026-10-30に公式RubyGems metadata・実配布bytes・保存Gemの一致を確認しました。最終候補のDebian 12/arm64／MRI 4.0.9限定包装観測では、全13 payloadのsource/archive/installed一致・通常requireによる10製品Rubyファイル読込み・保存入力と期待値を使う118ケースが合格しました。対応環境の保証拡張ではなく、包装時にsource190／885は再実行していません。[現在の公開記録](docs/PROJECT_STATUS.md#020公開済み--現在の配布状態)を参照してください。
+公開済み0.2.0は**33,280 bytes**、SHA256 `9a52e802de5a0564c34d198f4c4ad2c2b60791a8f1eb6e31db14c49e28e91f16`、公開元commit `9b2e28d91fc4886722de7b9c39a5422e966953a9`です。2026-10-30に公式RubyGems metadata・実配布bytes・保存Gemの一致を確認しました。最終候補のDebian 12/arm64／MRI 4.0.9限定包装観測では、全13 payloadのsource/archive/installed一致・通常requireによる10製品Rubyファイル読込み・保存入力と期待値を使う118ケースが合格しました。対応環境の保証拡張ではなく、包装時にsource190／885は再実行していません。[0.2.0の公開記録](docs/PROJECT_STATUS.md#020公開済み--現在の配布状態)を参照してください。
 
 公開Gem内のREADMEと契約は公開前のsnapshotです。今回のリポジトリ文書更新は公開済みGemを変更せず、再buildは不要です。再buildした別成果物へ検証結果を引き継ぎません。GitHubのsource archiveはリポジトリのソースであり、RubyGemsの配布Gemとは異なります。
 
