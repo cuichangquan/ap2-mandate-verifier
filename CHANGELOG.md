@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 — Unreleased
+
+- Adds `verify_checkout(**inputs)` as the recommended full-verification entry, delegating directly to `ResearchResult.verify` without transforming the seven inputs.
+- Preserves `verify_research` without deprecation warnings, syntax-only `verify`, fixed profile/bounds, Result/ResearchResult and immutable Evidence v2. Evidence is not Host ALLOW or payment permission.
+- Aligns candidate metadata and package/installed-Gem verification source with 0.2.0. Candidate build, installation, tests and publication are NOT_RUN; past 0.1.0 package observations do not validate this candidate. Release and publication require separate approval.
+
 ## 0.1.0 — 2026-10-26
 
 - Published the fixed-profile, verifier-only stable Gem on [RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0).

@@ -5,6 +5,14 @@ Distribution availability is determined by the official RubyGems version listing
 Owner adopted the existing verification API and bounded stable-release conditions below. Publication and a specific Host's production operation are separate decisions; this contract does not authorize either.
 Published research-only pre3 remains unchanged. Its historical observations below do not certify this new archive.
 
+## Unreleased 0.2.0 candidate API addition
+
+Repository candidate metadata is 0.2.0; this is not a publication or validated-archive claim. Published 0.1.0 and its historical evidence below remain unchanged. Candidate build/install/tests are NOT_RUN in this preparation.
+
+`verify_checkout(**inputs)` delegates directly to `ResearchResult.verify(**inputs)` without input transformation. It requires the same seven inputs listed below (six original Strings and externally supplied integer Unix seconds), fixed profile, bounds and trusted Host preconditions. `verify_research` is retained unchanged without deprecation warnings; `verify(presentation_json:)` remains syntax-only and never produces successful Evidence.
+
+Both full entries preserve Result/ResearchResult, status/code and immutable Evidence v2. Missing or unknown keywords return `:unavailable` / `:research_verification_unavailable`, `success? == false`, `evidence == nil`. Positional arguments or invalid keyword expansion can raise before entry; exceptions and missing results never authorize an operation. Success remains `:verified_research` / `:scoped_research_verified`, checked facts rather than Host ALLOW. No profile, trust, revocation, Host or payment responsibility is broadened.
+
 ## Verification contract
 
 Preserve `verify_research`, its seven keyword inputs, existing status/code and Evidence v2 identifiers, and legacy APIs' non-success behavior. No API rename, new trust enrollment, remote lookup, DB or payment operation is added. Fixed AP2 commit b4587ac1d055888a73b4b21750973cffba961793 and the exact profile v1 body/hash, seven supported shapes, ES256/P256 and existing bounds remain unchanged.
