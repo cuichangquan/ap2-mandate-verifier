@@ -1,7 +1,7 @@
 # 現状メモ / Project status
 
-更新：2026-10-26 UTC（固定profile検証専用0.1.0の公開確認）。確認基準main：
-`bf996c00dc78fa7dd20db388e307beb4e4f82d76`（PR #200後、本更新前）。
+更新：2026-10-30 UTC（0.2.0公開確認）。公開元main：
+`9b2e28d91fc4886722de7b9c39a5422e966953a9`（PR #214統合後、以下の文書追補前）。
 安定版R2のLinux実行SHA：`4ab7ceea46f477eb60f7b0d436e3afd434a0ff6c`。
 以下の旧pre3・R1・準備段階のNOT_RUN/HOLDは各時点の履歴で、現在の公開状態は直下の記録を正本とします。
 
@@ -10,7 +10,17 @@
 このメモは更新日時点の案内で、最新GitHub main／PR／レビュー／ActionsとRubyGems原本の確認を置き換えません。
 承認・制限の記載は現状記録であり、新たな権限を付与しません。
 
-## 0.1.0公開済み — 現在の配布状態
+## 0.2.0公開済み — 現在の配布状態
+
+[RubyGems 0.2.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.0)をOwner本人のTerminal/passkeyで公開。登録2026-10-30 06:43:10.743 UTC、照合06:44:48 UTC。owner `cuichangquan`、platform `ruby`、prerelease false、**33,280 bytes**、SHA256 `9a52e802de5a0564c34d198f4c4ad2c2b60791a8f1eb6e31db14c49e28e91f16`。公式SHA・配布Gem・MBA保存Gemが一致しました。公開元は上記main、tree `a7739f966416bdbc18cfee266efc93223a587407`です。以前の自動pushの終了不明記録は履歴として保持し、今回の本人公開成功とは区別します。
+
+推奨入口は `verify_checkout(**inputs)`。7入力・固定profile・Result/ResearchResult/Evidence v2を維持し、`verify_research` は非推奨警告なし、旧 `verify` は構文検査・非成功のままです。
+
+最終GemはDebian 12 arm64／MRI 4.0.9で全13 payloadのsource/archive/installed一致、10 libの通常require、118 installedケースPASS（research42＋checkout42＋unavailable24＋legacy7＋入力拒否2＋constructor1）を別途観測。固定依存・保存inputs/expectedを再利用し、190／885 source検査は包装工程ではNOT_RUNです。[PR #213](https://github.com/cuichangquan/ap2-mandate-verifier/pull/213)の旧32,256B候補とは別成果物で、Debianを新たな保証対象へ広げません。最終原REPORT SHA256 `4348837cc153c65633e36c83c7939540819f164f43588d8140656e5ab50c2ccd`、公開照合receipt SHA256 `4b8264c5b990b10ad76a3fa3f01fc4ca94e6a828664ab3cefe11e6792c94a139`。ローカル保持原本の識別子であり、公開ダウンロード先ではありません。
+
+公開Gemの同梱文書は公開前のsnapshotで、候補・NOT_RUNという包装時点の文言を含みます。本リポジトリの追補が現在状態を示し、公開済みbytesは変更しません。今回再build・追加テスト・再公開は不要で実施していません。GitHub source archiveとRubyGems配布Gemは異なります。実Issuer・失効・実Host・性能・本番GO・Phase 2-BはHOLDを維持します。
+
+## 0.1.0公開済み — 歴史的な配布記録
 
 Ownerの対象版・SHAを指定したS7承認後、[RubyGems 0.1.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0)を公開。公式登録時刻は2026-10-26 08:35:32 UTC、照合は08:37:27 UTC。所有者`cuichangquan`、安定版`0.1.0`、platform `ruby`、34,304B、SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`。公式版一覧のSHA・実配布Gem・保持R2が一致し、13 payloadとsource manifest18ファイルも照合済みです。[公開receiptと境界](../research/stable010_release_linux_package/README.md#rubygems-publication-verified)を参照。
 

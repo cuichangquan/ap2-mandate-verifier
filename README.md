@@ -1,4 +1,4 @@
-# AP2 Mandate Verifier — 0.2.0 release preparation
+# AP2 Mandate Verifier — 0.2.0
 
 [Japanese / 日本語](README.ja.md)
 
@@ -21,35 +21,35 @@ Both routes use the fixed-profile verifier, not payment execution or Host author
 
 ## Distribution and installation
 
-[0.1.0 is published on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0). This is the fixed-profile, verifier-only stable release; the research prerelease pre3 is a separate artifact.
+[0.2.0 is published on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.0). This is the fixed-profile, verifier-only stable release; the research prerelease pre3 is a separate artifact.
 
 Use an existing MRI 4.0.9 environment and your chosen Gem isolation. Normal installation may fetch dependencies and build JSON native extensions. Stop on conflicts or unknown providers rather than relaxing pins.
 
 ```sh
 ruby --version # MRI 4.0.9 required
-gem install ap2_mandate_verifier --version 0.1.0
+gem install ap2_mandate_verifier --version 0.2.0
 ```
 
 Bundler Gemfile:
 
 ```ruby
-gem "ap2_mandate_verifier", "= 0.1.0"
+gem "ap2_mandate_verifier", "= 0.2.0"
 ```
 
 Fixed runtime dependencies: JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1.
 Bundler 4.0.20 is the observed resolver baseline, not a runtime dependency. Gem version constraints alone do not enforce the MRI engine, OS or native-provider provenance.
 
-## Verification APIs: published 0.1.0 and unreleased 0.2.0
+## Verification APIs: 0.2.0 and compatibility
 
-**The commands and saved example below remain the published 0.1.0 route using `verify_research`.** Repository metadata is now a 0.2.0 release candidate, with `verify_checkout` as its recommended full entry. This documentation does not announce a 0.2.0 publication or provide a registry installation command for it; installing 0.1.0 does not provide this method.
+**The installation commands and saved example use published 0.2.0 and its recommended `verify_checkout` entry.** Existing 0.1.0 applications can continue using `verify_research`; it remains available in 0.2.0 without a deprecation warning. Installing 0.1.0 does not provide `verify_checkout`.
 
 | Entry | Availability and contract |
 | --- | --- |
-| `verify_checkout(**inputs)` | Recommended full-verification entry for unreleased v0.2.0 source. Delegates directly to `ResearchResult.verify` without changing inputs or the verification pipeline. |
+| `verify_checkout(**inputs)` | Recommended full-verification entry in 0.2.0. Delegates directly to `ResearchResult.verify` without changing inputs or the verification pipeline. |
 | `verify_research(**inputs)` | Full-verification entry in published 0.1.0; retained unchanged in v0.2.0, without a deprecation warning. |
 | `verify(presentation_json:)` | Existing JSON syntax check only. Valid JSON returns `:unverified` / `:verification_not_implemented`, never successful Evidence. It is not a substitute for full verification. |
 
-For a separately validated 0.2.0 candidate installation, replace only the call in the saved example with the recommended entry below. All seven values come from that example's `full` object; real integrations must supply the authenticated Host inputs described below. Use a registry install route only after publication is confirmed:
+The recommended entry takes all seven inputs. In the saved example below, these values come from `full`; real integrations must supply the authenticated Host inputs described below:
 
 ```ruby
 result = AP2MandateVerifier.verify_checkout(
@@ -121,7 +121,7 @@ inputs = {
   verified_at: full.fetch("verified_at")
 }
 
-result = AP2MandateVerifier.verify_research(**inputs)
+result = AP2MandateVerifier.verify_checkout(**inputs)
 puts "status=#{result.status} code=#{result.code}"
 if result.success?
   checked_facts = result.evidence.to_h # Detached, deeply frozen in-process facts.
@@ -172,7 +172,9 @@ The Host supplies authenticated token-independent trust/keys/profile and current
 
 ## Evidence and history
 
-A prior 0.2.0 candidate passed the limited Debian 12/arm64 packaging observation recorded in [PR #213](https://github.com/cuichangquan/ap2-mandate-verifier/pull/213): 13 payload files matched source/archive/installation, 10 product Ruby files loaded normally and 118 installed cases passed. This adds an observation, not a supported-platform guarantee. README.md and SUPPORT_CONTRACT are packaged; these documentation changes require a new artifact and separately approved build/install/13-payload/10-loaded/118-case validation. That final candidate is NOT_RUN. Prior 190/885 source checks were not rerun in the packaging attempt; publication remains a separate decision.
+The published 0.2.0 Gem is **33,280 bytes**, SHA256 `9a52e802de5a0564c34d198f4c4ad2c2b60791a8f1eb6e31db14c49e28e91f16`, from source commit `9b2e28d91fc4886722de7b9c39a5422e966953a9`. Publication on 2026-10-30 was verified against official RubyGems metadata, distribution bytes and the retained Gem. Its final Debian 12/arm64 / MRI 4.0.9 packaging observation matched all 13 payload files across source/archive/installation, loaded 10 product Ruby files normally and passed 118 installed cases using saved inputs/expected values. This is a limited observation, not a supported-platform expansion; source190/885 were not rerun in that packaging step. See [current publication status](docs/PROJECT_STATUS.md#020公開済み--現在の配布状態).
+
+The packaged README and contract are snapshots from before publication. These repository documentation updates do not change the published Gem, require no rebuild, and do not transfer its validation to a rebuilt artifact. GitHub source archives contain repository source, not the RubyGems binary.
 
 The published 0.1.0 archive is **34,304 bytes**, SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`. Official metadata, owner `cuichangquan`, downloaded distribution bytes and all 13 payload hashes were checked on 2026-10-26. See the [publication record](research/stable010_release_linux_package/README.md#rubygems-publication-verified). This repository README was reorganized after publication and differs from the packaged README; the published archive was not rebuilt.
 

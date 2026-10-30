@@ -1,12 +1,14 @@
 # Changelog
 
-## 0.2.0 — Unreleased
+## 0.2.0 — 2026-10-30
 
 - Adds `verify_checkout(**inputs)` as the recommended full-verification entry, delegating directly to `ResearchResult.verify` without transforming the seven inputs.
 - Preserves `verify_research` without deprecation warnings, syntax-only `verify`, fixed profile/bounds, Result/ResearchResult and immutable Evidence v2. Evidence is not Host ALLOW or payment permission.
 - Aligns candidate metadata and package/installed-Gem verification source with 0.2.0.
 - 2026-10-30 JST follow-up: [PR #213](https://github.com/cuichangquan/ap2-mandate-verifier/pull/213) records a limited Debian 12/arm64 candidate build/install/audit: 13 payload files matched source/archive/installation, 10 product Ruby files loaded normally, and 118 installed cases passed using saved inputs/expected values. This does not expand supported platforms; source190/885 were not rerun in that packaging attempt.
-- Release-document changes affect packaged bytes. The final candidate needs separately approved rebuild/install and 13-payload/10-loaded/118-case validation (NOT_RUN); prior candidate and 0.1.0 results do not validate new bytes. Dependency/provider advisory review and exact-artifact publication approval remain pending. This version remains Unreleased.
+- Published [0.2.0 on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.0) at 06:43:10 UTC; official metadata/distribution/retained bytes matched at 06:44:48 UTC. Source `9b2e28d91fc4886722de7b9c39a5422e966953a9`; 33,280 bytes; SHA256 `9a52e802de5a0564c34d198f4c4ad2c2b60791a8f1eb6e31db14c49e28e91f16`.
+- This final artifact separately passed Debian 12/arm64 MRI 4.0.9 packaging: 13 payload / 10 ordinary-loaded product files / 118 installed cases. It differs from PR #213's earlier 32,256-byte candidate; source190/885 were not rerun in this packaging step. See [publication status](docs/PROJECT_STATUS.md#020公開済み--現在の配布状態) for evidence and limits.
+- Post-publication repository documentation supersedes its preparation wording; packaged documents retain their original bytes. No rebuild/republication or platform-guarantee expansion. Real Issuer/revocation/Host, performance, production GO and Phase 2-B HOLDs remain.
 
 ## 0.1.0 — 2026-10-26
 
