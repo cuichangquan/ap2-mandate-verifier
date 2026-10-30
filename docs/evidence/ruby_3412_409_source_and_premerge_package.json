@@ -39,6 +39,8 @@
     },
     "compiled_openssl": "OpenSSL 3.0.22 25 Aug 2026",
     "loaded_openssl": "OpenSSL 3.0.22 25 Aug 2026",
+    "native_package": "libssl3|3.0.22-1~deb12u2|arm64|install ok installed",
+    "native_package_verify": "PASS",
     "native_files_sha256": {
      "/usr/local/bundle/gems/openssl-4.0.2/lib/openssl.so": "5eabc0cd0103ae34813ae4a2ee778828caa630080eb11a711cf4f63d2213e42c",
      "/usr/lib/aarch64-linux-gnu/libcrypto.so.3": "322b1a55dbc35b68c19a72fea768c97a1b38e6afa72b84627327a443ee74912e",
@@ -708,6 +710,8 @@
     },
     "compiled_openssl": "OpenSSL 3.0.22 25 Aug 2026",
     "loaded_openssl": "OpenSSL 3.0.22 25 Aug 2026",
+    "native_package": "libssl3|3.0.22-1~deb12u2|arm64|install ok installed",
+    "native_package_verify": "PASS",
     "native_files_sha256": {
      "/usr/local/bundle/gems/openssl-4.0.2/lib/openssl.so": "86992173d3367e917084783f533125f739666c5b3833c6f547b89c597b2e18c9",
      "/usr/lib/aarch64-linux-gnu/libcrypto.so.3": "322b1a55dbc35b68c19a72fea768c97a1b38e6afa72b84627327a443ee74912e",

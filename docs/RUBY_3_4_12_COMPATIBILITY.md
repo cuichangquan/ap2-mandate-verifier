@@ -61,6 +61,36 @@ Official Docker multiarchitecture image digests:
 
 Bundler 4.0.20 frozen dependency resolution also passed on both versions. A plain `bundle check` attempted an unchanged lockfile write against the read-only mount; `BUNDLE_FROZEN=true` preserves the lockfile and passes. An initial `gem install --install-dir` did not see the preinstalled dependency repository; standard `GEM_HOME`/`GEM_PATH` isolation resolved it without disabling dependency checks.
 
+## Scoped upstream/provider check
+
+Official fixed-tag gemspec Ruby minima permit both target versions:
+[JSON >=2.7](https://github.com/ruby/json/blob/v2.19.9/json.gemspec),
+[JWT >=2.5](https://github.com/jwt/ruby-jwt/blob/v3.3.0/ruby-jwt.gemspec),
+[base64 >=2.4](https://github.com/ruby/base64/blob/v0.3.0/base64.gemspec),
+[OpenSSL gem >=2.7.0](https://github.com/ruby/openssl/blob/v4.0.2/openssl.gemspec),
+[Digest >=2.5.0](https://github.com/ruby/digest/blob/v3.2.1/digest.gemspec).
+
+The known JSON advisory metadata discrepancy is preserved: the
+[IO-buffer advisory](https://github.com/ruby/json/security/advisories/GHSA-x2f5-4prf-w687)
+metadata lacks a patched version, while the fixed-tag changelog/source contains
+the 2.19.9 fix. The [format-string advisory](https://github.com/ruby/json/security/advisories/GHSA-3m6g-2423-7cp3)
+prose identifies 2.19.2 as fixed despite broad affected metadata. Product code
+uses neither IO generation nor ResumableParser. The
+[resumable-parser advisory](https://github.com/ruby/json/security/advisories/GHSA-9hj4-r449-hfvc)
+affects 2.20.0–2.21.1. [JWT's empty-HMAC-key issue](https://github.com/jwt/ruby-jwt/security/advisories/GHSA-c32j-vqhx-rx3x)
+was fixed in 3.2.0. These scoped checks do not establish general vulnerability
+absence or resolve upstream metadata inconsistencies.
+
+Both actual providers report `libssl3|3.0.22-1~deb12u2|arm64|install ok installed`
+and empty successful `dpkg --verify libssl3`. The
+[Debian tracker](https://security-tracker.debian.org/tracker/source-package/openssl)
+and [DLA-4859-1](https://security-tracker.debian.org/tracker/DLA-4859-1)
+identify that backported revision; the upstream 3.0.22 string alone is insufficient.
+The remaining tracker issue [CVE-2025-27587](https://security-tracker.debian.org/tracker/CVE-2025-27587)
+concerns PowerPC signing, outside this arm64/P256 observation. OpenSSL Gem 4.0.2
+is distinct from the native OpenSSL 3.0 library. Package-database verification
+is a trusted-container observation, not an independent runtime attestation.
+
 ## Candidate packaging and release boundary
 
 Build one Gem from the final source and run that same archive through ordinary
