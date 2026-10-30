@@ -1,4 +1,4 @@
-# Fixed-profile AP2 verification — 0.1.0
+# Fixed-profile AP2 verification — 0.1.0 baseline / 0.2.0 candidate
 
 **Fixed-profile verification contract; Evidence is not Host ALLOW or payment permission.**
 Distribution availability is determined by the official RubyGems version listing, not by this document. Specific Host production GO remains separate.
@@ -7,11 +7,19 @@ Published research-only pre3 remains unchanged. Its historical observations belo
 
 ## Unreleased 0.2.0 candidate API addition
 
-Repository candidate metadata is 0.2.0; this is not a publication or validated-archive claim. Published 0.1.0 and its historical evidence below remain unchanged. Candidate build/install/tests are NOT_RUN in this preparation.
+Repository candidate metadata is 0.2.0; this is not a publication or validated-archive claim. Published 0.1.0 and its historical evidence below remain unchanged. The initial source-only NOT_RUN record was followed by the limited candidate observation below; it does not validate later packaged-document changes.
 
 `verify_checkout(**inputs)` delegates directly to `ResearchResult.verify(**inputs)` without input transformation. It requires the same seven inputs listed below (six original Strings and externally supplied integer Unix seconds), fixed profile, bounds and trusted Host preconditions. `verify_research` is retained unchanged without deprecation warnings; `verify(presentation_json:)` remains syntax-only and never produces successful Evidence.
 
 Both full entries preserve Result/ResearchResult, status/code and immutable Evidence v2. Missing or unknown keywords return `:unavailable` / `:research_verification_unavailable`, `success? == false`, `evidence == nil`. Positional arguments or invalid keyword expansion can raise before entry; exceptions and missing results never authorize an operation. Success remains `:verified_research` / `:scoped_research_verified`, checked facts rather than Host ALLOW. No profile, trust, revocation, Host or payment responsibility is broadened.
+
+## Limited prior 0.2.0 candidate observation
+
+[PR #213](https://github.com/cuichangquan/ap2-mandate-verifier/pull/213) records a separately approved build/install/audit at source HEAD `771eebb1094c19931aadafd32feaa70e2caa48f6` (same tree as merged main `9b981be68a1abaf318a7ae78497b3d74d8aefdda`). The retained local candidate was 32,256 bytes, SHA256 `0a126e170e482fea5138865d658f4c21687dc238e595236456f687ceb8aab211`; it is not a published download or this document's new artifact.
+
+The limited Debian 12/arm64 observation used MRI 4.0.9 and the fixed Gem dependencies, OpenSSL library 3.0.22 / OS package `libssl3:arm64 3.0.22-1~deb12u2`. All 13 payload files matched source/archive/installed bytes, ordinary RubyGems require loaded 10 product Ruby files, and 118 logical cases passed: research42 + checkout42 + unavailable24 + legacy7 + input rejection2 + constructor rejection1. Saved inputs/independent expected values were reused; source190/885 were not rerun in this attempt. Earlier auxiliary-diagnostic STOP records remain preserved in PR #213.
+
+This is an additional bounded observation, not adoption of Debian as a supported platform or proof of general runtime security, symbol binding, whole-wire accounting or resource performance. The 0.1.0 baseline and historical evidence below retain their own artifact identities. README.md and this contract are packaged; editing them creates different candidate bytes. The documentation-final candidate build/install, 13-payload/10-loaded identity checks and 118 installed cases are pending separate approval and NOT_RUN. Final dependency/provider advisory review and exact-artifact publication approval remain required. Real Issuer trust/revocation, actual Host operation, performance and production GO remain HOLD.
 
 ## Verification contract
 
