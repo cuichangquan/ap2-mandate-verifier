@@ -1,4 +1,4 @@
-# AP2 Mandate Verifier — 0.1.0
+# AP2 Mandate Verifier — 0.2.0 release preparation
 
 [Japanese / 日本語](README.ja.md)
 
@@ -41,7 +41,7 @@ Bundler 4.0.20 is the observed resolver baseline, not a runtime dependency. Gem 
 
 ## Verification APIs: published 0.1.0 and unreleased 0.2.0
 
-**The installation instructions and saved example use published 0.1.0 and `verify_research`.** `verify_checkout` has been added to repository source for v0.2.0, which is **not published**; installing 0.1.0 does not provide this method.
+**The commands and saved example below remain the published 0.1.0 route using `verify_research`.** Repository metadata is now a 0.2.0 release candidate, with `verify_checkout` as its recommended full entry. This documentation does not announce a 0.2.0 publication or provide a registry installation command for it; installing 0.1.0 does not provide this method.
 
 | Entry | Availability and contract |
 | --- | --- |
@@ -49,10 +49,18 @@ Bundler 4.0.20 is the observed resolver baseline, not a runtime dependency. Gem 
 | `verify_research(**inputs)` | Full-verification entry in published 0.1.0; retained unchanged in v0.2.0, without a deprecation warning. |
 | `verify(presentation_json:)` | Existing JSON syntax check only. Valid JSON returns `:unverified` / `:verification_not_implemented`, never successful Evidence. It is not a substitute for full verification. |
 
-For unreleased v0.2.0 source only, use the same seven `inputs` shown in the saved example:
+For a separately validated 0.2.0 candidate installation, replace only the call in the saved example with the recommended entry below. All seven values come from that example's `full` object; real integrations must supply the authenticated Host inputs described below. Use a registry install route only after publication is confirmed:
 
 ```ruby
-result = AP2MandateVerifier.verify_checkout(**inputs)
+result = AP2MandateVerifier.verify_checkout(
+  trust_json: full.fetch("trust_json"),
+  selection_json: full.fetch("selection_json"),
+  host_json: full.fetch("host_json"),
+  root_presentation: full.fetch("root_presentation"),
+  terminal_jws: full.fetch("terminal_jws"),
+  host_checkout_jws: full.fetch("host_checkout_jws"),
+  verified_at: full.fetch("verified_at")
+)
 ```
 
 Both full-verification entries require all seven inputs listed under [responsibility boundaries](#real-inputs-and-responsibility-boundaries): six original Strings and externally supplied integer Unix seconds. Seven inputs and seven supported shapes are different concepts. Neither entry broadens the fixed profile below or supplies missing trust, Host state or time. Missing or unknown keywords return `:unavailable` / `:research_verification_unavailable`, with `success? == false` and `evidence == nil`; positional arguments or invalid keyword expansion can raise before verification begins.
@@ -164,7 +172,9 @@ The Host supplies authenticated token-independent trust/keys/profile and current
 
 ## Evidence and history
 
-The published archive is **34,304 bytes**, SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`. Official metadata, owner `cuichangquan`, downloaded distribution bytes and all 13 payload hashes were checked on 2026-10-26. See the [publication record](research/stable010_release_linux_package/README.md#rubygems-publication-verified). This repository README was reorganized after publication and differs from the packaged README; the published archive was not rebuilt.
+A prior 0.2.0 candidate passed the limited Debian 12/arm64 packaging observation recorded in [PR #213](https://github.com/cuichangquan/ap2-mandate-verifier/pull/213): 13 payload files matched source/archive/installation, 10 product Ruby files loaded normally and 118 installed cases passed. This adds an observation, not a supported-platform guarantee. README.md and SUPPORT_CONTRACT are packaged; these documentation changes require a new artifact and separately approved build/install/13-payload/10-loaded/118-case validation. That final candidate is NOT_RUN. Prior 190/885 source checks were not rerun in the packaging attempt; publication remains a separate decision.
+
+The published 0.1.0 archive is **34,304 bytes**, SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`. Official metadata, owner `cuichangquan`, downloaded distribution bytes and all 13 payload hashes were checked on 2026-10-26. See the [publication record](research/stable010_release_linux_package/README.md#rubygems-publication-verified). This repository README was reorganized after publication and differs from the packaged README; the published archive was not rebuilt.
 
 See the [versioned validation record](research/stable010_release_linux_package/README.md) for this archive's external SHA, per-environment observations and limits. The archive hash is kept outside its payload to avoid self-reference. A hash identifies bytes, not Host trust or global safety.
 
@@ -174,7 +184,7 @@ See the [versioned validation record](research/stable010_release_linux_package/R
 
 ## Illustrated concepts (Japanese diagrams)
 
-These existing diagrams contain Japanese text and illustrate broader AP2 concepts, not the exact 0.1.0 implementation contract. The fixed-profile contract above takes precedence. Issuer trust and current revocation are supplied and maintained by the Host; the Gem does not independently establish live external trust or revocation. Arbitrary chains, issuance, Payment Mandates and payment execution shown conceptually are not supported features of this release.
+These existing diagrams contain Japanese text and illustrate broader AP2 concepts, not the exact fixed-profile implementation contract. The fixed-profile contract above takes precedence. Issuer trust and current revocation are supplied and maintained by the Host; the Gem does not independently establish live external trust or revocation. Arbitrary chains, issuance, Payment Mandates and payment execution shown conceptually are not supported features of this release.
 
 ### AP2 overview (Japanese)
 

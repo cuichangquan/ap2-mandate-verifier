@@ -1,4 +1,4 @@
-# AP2 Mandate Verifier — 0.1.0
+# AP2 Mandate Verifier — 0.2.0公開準備
 
 [English](README.md)
 
@@ -37,7 +37,7 @@ Bundler 4.0.20は既存resolver基準でruntime依存ではありません。Gem
 
 ## 検証API：公開済み0.1.0と未公開0.2.0
 
-**本書の導入手順と保存済み入力の例は、公開済み0.1.0の `verify_research` を使います。** `verify_checkout` はv0.2.0向けにリポジトリのソースへ追加済みですが、v0.2.0は**未公開**です。0.1.0をインストールしてもこのメソッドは使えません。
+**下記の導入コマンドと保存済み入力の例は、公開済み0.1.0の `verify_research` を使う経路です。** リポジトリのmetadataは0.2.0候補となり、推奨完全検証入口は `verify_checkout` です。本書は0.2.0の公開を告知せず、そのregistry導入コマンドも提供しません。0.1.0をインストールしてもこのメソッドは使えません。
 
 | 入口 | 利用可能な版と契約 |
 | --- | --- |
@@ -45,10 +45,18 @@ Bundler 4.0.20は既存resolver基準でruntime依存ではありません。Gem
 | `verify_research(**inputs)` | 公開済み0.1.0の完全検証入口。v0.2.0でも変更せず維持し、非推奨警告も追加しません。 |
 | `verify(presentation_json:)` | 既存のJSON構文検査のみ。有効なJSONでも `:unverified` / `:verification_not_implemented` を返し、成功Evidenceを返しません。完全検証の代用にはなりません。 |
 
-未公開v0.2.0ソースに限り、保存済み入力の例と同じ7つの `inputs` を次の入口へ渡します。
+別途検証した0.2.0候補の導入環境では、保存済み入力の例の呼出しだけを次の推奨入口に置き換えます。7つの値は同例の `full` から読み、実連携では下記の認証済みHost入力契約に従います。registryからの導入は公開確認後の経路です。
 
 ```ruby
-result = AP2MandateVerifier.verify_checkout(**inputs)
+result = AP2MandateVerifier.verify_checkout(
+  trust_json: full.fetch("trust_json"),
+  selection_json: full.fetch("selection_json"),
+  host_json: full.fetch("host_json"),
+  root_presentation: full.fetch("root_presentation"),
+  terminal_jws: full.fetch("terminal_jws"),
+  host_checkout_jws: full.fetch("host_checkout_jws"),
+  verified_at: full.fetch("verified_at")
+)
 ```
 
 両完全検証入口とも、[責任境界](#実入力と責任境界)に示す7入力（原文String 6つと外部から供給される整数Unix秒）がすべて必要です。7入力と7支持形状は別の数え方です。下記の固定profileを広げたり、不足したtrust・Host状態・時刻を補完したりしません。不足・未知keywordは `:unavailable` / `:research_verification_unavailable`、`success? == false`、`evidence == nil` になります。位置引数や不正なkeyword展開は検証開始前に例外となり得ます。
@@ -170,9 +178,11 @@ Hostはtokenから独立した認証済みtrust/鍵/profile・最新失効/時�
 
 ## 証拠と履歴
 
-公開archiveは**34,304 bytes**、SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`。2026-10-26に公式metadata・所有者`cuichangquan`・実配布bytes・全13 payloadのhashを照合しました。[公開確認記録](research/stable010_release_linux_package/README.md#rubygems-publication-verified)を参照してください。このリポジトリREADMEは公開後に再整理したもので、公開Gem同梱READMEとは異なります。公開archiveは再作成していません。
+旧0.2.0候補は[PR #213](https://github.com/cuichangquan/ap2-mandate-verifier/pull/213)のDebian 12/arm64限定包装観測で、全13 payloadのsource/archive/installed一致・通常requireによる10製品Rubyファイルの読込み・導入118ケースに合格しました。これは追加観測であり、対応環境の保証拡張ではありません。README.mdとSUPPORT_CONTRACTはGem同梱のため、本変更後は別成果物となり、別途承認したbuild/install・13 payload・10 loaded・118ケースの最終確認が必要です。その最終候補はNOT_RUNです。包装時に過去190／885のsource検査は再実行しておらず、公開判断も別途必要です。
 
-現在の新archiveのSHA・環境別結果・制限は[版別検証記録](research/stable010_release_linux_package/README.md)を参照してください。archiveのSHAを同梱文書へ自己埋込せず、外部manifestで識別します。SHAは配布bytesを識別するもので、Host trustや全面安全性を保証しません。
+公開済み0.1.0のarchiveは**34,304 bytes**、SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`。2026-10-26に公式metadata・所有者`cuichangquan`・実配布bytes・全13 payloadのhashを照合しました。[公開確認記録](research/stable010_release_linux_package/README.md#rubygems-publication-verified)を参照してください。このリポジトリREADMEは公開後に再整理したもので、公開Gem同梱READMEとは異なります。公開archiveは再作成していません。
+
+公開済み0.1.0のarchiveのSHA・環境別結果・制限は[版別検証記録](research/stable010_release_linux_package/README.md)を参照してください。archiveのSHAを同梱文書へ自己埋込せず、外部manifestで識別します。SHAは配布bytesを識別するもので、Host trustや全面安全性を保証しません。
 
 [旧0.1.0候補R1](research/stable010_candidate/README.md)、[公開pre3](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0.pre.3)、[pre2 Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.1.0.pre.2)は別archiveです。旧NOT_RUN/停止/成功は各時点の記録として保持し、新archiveの実測へ読み替えません。885回帰（147は内数）と旧Ruby4.0.1独立比較の再利用は、新たな885実行やLinux独立Oracleを意味しません。
 
@@ -180,7 +190,7 @@ Hostはtokenから独立した認証済みtrust/鍵/profile・最新失効/時�
 
 ## 図で見るAP2の概念
 
-以下は既存の日本語概念図です。広いAP2の説明を含み、0.1.0の正確な対応契約を表すものではありません。上記の固定profile契約を優先してください。発行主体の信頼と最新失効はHostが管理・供給し、Gemが外部の最新状態を独立証明するものではありません。任意の委任チェーン・発行・Payment Mandate・決済実行などの概念は、本版の対応機能ではありません。
+以下は既存の日本語概念図です。広いAP2の説明を含み、固定profileの正確な対応契約を表すものではありません。上記の固定profile契約を優先してください。発行主体の信頼と最新失効はHostが管理・供給し、Gemが外部の最新状態を独立証明するものではありません。任意の委任チェーン・発行・Payment Mandate・決済実行などの概念は、本版の対応機能ではありません。
 
 ### AP2規格の全体像
 

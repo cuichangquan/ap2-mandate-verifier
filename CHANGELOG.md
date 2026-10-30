@@ -4,7 +4,9 @@
 
 - Adds `verify_checkout(**inputs)` as the recommended full-verification entry, delegating directly to `ResearchResult.verify` without transforming the seven inputs.
 - Preserves `verify_research` without deprecation warnings, syntax-only `verify`, fixed profile/bounds, Result/ResearchResult and immutable Evidence v2. Evidence is not Host ALLOW or payment permission.
-- Aligns candidate metadata and package/installed-Gem verification source with 0.2.0. Candidate build, installation, tests and publication are NOT_RUN; past 0.1.0 package observations do not validate this candidate. Release and publication require separate approval.
+- Aligns candidate metadata and package/installed-Gem verification source with 0.2.0.
+- 2026-10-30 JST follow-up: [PR #213](https://github.com/cuichangquan/ap2-mandate-verifier/pull/213) records a limited Debian 12/arm64 candidate build/install/audit: 13 payload files matched source/archive/installation, 10 product Ruby files loaded normally, and 118 installed cases passed using saved inputs/expected values. This does not expand supported platforms; source190/885 were not rerun in that packaging attempt.
+- Release-document changes affect packaged bytes. The final candidate needs separately approved rebuild/install and 13-payload/10-loaded/118-case validation (NOT_RUN); prior candidate and 0.1.0 results do not validate new bytes. Dependency/provider advisory review and exact-artifact publication approval remain pending. This version remains Unreleased.
 
 ## 0.1.0 — 2026-10-26
 
