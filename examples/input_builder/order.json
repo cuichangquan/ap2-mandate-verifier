@@ -1,0 +1,10 @@
+{
+  "tenant_id": "synthetic-tenant",
+  "buyer_account_id": "synthetic-buyer",
+  "order_id": "order",
+  "merchant_id": "shop",
+  "audience": "host",
+  "order_version": "order-v1",
+  "currency": "USD",
+  "expected_total": 200
+}

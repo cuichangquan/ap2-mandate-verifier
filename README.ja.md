@@ -1,4 +1,6 @@
-# AP2 Mandate Verifier — 0.2.1
+# AP2 Mandate Verifier — 0.3.0候補
+
+未公開の0.3.0候補に `InputBuilder` を追加しました。認証済みの業務情報からChallenge発行前の準備・保存・復元・現在状態の入力作成を行い、既存の完全検証へ接続します。Gem独自のtrust／selection／Host JSONやハッシュの手書きは不要です。[実行可能な例とRails対応付け](docs/INPUT_BUILDER.ja.md)を参照してください。既存の7入力APIも維持します。公開承認までは、以下の配布手順は公開済み0.2.1を指します。
 
 [English](README.md)
 

@@ -1,0 +1,42 @@
+{
+  "id": "synthetic-snapshot",
+  "policy_version": "policy-1",
+  "active": true,
+  "not_before": 1799998000,
+  "not_after": 1800002000,
+  "records": [
+    {
+      "role": "Issuer",
+      "identity": "issuer",
+      "tenant_id": "synthetic-tenant",
+      "purpose": "checkout",
+      "key_ref": "issuer-1",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEGFFuhif7T1ob7KyrsF+35iySF9Sb\nYI/km75zZZLczYkd7yHXxc4tQum7d8jqKUfHyOw3jAF9LGgu0yFLd1OrbA==\n-----END PUBLIC KEY-----\n",
+      "active": true,
+      "not_before": 1799998000,
+      "not_after": 1800002000
+    },
+    {
+      "role": "Agent",
+      "identity": "agent",
+      "tenant_id": "synthetic-tenant",
+      "purpose": "checkout",
+      "key_ref": "agent-1",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAECYc+eWKHEoAUxNr53LsQx7ai5kme\netqpIalJwYILuoH4t2LfNr7uufI5RRZkWUBY28f8wBulERehcKKy5ZfcvQ==\n-----END PUBLIC KEY-----\n",
+      "active": true,
+      "not_before": 1799998000,
+      "not_after": 1800002000
+    },
+    {
+      "role": "Merchant",
+      "identity": "shop",
+      "tenant_id": "synthetic-tenant",
+      "purpose": "checkout",
+      "key_ref": "merchant-1",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE5jWYx3IHPWK4XOmDCnBG5ZbfH1wJ\nf6P32oKSuhU/0vFd3ulQSUokY/lNgvXdJiQ2gJE2xaucb5tsmpzZmjV3Eg==\n-----END PUBLIC KEY-----\n",
+      "active": true,
+      "not_before": 1799998000,
+      "not_after": 1800002000
+    }
+  ]
+}

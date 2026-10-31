@@ -15,14 +15,14 @@ def deep_frozen(value)
   end
 end
 spec = Gem.loaded_specs.fetch("ap2_mandate_verifier")
-need(spec.version.to_s == "0.2.1" && %w[3.4.12 4.0.9].include?(RUBY_VERSION) && RUBY_ENGINE == "ruby", "candidate runtime")
+need(spec.version.to_s == "0.3.0" && %w[3.4.12 4.0.9].include?(RUBY_VERSION) && RUBY_ENGINE == "ruby", "candidate runtime")
 versions = {"json"=>"2.19.9","jwt"=>"3.3.0","base64"=>"0.3.0","openssl"=>"4.0.2","digest"=>"3.2.1"}
 need(versions.all? { |k,v| Gem.loaded_specs.fetch(k).version.to_s == v }, "runtime dependencies")
 root = File.realpath(spec.full_gem_path)
 prohibited = File.realpath(ARGV.fetch(3)) + "/"
 need(!root.start_with?(prohibited), "candidate loaded from repository")
 loaded = $LOADED_FEATURES.select { |f| f.include?("/ap2_mandate_verifier") && f.end_with?(".rb") }
-need(loaded.size == 10 && loaded.all? { |f| File.realpath(f).start_with?(root + "/") }, "ordinary installed entry")
+need(loaded.size == 11 && loaded.all? { |f| File.realpath(f).start_with?(root + "/") }, "ordinary installed entry")
 package = JSON.parse(File.read(ARGV.fetch(2)))
 need(loaded.all? { |f| rel=File.realpath(f).delete_prefix(root+"/"); Digest::SHA256.file(f).hexdigest == package.fetch("files_sha256").fetch(rel) }, "installed source identity")
 input_raw = File.binread(ARGV.fetch(0)); expected_raw = File.binread(ARGV.fetch(1))
@@ -97,8 +97,54 @@ begin
  raise "non-success constructor bypass"
 rescue ArgumentError
 end
-puts JSON.pretty_generate(scope:"UNRELEASED021_CANDIDATE_NOT_HOST_ALLOW",candidate_version:spec.version.to_s,
+# Exercise the new business path through the ordinarily installed product. Only
+# synthetic JSON fixture files are read from source; no source Ruby is required.
+builder = AP2MandateVerifier::InputBuilder
+fixture_dir = File.join(ARGV.fetch(3), "examples/input_builder")
+read_fixture = ->(name) { JSON.parse(File.binread(File.join(fixture_dir, name + ".json"))) }
+order = read_fixture.call("order")
+wires = read_fixture.call("signed_wires").transform_keys(&:to_sym)
+snapshot = read_fixture.call("trust_snapshot")
+trust = builder.trust(snapshot: snapshot, tenant_id: order.fetch("tenant_id"), verified_at: 1_800_000_000,
+  issuer: {"identity"=>"issuer","purpose"=>"checkout","key_ref"=>"issuer-1"},
+  agent: {"identity"=>"agent","purpose"=>"checkout","key_ref"=>"agent-1"},
+  merchant: {"identity"=>"shop","purpose"=>"checkout","key_ref"=>"merchant-1"})
+saved = builder.prepare(trust: trust, order: order, root_presentation: wires.fetch(:root_presentation),
+  host_checkout_jws: wires.fetch(:host_checkout_jws), challenge_id: "synthetic-challenge", nonce: "n",
+  issuer_id: "synthetic-host", not_before: 1_799_998_000, not_after: 1_800_002_000)
+trust = builder.restore_trust(trust_json: trust.trust_json, selection_json: trust.selection_json, verified_at: 1_800_000_000)
+saved = builder.restore(saved_challenge: saved)
+business_args = {trust: trust, saved_challenge: saved, order: order, **wires,
+  expected_challenge_issuer_id: "synthetic-host", clock_source_id: "fixed-synthetic-clock", verified_at: 1_800_000_000}
+builder_rows = []
+check_builder = lambda do |name, arguments, code|
+  result = builder.verify(**arguments)
+  success = code == :scoped_research_verified
+  need(result.code == code && result.success? == success && (success || result.evidence.nil?), "installed builder " + name)
+  builder_rows << {name: name, code: result.code, result: "MATCH"}
+  result
+end
+result = check_builder.call("business FULL", business_args, :scoped_research_verified)
+need(result.evidence["checkout_binding"].slice(*order.keys) == order && result.evidence["valid_until"] == 1_800_000_100,
+  "installed independently specified business binding/expiry")
+need(result.evidence.to_h == AP2MandateVerifier.verify_checkout(**builder.inputs(**business_args)).evidence.to_h,
+  "installed builder/core complete Evidence parity")
+check_builder.call("current order tamper", business_args.merge(order: order.merge("expected_total"=>999)), :host_binding_mismatch)
+check_builder.call("signed mandate expiry", business_args.merge(verified_at: 1_800_000_101), :invalid_purchase_time)
+stored = JSON.parse(saved); stored["challenge"]["trust_content_hash"] = "0" * 64
+check_builder.call("saved hash unchanged", business_args.merge(saved_challenge: JSON.generate(stored)), :challenge_reference_mismatch)
+stored = JSON.parse(saved); stored["challenge"]["state"] = "consumed"
+check_builder.call("saved consumed", business_args.merge(saved_challenge: JSON.generate(stored)), :challenge_state_mismatch)
+begin
+  stored = JSON.parse(saved); stored["format_version"] = "future"
+  builder.restore(saved_challenge: JSON.generate(stored))
+  raise "installed builder accepted future storage version"
+rescue AP2MandateVerifier::InputBuilder::Invalid
+  builder_rows << {name: "future saved version", result: "REJECTED"}
+end
+need(builder_rows.size == 6, "installed builder case accounting")
+puts JSON.pretty_generate(scope:"UNRELEASED030_CANDIDATE_NOT_HOST_ALLOW",candidate_version:spec.version.to_s,
  ruby:RUBY_VERSION,ruby_platform:RUBY_PLATFORM,dependencies:versions,openssl_default:Gem.loaded_specs.fetch("openssl").default_gem?,
  digest_default:Gem.loaded_specs.fetch("digest").default_gem?,libcrypto:OpenSSL::OPENSSL_LIBRARY_VERSION,installed_lib_files:loaded.size,ordinary_entry:true,
- independent_research_comparisons:rows,independent_checkout_comparisons:checkout_rows,unavailable_comparisons:unavailable_rows,legacy_api_checks:legacy.size,input_rejections:2,constructor_rejections:1,total_cases:118,
+ independent_research_comparisons:rows,independent_checkout_comparisons:checkout_rows,unavailable_comparisons:unavailable_rows,legacy_api_checks:legacy.size,input_rejections:2,constructor_rejections:1,builder_checks:builder_rows,total_cases:124,
  holds:"production/distribution/Phase2B/Hostatomic/Stage16; old acquisition gaps and Linuxalltraffic unproved")

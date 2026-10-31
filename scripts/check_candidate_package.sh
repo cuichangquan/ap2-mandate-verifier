@@ -13,7 +13,7 @@ cd "$source_dir"
 dependency_path=$(ruby -e 'puts Gem.path.join(File::PATH_SEPARATOR)')
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
   gem install --local --no-document "$artifact" > "$out_dir/install.log" 2>&1
-ruby -r "$source_dir/test/runtime_dependencies.rb" test/package_contents_audit.rb "$artifact" "$work_dir/extracted" "$work_dir/installed/gems/ap2_mandate_verifier-0.2.1" > "$out_dir/package.json"
+ruby -r "$source_dir/test/runtime_dependencies.rb" test/package_contents_audit.rb "$artifact" "$work_dir/extracted" "$work_dir/installed/gems/ap2_mandate_verifier-0.3.0" > "$out_dir/package.json"
 mkdir "$work_dir/detached"
 cd "$work_dir/detached"
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
