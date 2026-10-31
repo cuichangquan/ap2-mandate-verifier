@@ -1,4 +1,4 @@
-# 失敗時の診断（未公開 0.4.0候補）
+# 失敗時の診断（公開済み 0.4.0）
 
 Gem内部を追わず、失敗した検査と次の確認候補を取得できます。診断は補助情報です。
 既存呼び出し、status/code、固定profile、Fail Closed、非成功時のEvidenceなし契約は不変です。
@@ -53,14 +53,13 @@ trust選択、Host・challengeの確認候補を提供します。旧unverified�
 署名原文、鍵、nonce、個人情報、stack traceは保持・表示しません。診断はEvidenceではなく、
 元入力の再構築もできません。
 
-## ローカルで試す
+## 公開版をローカルで試す
 
-公開済み0.3.0は変更しません。対応MRI 3.4.12または4.0.9と固定依存を備えた隔離環境で、
-チェックアウトから候補を通常インストールしてください。
+対応MRI 3.4.12または4.0.9と固定依存を備えた環境で、公開済み0.4.0を通常導入し、
+リポジトリのチェックアウトから例を実行してください。
 
 ```sh
-gem build ap2_mandate_verifier.gemspec
-gem install --local --no-document ./ap2_mandate_verifier-0.4.0.gem
+gem install ap2_mandate_verifier --version 0.4.0
 ruby examples/input_builder.rb valid
 ruby examples/input_builder.rb tampered
 ruby examples/input_builder.rb expired
@@ -74,4 +73,4 @@ ruby examples/input_builder.rb unsupported_saved_format
 後半4例はrejected / invalid_host_contextのまま、理由が順にmissing_required_field、invalid_type、
 unknown_field、unsupported_saved_formatになります。合成fixtureの固定時刻を使います。
 業務データの対応・保存責務は[InputBuilderガイド](INPUT_BUILDER.ja.md)を参照してください。
-公開、実Issuer接続、本番購入許可、Phase 2-B移行を意味しません。
+Gemの公開は、実Issuer接続、本番購入許可、Phase 2-B移行を意味しません。

@@ -1,10 +1,10 @@
 # Changelog
 
-## 0.4.0 — unreleased
+## 0.4.0 — 2026-10-31
 
 - Adds immutable, input-free `Result#diagnostic` and `InputBuilder::Invalid#diagnostic`, machine stage/field/reason identifiers and English/Japanese hints. Success has no failure diagnostic; diagnostic failure cannot change a verdict.
 - Identifies known Builder missing/type/unknown-field/saved-format failures; existing status/code and all verification/Evidence contracts remain unchanged. Adds boundary, dependency, redaction and installed-package coverage plus runnable examples and guides.
-- Candidate only; no Gem publication, tag or Release. Published 0.3.0 remains unchanged. Runtime pins, fixed profile and production/real-Issuer/Host/Phase 2-B HOLDs remain.
+- Published on RubyGems at 04:25:06.427 UTC; exact download comparison at 04:26:15 UTC matched the reviewed 44,032-byte candidate, SHA256 `b212db01e7deb18dcef1199414f9d93ef43cb1f74b62baa55306de3955dfe177`, source `fc42852f53c615f96d7c165a8de494b24b252519`. Runtime pins, fixed profile and production/real-Issuer/Host/Phase 2-B HOLDs remain. [Publication record](docs/PROJECT_STATUS.md#040-publication).
 
 ## 0.3.0 — 2026-10-31
 

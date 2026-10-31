@@ -1,4 +1,4 @@
-# Failure diagnostics (unreleased 0.4.0)
+# Failure diagnostics (published 0.4.0)
 
 Diagnostics help you inspect a failed check without reading gem internals. They
 are supplemental: existing calls, status/code, fixed profile, Fail Closed and
@@ -62,15 +62,13 @@ hints come from a closed catalog. No values, arbitrary field names, signed
 wires, public/private keys, nonce, PII or stack traces are retained or emitted.
 The diagnostic is not Evidence and cannot reconstruct original inputs.
 
-## Try the candidate locally
+## Try the published release locally
 
-Published 0.3.0 remains unchanged. Build and normally install the unpublished
-candidate from this checkout in an isolated environment with the supported
-MRI (3.4.12 or 4.0.9) and pinned dependencies:
+Normally install published 0.4.0 in an environment with supported MRI
+(3.4.12 or 4.0.9) and pinned dependencies. Run the examples from a repository checkout:
 
 ```sh
-gem build ap2_mandate_verifier.gemspec
-gem install --local --no-document ./ap2_mandate_verifier-0.4.0.gem
+gem install ap2_mandate_verifier --version 0.4.0
 ruby examples/input_builder.rb valid
 ruby examples/input_builder.rb tampered
 ruby examples/input_builder.rb expired
@@ -86,5 +84,5 @@ assembly examples return `rejected / invalid_host_context` with diagnostic
 reasons `missing_required_field`, `invalid_type`, `unknown_field` and
 `unsupported_saved_format`. Synthetic fixture clocks are intentional. See
 [InputBuilder](INPUT_BUILDER.md) for data mapping and storage responsibilities.
-No publication, real Issuer connection, production authorization or Phase 2-B
-GO is implied.
+Gem availability does not imply real Issuer interoperability, production
+authorization or Phase 2-B GO.
