@@ -1,4 +1,4 @@
-# AP2 Mandate Verifier — 0.4.0
+# AP2 Mandate Verifier — 0.5.0
 
 [日本語](README.ja.md)
 
@@ -8,28 +8,29 @@ Verify purchase-delegation data in Ruby using a deliberately fixed AP2 profile. 
 
 ## Try the local demo
 
-The [Rails demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme) uses published 0.4.0 and InputBuilder by default. Its Docker instructions require no host Ruby installation. Compare synthetic normal, tampered and expired cases, including actual status/code, diagnostics and Evidence presence. It is local-only; it does not issue real challenges, consume nonces or execute purchases.
+The [Rails demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme) uses published 0.5.0 and InputBuilder by default. Its Docker instructions require no host Ruby installation. Compare synthetic normal, tampered and expired cases, including actual status/code, diagnostics and Evidence presence. Merchant signing and authentic Success/Error Receipts are also available. It is local-only; it does not issue real challenges, consume nonces or execute purchases.
 
 ## Install
 
 Formal support is **MRI 3.4.12 and MRI 4.0.9**. In your chosen Gem environment:
 
 ```sh
-gem install ap2_mandate_verifier --version 0.4.0
+gem install ap2_mandate_verifier --version 0.5.0
 ```
 
 Or add to your Gemfile:
 
 ```ruby
-gem "ap2_mandate_verifier", "= 0.4.0"
+gem "ap2_mandate_verifier", "= 0.5.0"
 ```
 
 Runtime dependencies are pinned to JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1. Normal installation may download/build dependencies; do not relax the pins to work around a conflict. The Ruby resolution interval is not certification of every Ruby version, OS or native provider. See the [support contract](docs/SUPPORT_CONTRACT.md).
 
-## Merchant signing and Receipt (unpublished 0.5.0 candidate)
+## Merchant signing and Receipt
 
-Create a signed checkout, then sign the application's explicit outcome. These
-additive APIs are available from the candidate source, not published 0.4.0:
+Create a signed checkout, then sign the application's explicit outcome. These additive APIs are included in published 0.5.0.
+Here `checkout` is the application order Hash, `key` its P-256 signing key,
+`received_closed_sd_jwt` the original final inline SD-JWT and `now` the application clock:
 
 ```ruby
 signing = AP2MandateVerifier::CheckoutJWT
@@ -44,7 +45,7 @@ receipt = AP2MandateVerifier::CheckoutReceipt.sign(closed_sd_jwt: received_close
 Receipt verification separately checks a trusted public key, expected issuer,
 explicit time window and original closed-Mandate reference. An authentic Error
 Receipt has `verified? == true` and `purchase_succeeded? == false`.
-See the [complete API example, supported wire shape and SDK differences](docs/MERCHANT_SIGNING.md).
+See the [complete runnable example](examples/merchant_signing.rb) and [API contract / SDK differences](docs/MERCHANT_SIGNING.md).
 
 ## A small InputBuilder example
 
@@ -122,7 +123,7 @@ Supported scope is the fixed `ap2.checkout.single_merchant_sku` profile v1: ES25
 
 | Entry | Role |
 | --- | --- |
-| `InputBuilder.verify(**business_information)` | Recommended business-data path in 0.4.0. Assembles inputs and runs complete verification; preparation and restoration are separate steps shown above. |
+| `InputBuilder.verify(**business_information)` | Recommended business-data path in 0.5.0. Assembles inputs and runs complete verification; preparation and restoration are separate steps shown above. |
 | `verify_checkout(**inputs)` | Direct complete verification with the existing seven inputs, including caller-supplied trust/selection/Host JSON. |
 | `verify_research(**inputs)` | Retained name for the same seven-input verification pipeline; no deprecation warning. |
 | `verify(presentation_json:)` | Legacy JSON syntax check only. Never returns successful Evidence. |
@@ -133,7 +134,7 @@ Malformed assembly arguments, including missing keywords, to `InputBuilder.verif
 
 - [Business-data lifecycle and Rails mapping](docs/INPUT_BUILDER.md), [complete Ruby example](examples/input_builder.rb) and [before/after example](examples/input_builder_before.rb).
 - [Supported inputs, limits and Result/Evidence contract](docs/SUPPORT_CONTRACT.md); [Issuer/Host responsibilities](docs/ISSUER_HOST_MINIMUM_CONTRACT.md).
-- [Published 0.4.0 release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.4.0), [publication/withdrawal records](docs/PROJECT_STATUS.md) and [changelog](CHANGELOG.md). Repository README changes do not rebuild or replace published Gem bytes.
+- [Published 0.5.0 release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.5.0), [publication/withdrawal records](docs/PROJECT_STATUS.md) and [changelog](CHANGELOG.md). Repository README changes do not rebuild or replace published Gem bytes.
 - [Pinned historical seven-input / saved FULL example](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.md#try-the-saved-synthetic-example), [older artifact/provider evidence](research/stable010_release_linux_package/README.md) and [historical conceptual diagrams](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.md#illustrated-concepts-japanese-diagrams). These records are preserved, not current integration instructions or broader support claims.
 - [Security reporting](SECURITY.md), [maintenance policy](docs/POST_RELEASE_MAINTENANCE.md) and [product direction](docs/PRODUCT_VISION.md). Do not include secrets, real Mandates or personal data in reports.
 

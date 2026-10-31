@@ -9,6 +9,10 @@ on:
       - 'scripts/check_candidate_package.sh'
       - 'ap2_mandate_verifier.gemspec'
       - 'README.md'
+      - 'README.ja.md'
+      - 'examples/merchant_signing.rb'
+      - 'scripts/check_published_guides.rb'
+      - '.github/published-guides.Dockerfile'
       - 'docs/MERCHANT_SIGNING.md'
       - 'docs/SUPPORT_CONTRACT.md'
       - '.github/merchant-ci.Dockerfile'
@@ -31,9 +35,26 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: Identify product changes without rebuilding published documentation
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git diff --name-only "$BASE_SHA" HEAD > "$RUNNER_TEMP/changed-paths"
+          if grep -Eq '^(lib/|test/|ap2_mandate_verifier\.gemspec$|scripts/check_ruby_compatibility\.sh$|scripts/check_candidate_package\.sh$|\.github/merchant-ci\.Dockerfile$)' "$RUNNER_TEMP/changed-paths"; then
+            echo 'product=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'product=false' >> "$GITHUB_OUTPUT"
+          fi
       - name: Build isolated pinned Ruby dependencies
+        if: steps.scope.outputs.product == 'true'
         run: docker build --build-arg RUBY_VERSION=${{ matrix.ruby }} -t ap2-merchant-ci -f .github/merchant-ci.Dockerfile .github
       - name: Source regression and ordinary candidate installation
+        if: steps.scope.outputs.product == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -47,3 +68,12 @@ jobs:
               timeout 300 sh scripts/check_candidate_package.sh /out/package /out/candidate.gem
               cat /out/package/merchant-installed.json
             '
+      - name: Verify published Gem guides without Gem build
+        if: steps.scope.outputs.product == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build --build-arg RUBY_VERSION=${{ matrix.ruby }} -t ap2-published-guides -f .github/published-guides.Dockerfile .github
+          docker run --rm --network=none --cpus=2 --memory=768m --pids-limit=128 \
+            -v "$GITHUB_WORKSPACE:/src:ro" ap2-published-guides \
+            timeout 120 ruby scripts/check_published_guides.rb

@@ -1,17 +1,29 @@
 # 現状メモ / Project status
 
-更新：2026-10-31 UTC（0.4.0公開確認）。0.4.0公開元source：
-`fc42852f53c615f96d7c165a8de494b24b252519`。公開後の文書更新は公開Gemのbytesを変更しません。
-以下の旧版・候補段階のNOT_RUN/HOLDや撤回記録は各時点の履歴で、現在の配布状態は直下の0.4.0記録を正本とします。
+更新：2026-10-31 UTC（0.5.0公開確認）。0.5.0公開元source：
+`bf796a53600c189b0cfe66c9cfcd1de8a353c03d`。公開後の文書更新は公開Gemのbytesを変更しません。
+以下の旧版・候補段階のNOT_RUN/HOLDや撤回記録は各時点の履歴で、現在の配布状態は直下の0.5.0記録を正本とします。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
 [プロセス正本 Issue #101](https://github.com/cuichangquan/ap2-mandate-verifier/issues/101)を確認してください。
 このメモは更新日時点の案内で、最新GitHub main／PR／レビュー／ActionsとRubyGems原本の確認を置き換えません。
 承認・制限の記載は現状記録であり、新たな権限を付与しません。
 
+<a id="050-publication"></a>
+
+## 0.5.0公開済み — 現在の配布状態
+
+[RubyGems 0.5.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.5.0)は登録2026-10-31 **07:26:21.576 UTC**、公式metadata・実配布・保存最終候補のbyte照合完了 **07:29:21.200455 UTC**。owner `cuichangquan`、platform `ruby`、prerelease false、照合時yanked false、**50,688 bytes**、SHA256 `00b0ce0981070864c67a056906c5af204bbc5aaa80d029cb4a64294634367dd8`。全21 payloadを公開元source `bf796a53600c189b0cfe66c9cfcd1de8a353c03d`（tree `c853d5cc26e6cabed5c5c84c296d382dfd81ac8e`）と照合しました。RubyGemsがsource SHAをattestするものではなく、承認候補と配布bytesの一致による対応付けです。最初のversion一覧は古い応答でしたが、fresh queryで0.5.0掲載を確認済みです。
+
+[実装PR225](https://github.com/cuichangquan/ap2-mandate-verifier/pull/225)のreview HEAD `c04dda3f7420fc489676ed05a6451af9fce2b290` と統合treeは一致。最新の集約した独立GitHub Codex手動レビューは07:00:09 UTCに完了・指摘なし、未解決thread0。旧依頼の履歴reactionを独立active jobと推定せず、集約最終レビューreceiptと直前の遅着確認を正本に判定しました。CI [41177543108](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/41177543108) attempt1の両Rubyが成功。統合mainからの新buildを同じbytesでMRI3.4.12／4.0.9へ通常導入し、既存全回帰・Receipt65項目、21payload一致／15製品ファイル通常読込み、導入後134ケース・診断・新署名API・成功／拒否Receiptを確認しました。Ruby↔固定Python SDKの署名・原Schema・実callback期待reference完全一致・公式sd_hash比較も成立。公開確認では再build・再push・重複試験をしていません。
+
+0.5.0はCheckout JWT作成・署名とCheckout Receipt作成・署名・検証を追加します。Receipt真正性と業務成功／拒否は別で、既存Verifier／Evidence／InputBuilder／診断の契約と依存・正式MRIは維持。[完全動作例](../examples/merchant_signing.rb)、[API／責任境界・仕様vsSDK差異](MERCHANT_SIGNING.md)、[Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.5.0)。Checkout専用Schemaのstatusを採用し、規範referenceは最終inline SD-JWTの末尾`~`を含む原文hashです。SDK leaf-helperのJWT単体hashとは同一視しません。
+
+公開元に固定するv0.5.0 tag／Release以後の文書整備は公開Gemのbytesを変更しません。[公開前草案](RELEASE_050_DRAFT.md)は履歴として保持。実Issuer・Host本番・実決済・原子的nonce消費・Phase 2-B等のHOLDは維持します。
+
 <a id="040-publication"></a>
 
-## 0.4.0公開済み — 現在の配布状態
+## 0.4.0公開済み — 過去の配布記録
 
 [RubyGems 0.4.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.4.0)は登録2026-10-31 04:25:06.427 UTC、metadata取得04:25:53 UTC、実配布との照合完了04:26:15 UTC。owner `cuichangquan`、platform `ruby`、prerelease false、照合時yanked false、**44,032 bytes**、SHA256 `b212db01e7deb18dcef1199414f9d93ef43cb1f74b62baa55306de3955dfe177`。公式metadata・実配布・保存候補がバイト単位で一致し、全17 payloadを公開元source `fc42852f53c615f96d7c165a8de494b24b252519`（tree `b1eedc7c1748b2620e7c9e2a3335cc6f2380d09a`）と照合しました。source対応は保存済みレビュー候補の一致によるもので、RubyGemsのsource attestationではありません。
 
