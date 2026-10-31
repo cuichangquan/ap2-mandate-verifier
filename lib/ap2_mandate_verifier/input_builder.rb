@@ -37,6 +37,7 @@ module AP2MandateVerifier
         "profile_ref" => TrustContext::PROFILE_REF, "profile_version" => TrustContext::PROFILE_VERSION,
         "profile_definition_hash" => TrustContext::PROFILE_HASH,
         "Issuer" => copy!(issuer), "Agent" => copy!(agent), "Merchant" => copy!(merchant)}
+      TrustContext::ROLES.each_key { |role| shape!(selection[role], %w[identity purpose key_ref]) }
       wire = json!({"snapshot" => {"id" => source["id"], "policy_version" => source["policy_version"],
         "content_hash" => selection["trust_content_hash"], "body" => body},
         "profile" => {"profile_ref" => TrustContext::PROFILE_REF, "version" => TrustContext::PROFILE_VERSION,
@@ -45,6 +46,8 @@ module AP2MandateVerifier
       context = TrustContext.verified_context!(trust_json: wire, selection_json: selected, verified_at: verified_at,
         expected_merchant_id: selection.fetch("Merchant").fetch("identity"))
       Trust.send(:new, wire, selected, context)
+    rescue RootSignature::Unavailable
+      raise
     rescue InputValidator::Invalid, RootSignature::Rejected, KeyError, TypeError
       invalid!
     end
@@ -58,6 +61,8 @@ module AP2MandateVerifier
       context = TrustContext.verified_context!(trust_json: wire, selection_json: selected,
         verified_at: copy!(verified_at), expected_merchant_id: selection.fetch("Merchant").fetch("identity"))
       Trust.send(:new, wire, selected, context)
+    rescue RootSignature::Unavailable
+      raise
     rescue InputValidator::Invalid, RootSignature::Rejected, KeyError, TypeError, NoMethodError
       invalid!
     end
@@ -75,6 +80,8 @@ module AP2MandateVerifier
       saved = json!({"format_version" => FORMAT_VERSION, "profile_ref" => TrustContext::PROFILE_REF,
         "profile_version" => TrustContext::PROFILE_VERSION, "challenge" => challenge}, 32_768)
       restore(saved_challenge: saved)
+    rescue RootSignature::Unavailable
+      raise
     rescue InputValidator::Invalid, RootSignature::Rejected, KeyError, TypeError
       invalid!
     end
@@ -97,6 +104,8 @@ module AP2MandateVerifier
       %w[not_before not_after].each { |field| HostBinding.send(:time!, challenge[field]) }
       invalid! unless challenge["not_before"] < challenge["not_after"]
       wire
+    rescue RootSignature::Unavailable
+      raise
     rescue InputValidator::Invalid, RootSignature::Rejected, KeyError, TypeError
       invalid!
     end
@@ -112,6 +121,8 @@ module AP2MandateVerifier
         "expected_challenge_issuer_id" => copy!(expected_challenge_issuer_id), "clock_source_id" => copy!(clock_source_id)}
       {trust_json: trust.trust_json, selection_json: trust.selection_json, host_json: json!(host, 32_768),
        root_presentation: root, terminal_jws: terminal, host_checkout_jws: checkout, verified_at: verified_at}.freeze
+    rescue RootSignature::Unavailable
+      raise
     rescue InputValidator::Invalid, RootSignature::Rejected, KeyError, TypeError
       invalid!
     end
@@ -120,11 +131,11 @@ module AP2MandateVerifier
     def self.verify(**arguments)
       AP2MandateVerifier.verify_checkout(**inputs(**arguments))
     rescue Invalid, ArgumentError
-      Result.new(status: :rejected, code: :invalid_input_builder)
+      Result.new(status: :rejected, code: :invalid_host_context)
     rescue InputValidator::Unavailable, RootSignature::Unavailable, LoadError
-      Result.new(status: :unavailable, code: :input_builder_unavailable)
+      Result.new(status: :unavailable, code: :research_verification_unavailable)
     rescue StandardError
-      Result.new(status: :unavailable, code: :input_builder_unavailable)
+      Result.new(status: :unavailable, code: :research_verification_unavailable)
     end
 
     def self.context!(trust, now)
@@ -149,7 +160,7 @@ module AP2MandateVerifier
     def self.invalid! = raise(Invalid, "invalid input-builder information")
     def self.json!(value, limit = InputValidator::MAX_BYTES)
       require "json"
-      invalid! unless JSON::VERSION == InputValidator::JSON_VERSION
+      raise InputValidator::Unavailable, :json_dependency_unavailable unless JSON::VERSION == InputValidator::JSON_VERSION
       InputValidator.snapshot!(JSON.generate(value), max_bytes: limit)
     end
 

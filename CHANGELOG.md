@@ -2,6 +2,8 @@
 
 ## 0.3.0 — unpublished candidate
 
+- Corrects candidate InputBuilder.verify failure handling to reuse registered Result codes. Malformed assembly returns rejected/invalid_host_context; unavailable assembly returns unavailable/research_verification_unavailable, with no Evidence. The earlier candidate SHA256 5de6907cfcf0565ddaba1385b1d38ae113cc5e26d52259d769030237378a48a8 is withdrawn and must not be published.
+
 - Adds Rails-independent `InputBuilder` conversion from explicit authenticated trust records and order information, challenge preparation, exact versioned persistence restoration and full verification through the unchanged seven-input core.
 - Bounds plain Ruby input graphs before serialization; preserves stored issue-time binding/references and separately constructs current binding. Unknown persisted formats/profiles fail closed. Assembly alone produces no Evidence.
 - Adds runnable business-data examples, English/Japanese guidance and Rails mapping. Existing fixed runtime dependencies, supported Rubies, profile and Result/Evidence v2 contracts remain unchanged. Publication requires separate Owner approval.

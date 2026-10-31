@@ -121,6 +121,11 @@ check_builder = lambda do |name, arguments, code|
   result = builder.verify(**arguments)
   success = code == :scoped_research_verified
   need(result.code == code && result.success? == success && (success || result.evidence.nil?), "installed builder " + name)
+  unless success
+    status = code == :research_verification_unavailable ? :unavailable : :rejected
+    need(result.instance_of?(AP2MandateVerifier::Result) && result.frozen? && result.status == status,
+      "installed builder immutable registered failure " + name)
+  end
   builder_rows << {name: name, code: result.code, result: "MATCH"}
   result
 end
@@ -142,9 +147,33 @@ begin
 rescue AP2MandateVerifier::InputBuilder::Invalid
   builder_rows << {name: "future saved version", result: "REJECTED"}
 end
-need(builder_rows.size == 6, "installed builder case accounting")
+stored = JSON.parse(saved); stored["format_version"] = "future"
+cyclic_order = order.dup; cyclic_order["cycle"] = cyclic_order
+{
+ "verify malformed JSON"=>business_args.merge(saved_challenge: "{"),
+ "verify future version"=>business_args.merge(saved_challenge: JSON.generate(stored)),
+ "verify missing order field"=>business_args.merge(order: order.reject { |key,_| key == "currency" }),
+ "verify unknown keyword"=>business_args.merge(future: true),
+ "verify missing keyword"=>business_args.reject { |key,_| key == :terminal_jws },
+ "verify cyclic order"=>business_args.merge(order: cyclic_order)
+}.each { |name, arguments| check_builder.call(name, arguments, :invalid_host_context) }
+validator = AP2MandateVerifier::InputValidator
+original_snapshot = validator.method(:snapshot!)
+[AP2MandateVerifier::InputValidator::Unavailable.new(:json_dependency_unavailable),
+ AP2MandateVerifier::RootSignature::Unavailable.new(:signature_dependency_unavailable),
+ LoadError.new("controlled dependency failure"), RuntimeError.new("controlled internal fault")].each do |fault|
+  reached = false
+  validator.define_singleton_method(:snapshot!) { |*_, **_keywords| reached = true; raise fault }
+  begin
+    check_builder.call("verify controlled #{fault.class}", business_args, :research_verification_unavailable)
+    need(reached, "installed fault reached real input path")
+  ensure
+    validator.define_singleton_method(:snapshot!, original_snapshot)
+  end
+end
+need(builder_rows.size == 16, "installed builder case accounting")
 puts JSON.pretty_generate(scope:"UNRELEASED030_CANDIDATE_NOT_HOST_ALLOW",candidate_version:spec.version.to_s,
  ruby:RUBY_VERSION,ruby_platform:RUBY_PLATFORM,dependencies:versions,openssl_default:Gem.loaded_specs.fetch("openssl").default_gem?,
  digest_default:Gem.loaded_specs.fetch("digest").default_gem?,libcrypto:OpenSSL::OPENSSL_LIBRARY_VERSION,installed_lib_files:loaded.size,ordinary_entry:true,
- independent_research_comparisons:rows,independent_checkout_comparisons:checkout_rows,unavailable_comparisons:unavailable_rows,legacy_api_checks:legacy.size,input_rejections:2,constructor_rejections:1,builder_checks:builder_rows,total_cases:124,
+ independent_research_comparisons:rows,independent_checkout_comparisons:checkout_rows,unavailable_comparisons:unavailable_rows,legacy_api_checks:legacy.size,input_rejections:2,constructor_rejections:1,builder_checks:builder_rows,total_cases:134,
  holds:"production/distribution/Phase2B/Hostatomic/Stage16; old acquisition gaps and Linuxalltraffic unproved")
