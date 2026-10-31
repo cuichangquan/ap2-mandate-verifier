@@ -1,0 +1,2 @@
+S01 signed_root_sha256=34c4c5c2d6cd4bf41c1aaf0708ff9a312de85218ca5d609ef0a78d4636767c58 binding=unverified requirement_id=Integer expected_schema_type=string result=invalid_scoped_schema
+PASS 97 scoped constraint cases; fixed subset only; no full Schema/ALLOW/Evidence claim

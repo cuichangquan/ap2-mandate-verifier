@@ -1,0 +1,2 @@
+PASS 149 Host binding/challenge/aggregate interval cases; no consumption/Evidence/ALLOW
+PASS 109 input builder contract/boundary cases; existing Host suite reported separately; not Host ALLOW
