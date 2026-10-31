@@ -1,6 +1,6 @@
-# Input assembly for the fixed checkout profile (0.3.0)
+# Input assembly for the fixed checkout profile (0.4.0)
 
-Unreleased 0.4.0 adds supplemental safe diagnostics; see [API and troubleshooting](DIAGNOSTICS.md). Published 0.3.0 and existing verdict/Evidence contracts remain unchanged.
+Published 0.4.0 includes supplemental safe diagnostics; see [API and troubleshooting](DIAGNOSTICS.md). Existing verdict/Evidence contracts remain unchanged.
 
 `AP2MandateVerifier::InputBuilder` converts explicit Host business information into
 the existing seven verification inputs. It performs no network, database, Rails,
@@ -10,7 +10,7 @@ The original `verify_checkout`, `verify_research` and older APIs remain availabl
 
 ## Run the complete Ruby example
 
-After ordinary installation of published 0.3.0 (`gem install ap2_mandate_verifier --version 0.3.0`), run these repository examples:
+After ordinary installation of published 0.4.0 (`gem install ap2_mandate_verifier --version 0.4.0`), run these repository examples:
 
 ```sh
 ruby examples/input_builder.rb valid

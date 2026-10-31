@@ -1,6 +1,6 @@
-# 入力組み立て支援（0.3.0）
+# 入力組み立て支援（0.4.0）
 
-未公開0.4.0候補では安全な診断を追加します。[診断APIと確認方法](DIAGNOSTICS.ja.md)。公開済み0.3.0の契約は維持します。
+公開済み0.4.0では安全な診断を利用できます。[診断APIと確認方法](DIAGNOSTICS.ja.md)。既存の判定・Evidence契約は維持します。
 
 `AP2MandateVerifier::InputBuilder` は、Hostが信頼する業務情報から既存の7入力を作ります。
 Rails、DB、通信、nonceの発行・消費、決済は行いません。入力の作成だけではEvidenceを返さず、
@@ -8,7 +8,7 @@ Rails、DB、通信、nonceの発行・消費、決済は行いません。入�
 
 ## 動く最小例
 
-公開済み0.3.0を通常導入（`gem install ap2_mandate_verifier --version 0.3.0`）した後、リポジトリの例を実行します。
+公開済み0.4.0を通常導入（`gem install ap2_mandate_verifier --version 0.4.0`）した後、リポジトリの例を実行します。
 
 ```sh
 ruby examples/input_builder.rb valid

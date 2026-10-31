@@ -1,6 +1,9 @@
-# Fixed-profile AP2 verification — published 0.3.0 / historical releases
+# Fixed-profile AP2 verification — published 0.4.0 / historical releases
 
-Unreleased 0.4.0 adds supplemental safe diagnostics; see [API and troubleshooting](DIAGNOSTICS.md). Published 0.3.0 and existing verdict/Evidence contracts remain unchanged.
+Published 0.4.0 adds supplemental safe diagnostics; see [API and troubleshooting](DIAGNOSTICS.md). Existing verdict/Evidence contracts remain unchanged.
+
+[0.4.0 on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.4.0) was registered 2026-10-31 04:25:06.427 UTC and compared at 04:26:15 UTC: owner `cuichangquan`, platform `ruby`, prerelease false, not yanked at comparison; 44,032 bytes, SHA256 `b212db01e7deb18dcef1199414f9d93ef43cb1f74b62baa55306de3955dfe177`. The download matches the saved reviewed artifact and all 17 payload files match source `fc42852f53c615f96d7c165a8de494b24b252519`. RubyGems does not independently attest the source SHA. Formal MRI support and all five runtime pins below are unchanged. [Publication record](PROJECT_STATUS.md#040-publication) and [validation scope](DIAGNOSTICS_VALIDATION.md). Packaged documentation retains its preparation snapshot; repository updates do not replace published bytes.
+
 
 ## Published 0.3.0 input assistance
 

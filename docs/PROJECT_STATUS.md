@@ -1,17 +1,31 @@
 # 現状メモ / Project status
 
-更新：2026-10-31 UTC（0.3.0公開確認）。0.3.0公開元source：
-`877f59195632f74714a60551b6afb22ac81d93e3`。公開後の本リポジトリ文書更新は公開Gemのbytesを変更しません。
-以下の旧版・候補段階のNOT_RUN/HOLDや撤回記録は各時点の履歴で、現在の配布状態は直下の0.3.0記録を正本とします。
+更新：2026-10-31 UTC（0.4.0公開確認）。0.4.0公開元source：
+`fc42852f53c615f96d7c165a8de494b24b252519`。公開後の文書更新は公開Gemのbytesを変更しません。
+以下の旧版・候補段階のNOT_RUN/HOLDや撤回記録は各時点の履歴で、現在の配布状態は直下の0.4.0記録を正本とします。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
 [プロセス正本 Issue #101](https://github.com/cuichangquan/ap2-mandate-verifier/issues/101)を確認してください。
 このメモは更新日時点の案内で、最新GitHub main／PR／レビュー／ActionsとRubyGems原本の確認を置き換えません。
 承認・制限の記載は現状記録であり、新たな権限を付与しません。
 
+<a id="040-publication"></a>
+
+## 0.4.0公開済み — 現在の配布状態
+
+[RubyGems 0.4.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.4.0)は登録2026-10-31 04:25:06.427 UTC、metadata取得04:25:53 UTC、実配布との照合完了04:26:15 UTC。owner `cuichangquan`、platform `ruby`、prerelease false、照合時yanked false、**44,032 bytes**、SHA256 `b212db01e7deb18dcef1199414f9d93ef43cb1f74b62baa55306de3955dfe177`。公式metadata・実配布・保存候補がバイト単位で一致し、全17 payloadを公開元source `fc42852f53c615f96d7c165a8de494b24b252519`（tree `b1eedc7c1748b2620e7c9e2a3335cc6f2380d09a`）と照合しました。source対応は保存済みレビュー候補の一致によるもので、RubyGemsのsource attestationではありません。
+
+[実装PR222](https://github.com/cuichangquan/ap2-mandate-verifier/pull/222)の最終review HEAD `c1a82cde9f5cc0c09a5c4b05e2ddd70a5ca8f313` と統合sourceのtreeは一致。最新HEADの独立Codex・GitHub Codexとも指摘なし、未解決thread0を確認して統合しました。両MRI 3.4.12／4.0.9のsource既存885＋checkout190＋metadata7＋Builder109＋診断244チェック、同一候補の通常導入134ケース＋診断244チェック＋7実行例、17 payload一致／12製品ファイルの通常読込みを確認済みです。公開物との完全一致により同一成果物と対応付け、公開確認ターンでは再build・再push・テスト再実行をしていません。[候補時点の検証記録](DIAGNOSTICS_VALIDATION.md)を履歴として保持します。
+
+[v0.4.0 tag／GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.4.0)はOwner承認下で04:35:43 UTCに公開。tagは正確な公開source fc42852を指し、短いRuby利用例と通貨不足の診断出力を掲載しています。再build・再pushは行いません。
+
+0.4.0は不変の `result.diagnostic`／`InputBuilder::Invalid#diagnostic` と英日ヒントを追加します。工程・安全な既知項目・機械判読理由・次の確認候補を示し、原因不明時は断定しません。既存status/code・API・検証条件・Evidence・固定profile・依存・対応MRIは不変です。診断の失敗が元判定を変えることはありません。[英語](DIAGNOSTICS.md)／[日本語](DIAGNOSTICS.ja.md)。
+
+公開Gem同梱文書は準備時点snapshotであり、GitHub source archiveはRubyGems Gemとは別成果物です。実Issuer・Host本番・決済・性能・原子的nonce消費・Phase 2-BのHOLDは維持します。
+
 <a id="030公開済み--現在の配布状態"></a>
 
-## 0.3.0公開済み — 現在の配布状態
+## 0.3.0公開済み — 過去の配布記録
 
 [RubyGems 0.3.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.3.0)は登録2026-10-31 01:31:40.743 UTC、公式metadata取得01:32:40 UTC、最終照合01:33:27 UTC。owner `cuichangquan`、platform `ruby`、prerelease false、照合時yanked false、**37,376 bytes**、SHA256 `b3a31d5a8b0718f1085745dd4d97d85f210ff9a1628798110da9ff382ae546bd`です。公式metadata・実配布・保存最終候補が一致し、候補の公開元sourceは `877f59195632f74714a60551b6afb22ac81d93e3` です。RubyGemsがsource SHAを独立証明するものではなく、保存済みレビュー候補とのbytes一致により対応付けています。
 

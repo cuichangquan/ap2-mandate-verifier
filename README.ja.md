@@ -1,6 +1,4 @@
-# AP2 Mandate Verifier — 0.3.0
-
-> **未公開の次版候補 0.4.0:** `result.diagnostic` に工程・安全な項目・理由・英日ヒントを追加します。[診断ガイド](docs/DIAGNOSTICS.ja.md)。下記の通常インストールは公開済み0.3.0です。候補の検証はガイドのローカル経路を使用してください。
+# AP2 Mandate Verifier — 0.4.0
 
 [English](README.md)
 
@@ -10,20 +8,20 @@ Rubyで購入委任データを検証する、AP2の固定profile向けGemです
 
 ## ローカルデモを試す
 
-[把握しやすいRailsデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)は、公開済み0.3.0とInputBuilderを通常経路で使います。Docker手順ならホストへのRuby導入は不要です。正常・改ざん・期限切れの合成ケースについて、実際のstatus/codeとEvidence有無を比較できます。ローカル専用で、実Challenge発行・nonce消費・購入実行は行いません。
+[把握しやすいRailsデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)は、公開済み0.4.0とInputBuilderを通常経路で使います。Docker手順ならホストへのRuby導入は不要です。正常・改ざん・期限切れの合成ケースについて、実際のstatus/code・診断・Evidence有無を比較できます。ローカル専用で、実Challenge発行・nonce消費・購入実行は行いません。
 
 ## インストール
 
 正式対応は **MRI 3.4.12とMRI 4.0.9** です。利用者が選ぶGem環境で導入します。
 
 ```sh
-gem install ap2_mandate_verifier --version 0.3.0
+gem install ap2_mandate_verifier --version 0.4.0
 ```
 
 BundlerのGemfile：
 
 ```ruby
-gem "ap2_mandate_verifier", "= 0.3.0"
+gem "ap2_mandate_verifier", "= 0.4.0"
 ```
 
 runtime依存はJSON 2.19.9、JWT 3.3.0、base64 0.3.0、OpenSSL gem 4.0.2、Digest 3.2.1に固定しています。通常導入には依存の取得・buildが伴い得ます。衝突回避のために固定条件を緩めないでください。Rubyの解決範囲は、その間の全Ruby版・OS・native providerへの対応保証ではありません。[対応契約](docs/SUPPORT_CONTRACT.md)を参照してください。
@@ -84,6 +82,16 @@ end
 | `:rejected`、`rejected? == true` | Evidenceなし。停止して `result.code` を確認します。 |
 | `:unavailable`、`unavailable? == true` | Evidenceなし。停止します。依存・処理の失敗だけで業務入力が不正とは断定しません。 |
 
+失敗時は追加の確認ヒントを取得できます。成功時の診断は `nil` です。
+
+```ruby
+if (diagnostic = result.diagnostic)
+  puts diagnostic.to_h(locale: :ja) # 英語は :en
+end
+```
+
+`stage / field / reason / hint` は確認候補であり、status/codeや判定を変えません。特定不能な項目・原因は断定しません。[詳しい診断ガイド](docs/DIAGNOSTICS.ja.md)を参照してください。
+
 例外・プロセス終了・結果なしでも、購入を許可しません。raw入力・nonceをログに出したり、シリアライズしたEvidenceを認証済みの資格情報として扱ったりしないでください。
 
 Gemは署名、支持する開示閉包、委任、購入／Host binding、制約・期限を検査します。Hostは認証済み・独立・最新のtrust／鍵／失効、注文・Challenge状態、時計を供給します。実行直前に現在状態と期限を再照合し、nonceの原子消費＋注文CAS、不明結果の回復、最終許可・決済判断を担当します。`prepare`／`restore` は保存元の認証やnonce未使用を証明しません。
@@ -94,7 +102,7 @@ Gemは署名、支持する開示閉包、委任、購入／Host binding、制�
 
 | 入口 | 役割 |
 | --- | --- |
-| `InputBuilder.verify(**business_information)` | 0.3.0の推奨業務情報経路。入力を組み立て、完全検証します。発行前準備・復元は上の例の別処理です。 |
+| `InputBuilder.verify(**business_information)` | 0.4.0の推奨業務情報経路。入力を組み立て、完全検証します。発行前準備・復元は上の例の別処理です。 |
 | `verify_checkout(**inputs)` | 既存の7入力を直接渡す完全検証。trust／selection／Host JSONも呼出側が渡します。 |
 | `verify_research(**inputs)` | 同じ7入力検証経路の維持された名称。非推奨警告はありません。 |
 | `verify(presentation_json:)` | 旧JSON構文検査のみ。成功Evidenceを返しません。 |
@@ -105,7 +113,7 @@ Gemは署名、支持する開示閉包、委任、購入／Host binding、制�
 
 - [業務情報の一連の利用とRails対応付け](docs/INPUT_BUILDER.ja.md)、[完全Ruby例](examples/input_builder.rb)、[変更前の例](examples/input_builder_before.rb)。
 - [支持入力・上限・Result／Evidence契約](docs/SUPPORT_CONTRACT.md)、[Issuer／Host責務](docs/ISSUER_HOST_MINIMUM_CONTRACT.md)。
-- [公開済み0.3.0 Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.3.0)、[公開・撤回記録](docs/PROJECT_STATUS.md)、[変更履歴](CHANGELOG.md)。リポジトリREADMEの変更で公開Gemを再build・置換しません。
+- [公開済み0.4.0 Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.4.0)、[公開・撤回記録](docs/PROJECT_STATUS.md)、[変更履歴](CHANGELOG.md)。リポジトリREADMEの変更で公開Gemを再build・置換しません。
 - [固定commitの旧7入力・保存FULL例](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.ja.md#保存済み合成入力で試す)、[過去版の配布物・provider証拠](research/stable010_release_linux_package/README.md)、[過去の概念図](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.ja.md#図で見るap2の概念)。履歴は保存していますが、現在の連携手順や対応範囲を広げる根拠ではありません。
 - [脆弱性報告](SECURITY.md)、[保守方針](docs/POST_RELEASE_MAINTENANCE.md)、[製品方針](docs/PRODUCT_VISION.md)。秘密鍵・実Mandate・個人情報を報告に含めないでください。
 
