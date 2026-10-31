@@ -1,4 +1,12 @@
-# 0.6.0 candidate — publication requires Owner decision
+# 0.6.0 candidate — historical preparation record
+
+**Publication update, 2026-10-31:** Owner approved and published the exact
+candidate at 11:50:18.664 UTC; the official download was verified at 11:51:54 UTC.
+It matches source `baee59a603d08123adc0af50e57c8710ea62f4f9`, 56,832 bytes,
+SHA256 `ff669a62717f91b2295b3cea1b68c6c4143c490d98df071fd322ad4b0007195d`.
+See the [current publication record](PROJECT_STATUS.md#060-publication) and
+[Release notes](RELEASE_060.md). The original checklist and draft below are
+retained as preparation history, not outstanding publication instructions.
 
 This compatible feature release adds an explicitly selected bounded multi-item
 profile. Published 0.5.0 bytes, tags and Release remain unchanged. Exact final

@@ -1,0 +1,11 @@
+PASS installed published Gem README.md quick start
+PASS installed published Gem README.ja.md quick start
+checkout_segments=3 checkout_hash_length=43
+Success: verified=true purchase_succeeded=true purchase_rejected=false
+Error: verified=true purchase_succeeded=false purchase_rejected=true
+checkout verified=true profile=ap2.checkout.single_merchant_multi_item
+receipt Success: verified=true purchase_succeeded=true
+receipt Error: verified=true purchase_succeeded=false
+Synthetic demonstration only. Host authorization, atomic nonce consumption and payment remain application responsibilities.
+checkout_segments=3
+PASS installed published 0.6.0 guides and Release snippet; no Gem build

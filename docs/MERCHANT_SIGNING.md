@@ -1,8 +1,8 @@
 # Merchant Checkout signing and Receipt
 
-## Explicit multi-item selection — 0.6.0 preparation
+## Explicit multi-item selection — published 0.6.0
 
-Published 0.5.0 APIs below retain their default single-SKU behavior. This checkout
+The APIs introduced in 0.5.0 retain their default single-SKU behavior. Published 0.6.0
 adds optional `profile_ref: "ap2.checkout.single_merchant_multi_item"` to
 `CheckoutJWT.sign` and `CheckoutReceipt.reference/sign/verify`. Pass it consistently
 when working with a multi-item Checkout. The new profile validates every line,
@@ -15,9 +15,10 @@ Receipt still references the complete original `<terminal_jws>~`, without
 per-line hashes or a compact-only alternate. Profile selection validates the
 supported embedded Checkout shape; reference computation alone does not verify
 Mandate authorization. Result/Evidence and business-outcome separation remain
-unchanged. 0.6.0 is not yet published; its final validation is recorded separately.
+unchanged. The [0.6.0 publication record](PROJECT_STATUS.md#060-publication) identifies
+the reviewed source, distribution and validation separately.
 
-Published [0.5.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.5.0) includes these APIs. [Complete runnable synthetic example](../examples/merchant_signing.rb). The example is repository content, not part of the installed Gem.
+The original single-SKU signing/Receipt APIs were introduced in [0.5.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.5.0); the explicit multi-item selection above is available in 0.6.0. [Complete runnable single-SKU example](../examples/merchant_signing.rb). The example is repository content, not part of the installed Gem.
 
 ## Scope and responsibility
 

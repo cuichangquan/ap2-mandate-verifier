@@ -1,5 +1,14 @@
 # Multi-item candidate validation — 2026-10-31
 
+**Subsequent publication:** Owner published the exact verified candidate as
+0.6.0 at 11:50:18.664 UTC. Official download comparison completed at 11:51:54 UTC,
+matching all 22 payloads and the approved source. See the
+[publication record](PROJECT_STATUS.md#060-publication) and
+[new post-publication measurements](POST_RELEASE_060.md).
+The original scope, table and pending statements below describe the
+pre-publication task; they are retained without turning those earlier NOT_RUN
+entries into measurements from a later task.
+
 Owner's 178-line formal request delegates this compatible feature, isolated
 Docker preparation/tests/retries, synthetic fixtures, independent Codex review,
 Draft PRs and conditional Squash Merge. It replaces earlier task-specific

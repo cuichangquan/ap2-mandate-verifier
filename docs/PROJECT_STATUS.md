@@ -1,6 +1,18 @@
 # 現状メモ / Project status
 
-## 0.6.0案 — 複数明細対応を準備中・未公開
+<a id="060-publication"></a>
+
+## 0.6.0公開済み — 現在の配布状態
+
+[RubyGems 0.6.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.6.0)はOwner本人のTerminalで公開され、登録日時は2026-10-31 **11:50:18.664 UTC**、公式metadata・配布Gem・承認候補・sourceの照合完了は **11:51:54 UTC**。platform `ruby`、prerelease false、照合時yanked false、**56,832 bytes**、SHA256 `ff669a62717f91b2295b3cea1b68c6c4143c490d98df071fd322ad4b0007195d`。公開元sourceは `baee59a603d08123adc0af50e57c8710ea62f4f9`で、全22 payloadの一致、name/version、5固定依存、Ruby要件とMITを確認しました。[公開検証Receipt](evidence/0.6.0_publication.json)。RubyGems自体によるsource attestationではなく、保存済みレビュー候補と実配布bytesの一致による対応付けです。
+
+[本体PR #227](https://github.com/cuichangquan/ap2-mandate-verifier/pull/227)の最新review HEAD `78c661ec93e8b58aaef595cf8adba4761328951d`と統合treeは一致。独立Codexと[GitHub Codex最新HEADレビュー](https://github.com/cuichangquan/ap2-mandate-verifier/pull/227#issuecomment-6542733261)に重要未解決指摘なし、未解決thread 0、[CI 41196448304](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/41196448304)の両MRI成功を確認してSquash Mergeしました。MRI 3.4.12／4.0.9の全source回帰、同一最終候補の通常導入と全payload一致、新数量431 assertions・profile保存21 cases・署名済み一貫35 cases、独立Python288配分比較と6完全経路を確認しています。再利用された旧suiteは重複加算しません。[検証範囲と初回失敗の記録](MULTI_ITEM_VALIDATION.md)、[公式実装との成立範囲・差異](MULTI_ITEM_INTEROP.md)を参照してください。
+
+0.6.0は明示選択の `ap2.checkout.single_merchant_multi_item` v1を追加し、単一販売者・単一通貨の複数商品と異なる数量を、署名・prepare／保存／restore／現在状態の完全検証・Evidence・真正Success／Error Receiptまでつなぎます。数量不足・余剰は拒否し、既定の `ap2.checkout.single_merchant_sku` v1の定義・hash・受理範囲は維持します。Evidenceは購入許可ではなく、Receipt真正性は業務Successとは別です。[完全例](../examples/multi_item_checkout.rb)、[契約と移行](MULTI_ITEM_CHECKOUT.md)。
+
+公開Gem同梱文書は準備時点snapshotです。本リポジトリの公開後追補やGitHub source archiveは公開Gemを置き換えず、再build・再pushしません。以下の準備時点NOT_RUN/PENDINGは履歴として保持し、現在の配布状態は本節を正本とします。[Release notes](RELEASE_060.md)と[公開後の公式Gem導入・掲載例・デモの新実測](POST_RELEASE_060.md)は準備時点の試験と区別します。実Issuer、Host本番、原子的nonce消費・注文CAS、実決済、性能保証、本番GO、Phase 2-BのHOLDは維持します。
+
+### 0.6.0準備時点の記録（履歴）
 
 2026-10-31の正式依頼により、販売者側Checkout拡張の設計・実装・隔離環境の試験・独立レビュー・条件付きSquash Merge・文書とローカルデモ更新・最終候補Gem準備が一括委任されています。過去研究の一ファイル・一回実行・複数商品除外・逐次確認の制限を今回へ流用しません。公開タグ・Release・RubyGems push、費用、Mac本体への新規導入、実Issuer／実鍵／実決済／本番・他タスクHOLD解除は委任外のままです。
 
@@ -8,9 +20,9 @@
 
 **作成時点：実装・検証進行中、最新HEAD独立レビュー／必須CI／統合後の最終候補検証は未完了（NOT_RUNまたはPENDING）。0.6.0公開完了・公開準備完了とは扱いません。** 最終コードSHA、PR、試験環境と結果、候補SHA256・サイズ・payload・sourceは最終検証記録に追記します。公開操作は行わずOwner判断を待ちます。
 
-以下は配布履歴です。記録更新：2026-10-31 UTC（0.5.0公開確認）。0.5.0公開元source：
+以下は配布履歴です。記録更新：2026-10-31 UTC（0.6.0公開確認）。0.5.0公開元source：
 `bf796a53600c189b0cfe66c9cfcd1de8a353c03d`。公開後の文書更新は公開Gemのbytesを変更しません。
-以下の旧版・候補段階のNOT_RUN/HOLDや撤回記録は各時点の履歴で、現在の配布状態は直下の0.5.0記録を正本とします。
+以下の旧版・候補段階のNOT_RUN/HOLDや撤回記録は各時点の履歴で、現在の配布状態は冒頭の0.6.0記録を正本とします。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
 [プロセス正本 Issue #101](https://github.com/cuichangquan/ap2-mandate-verifier/issues/101)を確認してください。
@@ -19,7 +31,7 @@
 
 <a id="050-publication"></a>
 
-## 0.5.0公開済み — 現在の配布状態
+## 0.5.0公開済み — 過去の配布記録
 
 [RubyGems 0.5.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.5.0)は登録2026-10-31 **07:26:21.576 UTC**、公式metadata・実配布・保存最終候補のbyte照合完了 **07:29:21.200455 UTC**。owner `cuichangquan`、platform `ruby`、prerelease false、照合時yanked false、**50,688 bytes**、SHA256 `00b0ce0981070864c67a056906c5af204bbc5aaa80d029cb4a64294634367dd8`。全21 payloadを公開元source `bf796a53600c189b0cfe66c9cfcd1de8a353c03d`（tree `c853d5cc26e6cabed5c5c84c296d382dfd81ac8e`）と照合しました。RubyGemsがsource SHAをattestするものではなく、承認候補と配布bytesの一致による対応付けです。最初のversion一覧は古い応答でしたが、fresh queryで0.5.0掲載を確認済みです。
 

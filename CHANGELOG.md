@@ -1,11 +1,11 @@
 # Changelog
 
-## 0.6.0 — unreleased proposal
+## 0.6.0 — 2026-10-31
 
 - Adds explicitly selected `ap2.checkout.single_merchant_multi_item` v1 for a single merchant/Checkout/currency with up to eight lines, eight requirements and eight candidates per requirement. Integer maximum flow consumes all requirement and checkout quantities without double allocation; repeated product IDs on distinct lines and overlapping candidates are supported.
 - Propagates authenticated profile selection through InputBuilder preparation/restoration/current-state verification, Checkout signing, complete Mandate verification, Evidence and Checkout Success/Error Receipts. Preserves original signed bytes and saved challenge references; every supported candidate disclosure is required.
 - Keeps the old single-SKU v1 identifier/body/hash/acceptance range and default APIs, Result/status/code, diagnostic/Evidence semantics, formal MRI versions and runtime pins. Product Mandate issuance, payment and Host authorization remain separate.
-- Preparation, review, CI, final candidate installation and publication are distinct states. This entry records no 0.6.0 publication; [current validation/status](docs/PROJECT_STATUS.md) identifies completed evidence and remaining gates.
+- Initial preparation, review, CI and final candidate installation were separate from Owner publication approval. Published at 11:50:18.664 UTC; official distribution comparison completed 11:51:54 UTC. The 56,832-byte Gem, SHA256 `ff669a62717f91b2295b3cea1b68c6c4143c490d98df071fd322ad4b0007195d`, matches source `baee59a603d08123adc0af50e57c8710ea62f4f9` across all 22 payload files. [Publication record](docs/PROJECT_STATUS.md#060-publication). Repository-only follow-up documentation does not replace the published bytes.
 
 ## 0.5.0 — 2026-10-31
 
