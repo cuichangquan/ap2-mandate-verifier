@@ -1,0 +1,49 @@
+name: Merchant source and package
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'test/**'
+      - 'scripts/check_ruby_compatibility.sh'
+      - 'scripts/check_candidate_package.sh'
+      - 'ap2_mandate_verifier.gemspec'
+      - 'README.md'
+      - 'docs/MERCHANT_SIGNING.md'
+      - 'docs/SUPPORT_CONTRACT.md'
+      - '.github/merchant-ci.Dockerfile'
+      - '.github/workflows/merchant-source-package.yml'
+permissions:
+  contents: read
+concurrency:
+  group: merchant-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  source-package:
+    if: github.repository == 'cuichangquan/ap2-mandate-verifier' && !github.event.repository.private
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ['3.4.12', '4.0.9']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Build isolated pinned Ruby dependencies
+        run: docker build --build-arg RUBY_VERSION=${{ matrix.ruby }} -t ap2-merchant-ci -f .github/merchant-ci.Dockerfile .github
+      - name: Source regression and ordinary candidate installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/merchant-evidence"
+          docker run --rm --network=none --cpus=2 --memory=768m --pids-limit=128 \
+            -v "$GITHUB_WORKSPACE:/src:ro" -v "$RUNNER_TEMP/merchant-evidence:/out" \
+            ap2-merchant-ci sh -c '
+              set -eu
+              timeout 300 sh scripts/check_ruby_compatibility.sh /out/source
+              gem build ap2_mandate_verifier.gemspec --output /out/candidate.gem
+              timeout 300 sh scripts/check_candidate_package.sh /out/package /out/candidate.gem
+              cat /out/package/merchant-installed.json
+            '
