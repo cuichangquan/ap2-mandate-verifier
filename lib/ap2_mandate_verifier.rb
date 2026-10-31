@@ -10,6 +10,9 @@ require_relative "ap2_mandate_verifier/trust_context"
 require_relative "ap2_mandate_verifier/host_binding"
 require_relative "ap2_mandate_verifier/research_result"
 require_relative "ap2_mandate_verifier/input_builder"
+require_relative "ap2_mandate_verifier/merchant_signature"
+require_relative "ap2_mandate_verifier/checkout_jwt"
+require_relative "ap2_mandate_verifier/checkout_receipt"
 
 module AP2MandateVerifier
   # Accepts original JSON bytes only. Syntax validity is not AP2 validity,
