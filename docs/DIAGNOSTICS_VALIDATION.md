@@ -13,7 +13,7 @@ with network disabled, read-only source/root filesystem and private temporary
 storage. No Mac package installation or existing service/container alteration.
 
 On **each** MRI, final source passed existing 885 regression cases, 190 checkout
-API cases, 7 installation-metadata cases, 109 existing Builder cases and 242
+API cases, 7 installation-metadata cases, 109 existing Builder cases and 244
 new diagnostic assertions. Required Host/Evidence suites print again when
 reused by other suites; these are not counted as additional unique cases.
 
@@ -23,7 +23,7 @@ was ordinarily installed on both MRIs outside the checkout. All **17 payload
 files** matched source/archive/installation; all **12 loaded product Ruby
 files** came from the installed Gem. The saved independent 42-case oracle was
 checked through both complete APIs, all 134 existing installed checks passed,
-then 242 diagnostic assertions and seven runnable example scenarios passed.
+then 244 diagnostic assertions and seven runnable example scenarios passed.
 No source load-path substitution was used for installed checks.
 
 Covered: success diagnostic nil and original Evidence equality; malformed
@@ -32,6 +32,7 @@ code; unknown-code fallback; dependency/provider unavailable subtypes; arbitrary
 objects and subclasses; secret values/unknown keys/provider messages; sanitized
 Builder exceptions with no parser cause; diagnostic factory faults including
 faults during an ArgumentError rescue; frozen diagnostic/projection/dup/clone.
+Explicit stdout/stderr capture and malformed-JSON exception-chain checks passed.
 Diagnostics contain only catalog identifiers and text and retain no input graph.
 
 Rails demo (separate repo, based on `e103afa9b837036917fde64267cae98d8d8aad2d`):

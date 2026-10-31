@@ -8,6 +8,8 @@ else
   require_relative "../lib/ap2_mandate_verifier"
 end
 
+require "stringio"
+
 module DiagnosticTest
   B = AP2MandateVerifier::InputBuilder
   D = AP2MandateVerifier::Diagnostic
@@ -95,10 +97,24 @@ module DiagnosticTest
   # Diagnostics must not retain a raw order, arbitrary field name or values.
   malformed = [args.merge(order: order.merge(secret => secret)), args.merge(order: order.merge("currency" => secret)),
     args.merge(saved_challenge: secret), args.merge(trust: secret)]
-  malformed.each do |input|
-    result = B.verify(**input)
-    need(!result.success? && result.evidence.nil?, "secret malformed fail closed")
-    need(![result.inspect, result.diagnostic.inspect, result.diagnostic.to_h.inspect].join.include?(secret), "no diagnostic input echoes")
+  original_stdout, original_stderr = $stdout, $stderr
+  captured = StringIO.new
+  begin
+    $stdout = $stderr = captured
+    malformed.each do |input|
+      result = B.verify(**input)
+      need(!result.success? && result.evidence.nil?, "secret malformed fail closed")
+      need(![result.inspect, result.diagnostic.inspect, result.diagnostic.to_h.inspect].join.include?(secret), "no diagnostic input echoes")
+    end
+  ensure
+    $stdout, $stderr = original_stdout, original_stderr
+  end
+  need(!captured.string.include?(secret), "no secret in stdout/stderr logs")
+  begin
+    B.restore(saved_challenge: "{#{secret}")
+    raise "expected malformed JSON rejection"
+  rescue B::Invalid => error
+    need(error.cause.nil? && !error.full_message.include?(secret), "parse exception cause sanitized")
   end
   # Fault injection occurs after a verdict, not in the verification pipeline.
   original = D.method(:for_result)
