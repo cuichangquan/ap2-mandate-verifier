@@ -1,234 +1,110 @@
 # AP2 Mandate Verifier — 0.3.0
 
-Published 0.3.0 adds `InputBuilder`: map authenticated business records once, prepare and persist a challenge, then supply independent current state to the complete verifier. No hand-written trust/selection/Host JSON or hashes are needed. Start with the [runnable business-data example and Rails mapping](docs/INPUT_BUILDER.md). Existing seven-input APIs remain supported. The commands below install published 0.3.0.
+[日本語](README.ja.md)
 
-[Japanese / 日本語](README.ja.md)
+Verify purchase-delegation data in Ruby using a deliberately fixed AP2 profile. The Gem checks signed data against independently supplied Host trust and order information, then returns immutable Evidence. **Verification success is not purchase or payment permission.**
 
-A Rails-independent Ruby Gem for a deliberately fixed AP2 verification profile. **A valid signature alone never authorizes a purchase.** Successful checks produce immutable Evidence; the Host makes the final business decision.
+`InputBuilder` converts business records into verification inputs: it creates the Gem-specific trust/selection/Host JSON, fingerprints and original-wire digests for you. You still choose whom to trust and supply the expected order, challenge state and clock. The Gem is Rails-independent and performs no network, database or payment operations.
 
-## Start with the local demo
+## Try the local demo
 
-The [AP2 Mandate Verifier Demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo) calls the real verifier on synthetic valid, tampered and expired examples, with Docker local-startup instructions; it is not a hosted demo site, production payments or Host authorization.
+The [Rails demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme) uses published 0.3.0 and InputBuilder by default. Its Docker instructions require no host Ruby installation. Compare synthetic normal, tampered and expired cases, including actual status/code and Evidence presence. It is local-only; it does not issue real challenges, consume nonces or execute purchases.
 
-For a Japanese walkthrough of the three demo scenarios, see the [Zenn article](https://zenn.dev/ccq/articles/7f9643f96fe5c7).
+## Install
 
-## Choose your starting point
-
-| Route | Start here |
-| --- | --- |
-| Docker demo: compare three synthetic cases | Follow the [demo README](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme) for local startup and valid / tampered / expired examples. Docker commands are maintained there. |
-| Ruby without the demo: MRI 3.4.12 or 4.0.9 | Follow [installation](#distribution-and-installation), then the [business-data example and Rails mapping](docs/INPUT_BUILDER.md). |
-
-Both routes use the fixed-profile verifier, not payment execution or Host authorization. See the [supported contract](#supported-contract) for the scope. The goal is to make the choices understandable in about five minutes, not to promise a five-minute installation or build.
-
-## Distribution and installation
-
-[0.3.0 is published on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.3.0). This is the fixed-profile, verifier-only stable release; the research prerelease pre3 is a separate artifact.
-
-Use an MRI 3.4.12 or MRI 4.0.9 environment and your chosen Gem isolation. Normal installation may fetch dependencies and build JSON native extensions. Stop on conflicts or unknown providers rather than relaxing pins.
+Formal support is **MRI 3.4.12 and MRI 4.0.9**. In your chosen Gem environment:
 
 ```sh
-ruby --version # MRI 3.4.12 or MRI 4.0.9
 gem install ap2_mandate_verifier --version 0.3.0
 ```
 
-Bundler Gemfile:
+Or add to your Gemfile:
 
 ```ruby
 gem "ap2_mandate_verifier", "= 0.3.0"
 ```
 
-Fixed runtime dependencies: JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1.
-Bundler 4.0.20 is the observed resolver baseline, not a runtime dependency. Gem version constraints alone do not enforce the MRI engine, OS or native-provider provenance.
+Runtime dependencies are pinned to JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1. Normal installation may download/build dependencies; do not relax the pins to work around a conflict. The Ruby resolution interval is not certification of every Ruby version, OS or native provider. See the [support contract](docs/SUPPORT_CONTRACT.md).
 
-## Published 0.3.0 artifact and validation
+## A small InputBuilder example
 
-Published 2026-10-31 01:31:40.743 UTC; official metadata fetched at 01:32:40 UTC and archive comparison completed at 01:33:27 UTC. Owner `cuichangquan`, platform `ruby`, non-prerelease and not yanked at verification. The official metadata SHA, distributed Gem and retained final candidate matched: **37,376 bytes**, SHA256 `b3a31d5a8b0718f1085745dd4d97d85f210ff9a1628798110da9ff382ae546bd`, source `877f59195632f74714a60551b6afb22ac81d93e3`.
-
-On Debian 12/arm64, both MRI 3.4.12 and 4.0.9 passed the merged-source suites (885 existing source cases, 190 checkout cases, 7 metadata cases and 109 builder cases). The same final Gem passed ordinary installation, all 14 payload-file comparisons, 11 normally loaded product files and 134 installed cases per Ruby. The [publication record](docs/PROJECT_STATUS.md#030公開済み--現在の配布状態) distinguishes these results from the withdrawn earlier candidate and historical releases. These bounded observations do not validate real Issuers, actual Host operations or performance.
-
-The published Gem retains its preparation-time README/contract. These repository-only publication updates do not rebuild, repush or replace those exact bytes. The [v0.3.0 Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.3.0) targets the exact published source; GitHub source archives are not the RubyGems Gem.
-
-## Historical 0.2.1 compatibility and artifact
-
-0.2.1 formally supports exactly MRI 3.4.12 and MRI 4.0.9 with the same five fixed dependencies. Its installation metadata permits Ruby `>= 3.4.12, < 4.1`; that interval does not declare every intermediate version or another engine supported.
-
-Both versions were measured on Debian 12/arm64 with official Ruby bookworm images: 885 source regressions, 190 additional checkout cases and 7 metadata cases passed per Ruby. The same final Gem passed ordinary installation, all 13 payload-file comparisons, 10 normally loaded product files and 118 installed cases on each version. Exact providers and evidence are in the [compatibility record](docs/RUBY_3_4_12_COMPATIBILITY.md). Historical macOS/Ubuntu observations are separate and do not establish 0.2.1 compatibility there.
-
-Published 2026-10-30 11:51:55.894 UTC; verified 11:53:55 UTC. Official RubyGems metadata, distribution bytes and the retained final Gem matched: **34,816 bytes**, SHA256 `a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114`, source `5a02bc3a192e16aa3628cf7899617623b0aed78c`. Owner `cuichangquan`, platform `ruby`, non-prerelease, not yanked at verification. The [v0.2.1 GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.2.1) uses that exact source tag.
-
-The Gem's packaged README/contract retain their preparation snapshot. These repository updates do not rebuild or replace the published bytes. GitHub source archives differ from the RubyGems Gem. Seven inputs, fixed profile, Fail Closed, Result/Evidence v2 and existing API meanings remain unchanged; publication does not establish Host production GO.
-
-## Verification APIs: 0.3.0 and compatibility
-
-**Start new business-data integrations with `InputBuilder.verify` and the [complete example](docs/INPUT_BUILDER.md).** The saved example below demonstrates the direct seven-input `verify_checkout` API. Existing 0.1.0 applications can continue using `verify_research`; it remains available in 0.3.0 without a deprecation warning. Installing 0.1.0 does not provide `verify_checkout`.
-
-| Entry | Availability and contract |
-| --- | --- |
-| `InputBuilder.verify(**business_information)` | Since 0.3.0, assembles explicit authenticated Host information and invokes complete verification. Preparation and exact saved-data restoration are separate; see the [guide](docs/INPUT_BUILDER.md). |
-| `verify_checkout(**inputs)` | Direct full-verification entry since 0.2.0, retained in 0.3.0. Delegates directly to `ResearchResult.verify` without changing inputs or the verification pipeline. |
-| `verify_research(**inputs)` | Full-verification entry in published 0.1.0; retained unchanged in v0.3.0, without a deprecation warning. |
-| `verify(presentation_json:)` | Existing JSON syntax check only. Valid JSON returns `:unverified` / `:verification_not_implemented`, never successful Evidence. It is not a substitute for full verification. |
-
-The direct `verify_checkout` entry takes all seven inputs. In the saved example below, these values come from `full`; real integrations must supply the authenticated Host inputs described below:
-
-```ruby
-result = AP2MandateVerifier.verify_checkout(
-  trust_json: full.fetch("trust_json"),
-  selection_json: full.fetch("selection_json"),
-  host_json: full.fetch("host_json"),
-  root_presentation: full.fetch("root_presentation"),
-  terminal_jws: full.fetch("terminal_jws"),
-  host_checkout_jws: full.fetch("host_checkout_jws"),
-  verified_at: full.fetch("verified_at")
-)
-```
-
-Both full-verification entries require all seven inputs listed under [responsibility boundaries](#real-inputs-and-responsibility-boundaries): six original Strings and externally supplied integer Unix seconds. Seven inputs and seven supported shapes are different concepts. Neither entry broadens the fixed profile below or supplies missing trust, Host state or time. Missing or unknown keywords return `:unavailable` / `:research_verification_unavailable`, with `success? == false` and `evidence == nil`; positional arguments or invalid keyword expansion can raise before verification begins.
-
-The [result handling](#understanding-the-result) is unchanged: success remains `ResearchResult` with `:verified_research` / `:scoped_research_verified` and immutable Evidence v2; rejected and unavailable results have no Evidence. Evidence is checked facts, **not purchase authorization**. Exceptions or missing results must also stop the caller. See the [API migration plan](docs/V0_2_0_API_PLAN.md) for design history; its earlier implementation gates do not describe the published 0.1.0 artifact or replace this availability distinction.
-
-## Supported contract
-
-- AP2 pinned source `b4587ac1d055888a73b4b21750973cffba961793`, registered profile `ap2.checkout.single_merchant_sku` v1: exact body/hash and seven supported shapes.
-
-- ES256/P256, Open1→Closed1, three fixed disclosure positions, one Merchant/SKU/line, USD/EUR/JPY and empty links; unknown/unsupported forms are rejected.
-
-- The Gem checks strict bounded inputs, supplied trust selection, signed Root wire and full supported closure, Agent/Merchant signatures, delegation, purchase/Host binding, types, constraints and time.
-
-- Both full-verification entries above preserve `verified_research` / `scoped_research_verified` result names and the Evidence v2 contract; a stable version does not imply generic AP2 support or Host authorization.
-
-See [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md) for exact required shapes, bounds and failure codes.
-
-## Environment, compatibility and maintenance
-
-The supported MRI versions are 3.4.12 and 4.0.9 with fixed dependencies; current 0.3.0 measurements cover the exact Debian 12/arm64 configurations summarized in the publication record above. Earlier MRI 4.0.9 MBA/macOS arm64 and Ubuntu 24.04/x86_64 observations retain their historical scope. Distinguish [historical release-package/provider evidence](research/stable010_release_linux_package/README.md) from the current artifact. Other OS versions, engines, architectures and arbitrary provider updates are not covered.
-
-Supported-input semantics and APIs do not change silently. Security-driven narrowing identifies reason, impact and migration; breaking API/required-field/profile changes are explicit. Dependency updates are not automatically compatible.
-
-Maintenance covers the latest patch in the initial stable series, with manual monthly/advisory/pre-release review. No old-series backport, fixed support term, response/fix deadline or 24/7 promise. See [SECURITY](SECURITY.md) and [maintenance](docs/POST_RELEASE_MAINTENANCE.md); never report private keys, real Mandates or personal data.
-
-## Try the saved synthetic example
-
-This example reads the same public `FULL` input used by the successful installed-Gem checks. The input JSON is not packaged in the Gem. Fetch it from the pinned commit and verify its SHA256 first. It contains no private keys. Its trust/Host assertions are **synthetic test data**, not real Issuer enrollment, a current order or a live clock. `verified_at = 1800000000` is the saved scenario's fixed evaluation time.
-
-```sh
-set -eu
-curl --fail --location --proto '=https' --proto-redir '=https' \
-  --output AP2_RESEARCH_INPUTS.json \
-  https://raw.githubusercontent.com/cuichangquan/ap2-mandate-verifier/f6d4f83d396b75505256dba5769a54a8f065eeea/research/stage15/results/R3/INPUTS.json
-printf '%s\n' '41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1  AP2_RESEARCH_INPUTS.json' | shasum -a 256 -c -
-# Save the Ruby example below as research_example.rb, then:
-ruby research_example.rb
-```
+After installation, use a checkout of this repository. Save the following as `quick_start.rb` in its root and run `ruby quick_start.rb`. The JSON files under [`examples/input_builder/`](examples/input_builder/) contain explicit synthetic order/registration records and original signed Strings; they are not part of the installed Gem. Their fixed clock is intentional because the saved signatures expire. These are test inputs, not real enrollment or current production data.
 
 ```ruby
 require "ap2_mandate_verifier"
 require "json"
-require "digest"
+require "tmpdir"
 
-raw = File.binread("AP2_RESEARCH_INPUTS.json")
-expected = "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1"
-raise "fixture checksum mismatch" unless Digest::SHA256.hexdigest(raw) == expected
+builder = AP2MandateVerifier::InputBuilder
+fixtures = File.join(__dir__, "examples/input_builder")
+read = ->(name) { JSON.parse(File.binread(File.join(fixtures, "#{name}.json"))) }
+trust_at = ->(now) do
+  builder.trust(snapshot: read.call("trust_snapshot"), tenant_id: "synthetic-tenant",
+    issuer: {"identity" => "issuer", "purpose" => "checkout", "key_ref" => "issuer-1"},
+    agent: {"identity" => "agent", "purpose" => "checkout", "key_ref" => "agent-1"},
+    merchant: {"identity" => "shop", "purpose" => "checkout", "key_ref" => "merchant-1"},
+    verified_at: now)
+end
+wires = read.call("signed_wires").transform_keys(&:to_sym) # Preserve String bytes.
 
-full = JSON.parse(raw).fetch("FULL")
-inputs = {
-  trust_json: full.fetch("trust_json"),
-  selection_json: full.fetch("selection_json"),
-  host_json: full.fetch("host_json"),
-  root_presentation: full.fetch("root_presentation"),
-  terminal_jws: full.fetch("terminal_jws"),
-  host_checkout_jws: full.fetch("host_checkout_jws"),
-  verified_at: full.fetch("verified_at")
-}
+# Before issuance: independent order/trust and Host-chosen challenge information.
+prepared = builder.prepare(trust: trust_at.call(1_800_000_000),
+  order: read.call("order"), root_presentation: wires.fetch(:root_presentation),
+  host_checkout_jws: wires.fetch(:host_checkout_jws),
+  challenge_id: "synthetic-challenge", nonce: "n", issuer_id: "synthetic-host",
+  not_before: 1_799_998_000, not_after: 1_800_002_000)
 
-result = AP2MandateVerifier.verify_checkout(**inputs)
-puts "status=#{result.status} code=#{result.code}"
-if result.success?
-  checked_facts = result.evidence.to_h # Detached, deeply frozen in-process facts.
-  puts "Scoped verification succeeded; this is NOT purchase authorization."
-  # No payment, order update or nonce consumption is performed here.
-else
-  raise "Verification did not succeed; stop."
+Dir.mktmpdir do |directory|
+  record = File.join(directory, "challenge.json")
+  File.binwrite(record, prepared) # Demo persistence; the Host owns real storage.
+
+  # Later: load the saved bytes, and independently obtain current order/trust.
+  now = 1_800_000_000 # Supplied synthetic clock, not a production time source.
+  result = builder.verify(trust: trust_at.call(now),
+    saved_challenge: builder.restore(saved_challenge: File.binread(record)),
+    order: read.call("order"), **wires,
+    expected_challenge_issuer_id: "synthetic-host",
+    clock_source_id: "fixed-synthetic-clock", verified_at: now)
+  puts "#{result.status}/#{result.code}; evidence=#{!result.evidence.nil?}"
+  raise "Verification did not succeed; stop" unless result.success?
 end
 ```
 
-For this saved `FULL` case, the expected result is `status=:verified_research`, `code=:scoped_research_verified`, `success?=true`. This is not the expected outcome for arbitrary real inputs, unsupported forms or dependency failures. Non-success results have nil Evidence. Exceptions or process termination without a result must also stop the caller. Avoid logging complete Evidence or raw inputs.
+Expected for these unchanged synthetic inputs: `verified_research/scoped_research_verified; evidence=true`. This example models preparation, persistence and later verification in one process; it does not implement real issuance or atomic consumption. In an application, map authenticated registry/order records explicitly and preserve the original signed bytes. Structured business inputs use plain Ruby values with String keys, not ActiveRecord objects.
 
-## Understanding the result
+Do not call `prepare` again during verification or update saved hashes/references to match current values. Changed orders, trust or signed bytes must remain detectable. Persisted trust JSON can be loaded with `restore_trust` without reserializing it. The [complete example](examples/input_builder.rb) includes normal/tampered/expired cases; the [input guide](docs/INPUT_BUILDER.md) explains the business fields, exact restoration and Rails model mapping.
 
-| Outcome | `status` and predicate | Evidence and handling |
-| --- | --- | --- |
-| Successful scoped verification | `:verified_research`; `success? == true`; `code == :scoped_research_verified` | Present: checked facts, **not purchase authorization**. Host responsibilities still apply. |
-| Rejected | `:rejected`; `rejected? == true` | Absent (`nil`). Stop; inspect `result.code` for the rejection reason. |
-| Verification unavailable | `:unavailable`; `unavailable? == true` | Absent (`nil`). Stop; a dependency or verification failure does not by itself establish that the input is invalid. |
+## Results and responsibility boundaries
 
-An exception, process termination or missing result must also stop the caller without authorizing a purchase. The example above deliberately stops on every non-success result. See [Result and Evidence](docs/SUPPORT_CONTRACT.md#result-and-evidence) for details.
-
-## Real inputs and responsibility boundaries
-
-| Keyword | Input contract |
+| Result | Meaning and next step |
 | --- | --- |
-| `trust_json` | Original JSON String for authenticated Host trust snapshot, profile and public-key registration. |
-| `selection_json` | Independently selected tenant, profile version and role/identity/purpose/key references. |
-| `host_json` | Authenticated current order binding, issued challenge, expected issuer and clock identity. |
-| `root_presentation` | Original signed Root presentation String, preserving disclosure order and trailing `~`. |
-| `terminal_jws` | Original Agent terminal compact JWS String. |
-| `host_checkout_jws` | Original Merchant Checkout compact JWT String frozen by the Host. |
-| `verified_at` | Integer Unix seconds supplied by an external trusted clock. |
+| `:verified_research` / `:scoped_research_verified`, `success? == true` | Immutable Evidence contains checked facts for the fixed profile. The Host must still decide whether to authorize the purchase. |
+| `:rejected`, `rejected? == true` | No Evidence. Stop and inspect `result.code`. |
+| `:unavailable`, `unavailable? == true` | No Evidence. Stop; a dependency or processing failure is not proof of invalid business data. |
 
-See [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md#full-entry-and-required-inputs) for exact required shapes, types and limits. Do not register trust from the presented token or parse/re-encode/reorder signed wire input. Matching Host-only Buyer/account fields does not establish Issuer-signed identity authentication.
+Exceptions, process failure and missing results also never authorize an operation. Do not log raw inputs/nonces or treat serialized Evidence as an authenticated credential.
 
-A successful result from either full-verification entry establishes scoped verification facts. The Host still must recheck latest trust/revocation/order version/challenge/time and atomically consume the nonce with order CAS. The Gem does not perform those operations. Serializing Evidence to JSON does not preserve or reconstruct authenticity through this API. Legacy `verify(presentation_json:)` checks only the JSON syntax boundary and never returns successful Evidence.
+The Gem checks signatures, supported disclosure closure, delegation, purchase/Host bindings, constraints and validity. The Host supplies authenticated, independent and current trust/keys/revocation, order/challenge state and clock. Before acting, it rechecks current state and validity, atomically consumes the nonce with order CAS, handles uncertain outcomes, and makes the final authorization/payment decision. `prepare`/`restore` do not authenticate storage or prove an unused nonce.
 
-Before integration, consult the [Issuer onboarding checklist](docs/ISSUER_ONBOARDING_CHECKLIST.md) and [Issuer/Host minimum contract](docs/ISSUER_HOST_MINIMUM_CONTRACT.md). Real-Issuer trust and a specific Host's production GO are not established by this Gem version or verification success. The contract and Host/DB code under `research/` describe synthetic research designs and limited observations, not a production adapter.
+Supported scope is the fixed `ap2.checkout.single_merchant_sku` profile v1: ES256/P256, one Merchant/SKU/cart line, USD/EUR/JPY and the documented disclosure shapes. Unknown/unsupported forms fail closed. General AP2/all-Schema support, real Issuer interoperability, signing/Receipt generation, Rails adapters, DB/payment execution and numeric performance guarantees are outside this release. Real Issuer/Host production GO and Phase 2-B remain separate HOLDs.
 
-Raw nonce values are input-only; Evidence projects their SHA256. Other low-level verification entries also keep `success?=false` and `evidence=nil`; do not apply the successful example to those entries.
+### Which API should I use?
 
-## Exclusions and safe stopping
+| Entry | Role |
+| --- | --- |
+| `InputBuilder.verify(**business_information)` | Recommended business-data path in 0.3.0. Assembles inputs and runs complete verification; preparation and restoration are separate steps shown above. |
+| `verify_checkout(**inputs)` | Direct complete verification with the existing seven inputs, including caller-supplied trust/selection/Host JSON. |
+| `verify_research(**inputs)` | Retained name for the same seven-input verification pipeline; no deprecation warning. |
+| `verify(presentation_json:)` | Legacy JSON syntax check only. Never returns successful Evidence. |
 
-General AP2/full Schema, arbitrary real-Issuer interoperability, issuance/presentation/Receipt generation, Rails adapters, real payments/Host/DB/revocation operations, worst CPU/RSS/concurrency and numerical SLAs are outside scope. No defect-free/all-path safety proof is claimed; exclusions do not excuse known major defects or missing Gem checks.
+Malformed assembly arguments, including missing keywords, to `InputBuilder.verify` return `:rejected / :invalid_host_context`. Assembly dependency/unexpected failures return `:unavailable / :research_verification_unavailable`; results from the complete core retain their codes. In contrast, missing/unknown keywords to the direct `verify_checkout` / `verify_research` entries return `:unavailable / :research_verification_unavailable`. Every such failure has `success? == false` and `evidence == nil`. See [the exact contract](docs/SUPPORT_CONTRACT.md#full-entry-and-required-inputs) for shapes, bounds and Ruby argument-binding caveats.
 
-The Host supplies authenticated token-independent trust/keys/profile and current revocation/clock/order/challenge state, rechecks before use, atomically consumes nonce with order CAS, reconciles PENDING and decides ALLOW. Existing Gem checks remain Gem responsibilities. Evidence is in-process checked facts in trusted Ruby, not a transport credential. Unknown/rejected/unavailable/exception/missing results never authorize; the Host provides outer time/memory/concurrency limits.
+## More detail
 
-## Evidence and history
-
-The published 0.2.0 Gem is **33,280 bytes**, SHA256 `9a52e802de5a0564c34d198f4c4ad2c2b60791a8f1eb6e31db14c49e28e91f16`, from source commit `9b2e28d91fc4886722de7b9c39a5422e966953a9`. Publication on 2026-10-30 was verified against official RubyGems metadata, distribution bytes and the retained Gem. Its final Debian 12/arm64 / MRI 4.0.9 packaging observation matched all 13 payload files across source/archive/installation, loaded 10 product Ruby files normally and passed 118 installed cases using saved inputs/expected values. This is a limited observation, not a supported-platform expansion; source190/885 were not rerun in that packaging step. See [historical 0.2.0 publication record](docs/PROJECT_STATUS.md#020公開済み--現在の配布状態).
-
-The packaged README and contract are snapshots from before publication. These repository documentation updates do not change the published Gem, require no rebuild, and do not transfer its validation to a rebuilt artifact. GitHub source archives contain repository source, not the RubyGems binary.
-
-The published 0.1.0 archive is **34,304 bytes**, SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`. Official metadata, owner `cuichangquan`, downloaded distribution bytes and all 13 payload hashes were checked on 2026-10-26. See the [publication record](research/stable010_release_linux_package/README.md#rubygems-publication-verified). This repository README was reorganized after publication and differs from the packaged README; the published archive was not rebuilt.
-
-See the [versioned validation record](research/stable010_release_linux_package/README.md) for this archive's external SHA, per-environment observations and limits. The archive hash is kept outside its payload to avoid self-reference. A hash identifies bytes, not Host trust or global safety.
-
-[Earlier 0.1.0 candidate R1](research/stable010_candidate/README.md), [published pre3](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0.pre.3) and [pre2 Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.1.0.pre.2) are different archives. Historical NOT_RUN/stops/passes remain tied to their original bytes and time. Reusing 885 regressions (including 147) and Ruby4.0.1 independent comparisons is not a fresh 885 run or Linux independent Oracle.
-
-[Historical research documentation](https://github.com/cuichangquan/ap2-mandate-verifier/blob/2546d112b4bd4eaaf0a55b502f1c40b1fd61be65/README.md#research-documentation) does not override the current contract or release status. Future SDK plans are described in [PRODUCT_VISION](docs/PRODUCT_VISION.md).
-
-## Illustrated concepts (Japanese diagrams)
-
-These existing diagrams contain Japanese text and illustrate broader AP2 concepts, not the exact fixed-profile implementation contract. The fixed-profile contract above takes precedence. Issuer trust and current revocation are supplied and maintained by the Host; the Gem does not independently establish live external trust or revocation. Arbitrary chains, issuance, Payment Mandates and payment execution shown conceptually are not supported features of this release.
-
-### AP2 overview (Japanese)
-
-![AP2 overview (Japanese)](docs/assets/ap2-overview.png)
-
-### Delegation and Host responsibility boundaries (Japanese)
-
-![Delegation and Host responsibility boundaries (Japanese)](docs/assets/ap2-delegation-trust-flow.png)
-
-### Mandate anatomy (Japanese)
-
-![Mandate anatomy (Japanese)](docs/assets/mandate-anatomy.png)
-
-### SD-JWT and delegation concepts (Japanese)
-
-![SD-JWT and delegation concepts (Japanese)](docs/assets/sd-jwt-delegation-chain.png)
-
-### Fail-closed attack patterns and Host replay prevention (Japanese)
-
-![Fail-closed attack patterns and Host replay prevention (Japanese)](docs/assets/attack-patterns-fail-closed.png)
-
-## License
+- [Business-data lifecycle and Rails mapping](docs/INPUT_BUILDER.md), [complete Ruby example](examples/input_builder.rb) and [before/after example](examples/input_builder_before.rb).
+- [Supported inputs, limits and Result/Evidence contract](docs/SUPPORT_CONTRACT.md); [Issuer/Host responsibilities](docs/ISSUER_HOST_MINIMUM_CONTRACT.md).
+- [Published 0.3.0 release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.3.0), [publication/withdrawal records](docs/PROJECT_STATUS.md) and [changelog](CHANGELOG.md). Repository README changes do not rebuild or replace published Gem bytes.
+- [Pinned historical seven-input / saved FULL example](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.md#try-the-saved-synthetic-example), [older artifact/provider evidence](research/stable010_release_linux_package/README.md) and [historical conceptual diagrams](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.md#illustrated-concepts-japanese-diagrams). These records are preserved, not current integration instructions or broader support claims.
+- [Security reporting](SECURITY.md), [maintenance policy](docs/POST_RELEASE_MAINTENANCE.md) and [product direction](docs/PRODUCT_VISION.md). Do not include secrets, real Mandates or personal data in reports.
 
 MIT. See [LICENSE](LICENSE).
