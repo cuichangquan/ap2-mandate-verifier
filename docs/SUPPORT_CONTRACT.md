@@ -1,8 +1,8 @@
-# Fixed-profile AP2 verification — 0.6.0 preparation / published history
+# Fixed-profile AP2 verification — published 0.6.0 / history
 
 ## Current source: explicit multi-item profile
 
-This checkout prepares **0.6.0**, not yet published. It adds the explicitly
+Published **0.6.0** adds the explicitly
 selected `ap2.checkout.single_merchant_multi_item` v1 across input preparation,
 restoration/current-state verification, Checkout signing and Checkout Receipts.
 The [multi-item contract](MULTI_ITEM_CHECKOUT.md) defines the accepted shapes,
@@ -14,9 +14,20 @@ their original releases; they do not exclude this separately selected addition.
 
 Formal MRI 3.4.12 and 4.0.9, all five dependency pins, Result/status/code,
 diagnostic and Evidence meanings remain unchanged. Tests, independent review,
-CI and final archive identities must be read from the task's final validation
-record; pending work is not a PASS. Publication/tag/Release operations require
-Owner judgment and have not been performed for 0.6.0.
+CI and archive identities are recorded separately in the
+[0.6.0 publication record](PROJECT_STATUS.md#060-publication) and
+[validation record](MULTI_ITEM_VALIDATION.md); pending work is not a PASS.
+
+Registered 2026-10-31 **11:50:18.664 UTC**, official metadata/distribution
+comparison completed **11:51:54 UTC**: 56,832 bytes, SHA256
+`ff669a62717f91b2295b3cea1b68c6c4143c490d98df071fd322ad4b0007195d`,
+source `baee59a603d08123adc0af50e57c8710ea62f4f9`. All 22 payloads match
+the approved source and candidate, with unchanged five runtime pins and Ruby
+requirement. Platform `ruby`, non-prerelease, not yanked at comparison.
+Source association is established by candidate/distribution bytes, not RubyGems
+source attestation. [Publication receipt](evidence/0.6.0_publication.json).
+Packaged documents retain their preparation snapshot; these repository-only
+updates do not rebuild, repush or replace the published Gem.
 
 Published **0.5.0** adds separate [Merchant signing and Checkout Receipt APIs](MERCHANT_SIGNING.md). They do not broaden the existing Verifier profile or change Result/Evidence/status/code. Checkout Receipt uses the dedicated Schema and normative final SD-JWT reference; unsupported forms fail closed. No product Mandate issuance, payment, persistence or real key/trust management is included.
 

@@ -1,10 +1,11 @@
-# Multiple-item Checkout profile — 0.6.0 preparation
+# Multiple-item Checkout profile — published 0.6.0
 
 This is the contract for the additive, explicitly selected
-`ap2.checkout.single_merchant_multi_item` version `1`. Published 0.5.0 remains
-available with the unchanged `ap2.checkout.single_merchant_sku` v1 default.
-Candidate test/CI/review/package completion is recorded separately in
-[project status](PROJECT_STATUS.md); this document does not authorize publication.
+`ap2.checkout.single_merchant_multi_item` version `1`, available in published
+0.6.0. The `ap2.checkout.single_merchant_sku` v1 default remains unchanged.
+Tests, review, distribution identity and publication are recorded separately in
+[project status](PROJECT_STATUS.md#060-publication); publication does not authorize
+a Host purchase or payment.
 
 ## Selection and lifecycle
 

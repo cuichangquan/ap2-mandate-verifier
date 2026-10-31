@@ -1,8 +1,8 @@
 # 入力組み立て支援
 
-## 0.6.0準備中の複数明細profile
+## 公開済み0.6.0の複数明細profile
 
-公開安定版は0.5.0です。このcheckoutでは
+公開安定版0.6.0では
 `InputBuilder.trust(..., profile_ref: "ap2.checkout.single_merchant_multi_item")`
 を明示指定できます。省略時は旧単一SKU profile v1のままです。選択は認証済みHost方針であり、
 受信Mandateから推測しません。`prepare`、`restore`、`restore_trust`、`inputs`、`verify` は
@@ -95,7 +95,7 @@ JSONの業務情報例を参照してください。取得元の認証・最新�
 
 ## 版と移行
 
-Gem版（公開0.5.0・次版案0.6.0）、AP2参照SHA `b4587ac1d055888a73b4b21750973cffba961793`、
+Gem版（現行公開0.6.0）、AP2参照SHA `b4587ac1d055888a73b4b21750973cffba961793`、
 明示選択するprofile（旧 `ap2.checkout.single_merchant_sku` v1／新 `ap2.checkout.single_merchant_multi_item` v1）、保存format v1を区別します。
 未知版は旧版として解釈せずFail Closed。将来の新規業務要件までアプリ変更不要とは約束しません。
 既存の7入力連携はそのまま継続でき、新たな準備から補助APIを採用できます。

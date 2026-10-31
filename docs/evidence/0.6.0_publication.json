@@ -1,0 +1,53 @@
+{
+  "status": "PASS",
+  "verified_at": "2026-10-31T11:51:54Z",
+  "registry_published_at": "2026-10-31T11:50:18.664Z",
+  "name": "ap2_mandate_verifier",
+  "version": "0.6.0",
+  "source": "baee59a603d08123adc0af50e57c8710ea62f4f9",
+  "official_metadata": "https://rubygems.org/api/v2/rubygems/ap2_mandate_verifier/versions/0.6.0.json",
+  "official_download": "https://rubygems.org/downloads/ap2_mandate_verifier-0.6.0.gem",
+  "artifact_sha256": "ff669a62717f91b2295b3cea1b68c6c4143c490d98df071fd322ad4b0007195d",
+  "artifact_bytes": 56832,
+  "candidate_exact_bytes_match": true,
+  "source_and_candidate_all_22_payloads_match": true,
+  "payload_sha256": {
+    "LICENSE": "1442143c4265d88eedfc14f25d04298449358c837b0bb58dfa825f84b36391c8",
+    "README.md": "38fb8f4c6c2923ff9b66aeaa87509fafb85c4b1e9f2e60bcd2ac57298233bf9e",
+    "docs/DIAGNOSTICS.ja.md": "302c87b40cb44bda43af021448ebe83409db96bbb2b0fb9c44e6a3dc78f3d433",
+    "docs/DIAGNOSTICS.md": "881cb7416ac1b18c26042ffa7f3bdbb33ccf5dbc95a2f7394f753271807df056",
+    "docs/MERCHANT_SIGNING.md": "3412dfdf767613350af18a63cfe939491d71ef7f0204e1920337a493a2947b54",
+    "docs/MULTI_ITEM_CHECKOUT.md": "666a470db289706e35a1e54adb0820a6af7a592a29278c9f841bb6a87d2442dc",
+    "docs/SUPPORT_CONTRACT.md": "205250d2f3c0d5723afb641cbebc0d65a0600a29ebf07f9d586136e45a178f52",
+    "lib/ap2_mandate_verifier.rb": "1feb0ac3297e82f5ad64c2ab657d5f21e3e1c954c5f353dd0223f115ac334518",
+    "lib/ap2_mandate_verifier/checkout_jwt.rb": "5b546206c244d5850870609aa4b07e5b9886f88579bd91ed5d51729c96cd00fa",
+    "lib/ap2_mandate_verifier/checkout_receipt.rb": "873d3f83da1db30c78fe4b231edf3b9360ce43d3a3f4f4e5c5f571efc447d2c4",
+    "lib/ap2_mandate_verifier/diagnostic.rb": "0d2e961d80d5f29d42b49898e2df993f60962766437958adba568cbf9b5d7f1e",
+    "lib/ap2_mandate_verifier/host_binding.rb": "1373efe503ccc5eda817ffd790799fc622d6cb106f8b7da85ef2b3f4693c662e",
+    "lib/ap2_mandate_verifier/input_builder.rb": "a35a5ce9160f0a8816c6dde6eeeeac09724b655d465c5caf7f14acdbe17e3290",
+    "lib/ap2_mandate_verifier/input_validator.rb": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+    "lib/ap2_mandate_verifier/merchant_signature.rb": "43afb0833aca4bb37232c920ec772be3294ed2aa6fee9e7596eabffdf51f10d1",
+    "lib/ap2_mandate_verifier/purchase_binding.rb": "6f3f966eed59511eed54cc7f28bb8fe83123d43b5b213502a9ea5cc328c53690",
+    "lib/ap2_mandate_verifier/research_result.rb": "6b0bc022e57a2a837e296f2b1bfe9a154d69b4c98fea46e269e2d3f28a1c948b",
+    "lib/ap2_mandate_verifier/result.rb": "ba4fc058784e34a870507446224121a6ba09387137ef2a8c044e02256fc6c64f",
+    "lib/ap2_mandate_verifier/root_disclosures.rb": "18473ae5392620fb58ce0a4ae24e722bd8aa937de5d46f363b387fb94d383ea5",
+    "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+    "lib/ap2_mandate_verifier/scoped_constraints.rb": "8bdb086e18a1288e0912586b0919932e847421f5460717b8d87ce60ee8fdd11c",
+    "lib/ap2_mandate_verifier/trust_context.rb": "897936b2fec31e63a673ca15e89485c5254f13a427aafae9504e3c2525601f97"
+  },
+  "runtime_dependencies": {
+    "base64": "= 0.3.0",
+    "digest": "= 3.2.1",
+    "json": "= 2.19.9",
+    "jwt": "= 3.3.0",
+    "openssl": "= 4.0.2"
+  },
+  "required_ruby": ">= 3.4.12, < 4.1",
+  "environment": {
+    "ruby": "3.4.12",
+    "engine": "ruby",
+    "platform": "aarch64-linux",
+    "network": "none"
+  },
+  "operations": "Official HTTPS retrieval followed by isolated offline metadata/archive/source comparison; no push, rebuild, installation, tags, Release, docs or demo mutation"
+}

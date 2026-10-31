@@ -1,8 +1,8 @@
 # Input assembly for explicit checkout profiles
 
-## Multi-item selection in 0.6.0 preparation
+## Multi-item selection in published 0.6.0
 
-Published stable remains 0.5.0. This checkout adds
+Published stable 0.6.0 supports
 `InputBuilder.trust(..., profile_ref: "ap2.checkout.single_merchant_multi_item")`.
 Omitting `profile_ref:` retains the unchanged single-SKU v1 profile. The new
 selection is authenticated Host policy, not extracted from Mandate claims.
@@ -149,7 +149,7 @@ business data, registration policy or atomic Host operations.
 
 ## Versions and migration
 
-Gem version (published `0.5.0`, proposed `0.6.0`), AP2 source
+Gem version (current published `0.6.0`), AP2 source
 `b4587ac1d055888a73b4b21750973cffba961793`, explicitly selected profile
 (`ap2.checkout.single_merchant_sku` v1 or `ap2.checkout.single_merchant_multi_item` v1), and preparation format `1` are
 separate identifiers. Unknown preparation/profile versions fail closed. There is
