@@ -13,7 +13,7 @@ cd "$source_dir"
 dependency_path=$(ruby -e 'puts Gem.path.join(File::PATH_SEPARATOR)')
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
   gem install --local --no-document "$artifact" > "$out_dir/install.log" 2>&1
-ruby -r "$source_dir/test/runtime_dependencies.rb" test/package_contents_audit.rb "$artifact" "$work_dir/extracted" "$work_dir/installed/gems/ap2_mandate_verifier-0.5.0" > "$out_dir/package.json"
+ruby -r "$source_dir/test/runtime_dependencies.rb" test/package_contents_audit.rb "$artifact" "$work_dir/extracted" "$work_dir/installed/gems/ap2_mandate_verifier-0.6.0" > "$out_dir/package.json"
 mkdir "$work_dir/detached"
 cd "$work_dir/detached"
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
@@ -31,3 +31,6 @@ for scenario in valid tampered expired missing_currency wrong_total_type unknown
 done
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
   ruby "$source_dir/test/merchant_installed_test.rb" "$source_dir/examples/input_builder/signed_wires.json" > "$out_dir/merchant-installed.json"
+GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
+  ruby "$source_dir/examples/multi_item_checkout.rb" > "$out_dir/multi-item-installed.log"
+cat "$out_dir/multi-item-installed.log"

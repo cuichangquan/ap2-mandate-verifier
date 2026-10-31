@@ -1,6 +1,14 @@
-# AP2 Mandate Verifier — 0.5.0
+# AP2 Mandate Verifier — 0.6.0準備中
 
 [English](README.md)
+
+公開済み安定版は **0.5.0** です。このcheckoutは互換な複数明細対応を **0.6.0案** として準備しています。未公開で、独立レビュー・CI・最終候補検証とOwnerの公開判断は別工程です。[現在地](docs/PROJECT_STATUS.md)を参照してください。
+
+## 複数商品と数量
+
+新profile `ap2.checkout.single_merchant_multi_item` v1は、`InputBuilder.trust`、`CheckoutJWT.sign`、`CheckoutReceipt.reference/sign/verify` に `profile_ref:` を渡して明示選択します。完全検証は認証済みtrustの選択に従います。既定の `ap2.checkout.single_merchant_sku` v1は定義・hash・1明細の受理範囲を維持します。
+
+単一販売者・単一Checkout・単一通貨で最大8明細を扱い、数量違いと同一商品の別行を支持します。開示候補の商品IDを整数最大流で照合し、全要件と全注文数量を過不足なく一度ずつ充当します。要件IDと明細IDは別の識別子です。[詳細・移行案内](docs/MULTI_ITEM_CHECKOUT.md)と[合成入力による一連の動作例](examples/multi_item_checkout.rb)を参照してください。
 
 Rubyで購入委任データを検証する、AP2の固定profile向けGemです。署名データを、Hostが独立して渡す信頼情報・注文情報と照合し、不変のEvidenceを返します。**検証成功は購入許可・決済許可ではありません。**
 
@@ -116,7 +124,7 @@ end
 
 Gemは署名、支持する開示閉包、委任、購入／Host binding、制約・期限を検査します。Hostは認証済み・独立・最新のtrust／鍵／失効、注文・Challenge状態、時計を供給します。実行直前に現在状態と期限を再照合し、nonceの原子消費＋注文CAS、不明結果の回復、最終許可・決済判断を担当します。`prepare`／`restore` は保存元の認証やnonce未使用を証明しません。
 
-対応は固定profile `ap2.checkout.single_merchant_sku` v1です。ES256/P256、単一Merchant／SKU／cart行、USD/EUR/JPYと文書化した開示形状に限定し、未知・非対応形式は拒否します。一般AP2／全Schema、実Issuer互換性、署名／Receipt生成、Rails adapter、DB／決済実行、数値性能保証は対象外です。実Issuer・実Hostの本番GOとPhase 2-Bは引き続き別のHOLDです。
+公開済み0.5.0は固定profile `ap2.checkout.single_merchant_sku` v1で、ES256/P256、単一Merchant／SKU／cart行、USD/EUR/JPYと文書化した開示形状に限定します。このcheckoutは明示選択の[複数明細profile](docs/MULTI_ITEM_CHECKOUT.md)を追加します。未知・非対応形式は拒否します。一般AP2／全Schema、実Issuer互換性、製品Mandate発行・提示、Rails adapter、DB／決済実行、数値性能保証は対象外です。実Issuer・実Hostの本番GOとPhase 2-Bは引き続き別のHOLDです。
 
 ### APIの使い分け
 

@@ -1,6 +1,14 @@
-# AP2 Mandate Verifier — 0.5.0
+# AP2 Mandate Verifier — 0.6.0 preparation
 
 [日本語](README.ja.md)
+
+Published stable is **0.5.0**. This checkout prepares additive multi-item support for **0.6.0**, which is not published. Review, CI, final package validation and Owner publication approval are separate gates; see [current status](docs/PROJECT_STATUS.md).
+
+## Multiple items and quantities
+
+Explicitly select `profile_ref: "ap2.checkout.single_merchant_multi_item"` when creating trust with `InputBuilder.trust`, signing a checkout with `CheckoutJWT.sign`, and using `CheckoutReceipt.reference/sign/verify`. The complete verifier follows the authenticated trust selection. The default `ap2.checkout.single_merchant_sku` v1 retains its exact definition, hash and one-line acceptance range.
+
+The new v1 profile supports one merchant, one checkout, one currency and up to eight lines, with different quantities and repeated product IDs on distinct lines. It matches all disclosed product candidates using integer maximum flow: every requirement and every ordered unit must be consumed exactly once. Requirement IDs and checkout line IDs are distinct identifiers. See the [multi-item contract and migration](docs/MULTI_ITEM_CHECKOUT.md) and [synthetic runnable lifecycle](examples/multi_item_checkout.rb).
 
 Verify purchase-delegation data in Ruby using a deliberately fixed AP2 profile. The Gem checks signed data against independently supplied Host trust and order information, then returns immutable Evidence. **Verification success is not purchase or payment permission.**
 
@@ -117,7 +125,7 @@ Exceptions, process failure and missing results also never authorize an operatio
 
 The Gem checks signatures, supported disclosure closure, delegation, purchase/Host bindings, constraints and validity. The Host supplies authenticated, independent and current trust/keys/revocation, order/challenge state and clock. Before acting, it rechecks current state and validity, atomically consumes the nonce with order CAS, handles uncertain outcomes, and makes the final authorization/payment decision. `prepare`/`restore` do not authenticate storage or prove an unused nonce.
 
-Supported scope is the fixed `ap2.checkout.single_merchant_sku` profile v1: ES256/P256, one Merchant/SKU/cart line, USD/EUR/JPY and the documented disclosure shapes. Unknown/unsupported forms fail closed. General AP2/all-Schema support, real Issuer interoperability, signing/Receipt generation, Rails adapters, DB/payment execution and numeric performance guarantees are outside this release. Real Issuer/Host production GO and Phase 2-B remain separate HOLDs.
+Published 0.5.0 uses `ap2.checkout.single_merchant_sku` v1: ES256/P256, one Merchant/SKU/cart line, USD/EUR/JPY and the documented disclosure shapes. This checkout adds the explicitly selected [multi-item profile](docs/MULTI_ITEM_CHECKOUT.md). Unknown/unsupported forms fail closed. General AP2/all-Schema support, real Issuer interoperability, product Mandate issuance/presentation, Rails adapters, DB/payment execution and numeric performance guarantees remain outside scope. Real Issuer/Host production GO and Phase 2-B remain separate HOLDs.
 
 ### Which API should I use?
 

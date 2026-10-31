@@ -1,4 +1,22 @@
-# Fixed-profile AP2 verification — published 0.5.0 / historical releases
+# Fixed-profile AP2 verification — 0.6.0 preparation / published history
+
+## Current source: explicit multi-item profile
+
+This checkout prepares **0.6.0**, not yet published. It adds the explicitly
+selected `ap2.checkout.single_merchant_multi_item` v1 across input preparation,
+restoration/current-state verification, Checkout signing and Checkout Receipts.
+The [multi-item contract](MULTI_ITEM_CHECKOUT.md) defines the accepted shapes,
+eight-line/eight-requirement/eight-candidate bounds, integer maximum-flow matching,
+complete disclosures, exact original-byte binding and migration. Existing
+`ap2.checkout.single_merchant_sku` v1 identifier/body/hash/acceptance range and all
+default APIs remain unchanged. Historical single-profile statements below describe
+their original releases; they do not exclude this separately selected addition.
+
+Formal MRI 3.4.12 and 4.0.9, all five dependency pins, Result/status/code,
+diagnostic and Evidence meanings remain unchanged. Tests, independent review,
+CI and final archive identities must be read from the task's final validation
+record; pending work is not a PASS. Publication/tag/Release operations require
+Owner judgment and have not been performed for 0.6.0.
 
 Published **0.5.0** adds separate [Merchant signing and Checkout Receipt APIs](MERCHANT_SIGNING.md). They do not broaden the existing Verifier profile or change Result/Evidence/status/code. Checkout Receipt uses the dedicated Schema and normative final SD-JWT reference; unsupported forms fail closed. No product Mandate issuance, payment, persistence or real key/trust management is included.
 
@@ -68,7 +86,7 @@ Gem-owned signature/original-wire/closure, delegation, binding, supplied-trust s
 Host inputs must be authenticated, independent of the token and current: trust/keys/profile/revocation/rollback protection, clock and order/challenge state. Recheck before use; atomically consume nonce with order CAS, reconcile unknown results as PENDING, and decide final ALLOW/payment separately.
 Evidence is immutable checked facts in the same trusted Ruby process, not ALLOW or a transport credential. JSON/Hash reconstruction does not authenticate it. Rejection, unavailability, exceptions and no result never authorize an operation. Trusted Ruby is a precondition, not a malicious-Ruby sandbox.
 
-No worst-case CPU/RSS/concurrency or numeric SLA is promised. Host process/time/memory/concurrency limits supplement, not replace, Gem finite input bounds. Issuance, presentation generation, Receipt, Rails adapter, real payments and Host DB operations are outside this verifier.
+No worst-case CPU/RSS/concurrency or numeric SLA is promised. Host process/time/memory/concurrency limits supplement, not replace, Gem finite input bounds. Product Mandate issuance/presentation, Rails adapters, real payments and Host DB operations remain outside the Gem. Separate merchant signing/Checkout Receipt APIs are documented in [MERCHANT_SIGNING](MERCHANT_SIGNING.md).
 Supported-input semantics and existing API/status/code/Evidence contracts must not change silently. Security-driven acceptance narrowing requires impact/reason/migration disclosure; breaking required-field/profile/API changes must be explicit. Dependency updates are not automatically compatible.
 
 The published 0.2.0 and historical baseline below is MRI4.0.9 plus JSON2.19.9/JWT3.3.0/base640.3.0/OpenSSL gem4.0.2/Digest3.2.1, with the exact observed MBA arm64-darwin25 and Ubuntu24.04/x86_64 configurations. RubyGems version constraints do not enforce MRI/OS/provider identity. All OS versions, other engines/architectures and arbitrary provider updates are not supported by past observations.
@@ -83,7 +101,7 @@ The API/limit specification below preserves the existing contract. All pre2/pre3
 
 ## Supported proposition and environment
 
-The sole registered profile is `ap2.checkout.single_merchant_sku` version1,
+The historical sole registered profile is `ap2.checkout.single_merchant_sku` version1,
 with the exact `TrustContext::PROFILE_BODY`/hash. Official AP2 source is fixed at
 b4587ac1d055888a73b4b21750973cffba961793; its subset-source reference027ed4734...
 is historical profile provenance, not runtime code attestation. Root typ is

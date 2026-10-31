@@ -1,0 +1,4 @@
+PASS 149 Host binding/challenge/aggregate interval cases; no consumption/Evidence/ALLOW
+PASS 109 input builder contract/boundary cases; existing Host suite reported separately; not Host ALLOW
+PASS CheckoutJWT signing, immutable original wire, negative inputs and existing Verifier/InputBuilder integration
+PASS 65 CheckoutReceipt reference/signing/authentication/business outcome checks

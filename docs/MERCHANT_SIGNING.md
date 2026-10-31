@@ -1,4 +1,21 @@
-# Merchant Checkout signing and Receipt — published 0.5.0
+# Merchant Checkout signing and Receipt
+
+## Explicit multi-item selection — 0.6.0 preparation
+
+Published 0.5.0 APIs below retain their default single-SKU behavior. This checkout
+adds optional `profile_ref: "ap2.checkout.single_merchant_multi_item"` to
+`CheckoutJWT.sign` and `CheckoutReceipt.reference/sign/verify`. Pass it consistently
+when working with a multi-item Checkout. The new profile validates every line,
+integer product/sum limits and unique line IDs before signing. Its
+[full contract](MULTI_ITEM_CHECKOUT.md) covers quantities, candidate matching,
+limits and migration; the [synthetic example](../examples/multi_item_checkout.rb)
+connects signing with InputBuilder verification and both Receipt outcomes.
+
+Receipt still references the complete original `<terminal_jws>~`, without
+per-line hashes or a compact-only alternate. Profile selection validates the
+supported embedded Checkout shape; reference computation alone does not verify
+Mandate authorization. Result/Evidence and business-outcome separation remain
+unchanged. 0.6.0 is not yet published; its final validation is recorded separately.
 
 Published [0.5.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.5.0) includes these APIs. [Complete runnable synthetic example](../examples/merchant_signing.rb). The example is repository content, not part of the installed Gem.
 
@@ -13,8 +30,10 @@ merchant enrollment, persist an order, consume a nonce or make a payment.
 The adopted AP2 source remains
 [`b4587ac1d055888a73b4b21750973cffba961793`](https://github.com/google-agentic-commerce/AP2/tree/b4587ac1d055888a73b4b21750973cffba961793).
 Checkout-specific ordering is defined by the existing local fixed profile, not
-all UCP shapes. Unsupported fields, multiple items, nonempty links and unsupported
-currencies are rejected. Amounts are integer minor units; totals must agree.
+all UCP shapes. Under the default profile, multiple items are rejected. The
+explicit multi-item profile supports the documented bounded subset. Unsupported
+fields, nonempty links and unsupported currencies are rejected in both profiles.
+Amounts are integer minor units; totals must agree.
 
 ## Minimal executable example
 

@@ -1,4 +1,20 @@
-# 入力組み立て支援（0.4.0）
+# 入力組み立て支援
+
+## 0.6.0準備中の複数明細profile
+
+公開安定版は0.5.0です。このcheckoutでは
+`InputBuilder.trust(..., profile_ref: "ap2.checkout.single_merchant_multi_item")`
+を明示指定できます。省略時は旧単一SKU profile v1のままです。選択は認証済みHost方針であり、
+受信Mandateから推測しません。`prepare`、`restore`、`restore_trust`、`inputs`、`verify` は
+既存引数のまま検証済みprofileに従います。保存済み識別子・定義hash・bindingと現在trustが
+異なる場合に、再生成して修復しません。旧保存形式は旧profileのまま維持し、移行は提示前に
+新selectionと新challengeを作る手順です。
+
+`CheckoutJWT.sign` と `CheckoutReceipt.reference/sign/verify` にも同じ `profile_ref:` を
+明示します。[複数明細の契約](MULTI_ITEM_CHECKOUT.md)に識別子・数量・開示・上限、
+[一連の合成動作例](../examples/multi_item_checkout.rb)に署名・準備・保存・復元・現在状態の
+検証と真正なSuccess/Error Receiptを示します。以下の業務注文は引き続き独立したHost値です。
+受信claimの合計や鍵を、そのまま期待注文・信頼登録へ昇格させないでください。
 
 公開済み0.4.0では安全な診断を利用できます。[診断APIと確認方法](DIAGNOSTICS.ja.md)。既存の判定・Evidence契約は維持します。
 
@@ -79,8 +95,8 @@ JSONの業務情報例を参照してください。取得元の認証・最新�
 
 ## 版と移行
 
-Gem 0.3.0、AP2参照SHA `b4587ac1d055888a73b4b21750973cffba961793`、
-固定profile `ap2.checkout.single_merchant_sku` v1、保存format v1を区別します。
+Gem版（公開0.5.0・次版案0.6.0）、AP2参照SHA `b4587ac1d055888a73b4b21750973cffba961793`、
+明示選択するprofile（旧 `ap2.checkout.single_merchant_sku` v1／新 `ap2.checkout.single_merchant_multi_item` v1）、保存format v1を区別します。
 未知版は旧版として解釈せずFail Closed。将来の新規業務要件までアプリ変更不要とは約束しません。
 既存の7入力連携はそのまま継続でき、新たな準備から補助APIを採用できます。
 既存Host JSONを新規発行Challengeへ自動変換せず、非対応保存形式はHostの正式な再承認・再発行で扱います。

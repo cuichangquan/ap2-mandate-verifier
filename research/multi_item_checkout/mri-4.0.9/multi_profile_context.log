@@ -1,0 +1,2 @@
+PASS 149 Host binding/challenge/aggregate interval cases; no consumption/Evidence/ALLOW
+PASS 21 explicit multi-profile trust/challenge compatibility cases

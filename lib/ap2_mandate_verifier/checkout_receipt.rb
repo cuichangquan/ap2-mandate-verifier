@@ -32,7 +32,7 @@ module AP2MandateVerifier
 
     # Exact received final closed SD-JWT, no disclosures or additional hop.
     # A terminal compact JWS alone is intentionally not accepted or repaired.
-    def self.reference(closed_sd_jwt:)
+    def self.reference(closed_sd_jwt:, profile_ref: TrustContext::PROFILE_REF)
       wire = InputValidator.snapshot!(closed_sd_jwt, max_bytes: 32_769)
       raise Invalid unless wire.ascii_only? && wire.end_with?("~") && wire.count("~") == 1
       compact = wire.byteslice(0, wire.bytesize - 1)
@@ -62,15 +62,16 @@ module AP2MandateVerifier
       checkout_header = InputValidator.parse!(RootSignature.send(:decode!, checkout_parts[0], 2_048))
       header!(checkout_header, "JWT")
       raise Invalid unless RootSignature.send(:decode!, checkout_parts[2], 64).bytesize == 64
-      CheckoutJWT.send(:validate!, InputValidator.parse!(RootSignature.send(:decode!, checkout_parts[1], 12_000)))
+      CheckoutJWT.send(:validate!, InputValidator.parse!(RootSignature.send(:decode!, checkout_parts[1], 12_000)), profile_ref: profile_ref)
       raise Invalid unless closed["checkout_hash"] == hash(checkout)
       hash(wire).freeze
     rescue StandardError, LoadError
       raise Invalid.new, cause: nil
     end
 
-    def self.sign(closed_sd_jwt:, issuer:, outcome:, issued_at:, signer:, public_key_pem:, order_id: nil, error: nil, error_description: nil)
-      ref = reference(closed_sd_jwt: closed_sd_jwt)
+    def self.sign(closed_sd_jwt:, issuer:, outcome:, issued_at:, signer:, public_key_pem:, order_id: nil, error: nil, error_description: nil,
+                  profile_ref: TrustContext::PROFILE_REF)
+      ref = reference(closed_sd_jwt: closed_sd_jwt, profile_ref: profile_ref)
       claims = {"iss" => issuer, "status" => outcome, "iat" => issued_at, "reference" => ref}
       claims["order_id"] = order_id unless order_id.nil?
       claims["error"] = error unless error.nil?
@@ -86,12 +87,13 @@ module AP2MandateVerifier
     # The Host supplies trusted enrollment key, expected signer and explicit time
     # window independently. JWT iss/kid are never used to choose trust.
     # Reference authenticates byte identity, not Mandate authorization/validity.
-    def self.verify(jwt:, closed_sd_jwt:, trusted_public_key_pem:, expected_issuer:, not_before:, not_after:, verified_at:)
+    def self.verify(jwt:, closed_sd_jwt:, trusted_public_key_pem:, expected_issuer:, not_before:, not_after:, verified_at:,
+                    profile_ref: TrustContext::PROFILE_REF)
       expected = InputValidator.snapshot!(expected_issuer, max_bytes: 512)
       text!(expected, 512)
       [not_before, not_after, verified_at].each { |t| epoch!(t) }
       raise Invalid unless not_before <= verified_at && verified_at <= not_after
-      ref = reference(closed_sd_jwt: closed_sd_jwt)
+      ref = reference(closed_sd_jwt: closed_sd_jwt, profile_ref: profile_ref)
       claims = RootSignature.verified_payload!(jwt, trusted_public_key_pem, expected_typ: "JWT", max_bytes: 16_384)
       validate!(claims)
       return Verification.send(:new, :receipt_issuer_mismatch) unless claims["iss"] == expected

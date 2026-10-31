@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0 — unreleased proposal
+
+- Adds explicitly selected `ap2.checkout.single_merchant_multi_item` v1 for a single merchant/Checkout/currency with up to eight lines, eight requirements and eight candidates per requirement. Integer maximum flow consumes all requirement and checkout quantities without double allocation; repeated product IDs on distinct lines and overlapping candidates are supported.
+- Propagates authenticated profile selection through InputBuilder preparation/restoration/current-state verification, Checkout signing, complete Mandate verification, Evidence and Checkout Success/Error Receipts. Preserves original signed bytes and saved challenge references; every supported candidate disclosure is required.
+- Keeps the old single-SKU v1 identifier/body/hash/acceptance range and default APIs, Result/status/code, diagnostic/Evidence semantics, formal MRI versions and runtime pins. Product Mandate issuance, payment and Host authorization remain separate.
+- Preparation, review, CI, final candidate installation and publication are distinct states. This entry records no 0.6.0 publication; [current validation/status](docs/PROJECT_STATUS.md) identifies completed evidence and remaining gates.
+
 ## 0.5.0 — 2026-10-31
 
 - Adds Merchant `CheckoutJWT.sign` with an application-owned ES256/P-256 signer, independently checked public key, immutable transmitted JWT and original-wire hash.

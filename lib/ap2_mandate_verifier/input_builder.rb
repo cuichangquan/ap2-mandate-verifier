@@ -33,28 +33,29 @@ module AP2MandateVerifier
 
     # All registry entries are preserved, including inactive/nonselected entries.
     # Selection is explicit Host policy, never extracted from signed claims.
-    def self.trust(snapshot:, tenant_id:, issuer:, agent:, merchant:, verified_at:)
+    def self.trust(snapshot:, tenant_id:, issuer:, agent:, merchant:, verified_at:, profile_ref: TrustContext::PROFILE_REF)
       verified_at = copy!(verified_at)
+      profile = TrustContext.profile!(copy!(profile_ref))
       source = copy!(snapshot)
       shape!(source, %w[id policy_version active not_before not_after records], "snapshot")
       invalid!("snapshot.records", :invalid_type) unless source["records"].instance_of?(Array)
       invalid!("snapshot.records", :invalid_value) unless source["records"].length.between?(1, 16)
       source["records"].each do |record|
         shape!(record, RECORD_FIELDS)
-        record.merge!("profile_ref" => TrustContext::PROFILE_REF, "profile_version" => TrustContext::PROFILE_VERSION,
+        record.merge!("profile_ref" => profile[:ref], "profile_version" => profile[:version],
           "algorithm" => "ES256", "key_fingerprint" => Digest::SHA256.hexdigest(record.fetch("public_key_pem")))
       end
       body = json!(source, 65_536)
       selection = {"trust_snapshot_id" => source["id"], "policy_version" => source["policy_version"],
         "trust_content_hash" => Digest::SHA256.hexdigest(body), "tenant_id" => copy!(tenant_id),
-        "profile_ref" => TrustContext::PROFILE_REF, "profile_version" => TrustContext::PROFILE_VERSION,
-        "profile_definition_hash" => TrustContext::PROFILE_HASH,
+        "profile_ref" => profile[:ref], "profile_version" => profile[:version],
+        "profile_definition_hash" => profile[:hash],
         "Issuer" => copy!(issuer), "Agent" => copy!(agent), "Merchant" => copy!(merchant)}
       TrustContext::ROLES.each_key { |role| shape!(selection[role], %w[identity purpose key_ref], role.downcase) }
       wire = json!({"snapshot" => {"id" => source["id"], "policy_version" => source["policy_version"],
         "content_hash" => selection["trust_content_hash"], "body" => body},
-        "profile" => {"profile_ref" => TrustContext::PROFILE_REF, "version" => TrustContext::PROFILE_VERSION,
-          "definition_hash" => TrustContext::PROFILE_HASH, "body" => TrustContext::PROFILE_BODY}})
+        "profile" => {"profile_ref" => profile[:ref], "version" => profile[:version],
+          "definition_hash" => profile[:hash], "body" => profile[:body]}})
       selected = json!(selection, 16_384)
       context = TrustContext.verified_context!(trust_json: wire, selection_json: selected, verified_at: verified_at,
         expected_merchant_id: selection.fetch("Merchant").fetch("identity"))
@@ -94,8 +95,8 @@ module AP2MandateVerifier
         "B" => binding!(context, order, root_presentation, host_checkout_jws),
         "not_before" => copy!(not_before), "not_after" => copy!(not_after), "state" => "issued"}
       HostBinding::REFERENCES.each { |field| challenge[field] = context.fetch(:references).fetch(field) }
-      saved = json!({"format_version" => FORMAT_VERSION, "profile_ref" => TrustContext::PROFILE_REF,
-        "profile_version" => TrustContext::PROFILE_VERSION, "challenge" => challenge}, 32_768)
+      saved = json!({"format_version" => FORMAT_VERSION, "profile_ref" => context.fetch(:references).fetch("profile_ref"),
+        "profile_version" => context.fetch(:references).fetch("profile_version"), "challenge" => challenge}, 32_768)
       restore(saved_challenge: saved)
     rescue Invalid
       raise
@@ -111,13 +112,16 @@ module AP2MandateVerifier
       wire = InputValidator.snapshot!(saved_challenge, max_bytes: 32_768)
       value = InputValidator.parse!(wire)
       shape!(value, %w[format_version profile_ref profile_version challenge], "saved_challenge")
+      invalid!("saved_challenge", :unsupported_saved_format) unless
+        [TrustContext::PROFILE_REF, TrustContext::MULTI_PROFILE_REF].include?(value["profile_ref"])
+      profile = TrustContext.profile!(value["profile_ref"])
       invalid!("saved_challenge", :unsupported_saved_format) unless value.values_at("format_version", "profile_ref", "profile_version") ==
-        [FORMAT_VERSION, TrustContext::PROFILE_REF, TrustContext::PROFILE_VERSION]
+        [FORMAT_VERSION, profile[:ref], profile[:version]]
       challenge = value["challenge"]
       shape!(challenge, HostBinding::CHALLENGE_FIELDS)
       HostBinding.send(:binding!, challenge["B"])
       invalid! unless challenge["B"].values_at("profile_ref", "profile_version") ==
-        [TrustContext::PROFILE_REF, TrustContext::PROFILE_VERSION]
+        profile.values_at(:ref, :version)
       %w[challenge_id nonce issuer_id trust_snapshot_id policy_version state].each { |field| HostBinding.send(:id!, challenge[field]) }
       %w[trust_content_hash profile_definition_hash].each { |field| HostBinding.send(:hash!, challenge[field]) }
       %w[not_before not_after].each { |field| HostBinding.send(:time!, challenge[field]) }
@@ -253,10 +257,11 @@ module AP2MandateVerifier
     %i[trust restore_trust prepare restore inputs].each do |name|
       implementation = method(name)
       fields = implementation.parameters.filter_map { |kind, field| field if kind == :keyreq }.freeze
+      optional = implementation.parameters.filter_map { |kind, field| field if kind == :key }.freeze
       define_singleton_method(name) do |**arguments|
         missing = fields.find { |field| !arguments.key?(field) }
         invalid!(missing&.to_s, :missing_required_field) if missing
-        invalid!("arguments", :unknown_field) unless arguments.length == fields.length
+        invalid!("arguments", :unknown_field) unless (arguments.keys - fields - optional).empty?
         implementation.call(**arguments)
       end
     end
