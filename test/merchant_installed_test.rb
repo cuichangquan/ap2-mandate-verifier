@@ -3,7 +3,7 @@
 require "ap2_mandate_verifier"
 require "json"
 AP2MandateVerifier::RootSignature.send(:dependencies!)
-raise "source accidentally loaded" unless Gem.loaded_specs.fetch("ap2_mandate_verifier").version.to_s == "0.5.0"
+raise "source accidentally loaded" unless Gem.loaded_specs.fetch("ap2_mandate_verifier").version.to_s == "0.6.0"
 wires = JSON.parse(File.binread(ARGV.fetch(0)))
 key = OpenSSL::PKey::EC.generate("prime256v1")
 c = AP2MandateVerifier::CheckoutJWT

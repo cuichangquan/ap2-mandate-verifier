@@ -8,6 +8,22 @@ module AP2MandateVerifier
     PROFILE_REF = "ap2.checkout.single_merchant_sku"
     PROFILE_VERSION = "1"
     PROFILE_HASH = Digest::SHA256.hexdigest(PROFILE_BODY).freeze
+    MULTI_PROFILE_REF = "ap2.checkout.single_merchant_multi_item"
+    MULTI_PROFILE_VERSION = "1"
+    MULTI_PROFILE_BODY = '{"profile_ref":"ap2.checkout.single_merchant_multi_item","version":"1","ap2_source":"b4587ac1d055888a73b4b21750973cffba961793","algorithm":"ES256","key_format":"canonical-public-SPKI-P256-SHA256","root_type":"example+sd-jwt","terminal_type":"kb+sd-jwt","checkout_type":"JWT","disclosure_path_semantics":"root-walker-with-synthetic-disclosed-edges","disclosure_positions":["delegate_payload[0]","delegate_payload[0].disclosed.constraints[0].items[*].acceptable_items[*]","delegate_payload[0].disclosed.constraints[1].allowed[0]"],"constraints":["checkout.line_items","checkout.allowed_merchants"],"max_disclosures":66,"max_disclosure_segment_bytes":8192,"max_root_bytes":131072,"max_graph_nodes":2048,"max_graph_depth":24,"max_array_entries":16,"max_line_items":8,"max_requirements":8,"max_candidates_per_requirement":8,"quantity_matching":"integer-max-flow-product-id-exact-coverage","duplicate_line_ids":"reject","duplicate_requirement_ids":"reject","same_product_multiple_lines":"allow","amount_model":"integer-minor-unit-no-tax-shipping-discount"}'.freeze
+    MULTI_PROFILE_HASH = Digest::SHA256.hexdigest(MULTI_PROFILE_BODY).freeze
+
+    # Explicit Host policy registration. Signed token claims never select this.
+    def self.profile!(reference)
+      case reference
+      when PROFILE_REF
+        {ref: PROFILE_REF, version: PROFILE_VERSION, body: PROFILE_BODY, hash: PROFILE_HASH}.freeze
+      when MULTI_PROFILE_REF
+        {ref: MULTI_PROFILE_REF, version: MULTI_PROFILE_VERSION, body: MULTI_PROFILE_BODY, hash: MULTI_PROFILE_HASH}.freeze
+      else
+        reject!(:unsupported_trust_profile)
+      end
+    end
     ROLES = {"Issuer" => :trusted_issuer_public_key_pem,
              "Agent" => :expected_agent_public_key_pem,
              "Merchant" => :trusted_merchant_public_key_pem}.freeze
@@ -73,9 +89,10 @@ module AP2MandateVerifier
         selection.values_at("trust_snapshot_id", "policy_version", "trust_content_hash")
       live!(snapshot, verified_at, :inactive_trust_snapshot, :trust_snapshot_time_mismatch)
       _profile, wire = body!(trust["profile"], %w[profile_ref version], "definition_hash", 8_192)
-      reject!(:unsupported_trust_profile) unless wire == PROFILE_BODY &&
-        trust["profile"].values_at("profile_ref", "version", "definition_hash") == [PROFILE_REF, PROFILE_VERSION, PROFILE_HASH] &&
-        selection.values_at("profile_ref", "profile_version", "profile_definition_hash") == [PROFILE_REF, PROFILE_VERSION, PROFILE_HASH]
+      profile = profile!(selection["profile_ref"])
+      reject!(:unsupported_trust_profile) unless wire == profile[:body] &&
+        trust["profile"].values_at("profile_ref", "version", "definition_hash") == profile.values_at(:ref, :version, :hash) &&
+        selection.values_at("profile_ref", "profile_version", "profile_definition_hash") == profile.values_at(:ref, :version, :hash)
       records = snapshot["records"]
       reject! unless records.instance_of?(Array) && records.length.between?(1, 16)
       records.each do |record|
@@ -83,7 +100,7 @@ module AP2MandateVerifier
         %w[identity tenant_id purpose key_ref profile_ref profile_version].each { |f| id!(record[f]) }
         reject! unless ROLES.key?(record["role"])
         window!(record)
-        reject!(:unsupported_trust_profile) unless record.values_at("profile_ref", "profile_version", "algorithm") == [PROFILE_REF, PROFILE_VERSION, "ES256"]
+        reject!(:unsupported_trust_profile) unless record.values_at("profile_ref", "profile_version", "algorithm") == [profile[:ref], profile[:version], "ES256"]
         digest!(record["key_fingerprint"])
         begin
           RootSignature.public_jwk!(record["public_key_pem"])

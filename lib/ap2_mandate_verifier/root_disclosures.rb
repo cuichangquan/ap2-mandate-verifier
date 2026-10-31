@@ -21,11 +21,13 @@ module AP2MandateVerifier
 
     # Internal handoff only: signature and entire closure are verified first.
     # AP2 semantics, constraints and Host authorization remain unvalidated.
-    def self.verified_root!(source, issuer_pem)
+    def self.verified_root!(source, issuer_pem, profile_ref: TrustContext::PROFILE_REF)
+      multi = profile_ref == "ap2.checkout.single_merchant_multi_item"
+      raise Rejected, :unsupported_disclosure_profile unless multi || profile_ref == TrustContext::PROFILE_REF
       wire = InputValidator.snapshot!(source)
       raise Rejected, :invalid_root_presentation unless wire.ascii_only? && wire.end_with?("~")
       parts = wire.split("~", -1)
-      raise Rejected, :invalid_root_presentation unless parts.size.between?(3, MAX_DISCLOSURES + 2) &&
+      raise Rejected, :invalid_root_presentation unless parts.size.between?(3, (multi ? 66 : MAX_DISCLOSURES) + 2) &&
         parts.last == "" && !parts.first.empty? && parts[1...-1].none?(&:empty?)
       # No disclosure decode, digest graph or trusted claims before signature.
       payload = RootSignature.verified_payload!(parts.first, issuer_pem)
@@ -48,13 +50,14 @@ module AP2MandateVerifier
       used = {}
       observed = []
       budget = [0]
-      resolved = walk!(payload, [], mapping, used, observed, budget, 1)
-      raise Rejected, :unsupported_disclosure_profile unless observed.sort_by(&:to_s) == PATHS.sort_by(&:to_s)
+      resolved = walk!(payload, [], mapping, used, observed, budget, 1, multi)
+      paths = multi ? multi_paths!(resolved) : PATHS
+      raise Rejected, :unsupported_disclosure_profile unless observed.sort_by(&:to_s) == paths.sort_by(&:to_s)
       raise Rejected, :extra_disclosure unless used.size == mapping.size
       resolved
     end
 
-    def self.walk!(value, path, mapping, used, observed, budget, depth)
+    def self.walk!(value, path, mapping, used, observed, budget, depth, multi)
       budget[0] += 1
       raise Rejected, :disclosure_limit_exceeded if budget[0] > 2_048 ||
         (depth > 24 && (value.instance_of?(Hash) || value.instance_of?(Array)))
@@ -63,13 +66,14 @@ module AP2MandateVerifier
         raise Rejected, :unsupported_disclosure_profile if value.key?("_sd") || value.key?("...") ||
           (path != [] && value.key?("_sd_alg"))
         raise Rejected, :disclosure_limit_exceeded if value.size > 32
-        value.to_h { |key, child| [key, walk!(child, path + [key], mapping, used, observed, budget, depth + 1)] }
+        value.to_h { |key, child| [key, walk!(child, path + [key], mapping, used, observed, budget, depth + 1, multi)] }
       when Array
         raise Rejected, :disclosure_limit_exceeded if value.size > 16
         value.each_with_index.map do |item, index|
           here = path + [index]
           if item.instance_of?(Hash) && item.key?("...")
-            raise Rejected, :unsupported_disclosure_profile unless item.keys == ["..."] && PATHS.include?(here)
+            raise Rejected, :unsupported_disclosure_profile unless item.keys == ["..."] &&
+              (multi ? multi_path?(here) : PATHS.include?(here))
             digest = item["..."]
             raise Rejected, :invalid_disclosure unless digest.instance_of?(String) &&
               digest.bytesize == 43 && decode!(digest).bytesize == 32
@@ -77,14 +81,33 @@ module AP2MandateVerifier
             raise Rejected, :missing_disclosure unless mapping.key?(digest)
             used[digest] = true
             observed << here
-            walk!(mapping.fetch(digest), here + ["disclosed"], mapping, used, observed, budget, depth + 1)
+            walk!(mapping.fetch(digest), here + ["disclosed"], mapping, used, observed, budget, depth + 1, multi)
           else
-            walk!(item, here, mapping, used, observed, budget, depth + 1)
+            walk!(item, here, mapping, used, observed, budget, depth + 1, multi)
           end
         end
       else
         value
       end
+    end
+
+    def self.multi_path?(path)
+      return true if PATHS[0..1].include?(path)
+      path.size == 9 && path[0, 6] == ["delegate_payload", 0, "disclosed", "constraints", 0, "items"] &&
+        path[6].instance_of?(Integer) && path[6].between?(0, 7) &&
+        path[7] == "acceptable_items" && path[8].instance_of?(Integer) && path[8].between?(0, 7)
+    end
+
+    def self.multi_paths!(resolved)
+      items = resolved.dig("delegate_payload", 0, "constraints", 0, "items")
+      raise Rejected, :unsupported_disclosure_profile unless items.instance_of?(Array) && items.size.between?(1, 8)
+      paths = PATHS[0..1].dup
+      items.each_with_index do |item, i|
+        candidates = item.instance_of?(Hash) && item["acceptable_items"]
+        raise Rejected, :unsupported_disclosure_profile unless candidates.instance_of?(Array) && candidates.size.between?(1, 8)
+        candidates.each_index { |j| paths << ["delegate_payload", 0, "disclosed", "constraints", 0, "items", i, "acceptable_items", j] }
+      end
+      paths
     end
 
     def self.decode!(part)
@@ -95,6 +118,6 @@ module AP2MandateVerifier
     rescue ArgumentError
       raise Rejected, :invalid_disclosure
     end
-    private_class_method :walk!, :decode!
+    private_class_method :walk!, :decode!, :multi_path?, :multi_paths!
   end
 end

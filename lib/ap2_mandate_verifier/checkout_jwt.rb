@@ -20,10 +20,10 @@ module AP2MandateVerifier
     # signer.call receives the exact ASCII JWS signing input and must return a
     # 64-byte JOSE ES256 signature. The supplied independent public key verifies
     # the result before any signed object is returned (including remote signers).
-    def self.sign(checkout:, signer:, public_key_pem:)
+    def self.sign(checkout:, signer:, public_key_pem:, profile_ref: TrustContext::PROFILE_REF)
       RootSignature.send(:dependencies!)
       value = InputBuilder.send(:copy!, checkout)
-      validate!(value)
+      validate!(value, profile_ref: profile_ref)
       jwt = MerchantSignature.sign!(value, signer, public_key_pem)
       Signed.send(:new, jwt)
     rescue StandardError, LoadError
@@ -44,7 +44,13 @@ module AP2MandateVerifier
       raise Invalid.new, cause: nil
     end
 
-    def self.validate!(checkout)
+    def self.validate!(checkout, profile_ref: TrustContext::PROFILE_REF)
+      profile_ref = InputValidator.snapshot!(profile_ref, max_bytes: 256)
+      if profile_ref == ScopedConstraints::MULTI_PROFILE_REF
+        ScopedConstraints.multi_checkout!(checkout)
+        return nil
+      end
+      raise Invalid unless profile_ref == TrustContext::PROFILE_REF
       c = ScopedConstraints
       c.send(:exact!, checkout, %w[currency id line_items links merchant status totals])
       c.send(:text!, checkout["id"])
@@ -71,8 +77,9 @@ module AP2MandateVerifier
     %i[sign es256_signer].each do |name|
       implementation = method(name)
       fields = implementation.parameters.filter_map { |kind, field| field if kind == :keyreq }.freeze
+      optional = implementation.parameters.filter_map { |kind, field| field if kind == :key }.freeze
       define_singleton_method(name) do |**arguments|
-        raise Invalid.new, cause: nil unless (fields - arguments.keys).empty? && (arguments.keys - fields).empty?
+        raise Invalid.new, cause: nil unless (fields - arguments.keys).empty? && (arguments.keys - fields - optional).empty?
         implementation.call(**arguments)
       end
     end

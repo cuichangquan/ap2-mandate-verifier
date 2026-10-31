@@ -1,4 +1,24 @@
-# Input assembly for the fixed checkout profile (0.4.0)
+# Input assembly for explicit checkout profiles
+
+## Multi-item selection in 0.6.0 preparation
+
+Published stable remains 0.5.0. This checkout adds
+`InputBuilder.trust(..., profile_ref: "ap2.checkout.single_merchant_multi_item")`.
+Omitting `profile_ref:` retains the unchanged single-SKU v1 profile. The new
+selection is authenticated Host policy, not extracted from Mandate claims.
+`prepare`, `restore`, `restore_trust`, `inputs` and `verify` retain their existing
+arguments and follow that validated profile. Saved profile identifiers and
+definition hashes must agree with current trust and binding; no repair occurs.
+The old saved format remains valid for its original profile, and migration
+requires a new selection and challenge before presentation.
+
+Use the same explicit `profile_ref:` for `CheckoutJWT.sign` and
+`CheckoutReceipt.reference/sign/verify`. The [multi-item guide](MULTI_ITEM_CHECKOUT.md)
+describes supported identities, quantities, disclosures and limits; the
+[complete synthetic example](../examples/multi_item_checkout.rb) covers signing,
+prepare/save/restore/current verification and genuine Success/Error Receipts.
+The normal business-order mapping below still supplies independent Host values;
+received signed claims never become their own expected total or trust input.
 
 Published 0.4.0 includes supplemental safe diagnostics; see [API and troubleshooting](DIAGNOSTICS.md). Existing verdict/Evidence contracts remain unchanged.
 
@@ -129,9 +149,9 @@ business data, registration policy or atomic Host operations.
 
 ## Versions and migration
 
-Gem version `0.3.0`, AP2 source
-`b4587ac1d055888a73b4b21750973cffba961793`, fixed profile
-`ap2.checkout.single_merchant_sku` version `1`, and preparation format `1` are
+Gem version (published `0.5.0`, proposed `0.6.0`), AP2 source
+`b4587ac1d055888a73b4b21750973cffba961793`, explicitly selected profile
+(`ap2.checkout.single_merchant_sku` v1 or `ap2.checkout.single_merchant_multi_item` v1), and preparation format `1` are
 separate identifiers. Unknown preparation/profile versions fail closed. There is
 no generic future-profile fallback. New protocol requirements can require new
 application data and an explicit migration or reissuance.
@@ -141,7 +161,7 @@ new preparations. Existing raw Host JSON is not automatically upgraded into a
 new issued challenge. Retain original signed bytes and authenticated saved
 references. Reissue through the Host's normal authorization process when a stored
 format cannot be supported; do not repair its digests or reinterpret its version.
-See [SUPPORT_CONTRACT](SUPPORT_CONTRACT.md) for the unchanged verification scope.
+See [SUPPORT_CONTRACT](SUPPORT_CONTRACT.md) and the [multi-item migration](MULTI_ITEM_CHECKOUT.md) for each profile's scope.
 
 ### Restoring an existing trust snapshot
 

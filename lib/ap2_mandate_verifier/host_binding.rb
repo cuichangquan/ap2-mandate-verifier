@@ -78,7 +78,8 @@ module AP2MandateVerifier
         host_checkout_jws: checkout, **context.fetch(:keys), expected_aud: binding["audience"],
         expected_nonce: challenge["nonce"], verified_at: verified_at,
         expected_checkout_id: binding["order_id"], expected_merchant_id: binding["merchant_id"],
-        expected_currency: binding["currency"], expected_total_minor: binding["expected_total"])
+        expected_currency: binding["currency"], expected_total_minor: binding["expected_total"],
+        profile_ref: references.fetch("profile_ref"))
       open, closed, proof = details.values_at(:open, :closed, :terminal)
       starts = [context.fetch(:valid_from), challenge["not_before"], open["iat"], closed["iat"], proof["iat"]]
       ends = [context.fetch(:valid_until), challenge["not_after"], open["exp"], closed["exp"], proof["iat"] + 301]

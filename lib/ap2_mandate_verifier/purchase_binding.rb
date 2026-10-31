@@ -24,7 +24,8 @@ module AP2MandateVerifier
     def self.verified_details!(root_presentation:, terminal_jws:, host_checkout_jws:,
                    trusted_issuer_public_key_pem:, expected_agent_public_key_pem:,
                    trusted_merchant_public_key_pem:, expected_aud:, expected_nonce:,
-                   verified_at:, expected_checkout_id:, expected_merchant_id:)
+                   verified_at:, expected_checkout_id:, expected_merchant_id:,
+                   profile_ref: TrustContext::PROFILE_REF)
       # Snapshot every caller-owned byte string before starting cryptography.
       root_wire = InputValidator.snapshot!(root_presentation)
       terminal_wire = InputValidator.snapshot!(terminal_jws, max_bytes: 32_768)
@@ -39,7 +40,11 @@ module AP2MandateVerifier
       raise RootSignature::Unavailable, :purchase_context_unavailable unless integer?(verified_at) &&
         verified_at.between?(0, MAX_EPOCH)
 
-      root = RootDisclosures.verified_root!(root_wire, issuer_pem)
+      root = if profile_ref == TrustContext::PROFILE_REF
+        RootDisclosures.verified_root!(root_wire, issuer_pem)
+      else
+        RootDisclosures.verified_root!(root_wire, issuer_pem, profile_ref: profile_ref)
+      end
       open = root.fetch("delegate_payload").first
       exact!(open, %w[cnf constraints exp iat vct])
       raise Rejected, :unsupported_purchase_profile unless open["vct"] == "mandate.checkout.open.1"

@@ -98,9 +98,9 @@ module AP2MandateVerifier
     inputs = inputs.to_h do |key, value|
       [key, %i[verified_at expected_total_minor].include?(key) ? value : InputValidator.snapshot!(value)]
     end
-    keys = TrustContext.keys!(trust_json: trust_json, selection_json: selection_json,
+    context = TrustContext.verified_context!(trust_json: trust_json, selection_json: selection_json,
       verified_at: inputs[:verified_at], expected_merchant_id: inputs[:expected_merchant_id])
-    ScopedConstraints.check!(**inputs, **keys)
+    ScopedConstraints.check!(**inputs, **context.fetch(:keys), profile_ref: context.fetch(:references).fetch("profile_ref"))
     Result.new(status: :unverified, code: :scoped_constraints_verified_only)
   rescue InputValidator::Unavailable, RootSignature::Unavailable => error
     Result.new(status: :unavailable, code: error.code)
