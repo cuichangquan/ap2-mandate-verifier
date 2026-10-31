@@ -26,6 +26,26 @@ gem "ap2_mandate_verifier", "= 0.4.0"
 
 Runtime dependencies are pinned to JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1. Normal installation may download/build dependencies; do not relax the pins to work around a conflict. The Ruby resolution interval is not certification of every Ruby version, OS or native provider. See the [support contract](docs/SUPPORT_CONTRACT.md).
 
+## Merchant signing and Receipt (unpublished 0.5.0 candidate)
+
+Create a signed checkout, then sign the application's explicit outcome. These
+additive APIs are available from the candidate source, not published 0.4.0:
+
+```ruby
+signing = AP2MandateVerifier::CheckoutJWT
+signed = signing.sign(checkout: checkout, signer: signing.es256_signer(private_key: key),
+                      public_key_pem: key.public_to_pem)
+# Retain signed.jwt unchanged; use it as InputBuilder's host_checkout_jws.
+receipt = AP2MandateVerifier::CheckoutReceipt.sign(closed_sd_jwt: received_closed_sd_jwt,
+  issuer: "shop", outcome: "Error", error: "declined", error_description: "Application declined",
+  issued_at: now, signer: signing.es256_signer(private_key: key), public_key_pem: key.public_to_pem)
+```
+
+Receipt verification separately checks a trusted public key, expected issuer,
+explicit time window and original closed-Mandate reference. An authentic Error
+Receipt has `verified? == true` and `purchase_succeeded? == false`.
+See the [complete API example, supported wire shape and SDK differences](docs/MERCHANT_SIGNING.md).
+
 ## A small InputBuilder example
 
 After installation, use a checkout of this repository. Save the following as `quick_start.rb` in its root and run `ruby quick_start.rb`. The JSON files under [`examples/input_builder/`](examples/input_builder/) contain explicit synthetic order/registration records and original signed Strings; they are not part of the installed Gem. Their fixed clock is intentional because the saved signatures expire. These are test inputs, not real enrollment or current production data.

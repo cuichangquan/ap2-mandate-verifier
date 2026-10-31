@@ -26,6 +26,25 @@ gem "ap2_mandate_verifier", "= 0.4.0"
 
 runtime依存はJSON 2.19.9、JWT 3.3.0、base64 0.3.0、OpenSSL gem 4.0.2、Digest 3.2.1に固定しています。通常導入には依存の取得・buildが伴い得ます。衝突回避のために固定条件を緩めないでください。Rubyの解決範囲は、その間の全Ruby版・OS・native providerへの対応保証ではありません。[対応契約](docs/SUPPORT_CONTRACT.md)を参照してください。
 
+## 販売者署名とReceipt（未公開0.5.0候補）
+
+注文JWTを署名し、利用アプリが明示した処理結果をReceiptとして署名できます。
+以下は候補source用の追加APIです。公開済み0.4.0には含まれません。
+
+```ruby
+signing = AP2MandateVerifier::CheckoutJWT
+signed = signing.sign(checkout: checkout, signer: signing.es256_signer(private_key: key),
+                      public_key_pem: key.public_to_pem)
+# signed.jwtの原文を保持し、InputBuilderのhost_checkout_jwsへ渡します。
+receipt = AP2MandateVerifier::CheckoutReceipt.sign(closed_sd_jwt: received_closed_sd_jwt,
+  issuer: "shop", outcome: "Error", error: "declined", error_description: "Application declined",
+  issued_at: now, signer: signing.es256_signer(private_key: key), public_key_pem: key.public_to_pem)
+```
+
+受信時は独立した信頼鍵・期待署名者・明示時刻範囲・対象Mandateの原文参照を照合します。
+真正な拒否は `verified? == true`、`purchase_succeeded? == false` です。
+[完全な利用例・対応原文形状・SDKとの差異](docs/MERCHANT_SIGNING.md)を参照してください。
+
 ## InputBuilderの最小例
 
 導入後、このリポジトリをcheckoutし、以下をルートの `quick_start.rb` として保存して `ruby quick_start.rb` を実行します。[`examples/input_builder/`](examples/input_builder/)のJSONファイルは、明示された合成注文・公開鍵登録情報と署名原文Stringです。インストール済みGemには含まれません。保存署名には期限があるため固定の合成時計を使います。実登録や本番の現在情報として再利用しないでください。

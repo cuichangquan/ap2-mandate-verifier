@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0 — unreleased candidate
+
+- Adds Merchant `CheckoutJWT.sign` with an application-owned ES256/P-256 signer, independently checked public key, immutable transmitted JWT and original-wire hash.
+- Adds Checkout-specific `CheckoutReceipt.sign`, `.reference` and `.verify`; independently checks trusted key, expected issuer, explicit time policy and exact final inline closed SD-JWT reference. Authentic Success/Error and verification failure are distinct.
+- Adopts Checkout Schema status/iat and normative sd_hash reference semantics; documents generic result spelling and SDK leaf-helper differences. Requires explicit `<terminal_jws>~`, rejects unsupported disclosures/hops/algorithms. Existing verifier, Evidence, status/code, InputBuilder, diagnostics and dependency pins are unchanged.
+- Includes synthetic bidirectional official Python SDK signature/Schema/reference tests, original-wire and negative checks, documentation, unpublished release-notes draft and opt-in local demo. No publication or production authorization.
+
 ## 0.4.0 — 2026-10-31
 
 - Adds immutable, input-free `Result#diagnostic` and `InputBuilder::Invalid#diagnostic`, machine stage/field/reason identifiers and English/Japanese hints. Success has no failure diagnostic; diagnostic failure cannot change a verdict.

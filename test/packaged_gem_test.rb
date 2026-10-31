@@ -15,14 +15,14 @@ def deep_frozen(value)
   end
 end
 spec = Gem.loaded_specs.fetch("ap2_mandate_verifier")
-need(spec.version.to_s == "0.4.0" && %w[3.4.12 4.0.9].include?(RUBY_VERSION) && RUBY_ENGINE == "ruby", "candidate runtime")
+need(spec.version.to_s == "0.5.0" && %w[3.4.12 4.0.9].include?(RUBY_VERSION) && RUBY_ENGINE == "ruby", "candidate runtime")
 versions = {"json"=>"2.19.9","jwt"=>"3.3.0","base64"=>"0.3.0","openssl"=>"4.0.2","digest"=>"3.2.1"}
 need(versions.all? { |k,v| Gem.loaded_specs.fetch(k).version.to_s == v }, "runtime dependencies")
 root = File.realpath(spec.full_gem_path)
 prohibited = File.realpath(ARGV.fetch(3)) + "/"
 need(!root.start_with?(prohibited), "candidate loaded from repository")
 loaded = $LOADED_FEATURES.select { |f| f.include?("/ap2_mandate_verifier") && f.end_with?(".rb") }
-need(loaded.size == 12 && loaded.all? { |f| File.realpath(f).start_with?(root + "/") }, "ordinary installed entry")
+need(loaded.size == 15 && loaded.all? { |f| File.realpath(f).start_with?(root + "/") }, "ordinary installed entry")
 package = JSON.parse(File.read(ARGV.fetch(2)))
 need(loaded.all? { |f| rel=File.realpath(f).delete_prefix(root+"/"); Digest::SHA256.file(f).hexdigest == package.fetch("files_sha256").fetch(rel) }, "installed source identity")
 input_raw = File.binread(ARGV.fetch(0)); expected_raw = File.binread(ARGV.fetch(1))
