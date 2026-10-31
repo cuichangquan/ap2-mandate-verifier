@@ -1,6 +1,6 @@
-# AP2 Mandate Verifier — 0.3.0 candidate
+# AP2 Mandate Verifier — 0.3.0
 
-The unpublished 0.3.0 candidate adds `InputBuilder`: map authenticated business records once, prepare and persist a challenge, then supply independent current state to the complete verifier. No hand-written trust/selection/Host JSON or hashes are needed. Start with the [runnable business-data example and Rails mapping](docs/INPUT_BUILDER.md). Existing seven-input APIs remain supported. Published installation below remains 0.2.1 until release approval.
+Published 0.3.0 adds `InputBuilder`: map authenticated business records once, prepare and persist a challenge, then supply independent current state to the complete verifier. No hand-written trust/selection/Host JSON or hashes are needed. Start with the [runnable business-data example and Rails mapping](docs/INPUT_BUILDER.md). Existing seven-input APIs remain supported. The commands below install published 0.3.0.
 
 [Japanese / 日本語](README.ja.md)
 
@@ -17,31 +17,39 @@ For a Japanese walkthrough of the three demo scenarios, see the [Zenn article](h
 | Route | Start here |
 | --- | --- |
 | Docker demo: compare three synthetic cases | Follow the [demo README](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme) for local startup and valid / tampered / expired examples. Docker commands are maintained there. |
-| Ruby without the demo: MRI 3.4.12 or 4.0.9 | Follow [installation](#distribution-and-installation), then the [saved synthetic example](#try-the-saved-synthetic-example) below. |
+| Ruby without the demo: MRI 3.4.12 or 4.0.9 | Follow [installation](#distribution-and-installation), then the [business-data example and Rails mapping](docs/INPUT_BUILDER.md). |
 
 Both routes use the fixed-profile verifier, not payment execution or Host authorization. See the [supported contract](#supported-contract) for the scope. The goal is to make the choices understandable in about five minutes, not to promise a five-minute installation or build.
 
 ## Distribution and installation
 
-[0.2.1 is published on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.1). This is the fixed-profile, verifier-only stable release; the research prerelease pre3 is a separate artifact.
+[0.3.0 is published on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.3.0). This is the fixed-profile, verifier-only stable release; the research prerelease pre3 is a separate artifact.
 
 Use an MRI 3.4.12 or MRI 4.0.9 environment and your chosen Gem isolation. Normal installation may fetch dependencies and build JSON native extensions. Stop on conflicts or unknown providers rather than relaxing pins.
 
 ```sh
 ruby --version # MRI 3.4.12 or MRI 4.0.9
-gem install ap2_mandate_verifier --version 0.2.1
+gem install ap2_mandate_verifier --version 0.3.0
 ```
 
 Bundler Gemfile:
 
 ```ruby
-gem "ap2_mandate_verifier", "= 0.2.1"
+gem "ap2_mandate_verifier", "= 0.3.0"
 ```
 
 Fixed runtime dependencies: JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1.
 Bundler 4.0.20 is the observed resolver baseline, not a runtime dependency. Gem version constraints alone do not enforce the MRI engine, OS or native-provider provenance.
 
-## Ruby 3.4.12 compatibility and published artifact
+## Published 0.3.0 artifact and validation
+
+Published 2026-10-31 01:31:40.743 UTC; official metadata fetched at 01:32:40 UTC and archive comparison completed at 01:33:27 UTC. Owner `cuichangquan`, platform `ruby`, non-prerelease and not yanked at verification. The official metadata SHA, distributed Gem and retained final candidate matched: **37,376 bytes**, SHA256 `b3a31d5a8b0718f1085745dd4d97d85f210ff9a1628798110da9ff382ae546bd`, source `877f59195632f74714a60551b6afb22ac81d93e3`.
+
+On Debian 12/arm64, both MRI 3.4.12 and 4.0.9 passed the merged-source suites (885 existing source cases, 190 checkout cases, 7 metadata cases and 109 builder cases). The same final Gem passed ordinary installation, all 14 payload-file comparisons, 11 normally loaded product files and 134 installed cases per Ruby. The [publication record](docs/PROJECT_STATUS.md#030公開済み--現在の配布状態) distinguishes these results from the withdrawn earlier candidate and historical releases. These bounded observations do not validate real Issuers, actual Host operations or performance.
+
+The published Gem retains its preparation-time README/contract. These repository-only publication updates do not rebuild, repush or replace those exact bytes. The [v0.3.0 Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.3.0) targets the exact published source; GitHub source archives are not the RubyGems Gem.
+
+## Historical 0.2.1 compatibility and artifact
 
 0.2.1 formally supports exactly MRI 3.4.12 and MRI 4.0.9 with the same five fixed dependencies. Its installation metadata permits Ruby `>= 3.4.12, < 4.1`; that interval does not declare every intermediate version or another engine supported.
 
@@ -51,17 +59,18 @@ Published 2026-10-30 11:51:55.894 UTC; verified 11:53:55 UTC. Official RubyGems 
 
 The Gem's packaged README/contract retain their preparation snapshot. These repository updates do not rebuild or replace the published bytes. GitHub source archives differ from the RubyGems Gem. Seven inputs, fixed profile, Fail Closed, Result/Evidence v2 and existing API meanings remain unchanged; publication does not establish Host production GO.
 
-## Verification APIs: 0.2.1 and compatibility
+## Verification APIs: 0.3.0 and compatibility
 
-**The installation commands and saved example use published 0.2.1 and its recommended `verify_checkout` entry.** Existing 0.1.0 applications can continue using `verify_research`; it remains available in 0.2.1 without a deprecation warning. Installing 0.1.0 does not provide `verify_checkout`.
+**Start new business-data integrations with `InputBuilder.verify` and the [complete example](docs/INPUT_BUILDER.md).** The saved example below demonstrates the direct seven-input `verify_checkout` API. Existing 0.1.0 applications can continue using `verify_research`; it remains available in 0.3.0 without a deprecation warning. Installing 0.1.0 does not provide `verify_checkout`.
 
 | Entry | Availability and contract |
 | --- | --- |
-| `verify_checkout(**inputs)` | Recommended full-verification entry since 0.2.0, retained in 0.2.1. Delegates directly to `ResearchResult.verify` without changing inputs or the verification pipeline. |
-| `verify_research(**inputs)` | Full-verification entry in published 0.1.0; retained unchanged in v0.2.1, without a deprecation warning. |
+| `InputBuilder.verify(**business_information)` | Since 0.3.0, assembles explicit authenticated Host information and invokes complete verification. Preparation and exact saved-data restoration are separate; see the [guide](docs/INPUT_BUILDER.md). |
+| `verify_checkout(**inputs)` | Direct full-verification entry since 0.2.0, retained in 0.3.0. Delegates directly to `ResearchResult.verify` without changing inputs or the verification pipeline. |
+| `verify_research(**inputs)` | Full-verification entry in published 0.1.0; retained unchanged in v0.3.0, without a deprecation warning. |
 | `verify(presentation_json:)` | Existing JSON syntax check only. Valid JSON returns `:unverified` / `:verification_not_implemented`, never successful Evidence. It is not a substitute for full verification. |
 
-The recommended entry takes all seven inputs. In the saved example below, these values come from `full`; real integrations must supply the authenticated Host inputs described below:
+The direct `verify_checkout` entry takes all seven inputs. In the saved example below, these values come from `full`; real integrations must supply the authenticated Host inputs described below:
 
 ```ruby
 result = AP2MandateVerifier.verify_checkout(
@@ -93,7 +102,7 @@ See [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md) for exact required shapes, boun
 
 ## Environment, compatibility and maintenance
 
-The supported MRI versions are 3.4.12 and 4.0.9 with fixed dependencies; current 0.2.1 measurements cover the exact Debian 12/arm64 configurations in the compatibility record above. Earlier MRI 4.0.9 MBA/macOS arm64 and Ubuntu 24.04/x86_64 observations retain their historical scope. Distinguish [historical release-package/provider evidence](research/stable010_release_linux_package/README.md) from the current artifact. Other OS versions, engines, architectures and arbitrary provider updates are not covered.
+The supported MRI versions are 3.4.12 and 4.0.9 with fixed dependencies; current 0.3.0 measurements cover the exact Debian 12/arm64 configurations summarized in the publication record above. Earlier MRI 4.0.9 MBA/macOS arm64 and Ubuntu 24.04/x86_64 observations retain their historical scope. Distinguish [historical release-package/provider evidence](research/stable010_release_linux_package/README.md) from the current artifact. Other OS versions, engines, architectures and arbitrary provider updates are not covered.
 
 Supported-input semantics and APIs do not change silently. Security-driven narrowing identifies reason, impact and migration; breaking API/required-field/profile changes are explicit. Dependency updates are not automatically compatible.
 

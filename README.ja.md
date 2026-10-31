@@ -1,6 +1,6 @@
-# AP2 Mandate Verifier — 0.3.0候補
+# AP2 Mandate Verifier — 0.3.0
 
-未公開の0.3.0候補に `InputBuilder` を追加しました。認証済みの業務情報からChallenge発行前の準備・保存・復元・現在状態の入力作成を行い、既存の完全検証へ接続します。Gem独自のtrust／selection／Host JSONやハッシュの手書きは不要です。[実行可能な例とRails対応付け](docs/INPUT_BUILDER.ja.md)を参照してください。既存の7入力APIも維持します。公開承認までは、以下の配布手順は公開済み0.2.1を指します。
+公開済み0.3.0に `InputBuilder` を追加しました。認証済みの業務情報からChallenge発行前の準備・保存・復元・現在状態の入力作成を行い、既存の完全検証へ接続します。Gem独自のtrust／selection／Host JSONやハッシュの手書きは不要です。[実行可能な例とRails対応付け](docs/INPUT_BUILDER.ja.md)を参照してください。既存の7入力APIも維持します。以下の配布手順は公開済み0.3.0を導入します。
 
 [English](README.md)
 
@@ -13,31 +13,39 @@ RubyでAP2の固定profileを検証する、Rails非依存のGemです。**署�
 | 経路 | 最初に見る場所 |
 | --- | --- |
 | Dockerデモ：3つの合成ケースを比較 | [デモREADME](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)のローカル起動手順と正常／改ざん／期限切れの例を参照。Dockerコマンドはデモ側で管理します。 |
-| デモを使わないRuby単体：MRI 3.4.12または4.0.9 | 下記の[導入](#配布と導入)から[保存済み合成入力の例](#保存済み合成入力で試す)へ進みます。 |
+| デモを使わないRuby単体：MRI 3.4.12または4.0.9 | 下記の[導入](#配布と導入)から[業務情報の例とRails対応付け](docs/INPUT_BUILDER.ja.md)へ進みます。 |
 
 どちらも固定profileの検証器を使う経路であり、決済実行やHostの業務許可を提供しません。範囲は[対応契約](#対応範囲)を参照してください。5分程度で選択肢を理解できる説明を目指すもので、導入やbuildが5分で完了する保証ではありません。
 
 ## 配布と導入
 
-[0.2.1はRubyGemsで公開済み](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.1)です。固定profileの検証専用安定版であり、旧研究版pre3は別の成果物です。
+[0.3.0はRubyGemsで公開済み](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.3.0)です。固定profileの検証専用安定版であり、旧研究版pre3は別の成果物です。
 
 MRI 3.4.12またはMRI 4.0.9環境と利用者が選ぶGem隔離環境で使用します。通常の導入は依存取得・JSON native buildを伴い得ます。依存衝突や未知providerを許容するために固定条件を緩めないでください。
 
 ```sh
 ruby --version # MRI 3.4.12 or MRI 4.0.9
-gem install ap2_mandate_verifier --version 0.2.1
+gem install ap2_mandate_verifier --version 0.3.0
 ```
 
 BundlerのGemfile：
 
 ```ruby
-gem "ap2_mandate_verifier", "= 0.2.1"
+gem "ap2_mandate_verifier", "= 0.3.0"
 ```
 
 固定runtime依存：JSON 2.19.9、JWT 3.3.0、base64 0.3.0、OpenSSL gem 4.0.2、Digest 3.2.1。
 Bundler 4.0.20は既存resolver基準でruntime依存ではありません。Gemの版制約だけではMRI engine、OSや実native/providerの出所を保証しません。
 
-## Ruby 3.4.12対応と公開成果物
+## 公開済み0.3.0と検証結果
+
+公開登録2026-10-31 01:31:40.743 UTC、公式metadata取得01:32:40 UTC、配布物照合完了01:33:27 UTC。owner `cuichangquan`、platform `ruby`、prerelease false、照合時yanked falseです。公式metadataのSHA・実配布Gem・保存最終候補は**37,376 bytes**、SHA256 `b3a31d5a8b0718f1085745dd4d97d85f210ff9a1628798110da9ff382ae546bd`、source `877f59195632f74714a60551b6afb22ac81d93e3`で一致しました。
+
+Debian 12/arm64でMRI 3.4.12と4.0.9の両方に、統合後sourceの既存885件・checkout190件・metadata7件・builder109件を実行しました。同じ最終Gemは両Rubyで通常導入・14 payload一致・11製品Rubyファイルの通常読込み・installed134件が成功しました。[公開記録](docs/PROJECT_STATUS.md#030公開済み--現在の配布状態)で撤回された旧候補・過去版と区別します。これは限定構成の機能観測で、実Issuer・実Host・性能の検証ではありません。
+
+公開Gemの同梱README／契約は準備時点のsnapshotです。この公開後リポジトリ文書更新はGemの再build・再push・bytes置換を行いません。[v0.3.0 Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.3.0)は正確な公開元sourceを対象とし、GitHub source archiveとRubyGems Gemは別成果物です。
+
+## 過去の0.2.1対応と公開成果物
 
 0.2.1の正式対応はMRI 3.4.12とMRI 4.0.9の2版で、固定5依存を維持します。導入metadataの範囲 `>= 3.4.12, < 4.1` は、その間の全Ruby版や他engineへの対応宣言ではありません。
 
@@ -47,17 +55,18 @@ Bundler 4.0.20は既存resolver基準でruntime依存ではありません。Gem
 
 同梱README／契約は準備時点のsnapshotを保持し、このリポジトリ文書更新で公開bytesを再build・置換しません。GitHub source archiveとRubyGems Gemは別成果物です。7入力・固定profile・Fail Closed・Result/Evidence v2・既存APIの意味は不変です。公開完了とHost本番GOは別判断です。
 
-## 検証API：0.2.1と互換性
+## 検証API：0.3.0と互換性
 
-**下記の導入コマンドと保存済み入力の例は、公開済み0.2.1の推奨入口 `verify_checkout` を使います。** 0.1.0の既存利用者は `verify_research` を継続でき、0.2.1でも非推奨警告なしで維持します。0.1.0には `verify_checkout` はありません。
+**新しい業務情報からの連携は `InputBuilder.verify` と[一連の実行例](docs/INPUT_BUILDER.ja.md)から始めてください。** 下記の保存済み入力例は直接7入力を渡す `verify_checkout` APIを示します。0.1.0の既存利用者は `verify_research` を継続でき、0.3.0でも非推奨警告なしで維持します。0.1.0には `verify_checkout` はありません。
 
 | 入口 | 利用可能な版と契約 |
 | --- | --- |
-| `verify_checkout(**inputs)` | 0.2.0で導入し、0.2.1でも維持する推奨完全検証入口。入力を加工せず `ResearchResult.verify` に直接委譲し、検証経路を変更しません。 |
-| `verify_research(**inputs)` | 公開済み0.1.0の完全検証入口。v0.2.1でも変更せず維持し、非推奨警告も追加しません。 |
+| `InputBuilder.verify(**business_information)` | 0.3.0から追加。明示された認証済みHost情報から入力を作り完全検証を呼びます。発行前準備・保存済み原文の復元は別処理です。[利用案内](docs/INPUT_BUILDER.ja.md)を参照。 |
+| `verify_checkout(**inputs)` | 0.2.0で導入し、0.3.0でも維持する直接7入力の完全検証入口。入力を加工せず `ResearchResult.verify` に直接委譲し、検証経路を変更しません。 |
+| `verify_research(**inputs)` | 公開済み0.1.0の完全検証入口。v0.3.0でも変更せず維持し、非推奨警告も追加しません。 |
 | `verify(presentation_json:)` | 既存のJSON構文検査のみ。有効なJSONでも `:unverified` / `:verification_not_implemented` を返し、成功Evidenceを返しません。完全検証の代用にはなりません。 |
 
-推奨入口には7入力すべてを渡します。下記の保存済み入力例では `full` から読み、実連携では認証済みHost入力契約に従います。
+直接入口の `verify_checkout` には7入力すべてを渡します。下記の保存済み入力例では `full` から読み、実連携では認証済みHost入力契約に従います。
 
 ```ruby
 result = AP2MandateVerifier.verify_checkout(
@@ -89,7 +98,7 @@ result = AP2MandateVerifier.verify_checkout(
 
 ## 環境・互換性・保守
 
-正式対応はMRI 3.4.12と4.0.9および固定依存です。0.2.1の実測は上記互換性記録の正確なDebian 12/arm64構成に限ります。過去のMRI 4.0.9 MBA/macOS arm64 (`arm64-darwin25`) およびUbuntu 24.04/x86_64観測は、それぞれの履歴として保持します。[過去の包装・provider証拠](research/stable010_release_linux_package/README.md)と今回の成果物を区別してください。OS全版・他engine/architecture・任意provider更新は保証しません。
+正式対応はMRI 3.4.12と4.0.9および固定依存です。0.3.0の実測は上記公開記録の正確なDebian 12/arm64構成に限ります。過去のMRI 4.0.9 MBA/macOS arm64 (`arm64-darwin25`) およびUbuntu 24.04/x86_64観測は、それぞれの履歴として保持します。[過去の包装・provider証拠](research/stable010_release_linux_package/README.md)と今回の成果物を区別してください。OS全版・他engine/architecture・任意provider更新は保証しません。
 
 支持入力の判定意味・APIを黙って変更しません。安全性修正で受理を狭める場合は理由・影響・移行を明示し、破壊的なAPI/必須field/profile変更を区別します。依存更新は自動互換ではありません。
 

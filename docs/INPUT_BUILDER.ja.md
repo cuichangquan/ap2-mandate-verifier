@@ -1,4 +1,4 @@
-# 入力組み立て支援（0.3.0候補）
+# 入力組み立て支援（0.3.0）
 
 `AP2MandateVerifier::InputBuilder` は、Hostが信頼する業務情報から既存の7入力を作ります。
 Rails、DB、通信、nonceの発行・消費、決済は行いません。入力の作成だけではEvidenceを返さず、
@@ -6,7 +6,7 @@ Rails、DB、通信、nonceの発行・消費、決済は行いません。入�
 
 ## 動く最小例
 
-検証済み候補Gemを通常インストールした後、リポジトリで実行します。
+公開済み0.3.0を通常導入（`gem install ap2_mandate_verifier --version 0.3.0`）した後、リポジトリの例を実行します。
 
 ```sh
 ruby examples/input_builder.rb valid

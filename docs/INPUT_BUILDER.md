@@ -1,4 +1,4 @@
-# Input assembly for the fixed checkout profile (0.3.0 candidate)
+# Input assembly for the fixed checkout profile (0.3.0)
 
 `AP2MandateVerifier::InputBuilder` converts explicit Host business information into
 the existing seven verification inputs. It performs no network, database, Rails,
@@ -8,7 +8,7 @@ The original `verify_checkout`, `verify_research` and older APIs remain availabl
 
 ## Run the complete Ruby example
 
-After ordinary installation of the checked candidate Gem:
+After ordinary installation of published 0.3.0 (`gem install ap2_mandate_verifier --version 0.3.0`), run these repository examples:
 
 ```sh
 ruby examples/input_builder.rb valid

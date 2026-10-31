@@ -1,12 +1,16 @@
 # Changelog
 
-## 0.3.0 — unpublished candidate
+## 0.3.0 — 2026-10-31
 
 - Corrects candidate InputBuilder.verify failure handling to reuse registered Result codes. Malformed assembly returns rejected/invalid_host_context; unavailable assembly returns unavailable/research_verification_unavailable, with no Evidence. The earlier candidate SHA256 5de6907cfcf0565ddaba1385b1d38ae113cc5e26d52259d769030237378a48a8 is withdrawn and must not be published.
 
 - Adds Rails-independent `InputBuilder` conversion from explicit authenticated trust records and order information, challenge preparation, exact versioned persistence restoration and full verification through the unchanged seven-input core.
 - Bounds plain Ruby input graphs before serialization; preserves stored issue-time binding/references and separately constructs current binding. Unknown persisted formats/profiles fail closed. Assembly alone produces no Evidence.
-- Adds runnable business-data examples, English/Japanese guidance and Rails mapping. Existing fixed runtime dependencies, supported Rubies, profile and Result/Evidence v2 contracts remain unchanged. Publication requires separate Owner approval.
+- Adds runnable business-data examples, English/Japanese guidance and Rails mapping. Existing fixed runtime dependencies, supported Rubies, profile and Result/Evidence v2 contracts remain unchanged. Publication does not establish Host production GO.
+
+- Published [0.3.0 on RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.3.0) at 01:31:40.743 UTC; metadata fetched 01:32:40 UTC and exact archive comparison completed 01:33:27 UTC. Source `877f59195632f74714a60551b6afb22ac81d93e3`; 37,376 bytes; SHA256 `b3a31d5a8b0718f1085745dd4d97d85f210ff9a1628798110da9ff382ae546bd`. Owner `cuichangquan`, platform `ruby`, non-prerelease, not yanked at verification. [v0.3.0 tag/Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.3.0) targets that exact source (published 01:35:52 UTC).
+- Corrected final source passed existing885 + checkout190 + metadata7 + builder109 on each supported Ruby; the same final Gem passed 14 payload matches, 11 ordinary-loaded product files and 134 installed cases per Ruby on Debian12/arm64. See [publication/withdrawal history](docs/PROJECT_STATUS.md#030公開済み--現在の配布状態). Prior124-case observations did not cover the withdrawn candidate's failure handlers.
+- Repository-only publication documentation does not rebuild, repush or replace the published archive; packaged documents retain their preparation snapshot. Real Issuer/Host, performance, production GO and Phase 2-B remain HOLD.
 
 ## 0.2.1 — 2026-10-30
 
