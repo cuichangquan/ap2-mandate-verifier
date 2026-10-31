@@ -36,6 +36,10 @@ ruby examples/input_builder_before.rb
 純粋な組み立てメソッドの不正入力は `InputBuilder::Invalid` です。
 例外、結果なし、拒否・検証不能を許可として扱わないでください。
 
+`verify` は組み立て引数の不正を既存Resultの `rejected / invalid_host_context`、
+依存の不足や予期しない組み立て失敗を `unavailable / research_verification_unavailable` にします。
+どちらも非成功・Evidenceなしです。完全検証に入った後の判定codeは維持します。
+
 snapshotは `id, policy_version, active, not_before, not_after, records`、各recordは
 `role, identity, tenant_id, purpose, key_ref, public_key_pem, active, not_before, not_after` です。
 鍵はcanonical P256 SPKI公開PEMを渡します。非選択・inactiveの記録も暗黙に除外しません。

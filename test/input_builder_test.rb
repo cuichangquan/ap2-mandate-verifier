@@ -51,6 +51,23 @@ module InputBuilderTest
     @count += 1
     r
   end
+  def self.failure(args, status, code, label)
+    r = B.verify(**args)
+    assert(r.instance_of?(AP2MandateVerifier::Result) && r.frozen?, "#{label} immutable non-success Result")
+    assert([r.status, r.code, r.success?, r.evidence] == [status, code, false, nil], "#{label} #{r.status}/#{r.code}")
+    assert(r.rejected? == (status == :rejected) && r.unavailable? == (status == :unavailable) && !r.unverified?, "#{label} flags")
+    @count += 1
+  end
+  def self.typed_failure(klass, code, label)
+    begin
+      yield
+    rescue klass => error
+      assert(error.code == code, "#{label} typed failure code") if code
+      @count += 1
+      return
+    end
+    raise "input builder expected #{klass} for #{label}"
+  end
 
   model = HostBindingTest.fixture
   args = setup(model)
@@ -198,5 +215,117 @@ module InputBuilderTest
     invalid("restored trust #{field} mismatch") { B.restore_trust(trust_json: public_input["trust_json"], selection_json: JSON.generate(selected), verified_at: public_input["verified_at"]) }
   end
 
+  # Verify rescue branches themselves: helper exceptions cannot prove that the
+  # public API returns a registered, immutable non-success Result.
+  future_saved = JSON.parse(args[:saved_challenge]); future_saved["format_version"] = "future"
+  cyclic_order = copy(args[:order]); cyclic_order["cycle"] = cyclic_order
+  malformed_cases = {
+    "malformed stored JSON" => args.merge(saved_challenge: "{"),
+    "unknown stored version" => args.merge(saved_challenge: JSON.generate(future_saved)),
+    "missing order currency" => args.merge(order: args[:order].reject { |key, _| key == "currency" }),
+    "unknown order field" => args.merge(order: args[:order].merge("future" => true)),
+    "nil order" => args.merge(order: nil),
+    "cyclic order" => args.merge(order: cyclic_order),
+    "unknown verify keyword" => args.merge(future: true),
+    "missing verify keyword" => args.reject { |key, _| key == :terminal_jws },
+    "empty verify keywords" => {},
+    "nil trust" => args.merge(trust: nil),
+    "nonstring saved challenge" => args.merge(saved_challenge: 1),
+    "noninteger current clock" => args.merge(verified_at: "1800000000")
+  }
+  malformed_cases.each do |label, malformed|
+    failure(malformed, :rejected, :invalid_host_context, label)
+  end
+
+  # Inject at the actual input snapshot dependency, keeping inputs/verify intact.
+  validator = AP2MandateVerifier::InputValidator
+  original_snapshot = validator.method(:snapshot!)
+  [AP2MandateVerifier::InputValidator::Unavailable.new(:json_dependency_unavailable),
+   AP2MandateVerifier::RootSignature::Unavailable.new(:signature_dependency_unavailable),
+   LoadError.new("controlled missing dependency"), RuntimeError.new("controlled internal fault")].each do |fault|
+    reached = false
+    validator.define_singleton_method(:snapshot!) do |*_, **_keywords|
+      reached = true
+      raise fault
+    end
+    begin
+      failure(args, :unavailable, :research_verification_unavailable, "verify rescue #{fault.class}")
+      assert(reached, "dependency injection reached actual inputs")
+    ensure
+      validator.define_singleton_method(:snapshot!, original_snapshot)
+    end
+  end
+
+  # RootSignature::Unavailable subclasses Rejected. Every pure-conversion
+  # rescue must preserve this subtype instead of relabeling provider failure as
+  # bad Host data. Inject into actual key processing, not the inputs facade.
+  signature = AP2MandateVerifier::RootSignature
+  original_key = signature.method(:public_jwk!)
+  challenge = model[:host]["challenge"]
+  prepare_args = {trust: args[:trust], order: order(model), root_presentation: model[:inputs][:root_presentation],
+    host_checkout_jws: model[:inputs][:host_checkout_jws],
+    **challenge.slice("challenge_id", "nonce", "issuer_id", "not_before", "not_after").transform_keys(&:to_sym)}
+  [AP2MandateVerifier::RootSignature::Unavailable.new(:signature_dependency_unavailable),
+   LoadError.new("controlled missing crypto dependency")].each do |fault|
+    reached = false
+    signature.define_singleton_method(:public_jwk!) { |*| reached = true; raise fault }
+    begin
+      typed_failure(fault.class, fault.respond_to?(:code) ? fault.code : nil, "trust crypto") { B.trust(**business(model)) }
+      typed_failure(fault.class, fault.respond_to?(:code) ? fault.code : nil, "restore trust crypto") do
+        B.restore_trust(trust_json: args[:trust].trust_json, selection_json: args[:trust].selection_json, verified_at: HostBindingTest::N)
+      end
+      typed_failure(fault.class, fault.respond_to?(:code) ? fault.code : nil, "prepare crypto") { B.prepare(**prepare_args) }
+      failure(args, :unavailable, :signature_dependency_unavailable, "verify real core crypto #{fault.class}")
+      assert(reached, "real crypto dependency path reached")
+    ensure
+      signature.define_singleton_method(:public_jwk!, original_key)
+    end
+  end
+
+  original_json_version = JSON::VERSION
+  begin
+    JSON.send(:remove_const, :VERSION); JSON.const_set(:VERSION, "unsupported-test-version")
+    typed_failure(AP2MandateVerifier::InputValidator::Unavailable, :json_dependency_unavailable, "trust JSON dependency mismatch") { B.trust(**business(model)) }
+    challenge = model[:host]["challenge"]
+    typed_failure(AP2MandateVerifier::InputValidator::Unavailable, :json_dependency_unavailable, "prepare JSON dependency mismatch") do
+      B.prepare(trust: args[:trust], order: order(model), root_presentation: model[:inputs][:root_presentation],
+        host_checkout_jws: model[:inputs][:host_checkout_jws],
+        **challenge.slice("challenge_id", "nonce", "issuer_id", "not_before", "not_after").transform_keys(&:to_sym))
+    end
+    failure(args, :unavailable, :research_verification_unavailable, "verify JSON dependency mismatch")
+  ensure
+    JSON.send(:remove_const, :VERSION); JSON.const_set(:VERSION, original_json_version)
+  end
+  %i[issuer agent merchant].each do |role|
+    [nil, false, "selector", [], 1].each do |bad_selector|
+      invalid("#{role} selector #{bad_selector.class}") { B.trust(**business(model).merge(role => bad_selector)) }
+    end
+  end
+
+  mutable_business = business(model)
+  captured_trust = B.trust(**mutable_business)
+  original_trust = [captured_trust.trust_json.dup, captured_trust.selection_json.dup]
+  mutable_business[:snapshot]["records"][0]["public_key_pem"].replace("changed")
+  mutable_business[:snapshot]["id"].replace("changed")
+  %i[issuer agent merchant].each { |role| mutable_business[role]["identity"].replace("changed") }
+  assert([captured_trust.trust_json, captured_trust.selection_json] == original_trust && captured_trust.frozen?, "new trust detached from snapshot/selectors")
+  @count += 1
+
+  mutable_prepare = prepare_args.transform_values { |value| value.instance_of?(String) ? value.dup : value }
+  mutable_prepare[:order] = copy(prepare_args[:order])
+  prepared = B.prepare(**mutable_prepare); original_prepared = prepared.dup
+  mutable_prepare.each_value { |value| value.replace("changed") if value.instance_of?(String) }
+  mutable_prepare[:order]["expected_total"] = 999
+  assert(prepared == original_prepared && prepared.frozen?, "prepared challenge detached from order/wires/nonce/id")
+  @count += 1
+
+  mutable_inputs = args.transform_values { |value| value.instance_of?(String) ? value.dup : value }
+  mutable_inputs[:order] = copy(args[:order])
+  inputs_snapshot = B.inputs(**mutable_inputs)
+  before = inputs_snapshot.transform_values { |value| value.instance_of?(String) ? value.dup : value }
+  mutable_inputs.each_value { |value| value.replace("changed") if value.instance_of?(String) }
+  mutable_inputs[:order]["expected_total"] = 999
+  assert(inputs_snapshot == before && inputs_snapshot.frozen? && inputs_snapshot.values.all?(&:frozen?), "seven inputs frozen/detached from caller")
+  @count += 1
   puts "PASS #{@count} input builder contract/boundary cases; existing Host suite reported separately; not Host ALLOW"
 end

@@ -32,6 +32,11 @@ custom coercions or unbounded graphs. Unknown fields are rejected. Pure assembly
 methods raise `InputBuilder::Invalid` for malformed business information; a caller
 must treat missing results or exceptions as failure, never authorization.
 
+`verify` converts malformed assembly arguments to the existing immutable Result
+`:rejected / :invalid_host_context`; dependency or unexpected assembly failures
+return `:unavailable / :research_verification_unavailable`. Both are non-success
+with no Evidence. Codes produced after entering the complete verifier are retained.
+
 | Business source | Builder argument | Host responsibility |
 | --- | --- | --- |
 | Authenticated registry snapshot and public PEM keys | `trust(snapshot:, tenant_id:, issuer:, agent:, merchant:, verified_at:)` | Provenance, enrollment, revocation, freshness and explicit selection |
