@@ -1,15 +1,35 @@
 # 現状メモ / Project status
 
-更新：2026-10-30 UTC（0.2.1公開確認）。0.2.1公開元source：
-`5a02bc3a192e16aa3628cf7899617623b0aed78c`。公開後の本リポジトリ文書更新は公開Gemのbytesを変更しません。
-以下の旧pre3・R1・候補段階のNOT_RUN/HOLDは各時点の履歴で、現在の配布状態は直下の0.2.1記録を正本とします。
+更新：2026-10-31 UTC（0.3.0公開確認）。0.3.0公開元source：
+`877f59195632f74714a60551b6afb22ac81d93e3`。公開後の本リポジトリ文書更新は公開Gemのbytesを変更しません。
+以下の旧版・候補段階のNOT_RUN/HOLDや撤回記録は各時点の履歴で、現在の配布状態は直下の0.3.0記録を正本とします。
 
 再開時はまずこの要約を読み、[AGENTS.md](../AGENTS.md)と
 [プロセス正本 Issue #101](https://github.com/cuichangquan/ap2-mandate-verifier/issues/101)を確認してください。
 このメモは更新日時点の案内で、最新GitHub main／PR／レビュー／ActionsとRubyGems原本の確認を置き換えません。
 承認・制限の記載は現状記録であり、新たな権限を付与しません。
 
-## 0.2.1公開済み — 現在の配布状態
+<a id="030公開済み--現在の配布状態"></a>
+
+## 0.3.0公開済み — 現在の配布状態
+
+[RubyGems 0.3.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.3.0)は登録2026-10-31 01:31:40.743 UTC、公式metadata取得01:32:40 UTC、最終照合01:33:27 UTC。owner `cuichangquan`、platform `ruby`、prerelease false、照合時yanked false、**37,376 bytes**、SHA256 `b3a31d5a8b0718f1085745dd4d97d85f210ff9a1628798110da9ff382ae546bd`です。公式metadata・実配布・保存最終候補が一致し、候補の公開元sourceは `877f59195632f74714a60551b6afb22ac81d93e3` です。RubyGemsがsource SHAを独立証明するものではなく、保存済みレビュー候補とのbytes一致により対応付けています。
+
+[v0.3.0 tag／GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.3.0)をOwner承認下で01:35:52 UTCに公開し、tagが上記の公開元sourceを指すことを確認しました。公開後の文書追補はGemを再build・再push・置換しません。同梱README／SUPPORT_CONTRACTは準備時点のsnapshotで、GitHub source archiveとRubyGems Gemは別成果物です。
+
+`InputBuilder` は認証済み業務情報からtrust／selection／host JSONとhashを作り、発行前準備→保存→原文のまま復元→独立した現在状態→既存の完全検証を支援します。Rails／DB／通信／決済への責務拡張はなく、7入力API・固定AP2/profile・Result/Evidence v2は維持します。[英語利用案内](INPUT_BUILDER.md)／[日本語利用案内](INPUT_BUILDER.ja.md)にRuby単体例とRails対応付けがあります。
+
+正式対応はMRI 3.4.12と4.0.9、導入範囲 `>= 3.4.12, < 4.1` は範囲内全版や他engineの保証ではありません。JSON2.19.9／JWT3.3.0／base640.3.0／OpenSSL gem4.0.2／Digest3.2.1を維持。Debian 12/arm64の両Rubyで統合後sourceの既存885件・checkout190件・metadata7件・builder109件が合格し、同一最終Gemの通常導入後134ケース、14 payload一致、11製品ファイルの通常読込みを確認しました。builderが再利用するHost149件は新規件数へ重複計上しません。既存署名原文・独立期待値と、異常verify／依存不足／selector型／呼出側変更耐性の追加試験を組み合わせています。これらは限定した構成の機能観測であり、過去のmacOS／Ubuntuや他architectureへの保証拡張ではありません。
+
+### 撤回候補と修正の履歴
+
+旧候補SHA256 `5de6907cfcf0565ddaba1385b1d38ae113cc5e26d52259d769030237378a48a8` は未公開のまま撤回しました。[PR218の遅着指摘](https://github.com/cuichangquan/ap2-mandate-verifier/pull/218#discussion_r4429729387)で、InputBuilder.verifyの未登録Result codeが例外を漏らすことを確認。[修正PR219](https://github.com/cuichangquan/ap2-mandate-verifier/pull/219)は登録済みcodeの再利用、依存失敗と不正入力の区別、selector shape検査を修正し、実際のverify／準備APIの異常経路を追加しました。旧候補の無指摘レビューやinstalled124件は、この欠陥を含む候補の妥当性を証明しません。
+
+修正HEAD `b9b3bc2ea53ccb6352c05d96c2e98e13528ca715` の独立Codexレビューは指摘なし、GitHub Codexも同HEADに01:14:25 UTCで👍、thread0を確認後にSquash Mergeしました。元の指摘は修正内容を回答して解決済みです。修正後mainから再生成した正確な最終bytesで両Rubyのsource／通常導入とデモを再検証し、Owner本人がRubyGems公開を実施しました。[候補準備の履歴](RELEASE_030_CANDIDATE.md)を保持し、過去の候補名・NOT_RUN・HOLDを上書きしません。
+
+EvidenceはHostの購入許可ではありません。実Issuer信頼・失効情報・実Host・原子的nonce消費／注文CAS・決済・性能・本番GO・Phase 2-Bは引き続きHOLDです。ローカルデモのみを扱い、Web公開は行いません。
+
+## 0.2.1公開済み — 過去の配布記録
 
 [RubyGems 0.2.1](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.1)は登録2026-10-30 11:51:55.894 UTC、照合11:53:55 UTC。owner `cuichangquan`、platform `ruby`、prerelease false、照合時yanked false、**34,816 bytes**、SHA256 `a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114`。公式metadata・実配布・保存最終Gemが一致しました。公開元sourceは `5a02bc3a192e16aa3628cf7899617623b0aed78c`です。
 
