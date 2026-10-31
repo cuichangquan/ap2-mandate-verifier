@@ -1,30 +1,20 @@
 # AP2 Mandate Verifier — 0.3.0
 
-公開済み0.3.0に `InputBuilder` を追加しました。認証済みの業務情報からChallenge発行前の準備・保存・復元・現在状態の入力作成を行い、既存の完全検証へ接続します。Gem独自のtrust／selection／Host JSONやハッシュの手書きは不要です。[実行可能な例とRails対応付け](docs/INPUT_BUILDER.ja.md)を参照してください。既存の7入力APIも維持します。以下の配布手順は公開済み0.3.0を導入します。
-
 [English](README.md)
 
-RubyでAP2の固定profileを検証する、Rails非依存のGemです。**署名の正しさだけで購入を許可しません。** 必要な検査が成立した場合に不変のEvidenceを返し、最終業務判断はHostが行います。
+Rubyで購入委任データを検証する、AP2の固定profile向けGemです。署名データを、Hostが独立して渡す信頼情報・注文情報と照合し、不変のEvidenceを返します。**検証成功は購入許可・決済許可ではありません。**
 
-購入委任の正常・改ざん・期限切れを試すには、[ローカルRailsデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo)と[Zennの解説記事](https://zenn.dev/ccq/articles/7f9643f96fe5c7)をご覧ください。
+`InputBuilder` は業務情報から検証入力を作り、Gem独自のtrust／selection／Host JSON、fingerprint、署名原文のdigest計算を担当します。誰を信頼するかの選択、期待する注文・Challenge状態・時計は利用者が渡します。Rails非依存で、通信・DB・決済処理は行いません。
 
-## 導入経路を選ぶ
+## ローカルデモを試す
 
-| 経路 | 最初に見る場所 |
-| --- | --- |
-| Dockerデモ：3つの合成ケースを比較 | [デモREADME](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)のローカル起動手順と正常／改ざん／期限切れの例を参照。Dockerコマンドはデモ側で管理します。 |
-| デモを使わないRuby単体：MRI 3.4.12または4.0.9 | 下記の[導入](#配布と導入)から[業務情報の例とRails対応付け](docs/INPUT_BUILDER.ja.md)へ進みます。 |
+[把握しやすいRailsデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)は、公開済み0.3.0とInputBuilderを通常経路で使います。Docker手順ならホストへのRuby導入は不要です。正常・改ざん・期限切れの合成ケースについて、実際のstatus/codeとEvidence有無を比較できます。ローカル専用で、実Challenge発行・nonce消費・購入実行は行いません。
 
-どちらも固定profileの検証器を使う経路であり、決済実行やHostの業務許可を提供しません。範囲は[対応契約](#対応範囲)を参照してください。5分程度で選択肢を理解できる説明を目指すもので、導入やbuildが5分で完了する保証ではありません。
+## インストール
 
-## 配布と導入
-
-[0.3.0はRubyGemsで公開済み](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.3.0)です。固定profileの検証専用安定版であり、旧研究版pre3は別の成果物です。
-
-MRI 3.4.12またはMRI 4.0.9環境と利用者が選ぶGem隔離環境で使用します。通常の導入は依存取得・JSON native buildを伴い得ます。依存衝突や未知providerを許容するために固定条件を緩めないでください。
+正式対応は **MRI 3.4.12とMRI 4.0.9** です。利用者が選ぶGem環境で導入します。
 
 ```sh
-ruby --version # MRI 3.4.12 or MRI 4.0.9
 gem install ap2_mandate_verifier --version 0.3.0
 ```
 
@@ -34,207 +24,87 @@ BundlerのGemfile：
 gem "ap2_mandate_verifier", "= 0.3.0"
 ```
 
-固定runtime依存：JSON 2.19.9、JWT 3.3.0、base64 0.3.0、OpenSSL gem 4.0.2、Digest 3.2.1。
-Bundler 4.0.20は既存resolver基準でruntime依存ではありません。Gemの版制約だけではMRI engine、OSや実native/providerの出所を保証しません。
+runtime依存はJSON 2.19.9、JWT 3.3.0、base64 0.3.0、OpenSSL gem 4.0.2、Digest 3.2.1に固定しています。通常導入には依存の取得・buildが伴い得ます。衝突回避のために固定条件を緩めないでください。Rubyの解決範囲は、その間の全Ruby版・OS・native providerへの対応保証ではありません。[対応契約](docs/SUPPORT_CONTRACT.md)を参照してください。
 
-## 公開済み0.3.0と検証結果
+## InputBuilderの最小例
 
-公開登録2026-10-31 01:31:40.743 UTC、公式metadata取得01:32:40 UTC、配布物照合完了01:33:27 UTC。owner `cuichangquan`、platform `ruby`、prerelease false、照合時yanked falseです。公式metadataのSHA・実配布Gem・保存最終候補は**37,376 bytes**、SHA256 `b3a31d5a8b0718f1085745dd4d97d85f210ff9a1628798110da9ff382ae546bd`、source `877f59195632f74714a60551b6afb22ac81d93e3`で一致しました。
-
-Debian 12/arm64でMRI 3.4.12と4.0.9の両方に、統合後sourceの既存885件・checkout190件・metadata7件・builder109件を実行しました。同じ最終Gemは両Rubyで通常導入・14 payload一致・11製品Rubyファイルの通常読込み・installed134件が成功しました。[公開記録](docs/PROJECT_STATUS.md#030公開済み--現在の配布状態)で撤回された旧候補・過去版と区別します。これは限定構成の機能観測で、実Issuer・実Host・性能の検証ではありません。
-
-公開Gemの同梱README／契約は準備時点のsnapshotです。この公開後リポジトリ文書更新はGemの再build・再push・bytes置換を行いません。[v0.3.0 Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.3.0)は正確な公開元sourceを対象とし、GitHub source archiveとRubyGems Gemは別成果物です。
-
-## 過去の0.2.1対応と公開成果物
-
-0.2.1の正式対応はMRI 3.4.12とMRI 4.0.9の2版で、固定5依存を維持します。導入metadataの範囲 `>= 3.4.12, < 4.1` は、その間の全Ruby版や他engineへの対応宣言ではありません。
-
-公式Ruby bookworm imageを使うDebian 12/arm64で、各Rubyのsource885件・追加checkout190件・metadata7件が合格しました。同一の最終Gemについて、両Rubyで通常導入・13 payload一致・10製品Rubyファイルの通常読込み・installed118件も確認しました。実providerと証拠は[互換性記録](docs/RUBY_3_4_12_COMPATIBILITY.md)を参照してください。過去のmacOS／Ubuntu観測は別記録で、0.2.1の同環境対応を証明しません。
-
-公開登録2026-10-30 11:51:55.894 UTC、照合11:53:55 UTC。公式RubyGems metadata・実配布・保存最終Gemは**34,816 bytes**、SHA256 `a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114`、source `5a02bc3a192e16aa3628cf7899617623b0aed78c`で一致しました。owner `cuichangquan`、platform `ruby`、prerelease false、照合時yanked falseです。[v0.2.1 GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.2.1)のtagは、この公開元sourceに固定しています。
-
-同梱README／契約は準備時点のsnapshotを保持し、このリポジトリ文書更新で公開bytesを再build・置換しません。GitHub source archiveとRubyGems Gemは別成果物です。7入力・固定profile・Fail Closed・Result/Evidence v2・既存APIの意味は不変です。公開完了とHost本番GOは別判断です。
-
-## 検証API：0.3.0と互換性
-
-**新しい業務情報からの連携は `InputBuilder.verify` と[一連の実行例](docs/INPUT_BUILDER.ja.md)から始めてください。** 下記の保存済み入力例は直接7入力を渡す `verify_checkout` APIを示します。0.1.0の既存利用者は `verify_research` を継続でき、0.3.0でも非推奨警告なしで維持します。0.1.0には `verify_checkout` はありません。
-
-| 入口 | 利用可能な版と契約 |
-| --- | --- |
-| `InputBuilder.verify(**business_information)` | 0.3.0から追加。明示された認証済みHost情報から入力を作り完全検証を呼びます。発行前準備・保存済み原文の復元は別処理です。[利用案内](docs/INPUT_BUILDER.ja.md)を参照。 |
-| `verify_checkout(**inputs)` | 0.2.0で導入し、0.3.0でも維持する直接7入力の完全検証入口。入力を加工せず `ResearchResult.verify` に直接委譲し、検証経路を変更しません。 |
-| `verify_research(**inputs)` | 公開済み0.1.0の完全検証入口。v0.3.0でも変更せず維持し、非推奨警告も追加しません。 |
-| `verify(presentation_json:)` | 既存のJSON構文検査のみ。有効なJSONでも `:unverified` / `:verification_not_implemented` を返し、成功Evidenceを返しません。完全検証の代用にはなりません。 |
-
-直接入口の `verify_checkout` には7入力すべてを渡します。下記の保存済み入力例では `full` から読み、実連携では認証済みHost入力契約に従います。
-
-```ruby
-result = AP2MandateVerifier.verify_checkout(
-  trust_json: full.fetch("trust_json"),
-  selection_json: full.fetch("selection_json"),
-  host_json: full.fetch("host_json"),
-  root_presentation: full.fetch("root_presentation"),
-  terminal_jws: full.fetch("terminal_jws"),
-  host_checkout_jws: full.fetch("host_checkout_jws"),
-  verified_at: full.fetch("verified_at")
-)
-```
-
-両完全検証入口とも、[責任境界](#実入力と責任境界)に示す7入力（原文String 6つと外部から供給される整数Unix秒）がすべて必要です。7入力と7支持形状は別の数え方です。下記の固定profileを広げたり、不足したtrust・Host状態・時刻を補完したりしません。不足・未知keywordは `:unavailable` / `:research_verification_unavailable`、`success? == false`、`evidence == nil` になります。位置引数や不正なkeyword展開は検証開始前に例外となり得ます。
-
-[結果の扱い](#結果の読み方)も不変です。成功は `ResearchResult` の `:verified_research` / `:scoped_research_verified` と不変のEvidence v2、拒否・検証不能はEvidenceなしです。Evidenceは検査事実であり、**購入許可ではありません**。例外・無結果でも呼出し側を停止します。設計経緯は[API移行計画](docs/V0_2_0_API_PLAN.md)を参照してください。同書の過去の実装承認待ち記録と、公開済み0.1.0の成果物・本書の利用可能版の区別を混同しないでください。
-
-## 対応範囲
-
-- AP2固定source `b4587ac1d055888a73b4b21750973cffba961793`、登録profile `ap2.checkout.single_merchant_sku` v1の正確なbody/hash・7支持形状
-
-- ES256/P256、Open1→Closed1、固定3開示位置、単一Merchant/SKU/行、USD/EUR/JPY、empty links。未知/非対応形式は拒否
-
-- 厳格入力と有限上限、供給trust選択、Root原文署名と全域閉包、Agent/Merchant署名・委任・購入/Host binding、型/制約/期限をGemが検査
-
-- 上記の両完全検証入口で `verified_research/scoped_research_verified`・Evidence v2契約を維持。安定版番号でも一般AP2対応やHost許可へ昇格しない
-
-正確な必須形状・全上限・失敗codeは[SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md)を参照してください。
-
-## 環境・互換性・保守
-
-正式対応はMRI 3.4.12と4.0.9および固定依存です。0.3.0の実測は上記公開記録の正確なDebian 12/arm64構成に限ります。過去のMRI 4.0.9 MBA/macOS arm64 (`arm64-darwin25`) およびUbuntu 24.04/x86_64観測は、それぞれの履歴として保持します。[過去の包装・provider証拠](research/stable010_release_linux_package/README.md)と今回の成果物を区別してください。OS全版・他engine/architecture・任意provider更新は保証しません。
-
-支持入力の判定意味・APIを黙って変更しません。安全性修正で受理を狭める場合は理由・影響・移行を明示し、破壊的なAPI/必須field/profile変更を区別します。依存更新は自動互換ではありません。
-
-初回安定系列の最新修正版のみを保守対象とし、月次・関連勧告判明時・次版前に手動確認します。旧版backport・固定保守年数・受付/修正期限・24時間対応は約束しません。[SECURITY](SECURITY.md)と[保守方針](docs/POST_RELEASE_MAINTENANCE.md)を参照し、秘密鍵・実Mandate・個人情報を報告しないでください。
-
-## ローカルデモ
-
-[AP2 Mandate Verifier Demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo)では、正常・改ざん・期限切れの合成入力を実際の検証器へ渡し、Dockerでローカル起動できます。公開ホスト型のデモサイト・本番決済・Hostの業務許可を提供するものではありません。
-
-## 保存済み合成入力で試す
-
-以下は既存の合格済みinstalled検査と同じ公開 `FULL` 入力を読む例です。入力JSONはGemに含まれません。固定commitから取得し、SHA256を確認してから使います。fixtureに秘密鍵は含まれません。fixtureのtrust／Host入力は**テスト専用の合成値**であり、実Issuer登録・現在の注文・実時刻として再利用してはいけません。`verified_at = 1800000000` は保存シナリオの固定時刻です。
-
-```sh
-set -eu
-curl --fail --location --proto '=https' --proto-redir '=https' \
-  --output AP2_RESEARCH_INPUTS.json \
-  https://raw.githubusercontent.com/cuichangquan/ap2-mandate-verifier/f6d4f83d396b75505256dba5769a54a8f065eeea/research/stage15/results/R3/INPUTS.json
-printf '%s\n' '41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1  AP2_RESEARCH_INPUTS.json' | shasum -a 256 -c -
-# Save the Ruby example below as research_example.rb, then:
-ruby research_example.rb
-```
+導入後、このリポジトリをcheckoutし、以下をルートの `quick_start.rb` として保存して `ruby quick_start.rb` を実行します。[`examples/input_builder/`](examples/input_builder/)のJSONファイルは、明示された合成注文・公開鍵登録情報と署名原文Stringです。インストール済みGemには含まれません。保存署名には期限があるため固定の合成時計を使います。実登録や本番の現在情報として再利用しないでください。
 
 ```ruby
 require "ap2_mandate_verifier"
 require "json"
-require "digest"
+require "tmpdir"
 
-raw = File.binread("AP2_RESEARCH_INPUTS.json")
-expected = "41ad845a7ea82a9c7316c9ef11fb8ee5281453afafe2b4932c7217c1936562c1"
-raise "fixture checksum mismatch" unless Digest::SHA256.hexdigest(raw) == expected
+builder = AP2MandateVerifier::InputBuilder
+fixtures = File.join(__dir__, "examples/input_builder")
+read = ->(name) { JSON.parse(File.binread(File.join(fixtures, "#{name}.json"))) }
+trust_at = ->(now) do
+  builder.trust(snapshot: read.call("trust_snapshot"), tenant_id: "synthetic-tenant",
+    issuer: {"identity" => "issuer", "purpose" => "checkout", "key_ref" => "issuer-1"},
+    agent: {"identity" => "agent", "purpose" => "checkout", "key_ref" => "agent-1"},
+    merchant: {"identity" => "shop", "purpose" => "checkout", "key_ref" => "merchant-1"},
+    verified_at: now)
+end
+wires = read.call("signed_wires").transform_keys(&:to_sym) # 原文Stringのbytesを保持。
 
-full = JSON.parse(raw).fetch("FULL")
-inputs = {
-  trust_json: full.fetch("trust_json"),
-  selection_json: full.fetch("selection_json"),
-  host_json: full.fetch("host_json"),
-  root_presentation: full.fetch("root_presentation"),
-  terminal_jws: full.fetch("terminal_jws"),
-  host_checkout_jws: full.fetch("host_checkout_jws"),
-  verified_at: full.fetch("verified_at")
-}
+# 発行前：独立した注文・信頼情報と、Hostが選んだChallenge情報。
+prepared = builder.prepare(trust: trust_at.call(1_800_000_000),
+  order: read.call("order"), root_presentation: wires.fetch(:root_presentation),
+  host_checkout_jws: wires.fetch(:host_checkout_jws),
+  challenge_id: "synthetic-challenge", nonce: "n", issuer_id: "synthetic-host",
+  not_before: 1_799_998_000, not_after: 1_800_002_000)
 
-result = AP2MandateVerifier.verify_checkout(**inputs)
-puts "status=#{result.status} code=#{result.code}"
-if result.success?
-  checked_facts = result.evidence.to_h # Detached, deeply frozen in-process facts.
-  puts "Scoped verification succeeded; this is NOT purchase authorization."
-  # No payment, order update or nonce consumption is performed here.
-else
-  raise "Verification did not succeed; stop."
+Dir.mktmpdir do |directory|
+  record = File.join(directory, "challenge.json")
+  File.binwrite(record, prepared) # デモ用保存。本物の保存処理はHostの責任。
+
+  # 検証時：保存原文を読み戻し、現在の注文・信頼情報を独立して取得。
+  now = 1_800_000_000 # 外部から供給する合成時計。本番の時刻取得ではない。
+  result = builder.verify(trust: trust_at.call(now),
+    saved_challenge: builder.restore(saved_challenge: File.binread(record)),
+    order: read.call("order"), **wires,
+    expected_challenge_issuer_id: "synthetic-host",
+    clock_source_id: "fixed-synthetic-clock", verified_at: now)
+  puts "#{result.status}/#{result.code}; evidence=#{!result.evidence.nil?}"
+  raise "Verification did not succeed; stop" unless result.success?
 end
 ```
 
-この保存 `FULL` ケースの期待値は `status=:verified_research`、`code=:scoped_research_verified`、`success?=true` です。実入力・不支持入力・依存障害では同じ結果を期待しません。非成功ならEvidenceはnilです。例外やプロセス終了で結果がない場合も停止してください。Evidence全体やraw入力を安易にログへ出さないでください。
+変更していない合成入力の期待値は `verified_research/scoped_research_verified; evidence=true` です。準備・保存・後の検証を1プロセス内で示す例であり、実発行や原子的消費を実装していません。実連携では、認証済みの登録・注文情報を明示的に対応付け、署名原文を保持します。構造化業務入力にはStringキーの通常のRuby値を使い、ActiveRecordオブジェクトそのものは渡しません。
 
-## 結果の読み方
+検証時に `prepare` をやり直したり、保存hash／参照を現在値に合わせて更新したりしないでください。注文・信頼情報・署名原文の変化は検出できるままにします。保存済みtrust JSONは `restore_trust` で再シリアライズせず読み戻せます。[完全例](examples/input_builder.rb)には正常・改ざん・期限切れがあり、[利用案内](docs/INPUT_BUILDER.ja.md)に業務field・原文復元・Railsモデル対応付けを示しています。
 
-| 分類 | `status`と判定メソッド | Evidenceと扱い |
-| --- | --- | --- |
-| 固定範囲の検証成功 | `:verified_research`、`success? == true`、`code == :scoped_research_verified` | あり。検査事実であり、**購入許可ではありません**。Host側の責任は残ります。 |
-| 拒否 | `:rejected`、`rejected? == true` | なし（`nil`）。停止し、`result.code`で拒否理由を確認します。 |
-| 検証不能 | `:unavailable`、`unavailable? == true` | なし（`nil`）。停止します。依存や検証処理の失敗だけで、入力が不正と断定しません。 |
+## 結果と責任境界
 
-例外・プロセス終了・結果なしの場合も、購入を許可せず停止します。上の例は意図的にすべての非成功で停止します。詳細は[Result and Evidence](docs/SUPPORT_CONTRACT.md#result-and-evidence)を参照してください。
-
-## 実入力と責任境界
-
-| Keyword | 入力契約 |
+| 結果 | 意味と利用者の処理 |
 | --- | --- |
-| `trust_json` | 認証済みHostの固定snapshot/profileと公開鍵登録を表すJSON原文String |
-| `selection_json` | 独立Hostが選択したtenant・profile版・Issuer/Agent/Merchantの識別／用途／鍵参照 |
-| `host_json` | 認証済み現在注文binding、issued challenge、発行元・時計識別 |
-| `root_presentation` | disclosure順と末尾`~`を維持した署名付きRoot提示原文String |
-| `terminal_jws` | Agent terminal compact JWS原文String |
-| `host_checkout_jws` | Hostが固定したMerchant Checkout compact JWT原文String |
-| `verified_at` | 外部の信頼時計から供給する整数Unix秒 |
+| `:verified_research` / `:scoped_research_verified`、`success? == true` | 不変のEvidenceに固定profileの検査事実があります。購入を許可するかは、Hostが別途判断します。 |
+| `:rejected`、`rejected? == true` | Evidenceなし。停止して `result.code` を確認します。 |
+| `:unavailable`、`unavailable? == true` | Evidenceなし。停止します。依存・処理の失敗だけで業務入力が不正とは断定しません。 |
 
-正確な必須形状・型・上限は[SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md#full-entry-and-required-inputs)を参照してください。tokenからtrustを自己登録したり、署名原文をparse／再encode／並べ替えして渡したりしません。Host-onlyなBuyer/account等の一致はIssuer署名による本人認証を意味しません。
+例外・プロセス終了・結果なしでも、購入を許可しません。raw入力・nonceをログに出したり、シリアライズしたEvidenceを認証済みの資格情報として扱ったりしないでください。
 
-両完全検証入口の成功は固定profileにおける検証事実です。Hostは最新trust／失効／注文版／challenge／有効期限を再照合し、nonce原子消費＋注文CASを自身で成立させる必要があります。Gemはこれを実行しません。EvidenceをJSON化して再入力し、真正性を回復するAPIもありません。旧 `verify(presentation_json:)` はJSON構文境界だけで、成功Evidenceを返しません。
+Gemは署名、支持する開示閉包、委任、購入／Host binding、制約・期限を検査します。Hostは認証済み・独立・最新のtrust／鍵／失効、注文・Challenge状態、時計を供給します。実行直前に現在状態と期限を再照合し、nonceの原子消費＋注文CAS、不明結果の回復、最終許可・決済判断を担当します。`prepare`／`restore` は保存元の認証やnonce未使用を証明しません。
 
-連携前に[Issuer登録前チェックリスト](docs/ISSUER_ONBOARDING_CHECKLIST.md)と[Issuer/Host最小契約](docs/ISSUER_HOST_MINIMUM_CONTRACT.md)を参照してください。実Issuerの信頼と特定Hostの本番運用GOは、このGemの版番号や検証成功では成立しません。契約と`research/`のHost/DBコードは合成研究の設計・限定観測であり、本番adapterとして提供するものではありません。
+対応は固定profile `ap2.checkout.single_merchant_sku` v1です。ES256/P256、単一Merchant／SKU／cart行、USD/EUR/JPYと文書化した開示形状に限定し、未知・非対応形式は拒否します。一般AP2／全Schema、実Issuer互換性、署名／Receipt生成、Rails adapter、DB／決済実行、数値性能保証は対象外です。実Issuer・実Hostの本番GOとPhase 2-Bは引き続き別のHOLDです。
 
-`inputs`はtrust_json/selection_json/host_json/root_presentation/terminal_jws/
-host_checkout_jws/verified_atです。前3つのJSONは認証済みの独立Host入力として渡し、
-提示tokenの自己申告から信頼を追加しません。raw nonceは入力専用、EvidenceにはSHA256だけを
-投影します。Hash/JSONへ書き出したものを真正なEvidenceとして再入力するAPIはありません。
+### APIの使い分け
 
-旧`verify`はJSON構文境界だけで、その他の低レベルverify入口と共にsuccess?=false/
-evidence=nilを維持します。呼出し例のsuccess?を旧APIへ流用してはいけません。
+| 入口 | 役割 |
+| --- | --- |
+| `InputBuilder.verify(**business_information)` | 0.3.0の推奨業務情報経路。入力を組み立て、完全検証します。発行前準備・復元は上の例の別処理です。 |
+| `verify_checkout(**inputs)` | 既存の7入力を直接渡す完全検証。trust／selection／Host JSONも呼出側が渡します。 |
+| `verify_research(**inputs)` | 同じ7入力検証経路の維持された名称。非推奨警告はありません。 |
+| `verify(presentation_json:)` | 旧JSON構文検査のみ。成功Evidenceを返しません。 |
 
-## 非保証と安全な停止
+`InputBuilder.verify` の不足keywordを含む組み立て引数不正は `:rejected / :invalid_host_context`、組み立て中の依存・予期しない失敗は `:unavailable / :research_verification_unavailable` です。完全検証に入った後のcodeは維持します。一方、直接の `verify_checkout`／`verify_research` の不足・未知keywordは `:unavailable / :research_verification_unavailable` です。これらの非成功では、すべて `success? == false`、`evidence == nil` になります。形状・上限・Rubyの引数束縛上の注意は[正確な契約](docs/SUPPORT_CONTRACT.md#full-entry-and-required-inputs)を参照してください。
 
-一般AP2/全Schema、任意の実Issuer互換性、発行/提示/Receipt生成、Rails adapter、実決済、実Host/DB/失効運用、最悪CPU/RSS/並行性能・数値SLAは対象外です。無欠陥や全パス安全性を証明したとは主張しません。既知重大問題やGem自身の検査欠落をこの非保証表示で補いません。
+## 詳細リンク
 
-Hostはtokenから独立した認証済みtrust/鍵/profile・最新失効/時計/注文/challengeを供給し、Evidence使用直前に再照合し、nonce原子消費＋注文CAS・PENDING回復・最終ALLOWを担当します。Gemの既存検査をHostへ移す意味ではありません。Evidenceは同一の信頼Rubyプロセス内の検査事実で、JSON/Hashから真正性を再構成しません。不明・拒否・不能・例外・結果なしは許可せず、Hostが外側の時間/メモリ/同時実行制限を設けます。
+- [業務情報の一連の利用とRails対応付け](docs/INPUT_BUILDER.ja.md)、[完全Ruby例](examples/input_builder.rb)、[変更前の例](examples/input_builder_before.rb)。
+- [支持入力・上限・Result／Evidence契約](docs/SUPPORT_CONTRACT.md)、[Issuer／Host責務](docs/ISSUER_HOST_MINIMUM_CONTRACT.md)。
+- [公開済み0.3.0 Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.3.0)、[公開・撤回記録](docs/PROJECT_STATUS.md)、[変更履歴](CHANGELOG.md)。リポジトリREADMEの変更で公開Gemを再build・置換しません。
+- [固定commitの旧7入力・保存FULL例](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.ja.md#保存済み合成入力で試す)、[過去版の配布物・provider証拠](research/stable010_release_linux_package/README.md)、[過去の概念図](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.ja.md#図で見るap2の概念)。履歴は保存していますが、現在の連携手順や対応範囲を広げる根拠ではありません。
+- [脆弱性報告](SECURITY.md)、[保守方針](docs/POST_RELEASE_MAINTENANCE.md)、[製品方針](docs/PRODUCT_VISION.md)。秘密鍵・実Mandate・個人情報を報告に含めないでください。
 
-## 証拠と履歴
-
-公開済み0.2.0は**33,280 bytes**、SHA256 `9a52e802de5a0564c34d198f4c4ad2c2b60791a8f1eb6e31db14c49e28e91f16`、公開元commit `9b2e28d91fc4886722de7b9c39a5422e966953a9`です。2026-10-30に公式RubyGems metadata・実配布bytes・保存Gemの一致を確認しました。最終候補のDebian 12/arm64／MRI 4.0.9限定包装観測では、全13 payloadのsource/archive/installed一致・通常requireによる10製品Rubyファイル読込み・保存入力と期待値を使う118ケースが合格しました。対応環境の保証拡張ではなく、包装時にsource190／885は再実行していません。[0.2.0の公開記録](docs/PROJECT_STATUS.md#020公開済み--現在の配布状態)を参照してください。
-
-公開Gem内のREADMEと契約は公開前のsnapshotです。今回のリポジトリ文書更新は公開済みGemを変更せず、再buildは不要です。再buildした別成果物へ検証結果を引き継ぎません。GitHubのsource archiveはリポジトリのソースであり、RubyGemsの配布Gemとは異なります。
-
-公開済み0.1.0のarchiveは**34,304 bytes**、SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32`。2026-10-26に公式metadata・所有者`cuichangquan`・実配布bytes・全13 payloadのhashを照合しました。[公開確認記録](research/stable010_release_linux_package/README.md#rubygems-publication-verified)を参照してください。このリポジトリREADMEは公開後に再整理したもので、公開Gem同梱READMEとは異なります。公開archiveは再作成していません。
-
-公開済み0.1.0のarchiveのSHA・環境別結果・制限は[版別検証記録](research/stable010_release_linux_package/README.md)を参照してください。archiveのSHAを同梱文書へ自己埋込せず、外部manifestで識別します。SHAは配布bytesを識別するもので、Host trustや全面安全性を保証しません。
-
-[旧0.1.0候補R1](research/stable010_candidate/README.md)、[公開pre3](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0.pre.3)、[pre2 Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.1.0.pre.2)は別archiveです。旧NOT_RUN/停止/成功は各時点の記録として保持し、新archiveの実測へ読み替えません。885回帰（147は内数）と旧Ruby4.0.1独立比較の再利用は、新たな885実行やLinux独立Oracleを意味しません。
-
-[過去READMEの研究資料一覧 / Historical research documentation](https://github.com/cuichangquan/ap2-mandate-verifier/blob/2546d112b4bd4eaaf0a55b502f1c40b1fd61be65/README.md#research-documentation)は履歴資料であり、現在の契約・公開状態より優先しません。将来のSDK構想は[PRODUCT_VISION](docs/PRODUCT_VISION.md)を参照してください。
-
-## 図で見るAP2の概念
-
-以下は既存の日本語概念図です。広いAP2の説明を含み、固定profileの正確な対応契約を表すものではありません。上記の固定profile契約を優先してください。発行主体の信頼と最新失効はHostが管理・供給し、Gemが外部の最新状態を独立証明するものではありません。任意の委任チェーン・発行・Payment Mandate・決済実行などの概念は、本版の対応機能ではありません。
-
-### AP2規格の全体像
-
-![AP2規格の全体像](docs/assets/ap2-overview.png)
-
-### 委任とHostの責任境界
-
-![委任とHostの責任境界](docs/assets/ap2-delegation-trust-flow.png)
-
-### Mandateの内部構造
-
-![Mandateの内部構造](docs/assets/mandate-anatomy.png)
-
-### SD-JWTと委任の概念
-
-![SD-JWTと委任の概念](docs/assets/sd-jwt-delegation-chain.png)
-
-### 攻撃パターンとFail Closed・Hostの再利用防止
-
-![攻撃パターンとFail Closed・Hostの再利用防止](docs/assets/attack-patterns-fail-closed.png)
-
-## License
-
-MIT. See [LICENSE](LICENSE).
+MIT。[LICENSE](LICENSE)を参照。
