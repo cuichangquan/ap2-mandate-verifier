@@ -1,4 +1,6 @@
-# Merchant Checkout signing (unpublished candidate)
+# Merchant Checkout signing and Receipt — published 0.5.0
+
+Published [0.5.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.5.0) includes these APIs. [Complete runnable synthetic example](../examples/merchant_signing.rb). The example is repository content, not part of the installed Gem.
 
 ## Scope and responsibility
 
