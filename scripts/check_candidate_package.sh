@@ -13,7 +13,7 @@ cd "$source_dir"
 dependency_path=$(ruby -e 'puts Gem.path.join(File::PATH_SEPARATOR)')
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
   gem install --local --no-document "$artifact" > "$out_dir/install.log" 2>&1
-ruby -r "$source_dir/test/runtime_dependencies.rb" test/package_contents_audit.rb "$artifact" "$work_dir/extracted" "$work_dir/installed/gems/ap2_mandate_verifier-0.3.0" > "$out_dir/package.json"
+ruby -r "$source_dir/test/runtime_dependencies.rb" test/package_contents_audit.rb "$artifact" "$work_dir/extracted" "$work_dir/installed/gems/ap2_mandate_verifier-0.4.0" > "$out_dir/package.json"
 mkdir "$work_dir/detached"
 cd "$work_dir/detached"
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
@@ -22,3 +22,10 @@ GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
     "$source_dir/research/stage15_linux/EXPECTED.json" \
     "$out_dir/package.json" "$source_dir" > "$out_dir/installed.json"
 cat "$out_dir/install.log"
+
+GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 \
+  ruby "$source_dir/test/diagnostic_test.rb" > "$out_dir/diagnostic.log"
+for scenario in valid tampered expired missing_currency wrong_total_type unknown_order_field unsupported_saved_format; do
+  GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
+    ruby "$source_dir/examples/input_builder.rb" "$scenario" >> "$out_dir/examples.log"
+done

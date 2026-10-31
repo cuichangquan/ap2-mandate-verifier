@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 — unreleased
+
+- Adds immutable, input-free `Result#diagnostic` and `InputBuilder::Invalid#diagnostic`, machine stage/field/reason identifiers and English/Japanese hints. Success has no failure diagnostic; diagnostic failure cannot change a verdict.
+- Identifies known Builder missing/type/unknown-field/saved-format failures; existing status/code and all verification/Evidence contracts remain unchanged. Adds boundary, dependency, redaction and installed-package coverage plus runnable examples and guides.
+- Candidate only; no Gem publication, tag or Release. Published 0.3.0 remains unchanged. Runtime pins, fixed profile and production/real-Issuer/Host/Phase 2-B HOLDs remain.
+
 ## 0.3.0 — 2026-10-31
 
 - Corrects candidate InputBuilder.verify failure handling to reuse registered Result codes. Malformed assembly returns rejected/invalid_host_context; unavailable assembly returns unavailable/research_verification_unavailable, with no Evidence. The earlier candidate SHA256 5de6907cfcf0565ddaba1385b1d38ae113cc5e26d52259d769030237378a48a8 is withdrawn and must not be published.

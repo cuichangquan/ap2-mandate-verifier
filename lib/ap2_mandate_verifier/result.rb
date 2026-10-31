@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "diagnostic"
+
 module AP2MandateVerifier
   # Legacy non-success type. The opt-in research entry uses a separate type.
   class Result
@@ -32,13 +34,21 @@ module AP2MandateVerifier
 
     attr_reader :status, :code
 
-    def initialize(status:, code:)
+    def initialize(status:, code:, diagnostic: nil)
       unless CODES.fetch(status, []).include?(code)
         raise ArgumentError, "unsupported non-success result"
       end
       @status = status
       @code = code
+      @diagnostic = diagnostic if Object.instance_method(:instance_of?).bind_call(diagnostic, Diagnostic) && diagnostic.frozen?
       freeze
+    end
+
+    # A diagnostic failure cannot affect the already determined verdict.
+    def diagnostic
+      @diagnostic || Diagnostic.for_result(status, code)
+    rescue StandardError, LoadError
+      nil
     end
 
     def success? = false
