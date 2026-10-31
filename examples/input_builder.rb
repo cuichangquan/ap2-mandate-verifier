@@ -20,7 +20,7 @@ module InputBuilderExample
   end
 
   def self.run(scenario = "valid")
-    raise ArgumentError, "unknown scenario" unless %w[valid tampered expired].include?(scenario)
+    raise ArgumentError, "unknown scenario" unless %w[valid tampered expired missing_currency wrong_total_type unknown_order_field unsupported_saved_format].include?(scenario)
     builder = AP2MandateVerifier::InputBuilder
     wires = read("signed_wires") # Exact original Strings, including Root's final '~'.
     order_at_issue = read("order") # Independent order source, never token-derived.
@@ -40,11 +40,18 @@ module InputBuilderExample
       now = scenario == "expired" ? 1_800_000_101 : 1_800_000_000
       current_order = read("order") # Retrieve current Host state independently.
       current_order["expected_total"] = 999 if scenario == "tampered"
+      current_order.delete("currency") if scenario == "missing_currency"
+      current_order["expected_total"] = "200" if scenario == "wrong_total_type"
+      current_order["unsupported"] = true if scenario == "unknown_order_field"
+      if scenario == "unsupported_saved_format"
+        restored = JSON.generate(JSON.parse(restored).merge("format_version" => "future"))
+      end
       result = builder.verify(trust: current_trust(now), saved_challenge: restored,
         order: current_order, **wires.transform_keys(&:to_sym),
         expected_challenge_issuer_id: "synthetic-host",
         clock_source_id: "fixed-synthetic-clock", verified_at: now)
       puts "#{scenario}: #{result.status}/#{result.code}; evidence=#{!result.evidence.nil?}"
+      puts result.diagnostic.to_h(locale: :en) if result.respond_to?(:diagnostic) && result.diagnostic
       # A success gives checked facts. Host authorization/payment remains separate.
       result
     end

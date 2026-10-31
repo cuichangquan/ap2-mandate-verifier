@@ -15,14 +15,14 @@ def deep_frozen(value)
   end
 end
 spec = Gem.loaded_specs.fetch("ap2_mandate_verifier")
-need(spec.version.to_s == "0.3.0" && %w[3.4.12 4.0.9].include?(RUBY_VERSION) && RUBY_ENGINE == "ruby", "candidate runtime")
+need(spec.version.to_s == "0.4.0" && %w[3.4.12 4.0.9].include?(RUBY_VERSION) && RUBY_ENGINE == "ruby", "candidate runtime")
 versions = {"json"=>"2.19.9","jwt"=>"3.3.0","base64"=>"0.3.0","openssl"=>"4.0.2","digest"=>"3.2.1"}
 need(versions.all? { |k,v| Gem.loaded_specs.fetch(k).version.to_s == v }, "runtime dependencies")
 root = File.realpath(spec.full_gem_path)
 prohibited = File.realpath(ARGV.fetch(3)) + "/"
 need(!root.start_with?(prohibited), "candidate loaded from repository")
 loaded = $LOADED_FEATURES.select { |f| f.include?("/ap2_mandate_verifier") && f.end_with?(".rb") }
-need(loaded.size == 11 && loaded.all? { |f| File.realpath(f).start_with?(root + "/") }, "ordinary installed entry")
+need(loaded.size == 12 && loaded.all? { |f| File.realpath(f).start_with?(root + "/") }, "ordinary installed entry")
 package = JSON.parse(File.read(ARGV.fetch(2)))
 need(loaded.all? { |f| rel=File.realpath(f).delete_prefix(root+"/"); Digest::SHA256.file(f).hexdigest == package.fetch("files_sha256").fetch(rel) }, "installed source identity")
 input_raw = File.binread(ARGV.fetch(0)); expected_raw = File.binread(ARGV.fetch(1))
@@ -172,7 +172,7 @@ original_snapshot = validator.method(:snapshot!)
   end
 end
 need(builder_rows.size == 16, "installed builder case accounting")
-puts JSON.pretty_generate(scope:"UNRELEASED030_CANDIDATE_NOT_HOST_ALLOW",candidate_version:spec.version.to_s,
+puts JSON.pretty_generate(scope:"UNRELEASED040_CANDIDATE_NOT_HOST_ALLOW",candidate_version:spec.version.to_s,
  ruby:RUBY_VERSION,ruby_platform:RUBY_PLATFORM,dependencies:versions,openssl_default:Gem.loaded_specs.fetch("openssl").default_gem?,
  digest_default:Gem.loaded_specs.fetch("digest").default_gem?,libcrypto:OpenSSL::OPENSSL_LIBRARY_VERSION,installed_lib_files:loaded.size,ordinary_entry:true,
  independent_research_comparisons:rows,independent_checkout_comparisons:checkout_rows,unavailable_comparisons:unavailable_rows,legacy_api_checks:legacy.size,input_rejections:2,constructor_rejections:1,builder_checks:builder_rows,total_cases:134,

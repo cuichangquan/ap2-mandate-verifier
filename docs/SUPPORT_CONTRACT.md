@@ -1,5 +1,7 @@
 # Fixed-profile AP2 verification — published 0.3.0 / historical releases
 
+Unreleased 0.4.0 adds supplemental safe diagnostics; see [API and troubleshooting](DIAGNOSTICS.md). Published 0.3.0 and existing verdict/Evidence contracts remain unchanged.
+
 ## Published 0.3.0 input assistance
 
 `InputBuilder` is an additive, Rails-independent conversion layer for explicit authenticated Host business records, versioned challenge preparation/restoration, and independently obtained current state. `verify` enters the unchanged complete `verify_checkout` core; assembly/restore alone never returns Evidence. Existing seven inputs, fixed profile/AP2 source, Result/Evidence v2, MRI 3.4.12/4.0.9 and all five pinned runtime dependencies remain unchanged.

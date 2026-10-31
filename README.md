@@ -1,5 +1,7 @@
 # AP2 Mandate Verifier — 0.3.0
 
+> **Unreleased 0.4.0 candidate:** adds `result.diagnostic` with stage, safe field, reason and English/Japanese guidance. See the [diagnostic guide](docs/DIAGNOSTICS.md). Ordinary installation below still selects published 0.3.0; use the guide’s local candidate path to try diagnostics.
+
 [日本語](README.ja.md)
 
 Verify purchase-delegation data in Ruby using a deliberately fixed AP2 profile. The Gem checks signed data against independently supplied Host trust and order information, then returns immutable Evidence. **Verification success is not purchase or payment permission.**

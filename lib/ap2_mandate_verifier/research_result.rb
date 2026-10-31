@@ -67,6 +67,7 @@ module AP2MandateVerifier
       freeze
     end
     private_class_method :new, :allocate
+    def diagnostic = nil
     def status = :verified_research
     def code = :scoped_research_verified
     def success? = true

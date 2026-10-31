@@ -8,10 +8,10 @@ package = Gem::Package.new(ARGV.fetch(0))
 package.verify
 spec = package.spec
 files = package.contents.sort
-expected = (Dir["lib/**/*.rb"] + %w[README.md LICENSE docs/SUPPORT_CONTRACT.md]).sort
+expected = (Dir["lib/**/*.rb"] + %w[README.md LICENSE docs/SUPPORT_CONTRACT.md docs/DIAGNOSTICS.md docs/DIAGNOSTICS.ja.md]).sort
 raise "package whitelist" unless files == expected && spec.extensions.empty?
 versions = {"base64"=>"= 0.3.0","json"=>"= 2.19.9","jwt"=>"= 3.3.0","openssl"=>"= 4.0.2","digest"=>"= 3.2.1"}
-raise "package metadata" unless spec.name == "ap2_mandate_verifier" && spec.version.to_s == "0.3.0" &&
+raise "package metadata" unless spec.name == "ap2_mandate_verifier" && spec.version.to_s == "0.4.0" &&
   spec.required_ruby_version == Gem::Requirement.new(">= 3.4.12", "< 4.1") && spec.license == "MIT" &&
   spec.runtime_dependencies.to_h { |d| [d.name, d.requirement.to_s] } == versions
 package.extract_files(ARGV.fetch(1))

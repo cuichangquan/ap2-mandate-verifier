@@ -1,5 +1,7 @@
 # Input assembly for the fixed checkout profile (0.3.0)
 
+Unreleased 0.4.0 adds supplemental safe diagnostics; see [API and troubleshooting](DIAGNOSTICS.md). Published 0.3.0 and existing verdict/Evidence contracts remain unchanged.
+
 `AP2MandateVerifier::InputBuilder` converts explicit Host business information into
 the existing seven verification inputs. It performs no network, database, Rails,
 nonce issuance/consumption or payment operation. A built input is not verified

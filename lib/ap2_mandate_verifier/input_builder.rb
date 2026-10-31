@@ -4,10 +4,22 @@ module AP2MandateVerifier
   # Pure, fixed-profile conversion of authenticated Host business information.
   # Preparation is not issuance, verification, nonce consumption or Host ALLOW.
   module InputBuilder
+    VERIFY_FIELDS = %i[trust saved_challenge order root_presentation terminal_jws host_checkout_jws
+      expected_challenge_issuer_id clock_source_id verified_at].freeze
     FORMAT_VERSION = "1"
     ORDER_FIELDS = %w[tenant_id buyer_account_id order_id merchant_id audience order_version currency expected_total].freeze
     RECORD_FIELDS = (TrustContext::RECORD_FIELDS - %w[profile_ref profile_version algorithm key_fingerprint]).freeze
-    class Invalid < ArgumentError; end
+    class Invalid < ArgumentError
+      def initialize(field = nil, reason = :invalid_builder_input)
+        @field, @reason = field, reason
+        super("invalid input-builder information")
+      end
+      def diagnostic
+        Diagnostic.builder(@field, @reason)
+      rescue StandardError, LoadError
+        nil
+      end
+    end
 
     class Trust
       attr_reader :trust_json, :selection_json
@@ -24,8 +36,9 @@ module AP2MandateVerifier
     def self.trust(snapshot:, tenant_id:, issuer:, agent:, merchant:, verified_at:)
       verified_at = copy!(verified_at)
       source = copy!(snapshot)
-      shape!(source, %w[id policy_version active not_before not_after records])
-      invalid! unless source["records"].instance_of?(Array) && source["records"].length.between?(1, 16)
+      shape!(source, %w[id policy_version active not_before not_after records], "snapshot")
+      invalid!("snapshot.records", :invalid_type) unless source["records"].instance_of?(Array)
+      invalid!("snapshot.records", :invalid_value) unless source["records"].length.between?(1, 16)
       source["records"].each do |record|
         shape!(record, RECORD_FIELDS)
         record.merge!("profile_ref" => TrustContext::PROFILE_REF, "profile_version" => TrustContext::PROFILE_VERSION,
@@ -37,7 +50,7 @@ module AP2MandateVerifier
         "profile_ref" => TrustContext::PROFILE_REF, "profile_version" => TrustContext::PROFILE_VERSION,
         "profile_definition_hash" => TrustContext::PROFILE_HASH,
         "Issuer" => copy!(issuer), "Agent" => copy!(agent), "Merchant" => copy!(merchant)}
-      TrustContext::ROLES.each_key { |role| shape!(selection[role], %w[identity purpose key_ref]) }
+      TrustContext::ROLES.each_key { |role| shape!(selection[role], %w[identity purpose key_ref], role.downcase) }
       wire = json!({"snapshot" => {"id" => source["id"], "policy_version" => source["policy_version"],
         "content_hash" => selection["trust_content_hash"], "body" => body},
         "profile" => {"profile_ref" => TrustContext::PROFILE_REF, "version" => TrustContext::PROFILE_VERSION,
@@ -46,6 +59,8 @@ module AP2MandateVerifier
       context = TrustContext.verified_context!(trust_json: wire, selection_json: selected, verified_at: verified_at,
         expected_merchant_id: selection.fetch("Merchant").fetch("identity"))
       Trust.send(:new, wire, selected, context)
+    rescue Invalid
+      raise
     rescue RootSignature::Unavailable
       raise
     rescue InputValidator::Invalid, RootSignature::Rejected, KeyError, TypeError
@@ -61,6 +76,8 @@ module AP2MandateVerifier
       context = TrustContext.verified_context!(trust_json: wire, selection_json: selected,
         verified_at: copy!(verified_at), expected_merchant_id: selection.fetch("Merchant").fetch("identity"))
       Trust.send(:new, wire, selected, context)
+    rescue Invalid
+      raise
     rescue RootSignature::Unavailable
       raise
     rescue InputValidator::Invalid, RootSignature::Rejected, KeyError, TypeError, NoMethodError
@@ -80,6 +97,8 @@ module AP2MandateVerifier
       saved = json!({"format_version" => FORMAT_VERSION, "profile_ref" => TrustContext::PROFILE_REF,
         "profile_version" => TrustContext::PROFILE_VERSION, "challenge" => challenge}, 32_768)
       restore(saved_challenge: saved)
+    rescue Invalid
+      raise
     rescue RootSignature::Unavailable
       raise
     rescue InputValidator::Invalid, RootSignature::Rejected, KeyError, TypeError
@@ -91,8 +110,8 @@ module AP2MandateVerifier
     def self.restore(saved_challenge:)
       wire = InputValidator.snapshot!(saved_challenge, max_bytes: 32_768)
       value = InputValidator.parse!(wire)
-      shape!(value, %w[format_version profile_ref profile_version challenge])
-      invalid! unless value.values_at("format_version", "profile_ref", "profile_version") ==
+      shape!(value, %w[format_version profile_ref profile_version challenge], "saved_challenge")
+      invalid!("saved_challenge", :unsupported_saved_format) unless value.values_at("format_version", "profile_ref", "profile_version") ==
         [FORMAT_VERSION, TrustContext::PROFILE_REF, TrustContext::PROFILE_VERSION]
       challenge = value["challenge"]
       shape!(challenge, HostBinding::CHALLENGE_FIELDS)
@@ -104,6 +123,8 @@ module AP2MandateVerifier
       %w[not_before not_after].each { |field| HostBinding.send(:time!, challenge[field]) }
       invalid! unless challenge["not_before"] < challenge["not_after"]
       wire
+    rescue Invalid
+      raise
     rescue RootSignature::Unavailable
       raise
     rescue InputValidator::Invalid, RootSignature::Rejected, KeyError, TypeError
@@ -121,6 +142,8 @@ module AP2MandateVerifier
         "expected_challenge_issuer_id" => copy!(expected_challenge_issuer_id), "clock_source_id" => copy!(clock_source_id)}
       {trust_json: trust.trust_json, selection_json: trust.selection_json, host_json: json!(host, 32_768),
        root_presentation: root, terminal_jws: terminal, host_checkout_jws: checkout, verified_at: verified_at}.freeze
+    rescue Invalid
+      raise
     rescue RootSignature::Unavailable
       raise
     rescue InputValidator::Invalid, RootSignature::Rejected, KeyError, TypeError
@@ -129,9 +152,14 @@ module AP2MandateVerifier
 
     # Building alone never produces Evidence; always enter the full old core.
     def self.verify(**arguments)
+      invalid!("arguments", :missing_required_field) unless VERIFY_FIELDS.all? { |field| arguments.key?(field) }
+      invalid!("arguments", :unknown_field) unless arguments.length == VERIFY_FIELDS.length
       AP2MandateVerifier.verify_checkout(**inputs(**arguments))
-    rescue Invalid, ArgumentError
-      Result.new(status: :rejected, code: :invalid_host_context)
+    rescue Invalid => error
+      Result.new(status: :rejected, code: :invalid_host_context, diagnostic: error.diagnostic)
+    rescue ArgumentError
+      Result.new(status: :rejected, code: :invalid_host_context,
+        diagnostic: Invalid.new.diagnostic)
     rescue InputValidator::Unavailable, RootSignature::Unavailable, LoadError
       Result.new(status: :unavailable, code: :research_verification_unavailable)
     rescue StandardError
@@ -139,13 +167,22 @@ module AP2MandateVerifier
     end
 
     def self.context!(trust, now)
-      invalid! unless Object.instance_method(:instance_of?).bind_call(trust, Trust)
+      invalid!("trust", :invalid_type) unless Object.instance_method(:instance_of?).bind_call(trust, Trust)
       HostBinding.send(:time!, copy!(now))
       trust.instance_variable_get(:@context)
     end
     def self.binding!(context, order, root, checkout)
       value = copy!(order)
-      shape!(value, ORDER_FIELDS)
+      shape!(value, ORDER_FIELDS, "order")
+      ORDER_FIELDS.each do |field|
+        expected = field == "expected_total" ? Integer : String
+        invalid!("order.#{field}", :invalid_type) unless value[field].instance_of?(expected)
+      end
+      HostBinding::B_IDS.grep_v(/profile/).each do |field|
+        invalid!("order.#{field}", :invalid_value) unless value[field].bytesize.between?(1, 256)
+      end
+      invalid!("order.currency", :invalid_value) unless ScopedConstraints::CURRENCIES.include?(value["currency"])
+      invalid!("order.expected_total", :invalid_value) unless value["expected_total"].between?(0, ScopedConstraints::MAX_AMOUNT)
       references = context.fetch(:references)
       value.merge!("profile_ref" => references.fetch("profile_ref"), "profile_version" => references.fetch("profile_version"),
         "approved_agent_key_fingerprint" => context.fetch(:agent_fingerprint),
@@ -154,10 +191,15 @@ module AP2MandateVerifier
       HostBinding.send(:binding!, value)
       value
     end
-    def self.shape!(value, fields)
-      invalid! unless value.instance_of?(Hash) && value.keys.sort == fields.sort
+    def self.shape!(value, fields, path = nil)
+      invalid!(path, :invalid_type) unless value.instance_of?(Hash)
+      missing = fields.find { |field| !value.key?(field) }
+      invalid!(path && "#{path}.#{missing}", :missing_required_field) if missing
+      invalid!(path, :unknown_field) unless value.keys.sort == fields.sort
     end
-    def self.invalid! = raise(Invalid, "invalid input-builder information")
+    def self.invalid!(field = nil, reason = :invalid_builder_input)
+      raise Invalid.new(field, reason), cause: nil
+    end
     def self.json!(value, limit = InputValidator::MAX_BYTES)
       require "json"
       raise InputValidator::Unavailable, :json_dependency_unavailable unless JSON::VERSION == InputValidator::JSON_VERSION
@@ -204,6 +246,18 @@ module AP2MandateVerifier
         result
       else
         invalid!
+      end
+    end
+    # Validate keyword shape before Ruby's keyword errors can echo arbitrary
+    # caller-supplied names. Each captured implementation keeps its typed API.
+    %i[trust restore_trust prepare restore inputs].each do |name|
+      implementation = method(name)
+      fields = implementation.parameters.filter_map { |kind, field| field if kind == :keyreq }.freeze
+      define_singleton_method(name) do |**arguments|
+        missing = fields.find { |field| !arguments.key?(field) }
+        invalid!(missing&.to_s, :missing_required_field) if missing
+        invalid!("arguments", :unknown_field) unless arguments.length == fields.length
+        implementation.call(**arguments)
       end
     end
     private_class_method :context!, :binding!, :shape!, :invalid!, :json!, :copy!, :walk!
