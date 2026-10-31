@@ -1,4 +1,6 @@
-# AP2 Mandate Verifier — 0.2.1
+# AP2 Mandate Verifier — 0.3.0 candidate
+
+The unpublished 0.3.0 candidate adds `InputBuilder`: map authenticated business records once, prepare and persist a challenge, then supply independent current state to the complete verifier. No hand-written trust/selection/Host JSON or hashes are needed. Start with the [runnable business-data example and Rails mapping](docs/INPUT_BUILDER.md). Existing seven-input APIs remain supported. Published installation below remains 0.2.1 until release approval.
 
 [Japanese / 日本語](README.ja.md)
 

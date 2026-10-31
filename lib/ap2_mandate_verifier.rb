@@ -9,6 +9,7 @@ require_relative "ap2_mandate_verifier/scoped_constraints"
 require_relative "ap2_mandate_verifier/trust_context"
 require_relative "ap2_mandate_verifier/host_binding"
 require_relative "ap2_mandate_verifier/research_result"
+require_relative "ap2_mandate_verifier/input_builder"
 
 module AP2MandateVerifier
   # Accepts original JSON bytes only. Syntax validity is not AP2 validity,
