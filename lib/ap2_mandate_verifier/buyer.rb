@@ -141,7 +141,7 @@ module AP2MandateVerifier
       implementation = method(name)
       fields = implementation.parameters.map(&:last).freeze
       define_singleton_method(name) do |**arguments|
-        unless arguments.keys.sort == fields.sort
+        unless (fields - arguments.keys).empty? && (arguments.keys - fields).empty?
           next Verification.send(:new, :direct_checkout_verification_failed) if name == :verify
           raise Invalid.new, cause: nil
         end

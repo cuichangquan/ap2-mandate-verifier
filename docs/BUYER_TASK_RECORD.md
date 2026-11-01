@@ -48,3 +48,27 @@ Initial checks: Direct basic Ruby tests and Python interoperability PASS. Multi
 acceptance and complete regression/candidate validation are recorded separately
 once final candidate identity is fixed; working-tree results are not final-HEAD
 certification.
+
+Self-audit: bounded original strings and strict JSON/base64url, no token-selected
+trust or network, full disclosure commitment consumption, no auth boolean,
+independent expected Checkout, every line arithmetic, explicit time/expiry,
+unchanged legacy profile code, fixed error messages/no causes and no secret logs.
+Whole-wire Receipt hash includes original disclosures and trailing separator.
+Example now returns the same issuance for duplicate approval and the saved
+Receipt for duplicate order; uncertain outcomes remain held. Persistence remains
+explicitly app-owned. No workflow changes. Static trigger inspection matches
+only Merchant source and package for these product paths, two jobs/one run.
+
+Independent Codex static review of `d6691ba6dc14be599034ce338674ac781a6f96d7`
+found one P2: mixed String/Symbol keyword sorting escaped the public failure
+contract. Replaced it with key-set checks and added all-three-entry negatives.
+No other substantive findings. Latest-HEAD re-review is required after these
+changes. No Owner approval review has been submitted.
+
+First PR CI: [41266393844](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/41266393844),
+HEAD `d6691ba6dc14be599034ce338674ac781a6f96d7`, attempt 1, success on both MRI
+jobs; 1/3 workflow-run budget consumed. Existing branch ruleset 25055863 requires
+PR and squash, forbids deletion/non-fast-forward; no Owner approval review count
+is required. Protections are not changed. One cohesive PR keeps the authoring,
+receiving and Receipt grammar reviewable together instead of exposing an issuer
+that the receiver cannot verify.

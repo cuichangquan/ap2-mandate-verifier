@@ -10,7 +10,7 @@ class ApprovalBackend
   def initialize(provider, merchant_pem)
     @signer = AP2MandateVerifier::CheckoutJWT.es256_signer(private_key: provider)
     @public_pem, @merchant_pem = provider.public_to_pem, merchant_pem
-    @records = {}
+    @records, @issued, @lock = {}, {}, Mutex.new
   end
 
   # Called by authenticated Trusted Surface AFTER displaying this verified
@@ -21,17 +21,21 @@ class ApprovalBackend
     checked = AP2MandateVerifier::CheckoutJWT.verify(jwt: displayed_checkout_jwt,
       trusted_public_key_pem: @merchant_pem, expected_merchant_id: "shop",
       profile_ref: AP2MandateVerifier::Buyer::CHECKOUT_PROFILE)
-    @records["approval-1"] = checked.jwt
+    @lock.synchronize { @records["approval-1"] ||= checked.jwt }
     "approval-1"
   end
 
   # Trusted Surface backend endpoint, never exposed to the Agent. In a real
   # DB atomically issue once and persist the wire before making it available.
   def issue_for_approval(approval_id:, current_checkout_jwt:, now:)
-    AP2MandateVerifier::Buyer.issue_closed(checkout_jwt: current_checkout_jwt,
-      approved_checkout_jwt: @records.fetch(approval_id),
-      trusted_merchant_public_key_pem: @merchant_pem, expected_merchant_id: "shop",
-      issued_at: now, expires_at: now + 60, signer: @signer, public_key_pem: @public_pem)
+    @lock.synchronize do
+      approved = @records.fetch(approval_id)
+      raise "approval mismatch" unless current_checkout_jwt == approved
+      @issued[approval_id] ||= AP2MandateVerifier::Buyer.issue_closed(checkout_jwt: current_checkout_jwt,
+        approved_checkout_jwt: approved,
+        trusted_merchant_public_key_pem: @merchant_pem, expected_merchant_id: "shop",
+        issued_at: now, expires_at: now + 60, signer: @signer, public_key_pem: @public_pem)
+    end
   end
 end
 
@@ -72,6 +76,8 @@ signed = c.sign(checkout: checkout, signer: c.es256_signer(private_key: merchant
 backend = ApprovalBackend.new(provider, merchant.public_to_pem)
 approval = backend.record_approval(employee_id: "synthetic-purchasing-employee", displayed_checkout_jwt: signed.jwt)
 issued = backend.issue_for_approval(approval_id: approval, current_checkout_jwt: signed.jwt, now: now)
+duplicate = backend.issue_for_approval(approval_id: approval, current_checkout_jwt: signed.jwt, now: now)
+raise "approval issued twice" unless duplicate.closed_sd_jwt == issued.closed_sd_jwt
 # Agent receives only the approved output and public APIs, never backend signer.
 wire = b.present_closed(closed_sd_jwt: issued.closed_sd_jwt)
 verified = b.verify(closed_sd_jwt: wire, trusted_provider_public_key_pem: provider.public_to_pem,

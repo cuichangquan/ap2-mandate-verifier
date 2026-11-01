@@ -39,6 +39,9 @@ module BuyerTest
     trusted_merchant_public_key_pem: merchant.public_to_pem, expected_checkout_jwt: signed.jwt,
     expected_merchant_id: "shop", verified_at: 1_800_000_000}
   assert(B.verify(**args).verified?, "direct full verification")
+  assert(!B.verify(**args.merge("unexpected" => "secret")).verified?, "mixed keyword rejection")
+  invalid { B.issue_closed(**issue.merge("unexpected" => "secret")) }
+  invalid { B.present_closed(**{closed_sd_jwt: wire, "unexpected" => "secret"}) }
   assert(B.verify(**args).checkout == checkout, "checked content")
   invalid { B.issue_closed(**issue.merge(approved_checkout_jwt: "secret")) }
   invalid { B.issue_closed(**issue.merge(expires_at: 1_800_000_601)) }
@@ -64,6 +67,10 @@ module BuyerTest
     assert(!B.verify(**args.merge(closed_sd_jwt: [jwt, *segments[1..]].join("~"))).verified?, "signed malformed")
   end
   altered = segments.dup
+  tampered_parts = altered[0].split(".")
+  tampered_parts[2][0] = tampered_parts[2][0] == "A" ? "B" : "A"
+  altered[0] = tampered_parts.join(".")
+  assert(!B.verify(**args.merge(closed_sd_jwt: altered.join("~"))).verified?, "signature bit tampering")
   altered[0] = JWT.encode(payload, merchant, "ES256", {"typ" => "example+sd-jwt"})
   assert(!B.verify(**args.merge(closed_sd_jwt: altered.join("~"))).verified?, "wrong authentic signer")
   assert(!B.verify(**args.merge(verified_at: 1_799_999_999)).verified?, "future")
