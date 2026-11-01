@@ -2,6 +2,28 @@
 
 [English](README.md)
 
+## 0.8.0候補：条件付き購入委任（未公開）
+
+`ConditionalCheckout.issue_open`、`.issue_closed`、`.present` を追加します。
+A／Bから1個とCを2個という条件を承認サービスが登録Agent鍵へOpenとして発行し、
+Agentが条件に合う販売者署名CheckoutをClosedにします。既存 `InputBuilder.verify` と
+`CheckoutReceipt.sign/verify` へ接続します。全候補開示の複数商品profileを維持し、
+Agent処理へProvider秘密鍵を渡しません。[API・信頼境界](docs/CONDITIONAL_CHECKOUT.md)、
+[公開判断資料](docs/RELEASE_080_CANDIDATE.md)を参照してください。
+
+正式対応MRI 3.4.12／4.0.9で、候補manifestに対応するローカルGemを取得した後：
+
+```sh
+gem install --local ./ap2_mandate_verifier-0.8.0.gem
+ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "0.8.0").full_gem_path')/examples/conditional_checkout.rb"
+```
+
+[Ruby単体の実行例](examples/conditional_checkout.rb)はインストール済み公開APIだけを使い、
+3明細・候補選択・異なる要件数量・同一商品の別行からSuccess／Error Receiptまで動きます。
+Success後は消費済み、Error後は再提示方針を再判断、Receipt未到着や結果不明は保留です。
+本人認証・同意・購買権限・信頼先登録・永続的な重複防止・注文や決済の実行はアプリ責務です。
+0.7.0利用者の移行は不要で、既存既定値・保存形式を維持します。0.8.0は未公開候補です。
+
 公開済み安定版は **0.7.0** です。Direct購入側の発行・提示・販売者検証・Receipt確認を追加し、1販売者・1〜8明細・複数商品に一貫対応します。既存Open→Closedの契約は維持します。[公開記録](docs/PROJECT_STATUS.md#070-publication)を参照してください。
 
 ## 複数商品と数量

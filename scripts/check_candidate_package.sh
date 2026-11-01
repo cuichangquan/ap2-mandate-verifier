@@ -13,7 +13,7 @@ cd "$source_dir"
 dependency_path=$(ruby -e 'puts Gem.path.join(File::PATH_SEPARATOR)')
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
   gem install --local --no-document "$artifact" > "$out_dir/install.log" 2>&1
-ruby -r "$source_dir/test/runtime_dependencies.rb" test/package_contents_audit.rb "$artifact" "$work_dir/extracted" "$work_dir/installed/gems/ap2_mandate_verifier-0.7.0" > "$out_dir/package.json"
+ruby -r "$source_dir/test/runtime_dependencies.rb" test/package_contents_audit.rb "$artifact" "$work_dir/extracted" "$work_dir/installed/gems/ap2_mandate_verifier-0.8.0" > "$out_dir/package.json"
 mkdir "$work_dir/detached"
 cd "$work_dir/detached"
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
@@ -37,3 +37,9 @@ cat "$out_dir/multi-item-installed.log"
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
   ruby "$source_dir/examples/direct_checkout.rb" > "$out_dir/direct-installed.log"
 cat "$out_dir/direct-installed.log"
+GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
+  ruby "$work_dir/installed/gems/ap2_mandate_verifier-0.8.0/examples/conditional_checkout.rb" > "$out_dir/conditional-installed.log"
+cat "$out_dir/conditional-installed.log"
+GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 \
+  ruby -r "$source_dir/test/runtime_dependencies.rb" "$source_dir/test/conditional_checkout_test.rb" > "$out_dir/conditional-installed-tests.log"
+cat "$out_dir/conditional-installed-tests.log"
