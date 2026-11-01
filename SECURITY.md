@@ -2,9 +2,11 @@
 
 ## 現在の対象と限界 / Current scope
 
-[Stable 0.1.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0) is published as a fixed-profile, verifier-only Gem. Support covers the latest patch of the initial stable series under the adopted manual maintenance policy below; prereleases and older versions carry no backport promise. See [verified R2 publication and limitations](research/stable010_release_linux_package/README.md#rubygems-publication-verified) and [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md).
+[Published 0.8.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.8.0) is a framework-independent Ruby SDK for the documented AP2 Checkout profiles, including Direct and conditional issuance, presentation, verification and Checkout Receipt confirmation. See [publication evidence](docs/POST_RELEASE_080.md) and [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md) for its scope and limitations. **1.0.0 is an unpublished candidate**, with its proposed stable surface and release status in [PUBLIC_API](docs/PUBLIC_API.md) and [release preparation](docs/RELEASE_100_CANDIDATE.md).
 
-固定profileの検証専用安定版0.1.0は公開済みです。初回安定系列の最新修正版のみを採用済み手動保守方針の対象とし、pre/旧版backportは約束しません。旧pre.3・候補R1・R2準備/公開待ちの記述は以下の歴史記録であり、現在の未公開状態を意味しません。
+現在の配布版は、対応profileのDirect／条件付き購入委任の発行・提示・検証・Checkout Receipt確認を備えた、フレームワーク非依存のRuby SDK **0.8.0**です。**1.0.0は準備中の未公開候補**です。1.x公開後の保守対象案は最新マイナー系列の最新修正版のみとし、旧マイナー・0.x・preへのbackportは約束しません。現行版の報告窓口は以下のままです。保守対象・互換性・セキュリティ修正の扱いは[公開後の整備](docs/POST_RELEASE_MAINTENANCE.md)を参照してください。
+
+The proposed 1.x policy covers only the latest patch of the latest 1.x minor series once released; older minors, 0.x and prereleases carry no backport promise. Existing reporting routes below remain available for the current release. See [maintenance and compatibility](docs/POST_RELEASE_MAINTENANCE.md). The pre.3, 0.1.0 candidate and R2 statements below are historical records of those stages, not the current release status.
 
 Evidence is not Host ALLOW or payment permission. Real Issuer trust, specific Host production GO and Phase 2-B remain HOLD; general AP2/full Schema, full Phase2-A PASS, worst-resource/concurrency and global native/runtime safety are not established. No SLA, fixed support term or response/fix deadline is promised. Existing provider/JSON advisory-metadata and communication-accounting limitations remain recorded; publication does not erase them. New execution, changes or releases require their own approval.
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.0 — Unreleased candidate
+
+- Defines the supported public API and 1.x compatibility, deprecation and
+  maintenance policies for the framework-independent AP2 Ruby SDK. The scope
+  includes Merchant Checkout JWTs, Direct and conditional Checkout Mandates,
+  complete verification and immutable Evidence, and Success/Error Receipts.
+- Preserves the 0.8.0 runtime implementation, existing API/status/error meanings,
+  profile identifiers/defaults, saved formats, five dependency pins and formally
+  supported MRI 3.4.12 / 4.0.9. No application migration is required for documented
+  0.8.0 APIs; the Gem dependency constraint must allow 1.0.0.
+- Updates SDK metadata, current security/support/product guidance and candidate
+  package checks. Adds independent Python-generated conditional inputs through
+  the installed Gem's public complete verification and Receipt APIs.
+- This is release preparation, not publication. Actual checks and outstanding
+  release gates are recorded with the [candidate](docs/RELEASE_100_CANDIDATE.md).
+
 ## 0.8.0 — 2026-11-01
 
 - Adds public `ConditionalCheckout.issue_open/issue_closed/present` for one merchant,

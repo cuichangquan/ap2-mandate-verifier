@@ -6,6 +6,7 @@ on:
       - 'lib/**'
       - 'test/**'
       - 'scripts/check_ruby_compatibility.sh'
+      - 'scripts/check_runtime.rb'
       - 'scripts/check_candidate_package.sh'
       - 'ap2_mandate_verifier.gemspec'
       - 'README.md'
@@ -45,7 +46,7 @@ jobs:
           set -euo pipefail
           [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
           git diff --name-only "$BASE_SHA" HEAD > "$RUNNER_TEMP/changed-paths"
-          if grep -Eq '^(lib/|test/|ap2_mandate_verifier\.gemspec$|scripts/check_ruby_compatibility\.sh$|scripts/check_candidate_package\.sh$|\.github/merchant-ci\.Dockerfile$)' "$RUNNER_TEMP/changed-paths"; then
+          if grep -Eq '^(lib/|test/|ap2_mandate_verifier\.gemspec$|scripts/check_ruby_compatibility\.sh$|scripts/check_runtime\.rb$|scripts/check_candidate_package\.sh$|\.github/merchant-ci\.Dockerfile$)' "$RUNNER_TEMP/changed-paths"; then
             echo 'product=true' >> "$GITHUB_OUTPUT"
           else
             echo 'product=false' >> "$GITHUB_OUTPUT"
