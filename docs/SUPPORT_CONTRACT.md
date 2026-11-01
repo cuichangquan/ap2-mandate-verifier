@@ -1,4 +1,15 @@
-# Fixed-profile AP2 verification — published 0.6.0 / history
+# Fixed-profile AP2 verification — published 0.7.0 / history
+
+Published 0.7.0 adds the separate [Direct buyer module](BUYER_DIRECT_CHECKOUT.md):
+merchant Checkout verification before human approval, Provider-signed issuance,
+Agent presentation, Direct merchant verification and whole-wire Receipt confirmation.
+It supports one merchant, 1–8 lines and multiple products; existing Open→Closed
+Result/Evidence/profile/save contracts are unchanged. Publication was verified at
+2026-11-01 03:14:04 UTC: 64,000 bytes, SHA256
+`baab8c68355b5e6c9351e7d86a836fab50652cdad662bbc99d1676c5e6134447`, all 24 payloads
+match source `9b4b78a7ed9aa95e7d35e01a64efc1281ba95be3`.
+[Publication record](PROJECT_STATUS.md#070-publication). Older version statements below
+retain their historical scope; they do not exclude the new Direct APIs.
 
 ## Current source: explicit multi-item profile
 
@@ -394,7 +405,7 @@ failed or mismatched report is not success. No local path is a public evidence
 URL. Raw local environment logs are not published by this package.
 
 
-## Direct buyer module — unpublished 0.7.0 candidate
+## Direct buyer module — published 0.7.0
 
 Additive `CheckoutJWT.verify` and `Buyer.issue_closed/present_closed/verify`
 implement Trusted Agent Provider / Human Present exact-order approval. Direct

@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# Run with the installed published 0.5.0 Gem; no source load-path substitution.
+# Run with the installed published 0.7.0 Gem; no source load-path substitution.
 require "ap2_mandate_verifier"
 require "openssl"
 require "jwt"

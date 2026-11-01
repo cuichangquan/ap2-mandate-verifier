@@ -1,7 +1,7 @@
-# Direct / Human Present Checkout — 0.7.0 candidate
+# Direct / Human Present Checkout — 0.7.0 published
 
 This additive optional module implements Trusted Agent Provider approval of a
-fixed merchant-signed order. It is NOT published. Adopted source is AP2 v0.2.0,
+fixed merchant-signed order. Published at 2026-11-01 03:12:46.522 UTC; [publication record](PROJECT_STATUS.md#070-publication). Adopted source is AP2 v0.2.0,
 commit `b4587ac1d055888a73b4b21750973cffba961793`; no source upgrade is made.
 The first example is one office supply purchase; **multiple products and lines
 are required and supported throughout issuance, presentation, merchant verification
@@ -142,7 +142,7 @@ Existing two profiles, InputBuilder save/restore, Result/Evidence, old API defau
 and legacy Receipt terminal syntax are unchanged. Direct is a new independent
 entry; existing `verify_checkout` continues to handle its prior Open→Agent Closed
 contract only. Passing Direct wire to old Receipt/default profile rejects.
-No dependency or Ruby support change. Compatible feature version is 0.7.0.
+No dependency or Ruby support change. Compatible feature version is published 0.7.0.
 
 `test/buyer_interop.py` uses the fixed official `sd_jwt.create/verify`, unmodified
 Closed Schema, JWT helpers and independent SHA256/commitment computation.
@@ -176,5 +176,5 @@ Credentials, multiple merchants, split orders and continuous autonomous buying
 are follow-up candidates. Agent-to-Agent delegation is outside current AP2 scope,
 not declared permanently forbidden. Real Issuer trust, actual demand, generic AP2
 support and production safety are not established by synthetic test success.
-No Gem/tag/Release publication, deployment, real payments or credentials are
-performed by this task.
+Gem publication and its separately approved tag/Release are recorded in the
+publication record. No deployment, real payments or real credentials are exercised.

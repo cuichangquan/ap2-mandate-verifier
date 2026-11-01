@@ -2,7 +2,7 @@
 require "ap2_mandate_verifier"
 require "json"
 require "open3"
-abort "published 0.6.0 not installed" unless Gem.loaded_specs.fetch("ap2_mandate_verifier").version.to_s == "0.6.0"
+abort "published 0.7.0 not installed" unless Gem.loaded_specs.fetch("ap2_mandate_verifier").version.to_s == "0.7.0"
 root = File.expand_path("..", __dir__)
 %w[README.md README.ja.md].each do |name|
   blocks = File.read(File.join(root, name)).scan(/```ruby\n(.*?)```/m).flatten
@@ -23,16 +23,30 @@ expected = ["checkout verified=true profile=ap2.checkout.single_merchant_multi_i
   "receipt Success: verified=true purchase_succeeded=true", "receipt Error: verified=true purchase_succeeded=false"]
 abort "multi-item example failed" unless status.success? && output.lines.first(3).map(&:strip) == expected
 puts output
-release = File.read(File.join(root, "docs/RELEASE_060.md")).scan(/```ruby\n(.*?)```/m).flatten.fetch(0)
+output, error, status = Open3.capture3(Gem.ruby, File.join(root, "examples/direct_checkout.rb"))
+abort "Direct example failed" unless status.success? && output.lines.map(&:strip) == [
+  "Direct checkout verified; application acceptance receipt verified; applied once=true",
+  "Unknown outcome held for application reconciliation; no payment performed"]
+puts output
+release = File.read(File.join(root, "docs/RELEASE_070.md")).scan(/```ruby\n(.*?)```/m).flatten.fetch(0)
 prelude = <<~RUBY
   require "ap2_mandate_verifier"
   require #{File.join(root, "test/support/multi_item_fixture.rb").inspect}
   checkout = MultiItemFixture.checkout
   key = OpenSSL::PKey::EC.generate("prime256v1")
-  signer = AP2MandateVerifier::CheckoutJWT.es256_signer(private_key: key)
-  public_key_pem = key.public_to_pem
+  merchant_public_key = key.public_to_pem
+  merchant_signer = AP2MandateVerifier::CheckoutJWT.es256_signer(private_key: key)
+  provider = OpenSSL::PKey::EC.generate("prime256v1")
+  provider_public_key = provider.public_to_pem
+  provider_signer = AP2MandateVerifier::CheckoutJWT.es256_signer(private_key: provider)
+  checkout_jwt = AP2MandateVerifier::CheckoutJWT.sign(checkout: checkout,
+    signer: merchant_signer, public_key_pem: merchant_public_key,
+    profile_ref: AP2MandateVerifier::Buyer::CHECKOUT_PROFILE).jwt
+  approved_checkout_jwt = checkout_jwt # Protected synthetic approval setup only.
+  current_checkout_jwt = checkout_jwt # Independently stored synthetic merchant order.
+  now = 1_800_000_000
 RUBY
 output, error, status = Open3.capture3(Gem.ruby, "-e", prelude + release)
-abort "Release snippet failed" unless status.success? && output.strip == "checkout_segments=3"
+abort "Release snippet failed" unless status.success? && output.lines.map(&:strip) == ["Direct verified=true", "Receipt verified=true purchase_succeeded=false"]
 puts output
-puts "PASS installed published 0.6.0 guides and Release snippet; no Gem build"
+puts "PASS installed published 0.7.0 guides and Release snippet; no Gem build"
