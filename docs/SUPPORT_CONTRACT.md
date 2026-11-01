@@ -393,3 +393,12 @@ The summary must explicitly identify the completed observation; a missing,
 failed or mismatched report is not success. No local path is a public evidence
 URL. Raw local environment logs are not published by this package.
 
+
+## Direct buyer module — unpublished 0.7.0 candidate
+
+Additive `CheckoutJWT.verify` and `Buyer.issue_closed/present_closed/verify`
+implement Trusted Agent Provider / Human Present exact-order approval. Direct
+Receipt requires explicit `Buyer::PROFILE_REF`; existing defaults and 2profile
+contracts are unchanged. Supports the existing 1–8-line multi-item Checkout subset
+end to end. [Full input, failure, trust and replay contract](BUYER_DIRECT_CHECKOUT.md).
+No general AP2, production authorization, payment or real-Issuer claim is added.

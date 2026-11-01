@@ -340,3 +340,15 @@ R2は34,304B、SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314
 追加build/Mac再検査/885/独立Oracle再実行なし。最初のreview待ちではUbuntu未着手でHOLDし、同HEADへの承認済み回復依頼1回後に有効な完了receiptを受領。別承認の新40分枠をその後07:49:39 UTCから記録しました。重複Running表示を追加ゲートにせず、完了した正確なHEADレビューと未解決0を確認して準備PRを統合しています。
 
 この結果追補は公開GOではありません。S6は追補の最新HEADレビューで確認し、S7の正確な版/配布先/残余を指定したOwner公開GO・特定Host本番GOは引き続きHOLD。製品10件と包装3ファイルは検証時bytesのままです。
+
+## 0.7.0 Direct buyer candidate — unpublished
+
+New independently delegated task after completed 0.6.0: Trusted Agent Provider /
+Human Present exact-Checkout approval, issue/present/merchant verify/Receipt
+verification. Existing ③ multi-product/multi-line subset (1–8 lines) is required
+end to end and reused without changing prior profiles. See
+[implementation contract](BUYER_DIRECT_CHECKOUT.md), [execution/approval record](BUYER_TASK_RECORD.md),
+[runnable integration](../examples/direct_checkout.rb), and
+[PR #229](https://github.com/cuichangquan/ap2-mandate-verifier/pull/229).
+This candidate is not published; 0.6.0 remains the published version. No Gem,
+public tag, Release, deployment or real payment is part of candidate preparation.
