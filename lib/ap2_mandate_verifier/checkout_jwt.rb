@@ -17,6 +17,32 @@ module AP2MandateVerifier
       private_class_method :new
     end
 
+    class Verification
+      attr_reader :jwt, :checkout_hash, :checkout, :profile_ref
+      def initialize(jwt, checkout, profile_ref)
+        @jwt, @profile_ref = jwt, profile_ref
+        @checkout_hash = Base64.urlsafe_encode64(Digest::SHA256.digest(jwt), padding: false).freeze
+        @checkout = ResearchEvidence.send(:copy_frozen, checkout)
+        freeze
+      end
+      def verified? = true
+      private_class_method :new
+    end
+
+    # Merchant trust is selected by the application, never by received claims.
+    # Checkout has no signed expiry: the app must check current order state.
+    def self.verify(jwt:, trusted_public_key_pem:, expected_merchant_id:, profile_ref: TrustContext::PROFILE_REF)
+      wire = InputValidator.snapshot!(jwt, max_bytes: 16_384)
+      profile = InputValidator.snapshot!(profile_ref, max_bytes: 256)
+      merchant = InputValidator.snapshot!(expected_merchant_id, max_bytes: 512)
+      claims = RootSignature.verified_payload!(wire, trusted_public_key_pem, expected_typ: "JWT", max_bytes: 16_384)
+      validate!(claims, profile_ref: profile)
+      raise Invalid unless claims.fetch("merchant").fetch("id") == merchant
+      Verification.send(:new, wire, claims, profile)
+    rescue StandardError, LoadError
+      raise Invalid.new, cause: nil
+    end
+
     # signer.call receives the exact ASCII JWS signing input and must return a
     # 64-byte JOSE ES256 signature. The supplied independent public key verifies
     # the result before any signed object is returned (including remote signers).
@@ -74,7 +100,7 @@ module AP2MandateVerifier
       c.send(:totals!, checkout["totals"], total)
       nil
     end
-    %i[sign es256_signer].each do |name|
+    %i[sign es256_signer verify].each do |name|
       implementation = method(name)
       fields = implementation.parameters.filter_map { |kind, field| field if kind == :keyreq }.freeze
       optional = implementation.parameters.filter_map { |kind, field| field if kind == :key }.freeze

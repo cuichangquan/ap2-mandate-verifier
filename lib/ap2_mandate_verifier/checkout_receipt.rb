@@ -33,6 +33,10 @@ module AP2MandateVerifier
     # Exact received final closed SD-JWT, no disclosures or additional hop.
     # A terminal compact JWS alone is intentionally not accepted or repaired.
     def self.reference(closed_sd_jwt:, profile_ref: TrustContext::PROFILE_REF)
+      if profile_ref == Buyer::PROFILE_REF
+        parsed = Buyer.send(:parse!, closed_sd_jwt)
+        return hash(parsed.fetch(:wire)).freeze
+      end
       wire = InputValidator.snapshot!(closed_sd_jwt, max_bytes: 32_769)
       raise Invalid unless wire.ascii_only? && wire.end_with?("~") && wire.count("~") == 1
       compact = wire.byteslice(0, wire.bytesize - 1)

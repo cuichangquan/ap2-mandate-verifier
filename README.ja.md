@@ -146,3 +146,15 @@ Gemは署名、支持する開示閉包、委任、購入／Host binding、制�
 - [脆弱性報告](SECURITY.md)、[保守方針](docs/POST_RELEASE_MAINTENANCE.md)、[製品方針](docs/PRODUCT_VISION.md)。秘密鍵・実Mandate・個人情報を報告に含めないでください。
 
 MIT。[LICENSE](LICENSE)を参照。
+
+### 購入側Direct Checkout（0.7.0候補・未公開）
+
+`CheckoutJWT.verify`で承認前に販売者署名を検証し、Trusted Surfaceの
+承認バックエンドから`Buyer.issue_closed`を呼びます。Shopping Agentは
+`Buyer.present_closed`で提示し、販売者は`Buyer.verify`で検証します。
+Receiptは`profile_ref: Buyer::PROFILE_REF`で生成・確認します。
+1販売者・1〜8明細・複数商品と数量を一貫して扱えます。既存2profileと
+Open→Agent ClosedのAPI契約は維持します。
+[仕様・責任境界](docs/BUYER_DIRECT_CHECKOUT.md)と
+[承認からReceiptまでの実行例](examples/direct_checkout.rb)を参照してください。
+検証成功は購買権限や実決済成功を意味しません。0.6.0には含まれません。

@@ -147,3 +147,15 @@ Malformed assembly arguments, including missing keywords, to `InputBuilder.verif
 - [Security reporting](SECURITY.md), [maintenance policy](docs/POST_RELEASE_MAINTENANCE.md) and [product direction](docs/PRODUCT_VISION.md). Do not include secrets, real Mandates or personal data in reports.
 
 MIT. See [LICENSE](LICENSE).
+
+### Buyer Direct checkout (0.7.0 candidate, unpublished)
+
+Trusted Surface backends can verify a merchant Checkout before approval, issue a
+Provider-signed Closed Mandate, and let the Shopping Agent present it. The new
+`AP2MandateVerifier::Buyer` module verifies Direct Closed-only presentations at
+the merchant and uses `CheckoutReceipt` with `profile_ref: Buyer::PROFILE_REF`.
+One merchant, 1–8 lines, multiple products and quantities are supported end to end.
+Existing Open→Agent Closed APIs and both profiles retain their contracts.
+See [API and responsibility contract](docs/BUYER_DIRECT_CHECKOUT.md) and the
+[runnable approval-to-Receipt example](examples/direct_checkout.rb). Verification
+is not purchasing authority or payment success. Candidate code is not in 0.6.0.
