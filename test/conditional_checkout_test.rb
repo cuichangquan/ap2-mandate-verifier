@@ -142,4 +142,34 @@ class ConditionalCheckoutTest < Minitest::Test
     end
     refute M::InputBuilder.verify(**host_inputs.merge(verified_at: F::NOW + 301)).success?
   end
+
+  def test_large_supported_checkout_uses_terminal_specific_limits
+    product = "p" * 256
+    requirements = [F.requirement("large", 8, [product])]
+    @opening = issue_open(requirements: requirements)
+    lines = (1..8).map do |i|
+      line = F.line("#{i}" + "r" * 255, product, 1)
+      line["item"]["title"] = "t" * 512
+      line
+    end
+    @checkout = sign_checkout(F.checkout(lines))
+    assert_operator @checkout.bytesize, :<, 16_384
+    closed = C.issue_closed(**args)
+    assert_operator closed.terminal_jws.bytesize, :>, 16_384
+    assert_operator closed.terminal_jws.bytesize, :<=, 32_768
+    assert_equal F.hash(closed.closed_sd_jwt), M::CheckoutReceipt.reference(
+      closed_sd_jwt: closed.closed_sd_jwt, profile_ref: C::PROFILE_REF)
+    restored = C.present(root_presentation: closed.root_presentation,
+      terminal_jws: closed.terminal_jws, checkout_jwt: @checkout)
+    assert_equal closed.closed_sd_jwt, restored.closed_sd_jwt
+    # Explicit helper bounds controls: never widen JWT/Direct while fixing KB.
+    {"JWT" => 12_000, "example+sd-jwt" => 12_000, "kb+sd-jwt" => 24_576}.each do |typ, limit|
+      calls = 0
+      assert_raises(M::InputValidator::Invalid) do
+        M::MerchantSignature.sign!({"data" => "x" * limit},
+          ->(_) { calls += 1; raise "should not sign" }, @merchant.public_to_pem, typ: typ)
+      end
+      assert_equal 0, calls
+    end
+  end
 end

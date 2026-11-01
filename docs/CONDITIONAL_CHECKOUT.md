@@ -70,6 +70,10 @@ inline Closed containing the exact merchant JWT and its SHA256 base64url hash.
 There are no selective disclosures in this final Closed; its SD-JWT is exactly
 `terminal_jws + "~"`. Audience and nonce come from the Host challenge and must
 also be independently checked by the Merchant. Proof age is at most 300 seconds.
+Agent signing uses the existing terminal limits (24,576 decoded claim bytes and
+32,768 compact bytes), accommodating the embedded original Merchant JWT.
+Merchant/Direct signing retain 12,000 decoded claim bytes and 16,384 wire bytes;
+Checkout text/count limits and all joint effective bounds still apply.
 
 Receipt `reference` is base64url without padding of SHA256 of **only the final
 Closed SD-JWT**, including its trailing `~`. It excludes the preceding Open

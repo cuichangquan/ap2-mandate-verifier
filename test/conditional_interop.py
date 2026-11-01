@@ -89,6 +89,23 @@ try:
     assert terminal['checkout_jwt'] == token and terminal['checkout_hash'] == digest(token)
     assert compute_sd_hash(parse_token(closed['closed'])) == digest(closed['terminal']+'~')
     assert digest(closed['closed']) != digest(closed['terminal']) != digest(ruby['root']+closed['closed'])
+    # Review regression: the embedded Checkout fits its own 16KiB wire bound,
+    # while the Agent terminal legitimately needs the existing 32KiB bound.
+    product = 'p' * 256
+    large_requirements = [dict(id='large', quantity=8, acceptable_items=[dict(id=product, title='Product')])]
+    large_root = rpc('issue_open', merchant=seller, requirements=large_requirements, issued_at=NOW, expires_at=NOW+600)
+    large_checkout = dict(checkout, totals=totals(800), line_items=[dict(id=str(i)+'r'*255,
+        item=dict(id=product, title='t'*512, price=100), quantity=1, totals=totals(100)) for i in range(8)])
+    large_jwt = create_jwt(dict(alg='ES256', typ='JWT'), large_checkout, key)
+    large = rpc('issue_closed', **(args | dict(root_presentation=large_root['root'], checkout_jwt=large_jwt)))
+    assert len(large_jwt) < 16384 < len(large['terminal']) <= 32768
+    large_payload = sd_jwt.verify(large_root['root'], provider)
+    large_prev = parse_token(large_root['root']).with_verified_payload(large_payload, large_payload['delegate_payload'])
+    large_verified = kb_sd_jwt.verify(parse_token(large['closed']), large_prev, expected_aud='host', expected_nonce='nonce')
+    schema('ap2/open_checkout_mandate.json', large_payload['delegate_payload'][0])
+    schema('ap2/checkout_mandate.json', large_verified['delegate_payload'][0])
+    schema('ucp/types/checkout.json', verify_jwt(large_jwt, key))
+    assert compute_sd_hash(parse_token(large['closed'])) == digest(large['closed'])
     # Official Python issuance -> Ruby full supported signature/constraint path.
     python_open = dict(opening, cnf=dict(jwk=json.loads(key.export_public())))
     python_root = sd_jwt.create(OpenCheckoutMandate(**python_open), key).sd_jwt_issuance
@@ -129,7 +146,7 @@ try:
                 assert rpc('verify_receipt', **(receipt_args | change)) == dict(verified=False)
             claims['reference'] = digest(wire[:-1])
             assert rpc('verify_receipt', **(receipt_args | dict(jwt=create_jwt(dict(alg='ES256', typ='JWT'), claims, key)))) == dict(verified=False)
-    print('PASS conditional bidirectional official SDK issuance/signatures, 3-row candidate/repeated-product flow, pinned Schemas, complete commitments, normative final SD hash, Success/Error receipts and negatives')
+    print('PASS conditional bidirectional official SDK issuance/signatures, 3-row candidate/repeated-product and large 8-row terminal flows, pinned Schemas, complete commitments, normative final SD hash, Success/Error receipts and negatives')
 finally:
     process.stdin.close()
     process.wait(timeout=10)

@@ -77,6 +77,15 @@ results are retained in the PR and external manifest/report. Final artifacts are
 rebuilt and normally installed on both Rubies after any packaged content change.
 Owner approval reviews and public tag/Release/RubyGems push remain unauthorized.
 
+GitHub Codex review raised P2 comment4434556116: Merchant-sized signing limits
+also restricted larger legitimate Agent terminals. Fixed the shared primitive
+with type-specific bounds only for `kb+sd-jwt`, matching the old verifier, while
+preserving JWT/Direct bounds. Added a long-ID/title eight-row public lifecycle,
+signature/Schema/hash independent Python comparison and before-signing oversize
+controls for all three token types. Final exact-HEAD review is required after
+this fix; no substantive finding is waived. The final manifest supersedes both
+earlier candidate hashes and identifies the tested final artifact/source.
+
 STOP: denied operations, unexpected network/CI/cost, private data exposure,
 unresolved substantive P1/P2, trust/source/dependency relaxation, profile break,
 unfulfilled branch protection/review/CI conditions. Existing real Issuer/Host,

@@ -18,10 +18,12 @@ No verified prior artifact or previous task checkout was modified.
 All 17 source-suite entry points pass offline on MRI 3.4.12 and 4.0.9. Existing
 regression includes Direct, both old profiles, signed missing/unknown/duplicate
 disclosures, original-wire binding, InputBuilder save/restore, Result/Evidence,
-diagnostics and Receipt outcomes. New tests add 7 cases / 112 assertions for
+diagnostics and Receipt outcomes. New tests add 8 cases / 123 assertions for
 issuance, sign-before-check prevention, bounds, 8×8 candidate/requirement cases,
 same-product separate rows, wrong keys/time/audience/nonce, restoration closure,
-and exact final Closed Receipt reference. Suite counts include shared legacy
+and exact final Closed Receipt reference. A long-ID/title eight-row Checkout
+also completes through the larger existing Agent-terminal bounds while Merchant
+JWT and Direct signing bounds remain unchanged. Suite counts include shared legacy
 dependencies; no misleading aggregate of repeated assertion counters is claimed.
 
 Official pinned Python comparison passes for signatures in both directions,
@@ -41,6 +43,11 @@ supported MRI versions are unchanged; old callers require no migration.
 
 Initial independent Codex review found one substantive P2 (restoration Root
 closure); fixed through shared structural parsing and signed negative regression.
+GitHub review additionally found that the Merchant signing helper's 12,000-byte
+claims / 16,384-byte JWS limits prevented valid larger Agent terminals. KB terminal
+signing now uses its existing verifier's 24,576-byte payload / 32,768-byte wire
+bounds only; JWT and Direct retain the old limits. Long-ID/title eight-row Ruby
+and official Python signature/Schema/hash regressions exercise this fix.
 Latest-HEAD independent review must be completed and identified in the external
 verification report. Review no-findings alone is not a security proof.
 
