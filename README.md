@@ -1,6 +1,15 @@
-# AP2 Mandate Verifier — 0.8.0
+# AP2 Mandate Verifier — Ruby SDK for Checkout delegation
 
 [日本語](README.ja.md)
+
+**Published stable: 0.8.0. Working candidate: 1.0.0, not published.**
+
+The 1.0.0 preparation defines a maintained public contract for the existing
+Direct and conditional Checkout APIs. It preserves 0.8.0 signatures, defaults,
+profiles, result meanings and saved formats. The published installation commands
+below still install 0.8.0. See [the public API contract](docs/PUBLIC_API.md),
+[maintenance policy](docs/POST_RELEASE_MAINTENANCE.md) and
+[candidate preparation status](docs/RELEASE_100_CANDIDATE.md).
 
 ## Conditional purchase delegation — published 0.8.0
 
@@ -132,6 +141,10 @@ Do not call `prepare` again during verification or update saved hashes/reference
 
 ## Results and responsibility boundaries
 
+The following table applies to complete Open → Agent Closed verification through
+InputBuilder or `verify_checkout`. Direct, Checkout and Receipt APIs retain their
+own `verified?` or exception contracts; see [all result conventions](docs/PUBLIC_API.md#result-object-and-failure-contracts).
+
 | Result | Meaning and next step |
 | --- | --- |
 | `:verified_research` / `:scoped_research_verified`, `success? == true` | Immutable Evidence contains checked facts for the fixed profile. The Host must still decide whether to authorize the purchase. |
@@ -165,8 +178,11 @@ Issuer/Host production GO and Phase 2-B remain separate HOLDs.
 | Entry | Role |
 | --- | --- |
 | `ConditionalCheckout.issue_open/issue_closed/present` | Conditional issuance and original-wire presentation; full merchant verification remains required. |
+| `Buyer.issue_closed/present_closed/verify` | Direct exact-order issuance, structural presentation and full Direct verification. |
+| `CheckoutJWT.sign/verify` | Merchant Checkout signing and authentication before approval. |
+| `CheckoutReceipt.reference/sign/verify` | Original final-Mandate reference, explicit application outcome signing and Receipt authentication. |
 | `InputBuilder.verify(**business_information)` | Recommended business-data path in 0.8.0. Assembles inputs and runs complete verification; preparation and restoration are separate steps shown above. |
-| `verify_checkout(**inputs)` | Direct complete verification with the existing seven inputs, including caller-supplied trust/selection/Host JSON. |
+| `verify_checkout(**inputs)` | Complete Open → Agent Closed verification with the existing seven inputs, including caller-supplied trust/selection/Host JSON. |
 | `verify_research(**inputs)` | Retained name for the same seven-input verification pipeline; no deprecation warning. |
 | `verify(presentation_json:)` | Legacy JSON syntax check only. Never returns successful Evidence. |
 
@@ -174,6 +190,7 @@ Malformed assembly arguments, including missing keywords, to `InputBuilder.verif
 
 ## More detail
 
+- [Proposed 1.x public API, errors, profiles and persistence contract](docs/PUBLIC_API.md). Existing partial-verification APIs remain supported and never return successful Evidence.
 - [Business-data lifecycle and Rails mapping](docs/INPUT_BUILDER.md), [complete Ruby example](examples/input_builder.rb) and [before/after example](examples/input_builder_before.rb).
 - [Supported inputs, limits and Result/Evidence contract](docs/SUPPORT_CONTRACT.md); [Issuer/Host responsibilities](docs/ISSUER_HOST_MINIMUM_CONTRACT.md).
 - [0.8.0 Release notes](docs/RELEASE_080.md), [publication/withdrawal records](docs/PROJECT_STATUS.md) and [changelog](CHANGELOG.md). Repository README changes do not rebuild or replace published Gem bytes.

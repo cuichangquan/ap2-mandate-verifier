@@ -1,4 +1,39 @@
-# Fixed-profile AP2 verification — published 0.8.0 / history
+# AP2 Checkout Ruby SDK — support contract and history
+
+## Current contract and unpublished 1.0.0 preparation
+
+**Published stable remains 0.8.0. The working 1.0.0 candidate is unpublished.**
+The candidate preserves the existing product implementation and acceptance
+contracts. Its intended 1.x public surface is catalogued in
+[PUBLIC_API](PUBLIC_API.md); candidate evidence and outstanding decisions are in
+[the preparation record](RELEASE_100_CANDIDATE.md). Historical observations below
+are not new 1.0.0 test results.
+
+| Current supported flow | Contract |
+| --- | --- |
+| Direct exact-order approval | Checkout authentication, Provider Closed issuance, original presentation, full Direct verification and Receipt confirmation: [Direct](BUYER_DIRECT_CHECKOUT.md). |
+| Conditional purchase delegation | Provider Open issuance, Agent Closed generation/presentation, existing full verification and Receipt confirmation: [Conditional Checkout](CONDITIONAL_CHECKOUT.md). |
+| Existing verification and business inputs | Both Open → Agent Closed profiles, InputBuilder trust/preparation/restoration, immutable Result/Evidence and supplemental diagnostics: [public API](PUBLIC_API.md). |
+| Merchant signing and Receipts | Checkout signing and explicit Success/Error outcome authentication with original-wire references: [Merchant signing](MERCHANT_SIGNING.md). |
+
+Formal support remains MRI 3.4.12 and MRI 4.0.9 with JSON 2.19.9, JWT 3.3.0,
+base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1. The Gem's Ruby resolution range
+does not certify every intervening version, engine, OS or native provider.
+AP2 source `b4587ac1d055888a73b4b21750973cffba961793`, the three documented v1
+profile identities and InputBuilder preparation format `1` remain unchanged.
+
+Each API retains its result/exception convention, including the existing `research`
+names and partial APIs' non-success behavior. A verification failure or signing
+`Invalid` is not automatically proof of malformed business data; see
+[failure handling](PUBLIC_API.md#result-object-and-failure-contracts).
+The app owns current trust, consent, durable state and final execution. Ruby SDK
+support does not establish general AP2 compatibility, Payment support, actual
+Issuer trust or a particular Host's production authorization.
+
+The [maintenance policy](POST_RELEASE_MAINTENANCE.md) governs proposed 1.x
+versioning, dependency changes, security corrections and deprecation. The sections
+below preserve older publication evidence and API details; statements explicitly
+scoped to old versions do not remove the current flows listed above.
 
 ## Published 0.8.0 conditional delegation
 
@@ -123,13 +158,13 @@ Gem-owned signature/original-wire/closure, delegation, binding, supplied-trust s
 Host inputs must be authenticated, independent of the token and current: trust/keys/profile/revocation/rollback protection, clock and order/challenge state. Recheck before use; atomically consume nonce with order CAS, reconcile unknown results as PENDING, and decide final ALLOW/payment separately.
 Evidence is immutable checked facts in the same trusted Ruby process, not ALLOW or a transport credential. JSON/Hash reconstruction does not authenticate it. Rejection, unavailability, exceptions and no result never authorize an operation. Trusted Ruby is a precondition, not a malicious-Ruby sandbox.
 
-No worst-case CPU/RSS/concurrency or numeric SLA is promised. Host process/time/memory/concurrency limits supplement, not replace, Gem finite input bounds. Product Mandate issuance/presentation, Rails adapters, real payments and Host DB operations remain outside the Gem. Separate merchant signing/Checkout Receipt APIs are documented in [MERCHANT_SIGNING](MERCHANT_SIGNING.md).
+No worst-case CPU/RSS/concurrency or numeric SLA is promised. Host process/time/memory/concurrency limits supplement, not replace, Gem finite input bounds. Direct and conditional issuance/presentation are supported by their separate contracts above. Rails adapters, real payments and Host DB operations remain outside the Gem. Separate merchant signing/Checkout Receipt APIs are documented in [MERCHANT_SIGNING](MERCHANT_SIGNING.md).
 Supported-input semantics and existing API/status/code/Evidence contracts must not change silently. Security-driven acceptance narrowing requires impact/reason/migration disclosure; breaking required-field/profile/API changes must be explicit. Dependency updates are not automatically compatible.
 
 The published 0.2.0 and historical baseline below is MRI4.0.9 plus JSON2.19.9/JWT3.3.0/base640.3.0/OpenSSL gem4.0.2/Digest3.2.1, with the exact observed MBA arm64-darwin25 and Ubuntu24.04/x86_64 configurations. RubyGems version constraints do not enforce MRI/OS/provider identity. All OS versions, other engines/architectures and arbitrary provider updates are not supported by past observations.
 Historical D3 observed MBA component identities and four selected crypto symbol sources; OS dyld hashes/all symbol bindings/global runtime security remain unproved. JSON2.19.9 official IO-buffer fix/tag/source identity is adopted static evidence; inconsistent GHSA patched-version metadata remains recorded. Neither observation is global S3 PASS. The earlier R1 archive subsequently passed Mac/Ubuntu packaging checks. It is a different archive; see the separate release-package record for current bytes and observations.
 
-Initial maintenance contact: Owner cuichangquan via repository Issues for ordinary bugs and private vulnerability reporting for vulnerabilities. No secrets, real Mandates or personal data in reports. Maintain only the latest patch in the selected initial stable series; no prerelease/old-series backport, fixed support years, response/fix/disclosure deadline or 24/7 promise.
+Maintenance contact: Owner cuichangquan via repository Issues for ordinary bugs and private vulnerability reporting for vulnerabilities. No secrets, real Mandates or personal data in reports. Current maintenance scope and versioning are in [POST_RELEASE_MAINTENANCE](POST_RELEASE_MAINTENANCE.md); no prerelease/old-series backport, fixed support years, response/fix/disclosure deadline or 24/7 promise is added here.
 Manual dependency/provider review is adopted monthly, on relevant advisories and before releases; no active automatic monitor is implied. Updates/deprecation/end of support must identify affected versions, reason and migration path without inventing a fixed notice period. Known major unaddressed issues or inability to maintain mean HOLD, not a blanket disclaimer.
 
 ## Existing API/limits and historical evidence baseline
@@ -246,6 +281,11 @@ Hash is provided. Trusted Ruby process/interpreter is a precondition; private
 constructors do not sandbox malicious Ruby/reflection in that same process.
 
 ## Parsing, schema and time boundaries
+
+The single-product shape/count statements in this section preserve the original
+profile. The [multi-item](MULTI_ITEM_CHECKOUT.md) and
+[Direct](BUYER_DIRECT_CHECKOUT.md) contracts specify their separate shapes and
+limits; the [conditional API](CONDITIONAL_CHECKOUT.md) reuses the multi-item profile.
 
 Header/payload parse before signature enforces strict bounded syntax only.
 JSON2.19.9 duplicate rejection remains on, including escaped duplicate keys;

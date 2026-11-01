@@ -1,6 +1,14 @@
-# AP2 Mandate Verifier — 0.8.0
+# AP2 Mandate Verifier — Checkout委任のRuby SDK
 
 [English](README.md)
+
+**公開済み安定版は0.8.0です。1.0.0は準備中の未公開候補です。**
+
+1.0.0では、既存のDirectと条件付きCheckoutの公開API・保守契約を明確にします。
+0.8.0の引数・既定値・profile・結果の意味・保存形式を維持します。
+以下の公開版インストール手順は引き続き0.8.0です。
+[公開API契約](docs/PUBLIC_API.md)、[保守方針](docs/POST_RELEASE_MAINTENANCE.md)、
+[候補版の準備状況](docs/RELEASE_100_CANDIDATE.md)を参照してください。
 
 ## 条件付き購入委任 — 0.8.0公開済み
 
@@ -126,6 +134,10 @@ end
 
 ## 結果と責任境界
 
+次の表は、InputBuilderまたは `verify_checkout` によるOpen → Agent Closedの
+完全検証に適用します。Direct・Checkout・Receiptは、それぞれの `verified?` や
+例外契約を維持します。[API別の結果・失敗契約](docs/PUBLIC_API.md#result-object-and-failure-contracts)を参照してください。
+
 | 結果 | 意味と利用者の処理 |
 | --- | --- |
 | `:verified_research` / `:scoped_research_verified`、`success? == true` | 不変のEvidenceに固定profileの検査事実があります。購入を許可するかは、Hostが別途判断します。 |
@@ -153,8 +165,11 @@ Gemは署名、支持する開示閉包、委任、購入／Host binding、制�
 | 入口 | 役割 |
 | --- | --- |
 | `ConditionalCheckout.issue_open/issue_closed/present` | 条件付き発行・原文提示。販売者による完全検証は別途必須です。 |
+| `Buyer.issue_closed/present_closed/verify` | 確定注文を承認するDirect発行・構造確認を伴う提示・Directの完全検証。 |
+| `CheckoutJWT.sign/verify` | 販売者のCheckout署名と、承認前の真正性確認。 |
+| `CheckoutReceipt.reference/sign/verify` | 最終Mandate原文の参照計算、明示的なアプリ結果の署名、Receiptの真正性確認。 |
 | `InputBuilder.verify(**business_information)` | 0.8.0の推奨業務情報経路。入力を組み立て、完全検証します。発行前準備・復元は上の例の別処理です。 |
-| `verify_checkout(**inputs)` | 既存の7入力を直接渡す完全検証。trust／selection／Host JSONも呼出側が渡します。 |
+| `verify_checkout(**inputs)` | 既存の7入力を直接渡すOpen → Agent Closedの完全検証。trust／selection／Host JSONも呼出側が渡します。 |
 | `verify_research(**inputs)` | 同じ7入力検証経路の維持された名称。非推奨警告はありません。 |
 | `verify(presentation_json:)` | 旧JSON構文検査のみ。成功Evidenceを返しません。 |
 
@@ -162,6 +177,7 @@ Gemは署名、支持する開示閉包、委任、購入／Host binding、制�
 
 ## 詳細リンク
 
+- [1.x候補の公開API・失敗・profile・保存契約](docs/PUBLIC_API.md)。従来の部分検証APIも維持し、成功Evidenceを返さない意味を変えません。
 - [業務情報の一連の利用とRails対応付け](docs/INPUT_BUILDER.ja.md)、[完全Ruby例](examples/input_builder.rb)、[変更前の例](examples/input_builder_before.rb)。
 - [支持入力・上限・Result／Evidence契約](docs/SUPPORT_CONTRACT.md)、[Issuer／Host責務](docs/ISSUER_HOST_MINIMUM_CONTRACT.md)。
 - [0.8.0 Release notes](docs/RELEASE_080.md)、[公開・撤回記録](docs/PROJECT_STATUS.md)、[変更履歴](CHANGELOG.md)。リポジトリREADMEの変更で公開Gemを再build・置換しません。

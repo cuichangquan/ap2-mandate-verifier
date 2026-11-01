@@ -2,6 +2,7 @@
 import base64
 import hashlib
 import json
+import os
 import subprocess
 from pathlib import Path
 from unittest.mock import patch
@@ -22,8 +23,6 @@ def digest(wire):
 def decode(part):
     return json.loads(base64.urlsafe_b64decode(part + '=' * (-len(part) % 4)))
 
-process = subprocess.Popen(['ruby', '-Ilib', 'test/conditional_interop_driver.rb'],
-                           stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
 def rpc(operation, **arguments):
     process.stdin.write(json.dumps(dict(operation=operation, arguments=arguments)) + '\n')
     process.stdin.flush()
@@ -32,7 +31,9 @@ def rpc(operation, **arguments):
 def no_remote(uri):
     raise ValueError('unregistered Schema: ' + uri)
 registry = Registry(retrieve=no_remote)
-root = Path('/official/code/sdk/schemas')
+official_root = Path(os.environ.get('AP2_OFFICIAL_ROOT', '/official')).resolve()
+assert Path(sd_jwt.__file__).resolve().is_relative_to(official_root), 'SDK and Schema roots differ'
+root = official_root / 'code/sdk/schemas'
 for path in root.rglob('*.json'):
     body = json.loads(path.read_text())
     registry = registry.with_resource(body['$id'], Resource.from_contents(body))
@@ -41,6 +42,9 @@ registry = registry.with_resource('https://ap2-protocol.org/schemas/types/receip
 def schema(name, value):
     Draft202012Validator(json.loads((root/name).read_text()), registry=registry).validate(value)
 
+# No -Ilib: installed mode must use ordinary RubyGems activation with no source overlay.
+process = subprocess.Popen(['ruby', str(Path(__file__).with_name('conditional_interop_driver.rb').resolve())],
+                           stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
 try:
     key = JWK.generate(kty='EC', crv='P-256')
     pem = key.export_to_pem().decode()
@@ -146,6 +150,110 @@ try:
                 assert rpc('verify_receipt', **(receipt_args | change)) == dict(verified=False)
             claims['reference'] = digest(wire[:-1])
             assert rpc('verify_receipt', **(receipt_args | dict(jwt=create_jwt(dict(alg='ES256', typ='JWT'), claims, key)))) == dict(verified=False)
+
+    # Independent Python issuance -> PUBLIC complete verification with saved Host
+    # state. This is additional coverage; the scoped differential checks above stay.
+    public_provider, public_agent, public_merchant = [JWK.generate(kty='EC', crv='P-256') for _ in range(3)]
+    agent_claim = {k: v for k, v in public_agent.export_public(as_dict=True).items() if k in ['kty', 'crv', 'x', 'y']}
+    public_open = dict(vct='mandate.checkout.open.1', iat=NOW-100, exp=NOW+600, cnf=dict(jwk=agent_claim),
+        constraints=[dict(type='checkout.line_items', items=requirements), dict(type='checkout.allowed_merchants', allowed=[seller])])
+    public_root = sd_jwt.create(OpenCheckoutMandate(**public_open), public_provider).sd_jwt_issuance
+    assert sd_jwt.verify(public_root, public_provider)['delegate_payload'] == [public_open]
+    schema('ap2/open_checkout_mandate.json', public_open)
+    public_checkout = dict(checkout, id='public-order')
+    public_checkout_jwt = create_jwt(dict(alg='ES256', typ='JWT'), public_checkout, public_merchant)
+    assert verify_jwt(public_checkout_jwt, public_merchant) == public_checkout
+    schema('ucp/types/checkout.json', public_checkout)
+    public_closed = dict(vct='mandate.checkout.1', iat=NOW-100, exp=NOW+600,
+        checkout_jwt=public_checkout_jwt, checkout_hash=digest(public_checkout_jwt))
+    schema('ap2/checkout_mandate.json', public_closed)
+    host_audience, host_nonce = 'conditional-host', 'conditional-nonce'
+    public_claims = dict(delegate_payload=[public_closed], iat=NOW, aud=host_audience, nonce=host_nonce,
+                         sd_hash=digest(public_root))
+    public_terminal = create_jwt(dict(alg='ES256', typ='kb+sd-jwt'), public_claims, public_agent)
+    assert verify_jwt(public_terminal, public_agent) == public_claims
+    previous = parse_token(public_root).with_verified_payload(
+        sd_jwt.verify(public_root, public_provider), [public_open])
+    assert kb_sd_jwt.verify(parse_token(public_terminal+'~'), previous,
+        expected_aud=host_audience, expected_nonce=host_nonce)['delegate_payload'] == [public_closed]
+
+    # Host expectations are explicit application data, not values decoded from
+    # the candidate JWT. Its registry, order and original saved challenge remain
+    # unchanged while only an independently re-signed terminal is varied below.
+    records = [dict(role=role, identity=identity, tenant_id='tenant', purpose='checkout', key_ref=role.lower(),
+                    public_key_pem=key.export_to_pem().decode(), active=True, not_before=NOW-600, not_after=NOW+1200)
+               for role, identity, key in [('Issuer', 'issuer', public_provider),
+                                           ('Agent', 'agent', public_agent), ('Merchant', 'shop', public_merchant)]]
+    selectors = {record['role'].lower(): {name: record[name] for name in ['identity', 'purpose', 'key_ref']}
+                 for record in records}
+    profile = 'ap2.checkout.single_merchant_multi_item'
+    host_order = dict(tenant_id='tenant', buyer_account_id='buyer', order_id='public-order', merchant_id='shop',
+                      audience=host_audience, order_version='1', currency='USD', expected_total=300)
+    host_trust = dict(snapshot=dict(id='public-registry', policy_version='1', active=True,
+        not_before=NOW-600, not_after=NOW+1200, records=records), tenant_id='tenant', verified_at=NOW,
+        profile_ref=profile, **selectors)
+    assert rpc('prepare_public_host', trust=host_trust, order=host_order, root_presentation=public_root,
+        host_checkout_jws=public_checkout_jwt, challenge=dict(challenge_id='public-challenge', nonce=host_nonce,
+        issuer_id='public-host', not_before=NOW-10, not_after=NOW+60)) == dict(prepared=True)
+    public_result = rpc('verify_public', terminal_jws=public_terminal)
+    assert {name: public_result[name] for name in ['success', 'status', 'code', 'evidence_frozen']} == dict(
+        success=True, status='verified_research', code='scoped_research_verified', evidence_frozen=True)
+    evidence = public_result['evidence']
+    assert evidence['contract_version'] == 'ap2.research-evidence.2'
+    assert evidence['profile_ref'] == profile
+    assert {name: evidence['checkout_binding'][name] for name in host_order} == host_order
+    assert evidence['verified_at'] == evidence['valid_from'] == NOW
+    assert evidence['valid_until'] == NOW+60
+    for name, wire in [('root_presentation_digest', public_root), ('checkout_jwt_digest', public_checkout_jwt),
+                       ('terminal_digest', public_terminal)]:
+        assert evidence[name] == hashlib.sha256(wire.encode('ascii')).hexdigest()
+    assert evidence['verified_challenge']['challenge_id'] == 'public-challenge'
+    assert evidence['verified_challenge']['verified_nonce_sha256'] == hashlib.sha256(host_nonce.encode('ascii')).hexdigest()
+    assert 'nonce' not in evidence['verified_challenge']
+    assert evidence['trust_snapshot']['id'] == 'public-registry'
+    assert 'host_challenge_order_binding' in evidence['verified_scope']
+
+    def reject_public(claims, signer, expected_code):
+        # A real valid signature over the intended mutation prevents a corrupted
+        # signature from masquerading as an audience/nonce/order rejection.
+        candidate = create_jwt(dict(alg='ES256', typ='kb+sd-jwt'), claims, signer)
+        assert verify_jwt(candidate, signer) == claims
+        assert claims['sd_hash'] == digest(public_root)
+        rejected = rpc('verify_public', terminal_jws=candidate)
+        assert rejected == dict(success=False, status='rejected', code=expected_code,
+                                evidence=None, evidence_frozen=False), rejected
+
+    reject_public(public_claims | dict(aud='other-host'), public_agent, 'audience_mismatch')
+    reject_public(public_claims | dict(nonce='other-nonce'), public_agent, 'nonce_mismatch')
+    changed_checkout = dict(public_checkout, id='different-order')
+    changed_jwt = create_jwt(dict(alg='ES256', typ='JWT'), changed_checkout, public_merchant)
+    assert verify_jwt(changed_jwt, public_merchant) == changed_checkout
+    schema('ucp/types/checkout.json', changed_checkout)
+    changed_closed = public_closed | dict(checkout_jwt=changed_jwt, checkout_hash=digest(changed_jwt))
+    schema('ap2/checkout_mandate.json', changed_closed)
+    reject_public(public_claims | dict(delegate_payload=[changed_closed]), public_agent, 'checkout_binding_mismatch')
+    reject_public(public_claims, JWK.generate(kty='EC', crv='P-256'), 'invalid_root_signature')
+    # The original proof still succeeds against the same saved Host state.
+    assert rpc('verify_public', terminal_jws=public_terminal) == public_result
+
+    public_wire = public_terminal+'~'
+    for outcome, fields in [('Success', dict(order_id='public-order')),
+                            ('Error', dict(error='declined', error_description='Application policy'))]:
+        receipt_claims = dict(iss='shop', status=outcome, iat=NOW, reference=digest(public_wire), **fields)
+        schema('ap2/checkout_receipt.json', receipt_claims)
+        receipt_jwt = create_jwt(dict(alg='ES256', typ='JWT'), receipt_claims, public_merchant)
+        assert verify_jwt(receipt_jwt, public_merchant) == receipt_claims
+        assert rpc('verify_public_receipt', jwt=receipt_jwt) == dict(verified=True, outcome=outcome,
+            purchase_succeeded=outcome == 'Success', purchase_rejected=outcome == 'Error')
+    mode = 'installed Gem' if os.environ.get('AP2_INSTALLED') == '1' else 'source'
+    print(json.dumps(dict(public_flow='PASS', mode=mode,
+        wire_sha256={name: hashlib.sha256(wire.encode('ascii')).hexdigest() for name, wire in
+            [('root_presentation', public_root), ('terminal_jws', public_terminal),
+             ('checkout_jwt', public_checkout_jwt), ('closed_sd_jwt', public_wire)]},
+        negative_codes=['audience_mismatch', 'nonce_mismatch', 'checkout_binding_mismatch', 'invalid_root_signature'],
+        receipt_outcomes=['Success', 'Error']), sort_keys=True))
+    print(f'PASS conditional Python issuance -> public InputBuilder.verify ({mode}): immutable Evidence, '
+          'independent saved Host state, causal audience/nonce/order/untrusted-Agent negatives, authentic Success/Error receipts')
     print('PASS conditional bidirectional official SDK issuance/signatures, 3-row candidate/repeated-product and large 8-row terminal flows, pinned Schemas, complete commitments, normative final SD hash, Success/Error receipts and negatives')
 finally:
     process.stdin.close()

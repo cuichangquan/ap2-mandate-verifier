@@ -1,5 +1,16 @@
 # 現状メモ / Project status
 
+## 1.0.0準備 — 未公開候補
+
+Ownerの「そのまま1.0.0の準備をお願いします」に基づく新しいリリース準備です。
+公開済み0.8.0を基準に、Ruby SDKの[公開API](PUBLIC_API.md)、
+[1.x互換性・保守方針](POST_RELEASE_MAINTENANCE.md)、配布metadata、
+外部生成入力から公開完全検証・Receiptまでの試験を整えます。
+候補のversionは1.0.0ですが、現在の公開版は引き続き0.8.0です。
+この作業で既存の実行時API・profile・依存pinを変更しません。
+候補・検証手順・残る公開条件は[1.0.0候補文書](RELEASE_100_CANDIDATE.md)を参照してください。
+RubyGems push、公開tag/Release、実決済・本番利用はこの準備の完了を意味しません。
+
 <a id="080-publication"></a>
 
 ## 0.8.0公開済み — 現在の配布状態
