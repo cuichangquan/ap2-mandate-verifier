@@ -1,8 +1,19 @@
 # 現状メモ / Project status
 
+<a id="070-publication"></a>
+
+## 0.7.0公開済み — 現在の配布状態
+
+[RubyGems 0.7.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.7.0)はOwner本人のTerminalで2026-11-01 **03:12:46.522 UTC**に公開。**03:14:04 UTC**の公式配布検証で、64,000 bytes、SHA256 `baab8c68355b5e6c9351e7d86a836fab50652cdad662bbc99d1676c5e6134447`が承認済み候補と完全一致し、全24payloadが公開元 `9b4b78a7ed9aa95e7d35e01a64efc1281ba95be3`と一致しました。5固定依存・Ruby要件・non-prerelease・non-yankedも確認。[公開検証記録](evidence/0.7.0_publication.json)。これは候補と実配布bytesの照合であり、RubyGemsによるsource attestationではありません。
+
+[PR #229](https://github.com/cuichangquan/ap2-mandate-verifier/pull/229)のreview HEAD `b7351458a42f5b50fed7a74fc90b71054e57dca2`と公開sourceは同じtree。独立Codexレビュー指摘なし・未解決thread 0・[両MRI CI成功](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/41266695904)でSquash Merge済みです。Direct／Human Presentの承認前Checkout検証・Provider署名発行・Agent提示・販売者検証・Receipt確認を1販売者・1〜8明細・複数商品で実装しています。[仕様](BUYER_DIRECT_CHECKOUT.md)、[短いAPI例](RELEASE_070.md)、[完全実行例](../examples/direct_checkout.rb)。既存2profile・Result/Evidence・保存契約は維持します。
+
+公開後のtag/Release・英日ガイド・デモ整備はOwnerの別途承認による作業です。[新しい公式Gem導入検証](POST_RELEASE_070.md)と準備時点の記録を区別します。Gemの再build・再pushは行いません。以下の0.7.0候補・旧版NOT_RUNは各時点の履歴です。本人認証・購買権限・永続重複防止・結果不明時の照会はアプリ責任で、検証や合成Receiptは実決済成功ではありません。
+
+
 <a id="060-publication"></a>
 
-## 0.6.0公開済み — 現在の配布状態
+## 0.6.0公開済み — 過去の配布記録
 
 [RubyGems 0.6.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.6.0)はOwner本人のTerminalで公開され、登録日時は2026-10-31 **11:50:18.664 UTC**、公式metadata・配布Gem・承認候補・sourceの照合完了は **11:51:54 UTC**。platform `ruby`、prerelease false、照合時yanked false、**56,832 bytes**、SHA256 `ff669a62717f91b2295b3cea1b68c6c4143c490d98df071fd322ad4b0007195d`。公開元sourceは `baee59a603d08123adc0af50e57c8710ea62f4f9`で、全22 payloadの一致、name/version、5固定依存、Ruby要件とMITを確認しました。[公開検証Receipt](evidence/0.6.0_publication.json)。RubyGems自体によるsource attestationではなく、保存済みレビュー候補と実配布bytesの一致による対応付けです。
 
@@ -341,7 +352,7 @@ R2は34,304B、SHA256 `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314
 
 この結果追補は公開GOではありません。S6は追補の最新HEADレビューで確認し、S7の正確な版/配布先/残余を指定したOwner公開GO・特定Host本番GOは引き続きHOLD。製品10件と包装3ファイルは検証時bytesのままです。
 
-## 0.7.0 Direct buyer candidate — unpublished
+## 0.7.0 Direct buyer preparation — historical
 
 New independently delegated task after completed 0.6.0: Trusted Agent Provider /
 Human Present exact-Checkout approval, issue/present/merchant verify/Receipt
@@ -350,5 +361,5 @@ end to end and reused without changing prior profiles. See
 [implementation contract](BUYER_DIRECT_CHECKOUT.md), [execution/approval record](BUYER_TASK_RECORD.md),
 [runnable integration](../examples/direct_checkout.rb), and
 [PR #229](https://github.com/cuichangquan/ap2-mandate-verifier/pull/229).
-This candidate is not published; 0.6.0 remains the published version. No Gem,
+At preparation time this candidate was not published. The current 0.7.0 publication is recorded at the top of this document. No Gem,
 public tag, Release, deployment or real payment is part of candidate preparation.

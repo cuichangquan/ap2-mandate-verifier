@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0 — 2026-11-01
+
+- Adds `CheckoutJWT.verify` and optional `Buyer.issue_closed/present_closed/verify` for Trusted Agent Provider / Direct Human Present exact-order approval. Supports one merchant and 1–8 lines with multiple products throughout issuance, presentation, merchant verification and Receipt confirmation.
+- Adds explicit Direct Receipt profile preserving both disclosures and terminal `~` in the original-wire reference. Requires independently registered keys, protected app approval bytes, supported commitment closure and explicit time/order checks; failures do not grant authorization.
+- Existing two profiles, Result/Evidence, saved inputs, supported MRI and dependencies retain their contracts. Open issuance/Agent Closed generation remain follow-up candidates.
+- Published 03:12:46.522 UTC; official verification 03:14:04 UTC. Exact 64,000-byte candidate SHA256 `baab8c68355b5e6c9351e7d86a836fab50652cdad662bbc99d1676c5e6134447` matches source `9b4b78a7ed9aa95e7d35e01a64efc1281ba95be3` across all 24 payloads. [Release](docs/RELEASE_070.md), [publication](docs/PROJECT_STATUS.md#070-publication). Follow-up guides do not rebuild/replace the published Gem.
+
 ## 0.6.0 — 2026-10-31
 
 - Adds explicitly selected `ap2.checkout.single_merchant_multi_item` v1 for a single merchant/Checkout/currency with up to eight lines, eight requirements and eight candidates per requirement. Integer maximum flow consumes all requirement and checkout quantities without double allocation; repeated product IDs on distinct lines and overlapping candidates are supported.

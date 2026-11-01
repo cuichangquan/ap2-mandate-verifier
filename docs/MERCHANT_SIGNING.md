@@ -62,7 +62,7 @@ puts signed.checkout_hash.length  # 43
 `signed.jwt` is the frozen original compact JWT to transmit and retain. Supply
 that exact String as `host_checkout_jws` to InputBuilder and Verifier; supply
 `signed.checkout_hash` when a test or external Agent binds a Closed Mandate.
-These 0.5/0.6 APIs do not issue a product Mandate. The unpublished 0.7.0
+These 0.5/0.6 APIs do not issue a product Mandate. The published 0.7.0
 [Direct buyer module](BUYER_DIRECT_CHECKOUT.md) adds a separate issuance flow.
 Re-encoding claims or signing again
 creates different original wire, even when the order is the same.

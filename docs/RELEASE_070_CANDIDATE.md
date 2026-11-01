@@ -1,4 +1,9 @@
-# 0.7.0 release candidate — NOT PUBLISHED
+> Publication update: 0.7.0 was published on 2026-11-01 at 03:12:46.522 UTC;
+> the official 64,000-byte download matches the approved artifact and source
+> `9b4b78a7ed9aa95e7d35e01a64efc1281ba95be3` across 24 payloads. The text below
+> is the historical preparation snapshot. See [current publication](PROJECT_STATUS.md#070-publication).
+
+# 0.7.0 release candidate — historical preparation
 
 Compatible feature release for Trusted Agent Provider / Direct Human Present
 Checkout. Supports merchant signature verification before approval, backend
