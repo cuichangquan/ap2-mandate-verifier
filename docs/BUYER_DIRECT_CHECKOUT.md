@@ -102,6 +102,13 @@ exact form `<root>~<closed disclosure>~<checkout disclosure>~`. No KB-JWT,
 binding concerns, not universal Direct requirements. Trusted Provider enrollment
 is external; keys embedded in received data never select trust.
 
+In the existing Open→Closed flow, the Provider-signed Open content endorses the
+Agent's public key through `cnf.jwk`; that key verifies the terminal Agent
+signature and its binding to the preceding original SD-JWT, expected audience
+and nonce. Direct instead trusts the Provider signature over the already closed
+order itself and needs no Agent key endorsement. Open issuance, choosing fewer
+disclosures and Agent signing therefore remain separate future APIs.
+
 Maximum entire wire 32,768 bytes; Checkout JWT 16,384; root payload 2,048;
 decoded disclosure 24,576; JSON depth 24. Existing strict JSON/canonical base64url
 and finite number checks apply. Limits combine; counts alone do not guarantee

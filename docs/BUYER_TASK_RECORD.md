@@ -72,3 +72,21 @@ PR and squash, forbids deletion/non-fast-forward; no Owner approval review count
 is required. Protections are not changed. One cohesive PR keeps the authoring,
 receiving and Receipt grammar reviewable together instead of exposing an issuer
 that the receiver cannot verify.
+
+GitHub Codex review of `6dddd31009683843f42d69c119a211c82fce1985` completed
+2026-11-01 02:47:28 UTC with no findings; independent local Codex re-review also
+had no substantive findings. CI
+[41266522142](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/41266522142)
+at this HEAD succeeded, attempt 1; 2/3 run budget consumed.
+
+Final self-audit additionally snapshots Receipt profile selection before testing
+Direct identity, rejecting custom equality objects/unknown profile names. Added
+negative cases; no legacy string profile contract is changed. Final HEAD requires
+fresh independent review and the remaining third workflow run. No failed run has
+been rerun. Final integration/evidence is to be recorded on the PR and external
+artifact manifest so the reviewed candidate need not change for status bookkeeping.
+
+Demo main was independently read as `37ba736ebb32742f17d793d74c196a4ea723ce63`,
+with no open PRs and no repository AGENTS.md at its root (REST 404, not a denied
+write). No demo change is needed: the authorized alternative runnable integration
+is included here. RubyGems latest endpoint independently reports 0.6.0.

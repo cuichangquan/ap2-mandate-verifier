@@ -77,6 +77,10 @@ module BuyerTest
   ref = Base64.urlsafe_encode64(Digest::SHA256.digest(wire), padding: false)
   assert(R.reference(closed_sd_jwt: wire, profile_ref: B::PROFILE_REF) == ref, "entire SD wire reference")
   invalid { R.reference(closed_sd_jwt: wire) } # Existing profile remains strict.
+  forged_profile = Object.new
+  def forged_profile.==(_other) = true
+  invalid { R.reference(closed_sd_jwt: wire, profile_ref: forged_profile) }
+  invalid { R.reference(closed_sd_jwt: wire, profile_ref: "unknown") }
   %w[Success Error].each do |outcome|
     fields = outcome == "Success" ? {order_id: "office-1"} : {error: "declined", error_description: "Application declined"}
     receipt = R.sign(closed_sd_jwt: wire, profile_ref: B::PROFILE_REF, issuer: "shop", outcome: outcome,
