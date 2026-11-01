@@ -1,0 +1,19 @@
+PASS installed published Gem README.md quick start
+PASS installed published Gem README.ja.md quick start
+checkout_segments=3 checkout_hash_length=43
+Success: verified=true purchase_succeeded=true purchase_rejected=false
+Error: verified=true purchase_succeeded=false purchase_rejected=true
+checkout verified=true profile=ap2.checkout.single_merchant_multi_item
+receipt Success: verified=true purchase_succeeded=true
+receipt Error: verified=true purchase_succeeded=false
+Synthetic demonstration only. Host authorization, atomic nonce consumption and payment remain application responsibilities.
+Direct checkout verified; application acceptance receipt verified; applied once=true
+Unknown outcome held for application reconciliation; no payment performed
+Open -> Agent Closed -> merchant evidence: verified=true; rows=3; requirements=2
+Receipt Success: authentic=true; purchase_succeeded=true
+Receipt Error: authentic=true; purchase_succeeded=false
+Success=consumed; Error=policy decision; missing Receipt/uncertain commit=pending
+Synthetic only; evidence and Receipt authenticity are not payment completion.
+Conditional verified=true
+Receipt verified=true purchase_succeeded=false
+PASS installed published 0.8.0 guides, standalone conditional example and Release snippet; no Gem build

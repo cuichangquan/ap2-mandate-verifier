@@ -1,14 +1,24 @@
 # 現状メモ / Project status
 
-## 0.8.0条件付き購入委任候補（未公開）
+<a id="080-publication"></a>
 
-Open発行・Agent Closed生成／提示を既存複数商品profileと完全検証・Receiptへ接続する
-追加APIを準備しています。[仕様](CONDITIONAL_CHECKOUT.md)、[候補判断資料](RELEASE_080_CANDIDATE.md)。
-0.7.0が公開済み安定版です。0.8.0の公開・tag／Release・本番接続・実決済は未実施です。
-初回push拒否はOwnerの2026-11-01 14:41 JSTの個別承認で解消しました。
-[PR #231](https://github.com/cuichangquan/ap2-mandate-verifier/pull/231)で
-最新HEADレビュー・既存CI・保護条件を確認し、成立後のみSquash Mergeします。
-最終候補のsource・SHA256・サイズ・通常インストール結果は外部manifestで固定します。
+## 0.8.0公開済み — 現在の配布状態
+
+2026-11-01 **06:01:31.103 UTC（15:01:31.103 JST）**にOwnerが公開し、
+**06:03:20 UTC**の公式配布物照合で、承認候補との完全一致を確認しました。
+79,872 bytes、SHA256 `6c07664e4291aa8bc025b152075869322411a0d99861e1267959f1794e99acec`。
+全29payload・依存5件・Ruby要件が公開source
+`5a7394c1b98f000b321423e2c2f80d50b5157808`と一致します。
+[照合receipt](evidence/0.8.0_publication.json)、[Release例](RELEASE_080.md)、
+[公開後の新しい検証](POST_RELEASE_080.md)。
+
+Open発行・Agent Closed生成／提示を既存複数商品profileの完全検証とReceiptへ接続。
+[仕様](CONDITIONAL_CHECKOUT.md)、[Ruby単体実行例](../examples/conditional_checkout.rb)。
+[PR #231](https://github.com/cuichangquan/ap2-mandate-verifier/pull/231)は統合済み。
+reviewed HEAD `35749455db7330c0dc9c1497d78e991319cc09bc` と公開sourceのtreeは同一です。
+旧79,360-byte候補はsupersededで、公開されたのは79,872-byte最終候補だけです。
+過去の候補文書・同梱文書は準備時の履歴として保持し、公開Gemを再build／再pushしません。
+本番接続・実Issuer／実決済・公開Webは未実施です。
 
 <a id="070-publication"></a>
 

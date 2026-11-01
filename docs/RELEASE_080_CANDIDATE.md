@@ -1,4 +1,9 @@
-# 0.8.0 candidate — conditional Checkout delegation, unpublished
+> Historical preparation snapshot. 0.8.0 was subsequently published on
+> 2026-11-01 06:01:31.103 UTC; its 79,872-byte official download matches the
+> approved artifact/source across all29 payloads. See [publication](POST_RELEASE_080.md).
+> The statuses below describe preparation and do not assert current non-publication.
+
+# 0.8.0 candidate — historical preparation
 
 Compatible feature release preparation for approved conditional purchasing:
 `ConditionalCheckout.issue_open` → Agent `.issue_closed` → `.present` → existing
