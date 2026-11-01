@@ -1,6 +1,6 @@
-# Fixed-profile AP2 verification — published 0.7.0 / history
+# Fixed-profile AP2 verification — published 0.8.0 / history
 
-## Unpublished 0.8.0 additive candidate
+## Published 0.8.0 conditional delegation
 
 `ConditionalCheckout.issue_open/issue_closed/present` add conditional delegation
 issuance and original-wire presentation under the unchanged explicit multi-item
@@ -8,7 +8,12 @@ profile v1. [Contract, errors, limits and application responsibilities](CONDITIO
 The packaged standalone example uses only public installed APIs. No old default,
 profile definition/hash, Result/Evidence/diagnostic, saved record or Receipt
 acceptance condition is changed. All candidates remain required; no new selective
-disclosure profile is introduced. Published stable remains 0.7.0.
+disclosure profile is introduced. Published stable is 0.8.0, registered
+2026-11-01 06:01:31.103 UTC and compared 06:03:20 UTC: 79,872 bytes, SHA256
+`6c07664e4291aa8bc025b152075869322411a0d99861e1267959f1794e99acec`.
+All29 payloads match published source `5a7394c1b98f000b321423e2c2f80d50b5157808`.
+[Publication and new installed-Gem checks](POST_RELEASE_080.md). The archive's
+candidate-time documents remain unchanged; repository updates do not replace it.
 
 Published 0.7.0 adds the separate [Direct buyer module](BUYER_DIRECT_CHECKOUT.md):
 merchant Checkout verification before human approval, Provider-signed issuance,

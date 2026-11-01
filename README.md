@@ -1,21 +1,20 @@
-# AP2 Mandate Verifier — 0.7.0
+# AP2 Mandate Verifier — 0.8.0
 
 [日本語](README.ja.md)
 
-## 0.8.0 candidate: conditional purchase delegation (unpublished)
+## Conditional purchase delegation — published 0.8.0
 
-The candidate adds `ConditionalCheckout.issue_open`, `.issue_closed` and `.present`:
+Published 0.8.0 adds `ConditionalCheckout.issue_open`, `.issue_closed` and `.present`:
 approve A/B×1 plus C×2, issue Open for a registered Agent key, let that Agent close
 a matching merchant-signed Checkout, then use existing `InputBuilder.verify` and
 `CheckoutReceipt.sign/verify`. All candidates remain disclosed under the unchanged
 multi-item profile. Provider private keys never enter Agent operations.
-[API and trust contract](docs/CONDITIONAL_CHECKOUT.md), [release decision material](docs/RELEASE_080_CANDIDATE.md).
+[API and trust contract](docs/CONDITIONAL_CHECKOUT.md), [release sample](docs/RELEASE_080.md), [publication verification](docs/POST_RELEASE_080.md).
 
-Quick Start on MRI 3.4.12 or 4.0.9, using the locally built candidate identified by
-the release manifest (0.8.0 is **not published**):
+Ruby-only Quick Start on MRI 3.4.12 or 4.0.9; no source checkout or Rails required:
 
 ```sh
-gem install --local ./ap2_mandate_verifier-0.8.0.gem
+gem install ap2_mandate_verifier --version 0.8.0
 ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "0.8.0").full_gem_path')/examples/conditional_checkout.rb"
 ```
 
@@ -27,7 +26,10 @@ pending. Authentication, consent, enrollment, durable replay prevention and actu
 order/payment execution remain app-owned. Existing users need no migration;
 0.7.0 defaults and saved formats remain unchanged.
 
-Published stable is **0.7.0**, adding Direct buyer Checkout issuance, presentation and merchant verification through Receipt confirmation. It supports one merchant and 1–8 lines with multiple products. Existing Open→Closed profiles retain their contracts; see [the publication record](docs/PROJECT_STATUS.md#070-publication).
+Published stable is **0.8.0**. It adds conditional Open issuance and Agent Closed
+generation/presentation through complete verification and Receipt confirmation.
+Existing Direct and both Open→Closed profiles retain their contracts; see
+[the publication record](docs/PROJECT_STATUS.md#080-publication).
 
 ## Multiple items and quantities
 
@@ -41,27 +43,27 @@ Verify purchase-delegation data in Ruby using a deliberately fixed AP2 profile. 
 
 ## Try the local demo
 
-The [Rails demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme) uses published 0.7.0 and InputBuilder by default. Its Docker instructions require no host Ruby installation. Compare synthetic normal, tampered and expired cases, including actual status/code, diagnostics and Evidence presence. It also demonstrates multiple products with differing quantities, later-line quantity rejection, and authentic Success/Error Receipts. It is local-only; it does not issue real challenges, consume nonces or execute purchases.
+The [Rails demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme) uses published 0.8.0 and InputBuilder by default. Its Docker instructions require no host Ruby installation. It retains the existing synthetic Open→Agent Closed verification, multi-item and Success/Error Receipt screens. It has no conditional approval/issuance UI; use the standalone Ruby example above for that lifecycle. It is local-only and performs no real challenge issuance, nonce consumption or purchase/payment.
 
 ## Install
 
 Formal support is **MRI 3.4.12 and MRI 4.0.9**. In your chosen Gem environment:
 
 ```sh
-gem install ap2_mandate_verifier --version 0.7.0
+gem install ap2_mandate_verifier --version 0.8.0
 ```
 
 Or add to your Gemfile:
 
 ```ruby
-gem "ap2_mandate_verifier", "= 0.7.0"
+gem "ap2_mandate_verifier", "= 0.8.0"
 ```
 
 Runtime dependencies are pinned to JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1. Normal installation may download/build dependencies; do not relax the pins to work around a conflict. The Ruby resolution interval is not certification of every Ruby version, OS or native provider. See the [support contract](docs/SUPPORT_CONTRACT.md).
 
 ## Merchant signing and Receipt
 
-Create a signed checkout, then sign the application's explicit outcome. These APIs were added in 0.5.0 and remain available in 0.7.0; the excerpt uses the default single-SKU profile.
+Create a signed checkout, then sign the application's explicit outcome. These APIs were added in 0.5.0 and remain available in 0.8.0; the excerpt uses the default single-SKU profile.
 Here `checkout` is the application order Hash, `key` its P-256 signing key,
 `received_closed_sd_jwt` the original final inline SD-JWT and `now` the application clock:
 
@@ -150,13 +152,20 @@ Exceptions, process failure and missing results also never authorize an operatio
 
 The Gem checks signatures, supported disclosure closure, delegation, purchase/Host bindings, constraints and validity. The Host supplies authenticated, independent and current trust/keys/revocation, order/challenge state and clock. Before acting, it rechecks current state and validity, atomically consumes the nonce with order CAS, handles uncertain outcomes, and makes the final authorization/payment decision. `prepare`/`restore` do not authenticate storage or prove an unused nonce.
 
-Published 0.7.0 retains the default `ap2.checkout.single_merchant_sku` v1: ES256/P256, one Merchant/SKU/cart line, USD/EUR/JPY and its documented disclosure shapes. It adds the explicitly selected [multi-item profile](docs/MULTI_ITEM_CHECKOUT.md). Unknown/unsupported forms fail closed. General AP2/all-Schema support, real Issuer interoperability, Open Mandate issuance/presentation, Rails adapters, DB/payment execution and numeric performance guarantees remain outside scope. Real Issuer/Host production GO and Phase 2-B remain separate HOLDs.
+Published 0.8.0 retains the default `ap2.checkout.single_merchant_sku` v1 and the
+explicit [multi-item profile](docs/MULTI_ITEM_CHECKOUT.md). Conditional issuance
+uses that multi-item profile, with all candidates disclosed and existing limits.
+Unknown/unsupported forms fail closed. General AP2/all-Schema support, real Issuer
+interoperability, new selective-disclosure profiles, Rails adapters, DB/payment
+execution and numeric performance guarantees remain outside scope. Real
+Issuer/Host production GO and Phase 2-B remain separate HOLDs.
 
 ### Which API should I use?
 
 | Entry | Role |
 | --- | --- |
-| `InputBuilder.verify(**business_information)` | Recommended business-data path in 0.7.0. Assembles inputs and runs complete verification; preparation and restoration are separate steps shown above. |
+| `ConditionalCheckout.issue_open/issue_closed/present` | Conditional issuance and original-wire presentation; full merchant verification remains required. |
+| `InputBuilder.verify(**business_information)` | Recommended business-data path in 0.8.0. Assembles inputs and runs complete verification; preparation and restoration are separate steps shown above. |
 | `verify_checkout(**inputs)` | Direct complete verification with the existing seven inputs, including caller-supplied trust/selection/Host JSON. |
 | `verify_research(**inputs)` | Retained name for the same seven-input verification pipeline; no deprecation warning. |
 | `verify(presentation_json:)` | Legacy JSON syntax check only. Never returns successful Evidence. |
@@ -167,7 +176,7 @@ Malformed assembly arguments, including missing keywords, to `InputBuilder.verif
 
 - [Business-data lifecycle and Rails mapping](docs/INPUT_BUILDER.md), [complete Ruby example](examples/input_builder.rb) and [before/after example](examples/input_builder_before.rb).
 - [Supported inputs, limits and Result/Evidence contract](docs/SUPPORT_CONTRACT.md); [Issuer/Host responsibilities](docs/ISSUER_HOST_MINIMUM_CONTRACT.md).
-- [0.7.0 Release notes](docs/RELEASE_070.md), [publication/withdrawal records](docs/PROJECT_STATUS.md) and [changelog](CHANGELOG.md). Repository README changes do not rebuild or replace published Gem bytes.
+- [0.8.0 Release notes](docs/RELEASE_080.md), [publication/withdrawal records](docs/PROJECT_STATUS.md) and [changelog](CHANGELOG.md). Repository README changes do not rebuild or replace published Gem bytes.
 - [Pinned historical seven-input / saved FULL example](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.md#try-the-saved-synthetic-example), [older artifact/provider evidence](research/stable010_release_linux_package/README.md) and [historical conceptual diagrams](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.md#illustrated-concepts-japanese-diagrams). These records are preserved, not current integration instructions or broader support claims.
 - [Security reporting](SECURITY.md), [maintenance policy](docs/POST_RELEASE_MAINTENANCE.md) and [product direction](docs/PRODUCT_VISION.md). Do not include secrets, real Mandates or personal data in reports.
 

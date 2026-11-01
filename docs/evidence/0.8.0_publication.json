@@ -1,0 +1,42 @@
+{
+  "version": "0.8.0",
+  "published": true,
+  "version_created_at": "2026-11-01T06:01:31.103Z",
+  "verified_at": "2026-11-01T06:03:20Z",
+  "artifact_bytes": 79872,
+  "artifact_sha256": "6c07664e4291aa8bc025b152075869322411a0d99861e1267959f1794e99acec",
+  "exact_retained_candidate_bytes_match": true,
+  "source_commit": "5a7394c1b98f000b321423e2c2f80d50b5157808",
+  "archive_source_payload_match": true,
+  "payload_count": 29,
+  "dependencies": {
+    "base64": "= 0.3.0",
+    "digest": "= 3.2.1",
+    "json": "= 2.19.9",
+    "jwt": "= 3.3.0",
+    "openssl": "= 4.0.2"
+  },
+  "required_ruby": ">= 3.4.12, < 4.1",
+  "yanked": false,
+  "prerelease": false,
+  "official_metadata": "https://rubygems.org/api/v2/rubygems/ap2_mandate_verifier/versions/0.8.0.json",
+  "official_download": "https://rubygems.org/downloads/ap2_mandate_verifier-0.8.0.gem",
+  "operations": "read-only download and offline package/source comparison; no build/install/push/tag/Release/docs/demo changes",
+  "published_at_JST": "2026-11-01T15:01:31.103+09:00",
+  "reviewed_source_commit": "35749455db7330c0dc9c1497d78e991319cc09bc",
+  "source_and_reviewed_tree": "726fe5439a1bea41245dee731b75b006e5d3cbff",
+  "source_and_reviewed_trees_identical": true,
+  "registry_inventory_present": true,
+  "initial_inventory_cache_lag_resolved_by_read_only_recheck": true,
+  "owner_attempt_snapshot_matches": true,
+  "attempt_record_modified": false,
+  "mismatch": false,
+  "NOT_RUN": [
+    "repush",
+    "publication script rerun",
+    "artifact rebuild",
+    "gem authentication by agent",
+    "tag/Release creation",
+    "docs/demo update"
+  ]
+}

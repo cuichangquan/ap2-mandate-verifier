@@ -2,8 +2,10 @@
 require "ap2_mandate_verifier"
 require "json"
 require "open3"
-abort "published 0.7.0 not installed" unless Gem.loaded_specs.fetch("ap2_mandate_verifier").version.to_s == "0.7.0"
+spec = Gem.loaded_specs.fetch("ap2_mandate_verifier")
+abort "published 0.8.0 not installed" unless spec.version.to_s == "0.8.0"
 root = File.expand_path("..", __dir__)
+abort "source library loaded" if File.realpath(spec.full_gem_path).start_with?(root + "/")
 %w[README.md README.ja.md].each do |name|
   blocks = File.read(File.join(root, name)).scan(/```ruby\n(.*?)```/m).flatten
   quickstart = blocks.find { |b| b.include?('require "tmpdir"') }
@@ -28,25 +30,45 @@ abort "Direct example failed" unless status.success? && output.lines.map(&:strip
   "Direct checkout verified; application acceptance receipt verified; applied once=true",
   "Unknown outcome held for application reconciliation; no payment performed"]
 puts output
-release = File.read(File.join(root, "docs/RELEASE_070.md")).scan(/```ruby\n(.*?)```/m).flatten.fetch(0)
+installed_example = File.join(spec.full_gem_path, "examples/conditional_checkout.rb")
+output, error, status = Open3.capture3(Gem.ruby, installed_example)
+abort "installed conditional example failed" unless status.success? && output.lines.map(&:strip) == [
+  "Open -> Agent Closed -> merchant evidence: verified=true; rows=3; requirements=2",
+  "Receipt Success: authentic=true; purchase_succeeded=true",
+  "Receipt Error: authentic=true; purchase_succeeded=false",
+  "Success=consumed; Error=policy decision; missing Receipt/uncertain commit=pending",
+  "Synthetic only; evidence and Receipt authenticity are not payment completion."]
+puts output
+release = File.read(File.join(root, "docs/RELEASE_080.md")).scan(/```ruby\n(.*?)```/m).flatten.fetch(0)
 prelude = <<~RUBY
   require "ap2_mandate_verifier"
-  require #{File.join(root, "test/support/multi_item_fixture.rb").inspect}
-  checkout = MultiItemFixture.checkout
-  key = OpenSSL::PKey::EC.generate("prime256v1")
-  merchant_public_key = key.public_to_pem
-  merchant_signer = AP2MandateVerifier::CheckoutJWT.es256_signer(private_key: key)
-  provider = OpenSSL::PKey::EC.generate("prime256v1")
+  require "stringio"
+  require #{installed_example.inspect}
+  original_output = $stdout
+  begin
+    $stdout = StringIO.new
+    model = ConditionalCheckoutExample.run
+  ensure
+    $stdout = original_output
+  end
+  provider, agent, merchant = model.fetch(:keys)
+  approved_merchant = model.fetch(:checkout).fetch("merchant")
+  approved_requirements = model.fetch(:requirements)
+  trust = model.fetch(:host_inputs).fetch(:trust)
+  host_order = model.fetch(:host_inputs).fetch(:order)
+  host_audience = host_order.fetch("audience")
+  host_nonce = "synthetic-host-nonce"
+  challenge_id = "synthetic-challenge-1"
+  checkout_jwt = model.fetch(:closed).checkout_jwt
   provider_public_key = provider.public_to_pem
   provider_signer = AP2MandateVerifier::CheckoutJWT.es256_signer(private_key: provider)
-  checkout_jwt = AP2MandateVerifier::CheckoutJWT.sign(checkout: checkout,
-    signer: merchant_signer, public_key_pem: merchant_public_key,
-    profile_ref: AP2MandateVerifier::Buyer::CHECKOUT_PROFILE).jwt
-  approved_checkout_jwt = checkout_jwt # Protected synthetic approval setup only.
-  current_checkout_jwt = checkout_jwt # Independently stored synthetic merchant order.
+  agent_public_key = agent.public_to_pem
+  agent_signer = AP2MandateVerifier::CheckoutJWT.es256_signer(private_key: agent)
+  merchant_public_key = merchant.public_to_pem
+  merchant_signer = AP2MandateVerifier::CheckoutJWT.es256_signer(private_key: merchant)
   now = 1_800_000_000
 RUBY
 output, error, status = Open3.capture3(Gem.ruby, "-e", prelude + release)
-abort "Release snippet failed" unless status.success? && output.lines.map(&:strip) == ["Direct verified=true", "Receipt verified=true purchase_succeeded=false"]
+abort "Release snippet failed" unless status.success? && output.lines.map(&:strip) == ["Conditional verified=true", "Receipt verified=true purchase_succeeded=false"]
 puts output
-puts "PASS installed published 0.7.0 guides and Release snippet; no Gem build"
+puts "PASS installed published 0.8.0 guides, standalone conditional example and Release snippet; no Gem build"

@@ -106,8 +106,10 @@ In the existing Open→Closed flow, the Provider-signed Open content endorses th
 Agent's public key through `cnf.jwk`; that key verifies the terminal Agent
 signature and its binding to the preceding original SD-JWT, expected audience
 and nonce. Direct instead trusts the Provider signature over the already closed
-order itself and needs no Agent key endorsement. Open issuance, choosing fewer
-disclosures and Agent signing therefore remain separate future APIs.
+order itself and needs no Agent key endorsement. In 0.7.0, Open issuance and
+Agent signing were future work; published 0.8.0 adds those APIs separately in
+[ConditionalCheckout](CONDITIONAL_CHECKOUT.md), preserving this Direct contract.
+Choosing fewer disclosures remains unsupported.
 
 Maximum entire wire 32,768 bytes; Checkout JWT 16,384; root payload 2,048;
 decoded disclosure 24,576; JSON depth 24. Existing strict JSON/canonical base64url
@@ -171,9 +173,10 @@ expiry/future time, missing disclosures, malformed signed combinations and unkno
 formats. Existing source and ordinary-install regressions run on MRI 3.4.12/4.0.9.
 Latest-HEAD independent review and branch protections are required before merge.
 
-Open issuance, Agent Closed generation/selective disclosure/presentation, User
-Credentials, multiple merchants, split orders and continuous autonomous buying
-are follow-up candidates. Agent-to-Agent delegation is outside current AP2 scope,
+Open issuance and Agent Closed generation/presentation were follow-ups at 0.7.0
+and are now available in the separate 0.8.0 module. Selective-disclosure profiles,
+User Credentials, multiple merchants, split orders and continuous autonomous buying
+remain follow-up candidates. Agent-to-Agent delegation is outside current AP2 scope,
 not declared permanently forbidden. Real Issuer trust, actual demand, generic AP2
 support and production safety are not established by synthetic test success.
 Gem publication and its separately approved tag/Release are recorded in the

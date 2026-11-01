@@ -1,4 +1,8 @@
-# Conditional Checkout delegation — 0.8.0 candidate
+# Conditional Checkout delegation — published 0.8.0
+
+Published 2026-11-01 06:01:31.103 UTC. The official 79,872-byte Gem and all29
+payloads match source `5a7394c1b98f000b321423e2c2f80d50b5157808`.
+[Publication verification and installed examples](POST_RELEASE_080.md).
 
 Adopted AP2 v0.2.0 source remains `b4587ac1d055888a73b4b21750973cffba961793`.
 This is an additive Ruby issuance API for the existing explicit
@@ -111,10 +115,9 @@ SDK behavior and stricter local rules are recorded separately; SDK shortage and
 empty-candidate differences remain in MULTI_ITEM_INTEROP.md. Latest-HEAD Codex
 review and the same candidate Gem installed on both supported Rubies are required.
 
-Status: implemented and locally tested; release gates and final package/review
-evidence are tracked in RELEASE_080_CANDIDATE.md and the external manifest.
-No RubyGems push, public tag/Release,
-production connection or actual payment is authorized by this task.
+Status: published after separate Owner authorization; final review/CI/source and
+distribution evidence are linked in POST_RELEASE_080.md. The preparation snapshot
+remains in RELEASE_080_CANDIDATE.md. No production or actual payment is performed.
 
 ## Official-source comparison and independent results
 

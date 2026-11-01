@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.0 — unreleased candidate
+## 0.8.0 — 2026-11-01
 
 - Adds public `ConditionalCheckout.issue_open/issue_closed/present` for one merchant,
   1–8 requirements/candidates/lines, exact quantities, candidate choice and repeated
@@ -11,7 +11,12 @@
 - Includes a standalone installed-Gem example through full merchant Evidence and
   both Receipt outcomes, English/Japanese Quick Start and release instructions.
   Existing profiles, Direct, saved formats, Result/Evidence, diagnostic contracts,
-  dependency pins and supported Rubies are unchanged. Publication remains pending.
+  dependency pins and supported Rubies are unchanged.
+- Published 06:01:31.103 UTC; official comparison 06:03:20 UTC. The 79,872-byte
+  download SHA256 `6c07664e4291aa8bc025b152075869322411a0d99861e1267959f1794e99acec`
+  and all29 payloads match source `5a7394c1b98f000b321423e2c2f80d50b5157808`.
+  [Release](docs/RELEASE_080.md), [publication](docs/POST_RELEASE_080.md).
+  Repository-only guide updates do not rebuild or replace the published bytes.
 
 ## 0.7.0 — 2026-11-01
 
