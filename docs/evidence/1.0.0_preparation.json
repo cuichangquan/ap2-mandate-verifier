@@ -1,0 +1,902 @@
+{
+  "recorded_at_utc": "2026-11-01T07:35:16Z",
+  "status": "LOCAL_PREPARATION_COMPLETE_NOT_PUBLISHED",
+  "request": "Owner requested preparation of 1.0.0 after the 0.8.0 readiness audit.",
+  "baseline": "7facf5e21699c754eb3e046ee2c653c6ce2c16cf",
+  "candidate_source": "ac1c39016c349ecac4f5f2b2dd8b82c7cd086b8f",
+  "candidate_source_tree": "3cdfe83fda1f2942f0f5a98cfa43c81568c2e7ca",
+  "source_execution_identity": "Working files executed by source checks were subsequently committed unchanged as candidate_source; archive and installed checks used that commit.",
+  "runtime_lib_unchanged_from_baseline": true,
+  "artifact": {
+    "filename": "ap2_mandate_verifier-1.0.0.gem",
+    "bytes": 102912,
+    "sha256": "a107101b0178c54ba417be7a2bd7e22feb2fd9a07bda089043e8c5ea8e65e12b",
+    "build_ruby": "3.4.12",
+    "source_date_epoch": 1793491200,
+    "same_archive_tested_on_both_rubies": true,
+    "payload_files": 33,
+    "package": {
+      "version": "1.0.0",
+      "required_ruby": ">= 3.4.12, < 4.1",
+      "dependencies": {
+        "base64": "= 0.3.0",
+        "json": "= 2.19.9",
+        "jwt": "= 3.3.0",
+        "openssl": "= 4.0.2",
+        "digest": "= 3.2.1"
+      },
+      "files": [
+        "LICENSE",
+        "README.ja.md",
+        "README.md",
+        "SECURITY.md",
+        "docs/BUYER_DIRECT_CHECKOUT.md",
+        "docs/CONDITIONAL_CHECKOUT.md",
+        "docs/DIAGNOSTICS.ja.md",
+        "docs/DIAGNOSTICS.md",
+        "docs/INPUT_BUILDER.md",
+        "docs/MERCHANT_SIGNING.md",
+        "docs/MULTI_ITEM_CHECKOUT.md",
+        "docs/POST_RELEASE_MAINTENANCE.md",
+        "docs/PUBLIC_API.md",
+        "docs/RELEASE_100_CANDIDATE.md",
+        "docs/SUPPORT_CONTRACT.md",
+        "examples/conditional_checkout.rb",
+        "lib/ap2_mandate_verifier.rb",
+        "lib/ap2_mandate_verifier/buyer.rb",
+        "lib/ap2_mandate_verifier/checkout_jwt.rb",
+        "lib/ap2_mandate_verifier/checkout_receipt.rb",
+        "lib/ap2_mandate_verifier/conditional_checkout.rb",
+        "lib/ap2_mandate_verifier/diagnostic.rb",
+        "lib/ap2_mandate_verifier/host_binding.rb",
+        "lib/ap2_mandate_verifier/input_builder.rb",
+        "lib/ap2_mandate_verifier/input_validator.rb",
+        "lib/ap2_mandate_verifier/merchant_signature.rb",
+        "lib/ap2_mandate_verifier/purchase_binding.rb",
+        "lib/ap2_mandate_verifier/research_result.rb",
+        "lib/ap2_mandate_verifier/result.rb",
+        "lib/ap2_mandate_verifier/root_disclosures.rb",
+        "lib/ap2_mandate_verifier/root_signature.rb",
+        "lib/ap2_mandate_verifier/scoped_constraints.rb",
+        "lib/ap2_mandate_verifier/trust_context.rb"
+      ],
+      "files_sha256": {
+        "LICENSE": "1442143c4265d88eedfc14f25d04298449358c837b0bb58dfa825f84b36391c8",
+        "README.ja.md": "4a52240cf437e6747c46506d08d592c3875d5ec76bb3e5de7ccee567cb55be1f",
+        "README.md": "46edb2bcafc43dbb286abed808fa4f0c3a61bcc8cc10b7556ebdfc996f0df806",
+        "SECURITY.md": "ac3a773bc226febc33820b5c55e6534504a9f8deb8d335dc4ae8e92b1a1e6d4b",
+        "docs/BUYER_DIRECT_CHECKOUT.md": "96c67be9340a152d8bb4d10ea69b812eedce995a7d7b6a54bc0de3e6efca6ed5",
+        "docs/CONDITIONAL_CHECKOUT.md": "6ce7b14e3171525a7cbd4283862f724f98650f3f3e669bfab84345273ef3a2a7",
+        "docs/DIAGNOSTICS.ja.md": "302c87b40cb44bda43af021448ebe83409db96bbb2b0fb9c44e6a3dc78f3d433",
+        "docs/DIAGNOSTICS.md": "881cb7416ac1b18c26042ffa7f3bdbb33ccf5dbc95a2f7394f753271807df056",
+        "docs/INPUT_BUILDER.md": "428dbe89887fa13868dd750d19b524aa614eb8a80268bae6e4fd0c837a69841c",
+        "docs/MERCHANT_SIGNING.md": "31af8ead7fd507d72af4c400f2134e753d6d2297b1d6b85c831b3bd53185eeb4",
+        "docs/MULTI_ITEM_CHECKOUT.md": "3db7caa63b33e7204c8d512ed22403fcceb2b90e198d9e963f13b2610c40b228",
+        "docs/POST_RELEASE_MAINTENANCE.md": "5748948ea9461bfbde8c881a9e927fb0e2c7939718b9acf3c4bdf99472a5c054",
+        "docs/PUBLIC_API.md": "87e60c303e42786f7d1aa25e3409188a765aa6b722d893220320a87bb17b2209",
+        "docs/RELEASE_100_CANDIDATE.md": "8655eb187589c2229b5eeb49479fff2cdac4ba1986099e815a08661aeeb982c0",
+        "docs/SUPPORT_CONTRACT.md": "76a78e6a9876969e7bb127dbcfa4261986158a5902e526bd637466b3f521cbb0",
+        "examples/conditional_checkout.rb": "dd672cc54c4a6650bfff654eb777eddd379c892481b67e58781e297a02c4c5af",
+        "lib/ap2_mandate_verifier.rb": "c4d2f9e797d2a105c421340c0b23620c70646f53813a2934cec300af30486ef8",
+        "lib/ap2_mandate_verifier/buyer.rb": "1a9c129b6eb33ac508472aa634eee7afc4add5a537a5c3cb7d49d12557269588",
+        "lib/ap2_mandate_verifier/checkout_jwt.rb": "d96a1e8ea9d69787ce94c35253b866c0d5fb867b8864cd7a9f93a526adbb8781",
+        "lib/ap2_mandate_verifier/checkout_receipt.rb": "ba37ef2519eb49d46313c2c85cba894e0e644626e33247d227e0b4c26149c303",
+        "lib/ap2_mandate_verifier/conditional_checkout.rb": "685a57939b8a1774dfeb40f2ba2fcb96686f613e4bbe02cb315a82b598e0391e",
+        "lib/ap2_mandate_verifier/diagnostic.rb": "0d2e961d80d5f29d42b49898e2df993f60962766437958adba568cbf9b5d7f1e",
+        "lib/ap2_mandate_verifier/host_binding.rb": "1373efe503ccc5eda817ffd790799fc622d6cb106f8b7da85ef2b3f4693c662e",
+        "lib/ap2_mandate_verifier/input_builder.rb": "a35a5ce9160f0a8816c6dde6eeeeac09724b655d465c5caf7f14acdbe17e3290",
+        "lib/ap2_mandate_verifier/input_validator.rb": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+        "lib/ap2_mandate_verifier/merchant_signature.rb": "f41aafd533dc3f988956c4503325ebbd82dc43a8bc1511e8c26572b4c32e7e70",
+        "lib/ap2_mandate_verifier/purchase_binding.rb": "6f3f966eed59511eed54cc7f28bb8fe83123d43b5b213502a9ea5cc328c53690",
+        "lib/ap2_mandate_verifier/research_result.rb": "6b0bc022e57a2a837e296f2b1bfe9a154d69b4c98fea46e269e2d3f28a1c948b",
+        "lib/ap2_mandate_verifier/result.rb": "ba4fc058784e34a870507446224121a6ba09387137ef2a8c044e02256fc6c64f",
+        "lib/ap2_mandate_verifier/root_disclosures.rb": "7e9d2f51a24c344b54fd4e63e6619108b794b88d0adc003b6cdee821b39a8d65",
+        "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+        "lib/ap2_mandate_verifier/scoped_constraints.rb": "5d50858ba365e2716b635a2888f08f38afda7937be879347dd536d11f7b5d44b",
+        "lib/ap2_mandate_verifier/trust_context.rb": "897936b2fec31e63a673ca15e89485c5254f13a427aafae9504e3c2525601f97"
+      },
+      "artifact_sha256": "a107101b0178c54ba417be7a2bd7e22feb2fd9a07bda089043e8c5ea8e65e12b",
+      "artifact_bytes": 102912,
+      "native_extensions": [],
+      "source_archive_installed_all_files_match": true
+    }
+  },
+  "local_environment": {
+    "os": "Ubuntu 24.04.3 LTS",
+    "architecture": "x86_64",
+    "isolation": "Task-local providers and dependencies inside the managed workspace; no user Mac or system installation.",
+    "network": "Acquisitions used explicit external access. Verification commands used the normal network-restricted sandbox and requested no external traffic. No claim of separately measured OS-wide network isolation.",
+    "bounds": "Source and package commands: 300 seconds each; interop: 120 seconds; sequential suites; native builds MAKEFLAGS=-j2.",
+    "runtime_relocation": "Verified ruby-builder archives were extracted under /tmp. A task-only bootstrap maps their original standard load paths to the extraction root before test -r flags. Product load paths are supplied only by normal RubyGems activation.",
+    "relocation_sha256": {
+      "3.4.12": "8e64f2fcb51754fe32648ab646f463e16e7281b9366498bba58ed637e6d9f9b3",
+      "4.0.9": "eeebb12375fe21ce01908a4b57409ee5d37f74f5cdebaf24095759abbc724b28"
+    }
+  },
+  "ruby_providers": [
+    {
+      "version": "3.4.12",
+      "url": "https://github.com/ruby/ruby-builder/releases/download/ruby-3.4.12/ruby-3.4.12-ubuntu-24.04-x64.tar.gz",
+      "bytes": 41654486,
+      "sha256": "c711e610c39b1e341138e78a2adeecd378e7b4ded326ae8ff601d3ea29443f2b"
+    },
+    {
+      "version": "4.0.9",
+      "url": "https://github.com/ruby/ruby-builder/releases/download/ruby-4.0.9/ruby-4.0.9-ubuntu-24.04-x64.tar.gz",
+      "bytes": 49100121,
+      "sha256": "046d1422e1be5575eadd55323c85c3efbeaee8c8e1c1bfccee343e28619cb3b3"
+    }
+  ],
+  "ruby_gem_acquisition": [
+    {
+      "name": "json",
+      "version": "2.19.9",
+      "url": "https://rubygems.org/downloads/json-2.19.9.gem",
+      "metadata_url": "https://rubygems.org/api/v2/rubygems/json/versions/2.19.9.json?platform=ruby",
+      "sha256": "9b9025b7cdddafa38d316eca0b2358488e42d417045c1b90d216a9fefe46b79a",
+      "bytes": 107008
+    },
+    {
+      "name": "jwt",
+      "version": "3.3.0",
+      "url": "https://rubygems.org/downloads/jwt-3.3.0.gem",
+      "metadata_url": "https://rubygems.org/api/v2/rubygems/jwt/versions/3.3.0.json?platform=ruby",
+      "sha256": "44cc34fbc341c148233cf66641522b4bce0dfb1ce55e8073f05c56f44f4ee546",
+      "bytes": 57856
+    },
+    {
+      "name": "base64",
+      "version": "0.3.0",
+      "url": "https://rubygems.org/downloads/base64-0.3.0.gem",
+      "metadata_url": "https://rubygems.org/api/v2/rubygems/base64/versions/0.3.0.json?platform=ruby",
+      "sha256": "27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b",
+      "bytes": 11776
+    },
+    {
+      "name": "openssl",
+      "version": "4.0.2",
+      "url": "https://rubygems.org/downloads/openssl-4.0.2.gem",
+      "metadata_url": "https://rubygems.org/api/v2/rubygems/openssl/versions/4.0.2.json?platform=ruby",
+      "sha256": "1037ad2868ae58df9ad917891c0c0f9815a1172f6846d4bcdd508e4c2ee747c2",
+      "bytes": 206848
+    },
+    {
+      "name": "digest",
+      "version": "3.2.1",
+      "url": "https://rubygems.org/downloads/digest-3.2.1.gem",
+      "metadata_url": "https://rubygems.org/api/v2/rubygems/digest/versions/3.2.1.json?platform=ruby",
+      "sha256": "ab3312b4e272d7d5dc41c564c86a25861a1f34ac5153374199a0b74861395947",
+      "bytes": 41472
+    },
+    {
+      "name": "bundler",
+      "version": "4.0.20",
+      "url": "https://rubygems.org/downloads/bundler-4.0.20.gem",
+      "metadata_url": "https://rubygems.org/api/v2/rubygems/bundler/versions/4.0.20.json?platform=ruby",
+      "sha256": "7978a8ac648767f5e635bc522445b79e80a52b907a39a36c2d8085ed6bc762ae",
+      "bytes": 467968
+    }
+  ],
+  "official_ap2": {
+    "source": "b4587ac1d055888a73b4b21750973cffba961793",
+    "sdk_tree": "be8ebdeab3f8c900edbd4271f4052f60da37fc12",
+    "schema_tree": "8764c1530b735af1ba82b81bc7e4620bcb3076ba",
+    "checkout_clean": true
+  },
+  "python_environment": {
+    "version": "3.12.14",
+    "packages": [
+      {
+        "name": "cryptography",
+        "version": "46.0.5",
+        "url": "https://files.pythonhosted.org/packages/6d/1a/c1ba8fead184d6e3d5afcf03d569acac5ad063f3ac9fb7258af158f7e378/cryptography-46.0.5-cp311-abi3-manylinux_2_34_x86_64.whl",
+        "sha256": "4c3341037c136030cb46e4b1e17b7418ea4cbd9dd207e4a6f3b2b24e0d4ac731"
+      },
+      {
+        "name": "jwcrypto",
+        "version": "1.5.6",
+        "url": "https://files.pythonhosted.org/packages/cd/58/4a1880ea64032185e9ae9f63940c9327c6952d5584ea544a8f66972f2fda/jwcrypto-1.5.6-py3-none-any.whl",
+        "sha256": "150d2b0ebbdb8f40b77f543fb44ffd2baeff48788be71f67f03566692fd55789"
+      },
+      {
+        "name": "pydantic",
+        "version": "2.12.5",
+        "url": "https://files.pythonhosted.org/packages/5a/87/b70ad306ebb6f9b585f114d0ac2137d792b48be34d732d60e597c2f8465a/pydantic-2.12.5-py3-none-any.whl",
+        "sha256": "e561593fccf61e8a20fc46dfc2dfe075b8be7d0188df33f221ad1f0139180f9d"
+      },
+      {
+        "name": "sd-jwt",
+        "version": "0.10.4",
+        "url": "https://files.pythonhosted.org/packages/30/3c/ee53742c903969bcf06eaa2d1affda571953bfd812b07bd2d109f3b8cd28/sd_jwt-0.10.4-py3-none-any.whl",
+        "sha256": "d7ae669eb5d51bceeb38e0df8ab2faddd12e3b21ab64d831b6d048fc1e00ce75"
+      },
+      {
+        "name": "jsonschema",
+        "version": "4.26.0",
+        "url": "https://files.pythonhosted.org/packages/69/90/f63fb5873511e014207a475e2bb4e8b2e570d655b00ac19a9a0ca0a385ee/jsonschema-4.26.0-py3-none-any.whl",
+        "sha256": "d489f15263b8d200f8387e64b4c3a75f06629559fb73deb8fdfb525f2dab50ce"
+      },
+      {
+        "name": "referencing",
+        "version": "0.37.0",
+        "url": "https://files.pythonhosted.org/packages/2c/58/ca301544e1fa93ed4f80d724bf5b194f6e4b945841c5bfd555878eea9fcb/referencing-0.37.0-py3-none-any.whl",
+        "sha256": "381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231"
+      },
+      {
+        "name": "annotated-types",
+        "version": "0.8.0",
+        "url": "https://files.pythonhosted.org/packages/99/91/8acff4f5e50511b911bbccb72b8628a49c68ce14148cd9f6431094859a90/annotated_types-0.8.0-py3-none-any.whl",
+        "sha256": "f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0"
+      },
+      {
+        "name": "attrs",
+        "version": "26.1.0",
+        "url": "https://files.pythonhosted.org/packages/64/b4/17d4b0b2a2dc85a6df63d1157e028ed19f90d4cd97c36717afef2bc2f395/attrs-26.1.0-py3-none-any.whl",
+        "sha256": "c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309"
+      },
+      {
+        "name": "cffi",
+        "version": "2.1.1",
+        "url": "https://files.pythonhosted.org/packages/b1/db/dceb9dd5b231e1da801793f8acc9f3c52a7e1afe40bb1aae37e02b0faad5/cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+        "sha256": "c1453022f490d2459a11819d83ad1d586e9ff65a12ac3e705ffebd46d3685dcf"
+      },
+      {
+        "name": "jsonschema-specifications",
+        "version": "2025.9.1",
+        "url": "https://files.pythonhosted.org/packages/41/45/1a4ed80516f02155c51f51e8cedb3c1902296743db0bbc66608a0db2814f/jsonschema_specifications-2025.9.1-py3-none-any.whl",
+        "sha256": "98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe"
+      },
+      {
+        "name": "pycparser",
+        "version": "3.12",
+        "url": "https://files.pythonhosted.org/packages/b6/ae/315bbeee126a769cbde43cf4908acb4b40408d8bf8bbf334dd7368d8dadf/pycparser-3.12-py3-none-any.whl",
+        "sha256": "a076f3f489b39b43ed13563a1dafe42447445bec2e294154ec5c57fcdda4c85e"
+      },
+      {
+        "name": "pydantic_core",
+        "version": "2.41.5",
+        "url": "https://files.pythonhosted.org/packages/0d/76/941cc9f73529988688a665a5c0ecff1112b3d95ab48f81db5f7606f522d3/pydantic_core-2.41.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+        "sha256": "eceb81a8d74f9267ef4081e246ffd6d129da5d87e37a77c9bde550cb04870c1c"
+      },
+      {
+        "name": "PyYAML",
+        "version": "6.0.3",
+        "url": "https://files.pythonhosted.org/packages/8b/9d/b3589d3877982d4f2329302ef98a8026e7f4443c765c46cfecc8858c6b4b/pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+        "sha256": "ba1cc08a7ccde2d2ec775841541641e4548226580ab850948cbfda66a1befcdc"
+      },
+      {
+        "name": "rpds-py",
+        "version": "2026.9.1",
+        "url": "https://files.pythonhosted.org/packages/1d/6d/b26eb1e75395925b3a142ed351cbed2ec8212f5c9d937aee3df32c701baa/rpds_py-2026.9.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+        "sha256": "addeda51556dac7c1a2f14cda62db8b621cd12afba3091d03a96c72932387eab"
+      },
+      {
+        "name": "typing-inspection",
+        "version": "0.4.4",
+        "url": "https://files.pythonhosted.org/packages/67/81/4add07e5172b7ac40d8ed5ff580409a7801a4fe26d529bdd915401dabfbe/typing_inspection-0.4.4-py3-none-any.whl",
+        "sha256": "65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147"
+      },
+      {
+        "name": "typing_extensions",
+        "version": "4.16.0",
+        "url": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
+        "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"
+      }
+    ],
+    "lock_scope": "Four AP2 upstream direct pins plus the previously recorded comparison dependency pins. This is a separate Linux Python 3.12 environment, not reproduction of the complete upstream uv.lock or the historical Python 3.11 environment."
+  },
+  "checks": [
+    {
+      "ruby": "3.4.12",
+      "result": "PASS",
+      "runtime": {
+        "ruby": "ruby 3.4.12 (2026-10-23 revision 366f5fdc00) +PRISM [x86_64-linux]",
+        "engine": "ruby",
+        "executable": "/tmp/ap2-release100-runtime/3.4.12/x64/bin/ruby",
+        "platform": "x86_64-linux",
+        "os": "PRETTY_NAME=\"Ubuntu 24.04.3 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.3 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+        "bundler": "4.0.20",
+        "dependencies": {
+          "json": {
+            "version": "2.19.9",
+            "default_gem": false,
+            "path": "/tmp/ap2-release100-runtime/3.4.12/gems/gems/json-2.19.9"
+          },
+          "jwt": {
+            "version": "3.3.0",
+            "default_gem": false,
+            "path": "/tmp/ap2-release100-runtime/3.4.12/gems/gems/jwt-3.3.0"
+          },
+          "base64": {
+            "version": "0.3.0",
+            "default_gem": false,
+            "path": "/tmp/ap2-release100-runtime/3.4.12/gems/gems/base64-0.3.0"
+          },
+          "openssl": {
+            "version": "4.0.2",
+            "default_gem": false,
+            "path": "/tmp/ap2-release100-runtime/3.4.12/gems/gems/openssl-4.0.2"
+          },
+          "digest": {
+            "version": "3.2.1",
+            "default_gem": false,
+            "path": "/tmp/ap2-release100-runtime/3.4.12/gems/gems/digest-3.2.1"
+          }
+        },
+        "compiled_openssl": "OpenSSL 3.0.13 30 Jan 2024",
+        "loaded_openssl": "OpenSSL 3.0.13 30 Jan 2024",
+        "native_package": "libssl3t64|3.0.13-0ubuntu3.6|amd64|install ok installed",
+        "native_package_verify": "PASS",
+        "native_files_sha256": {
+          "/tmp/ap2-release100-runtime/3.4.12/gems/gems/openssl-4.0.2/lib/openssl.so": "0b0bb6ef37cb45a7b120ac1796523a47c7e15e86c9b1011a5b5c6ed4fa667889",
+          "/usr/lib/x86_64-linux-gnu/libcrypto.so.3": "c19c2cf8d7cf91c4f273b1d3bbc56a9d19c91a739bfe57ad630756ee8ede7b77",
+          "/usr/lib/x86_64-linux-gnu/libssl.so.3": "63597a81ef19496ad0423cbaaf04d5b0244c7a9e261e331a5a7f3ac0fcdb9590"
+        }
+      },
+      "source_suite_entry_points": 17,
+      "source_suites": [
+        {
+          "entry": "test/ruby_requirement_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 7 Ruby installation metadata cases; installation interval is not formal support"
+          ]
+        },
+        {
+          "entry": "test/input_boundary_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 79 cases; Ruby 3.4.12; JSON 2.19.9"
+          ]
+        },
+        {
+          "entry": "test/root_signature_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 74 root-signature cases; Ruby 3.4.12; JWT 3.3.0; JSON 2.19.9"
+          ]
+        },
+        {
+          "entry": "test/root_disclosures_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 64 disclosure cases; six synthetic signed classes; no full AP2/O1-O5 claim"
+          ]
+        },
+        {
+          "entry": "test/purchase_binding_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 81 purchase binding cases; no Schema/constraints/Host ALLOW/Evidence claim"
+          ]
+        },
+        {
+          "entry": "test/scoped_constraints_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 97 scoped constraint cases; fixed subset only; no full Schema/ALLOW/Evidence claim"
+          ]
+        },
+        {
+          "entry": "test/integration_matrix_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 16 same-candidate integration cases; entered stages only; no full AP2/independent Oracle PASS"
+          ]
+        },
+        {
+          "entry": "test/trust_context_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 147 trust snapshot/profile/key and integrated non-success cases"
+          ]
+        },
+        {
+          "entry": "test/verify_checkout_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 149 Host binding/challenge/aggregate interval cases; no consumption/Evidence/ALLOW",
+            "PASS 178 unified research/Evidence cases; immutable in-process facts, not Host ALLOW",
+            "PASS 190 checkout API cases; reused Host/Evidence suites reported separately; not Host ALLOW"
+          ]
+        },
+        {
+          "entry": "test/input_builder_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 149 Host binding/challenge/aggregate interval cases; no consumption/Evidence/ALLOW",
+            "PASS 109 input builder contract/boundary cases; existing Host suite reported separately; not Host ALLOW"
+          ]
+        },
+        {
+          "entry": "test/diagnostic_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 244 diagnostic checks; no Host ALLOW claim"
+          ]
+        },
+        {
+          "entry": "test/checkout_receipt_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 149 Host binding/challenge/aggregate interval cases; no consumption/Evidence/ALLOW",
+            "PASS 109 input builder contract/boundary cases; existing Host suite reported separately; not Host ALLOW",
+            "PASS CheckoutJWT signing, immutable original wire, negative inputs and existing Verifier/InputBuilder integration",
+            "PASS 65 CheckoutReceipt reference/signing/authentication/business outcome checks"
+          ]
+        },
+        {
+          "entry": "test/multi_constraints_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 431 multi quantity allocation, bounds, amount and signing assertions"
+          ]
+        },
+        {
+          "entry": "test/multi_profile_context_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 149 Host binding/challenge/aggregate interval cases; no consumption/Evidence/ALLOW",
+            "PASS 21 explicit multi-profile trust/challenge compatibility cases"
+          ]
+        },
+        {
+          "entry": "test/multi_item_integration_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 35 multi-item integration cases; boundary root_bytes=11670 build_and_verify_seconds=0.0546; synthetic only, not Host ALLOW"
+          ]
+        },
+        {
+          "entry": "test/buyer_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS Direct buyer issuance, presentation, verification, receipt, redaction and negatives",
+            "PASS multi-product/multi-line Direct flow 3/8 lines, repeated products, reordered lines, both receipts and signed malformed inputs"
+          ]
+        },
+        {
+          "entry": "test/conditional_checkout_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "8 runs, 123 assertions, 0 failures, 0 errors, 0 skips"
+          ]
+        }
+      ],
+      "counts_policy": "Do not sum transitive Host/Evidence/Builder suites printed by multiple entries.",
+      "installed": {
+        "scope": "CONDITIONAL_CHECKOUT_CANDIDATE_NOT_HOST_ALLOW",
+        "candidate_version": "1.0.0",
+        "ruby": "3.4.12",
+        "ruby_platform": "x86_64-linux",
+        "dependencies": {
+          "json": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.2",
+          "digest": "3.2.1"
+        },
+        "openssl_default": false,
+        "digest_default": false,
+        "libcrypto": "OpenSSL 3.0.13 30 Jan 2024",
+        "installed_lib_files": 17,
+        "ordinary_entry": true,
+        "independent_research_comparisons": 42,
+        "independent_checkout_comparisons": 42,
+        "unavailable_comparisons": 24,
+        "legacy_api_checks": 7,
+        "input_rejections": 2,
+        "constructor_rejections": 1,
+        "builder_checks": 16,
+        "total_cases": 134,
+        "holds": "production/distribution/Phase2B/Hostatomic/Stage16; old acquisition gaps and Linuxalltraffic unproved"
+      },
+      "merchant": {
+        "installed_merchant_signing_and_both_receipt_outcomes": true,
+        "ordinary_require": true,
+        "ruby": "3.4.12",
+        "gem_version": "1.0.0"
+      },
+      "installed_conditional_summary": "8 runs, 123 assertions, 0 failures, 0 errors, 0 skips",
+      "installed_diagnostic_summary": "PASS 244 diagnostic checks; no Host ALLOW claim",
+      "installed_examples": [
+        "input_builder:7 scenarios",
+        "merchant_signing",
+        "multi_item_checkout",
+        "direct_checkout",
+        "packaged conditional_checkout"
+      ],
+      "conditional_interop": {
+        "mode": "installed Gem",
+        "negative_codes": [
+          "audience_mismatch",
+          "nonce_mismatch",
+          "checkout_binding_mismatch",
+          "invalid_root_signature"
+        ],
+        "public_flow": "PASS",
+        "receipt_outcomes": [
+          "Success",
+          "Error"
+        ],
+        "wire_sha256": {
+          "checkout_jwt": "644a6c5f306f6f557d142272f88c230c673dfdf6ed2356748c09c56509a6e331",
+          "closed_sd_jwt": "5e1f517d10561081f088391111fb88c4989610da9e0fb0f3ccedcfb9e5f46cfc",
+          "root_presentation": "459d0707b9f925f98f18778e3a840bb9c664083d21d4f1e22e493e2cfc2f5632",
+          "terminal_jws": "23689df54e8bf2cacf462c0ce5cb50e3ddbf10b1309864158e77ef172d22afd3"
+        }
+      },
+      "conditional_interop_summaries": [
+        "PASS conditional Python issuance -> public InputBuilder.verify (installed Gem): immutable Evidence, independent saved Host state, causal audience/nonce/order/untrusted-Agent negatives, authentic Success/Error receipts",
+        "PASS conditional bidirectional official SDK issuance/signatures, 3-row candidate/repeated-product and large 8-row terminal flows, pinned Schemas, complete commitments, normative final SD hash, Success/Error receipts and negatives"
+      ],
+      "installed_comparison_arrays": "Array fields are represented by counts here; complete per-case records are in validation/package-3.4.12/installed.json in the preparation bundle."
+    },
+    {
+      "ruby": "4.0.9",
+      "result": "PASS",
+      "runtime": {
+        "ruby": "ruby 4.0.9 (2026-10-23 revision 3e93b23afc) +PRISM [x86_64-linux]",
+        "engine": "ruby",
+        "executable": "/tmp/ap2-release100-runtime/4.0.9/x64/bin/ruby",
+        "platform": "x86_64-linux",
+        "os": "PRETTY_NAME=\"Ubuntu 24.04.3 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.3 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+        "bundler": "4.0.20",
+        "dependencies": {
+          "json": {
+            "version": "2.19.9",
+            "default_gem": false,
+            "path": "/tmp/ap2-release100-runtime/4.0.9/gems/gems/json-2.19.9"
+          },
+          "jwt": {
+            "version": "3.3.0",
+            "default_gem": false,
+            "path": "/tmp/ap2-release100-runtime/4.0.9/gems/gems/jwt-3.3.0"
+          },
+          "base64": {
+            "version": "0.3.0",
+            "default_gem": false,
+            "path": "/tmp/ap2-release100-runtime/4.0.9/gems/gems/base64-0.3.0"
+          },
+          "openssl": {
+            "version": "4.0.2",
+            "default_gem": false,
+            "path": "/tmp/ap2-release100-runtime/4.0.9/gems/gems/openssl-4.0.2"
+          },
+          "digest": {
+            "version": "3.2.1",
+            "default_gem": false,
+            "path": "/tmp/ap2-release100-runtime/4.0.9/gems/gems/digest-3.2.1"
+          }
+        },
+        "compiled_openssl": "OpenSSL 3.0.13 30 Jan 2024",
+        "loaded_openssl": "OpenSSL 3.0.13 30 Jan 2024",
+        "native_package": "libssl3t64|3.0.13-0ubuntu3.6|amd64|install ok installed",
+        "native_package_verify": "PASS",
+        "native_files_sha256": {
+          "/tmp/ap2-release100-runtime/4.0.9/gems/gems/openssl-4.0.2/lib/openssl.so": "020c5a382120114bb95c7542f7d48b81fe028b2cade2be7eb6b2ef565033a00a",
+          "/usr/lib/x86_64-linux-gnu/libcrypto.so.3": "c19c2cf8d7cf91c4f273b1d3bbc56a9d19c91a739bfe57ad630756ee8ede7b77",
+          "/usr/lib/x86_64-linux-gnu/libssl.so.3": "63597a81ef19496ad0423cbaaf04d5b0244c7a9e261e331a5a7f3ac0fcdb9590"
+        }
+      },
+      "source_suite_entry_points": 17,
+      "source_suites": [
+        {
+          "entry": "test/ruby_requirement_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 7 Ruby installation metadata cases; installation interval is not formal support"
+          ]
+        },
+        {
+          "entry": "test/input_boundary_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 79 cases; Ruby 4.0.9; JSON 2.19.9"
+          ]
+        },
+        {
+          "entry": "test/root_signature_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 74 root-signature cases; Ruby 4.0.9; JWT 3.3.0; JSON 2.19.9"
+          ]
+        },
+        {
+          "entry": "test/root_disclosures_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 64 disclosure cases; six synthetic signed classes; no full AP2/O1-O5 claim"
+          ]
+        },
+        {
+          "entry": "test/purchase_binding_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 81 purchase binding cases; no Schema/constraints/Host ALLOW/Evidence claim"
+          ]
+        },
+        {
+          "entry": "test/scoped_constraints_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 97 scoped constraint cases; fixed subset only; no full Schema/ALLOW/Evidence claim"
+          ]
+        },
+        {
+          "entry": "test/integration_matrix_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 16 same-candidate integration cases; entered stages only; no full AP2/independent Oracle PASS"
+          ]
+        },
+        {
+          "entry": "test/trust_context_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 147 trust snapshot/profile/key and integrated non-success cases"
+          ]
+        },
+        {
+          "entry": "test/verify_checkout_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 149 Host binding/challenge/aggregate interval cases; no consumption/Evidence/ALLOW",
+            "PASS 178 unified research/Evidence cases; immutable in-process facts, not Host ALLOW",
+            "PASS 190 checkout API cases; reused Host/Evidence suites reported separately; not Host ALLOW"
+          ]
+        },
+        {
+          "entry": "test/input_builder_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 149 Host binding/challenge/aggregate interval cases; no consumption/Evidence/ALLOW",
+            "PASS 109 input builder contract/boundary cases; existing Host suite reported separately; not Host ALLOW"
+          ]
+        },
+        {
+          "entry": "test/diagnostic_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 244 diagnostic checks; no Host ALLOW claim"
+          ]
+        },
+        {
+          "entry": "test/checkout_receipt_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 149 Host binding/challenge/aggregate interval cases; no consumption/Evidence/ALLOW",
+            "PASS 109 input builder contract/boundary cases; existing Host suite reported separately; not Host ALLOW",
+            "PASS CheckoutJWT signing, immutable original wire, negative inputs and existing Verifier/InputBuilder integration",
+            "PASS 65 CheckoutReceipt reference/signing/authentication/business outcome checks"
+          ]
+        },
+        {
+          "entry": "test/multi_constraints_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 431 multi quantity allocation, bounds, amount and signing assertions"
+          ]
+        },
+        {
+          "entry": "test/multi_profile_context_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 149 Host binding/challenge/aggregate interval cases; no consumption/Evidence/ALLOW",
+            "PASS 21 explicit multi-profile trust/challenge compatibility cases"
+          ]
+        },
+        {
+          "entry": "test/multi_item_integration_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS 35 multi-item integration cases; boundary root_bytes=11670 build_and_verify_seconds=0.0506; synthetic only, not Host ALLOW"
+          ]
+        },
+        {
+          "entry": "test/buyer_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "PASS Direct buyer issuance, presentation, verification, receipt, redaction and negatives",
+            "PASS multi-product/multi-line Direct flow 3/8 lines, repeated products, reordered lines, both receipts and signed malformed inputs"
+          ]
+        },
+        {
+          "entry": "test/conditional_checkout_test.rb",
+          "result": "PASS",
+          "summaries": [
+            "8 runs, 126 assertions, 0 failures, 0 errors, 0 skips"
+          ]
+        }
+      ],
+      "counts_policy": "Do not sum transitive Host/Evidence/Builder suites printed by multiple entries.",
+      "installed": {
+        "scope": "CONDITIONAL_CHECKOUT_CANDIDATE_NOT_HOST_ALLOW",
+        "candidate_version": "1.0.0",
+        "ruby": "4.0.9",
+        "ruby_platform": "x86_64-linux",
+        "dependencies": {
+          "json": "2.19.9",
+          "jwt": "3.3.0",
+          "base64": "0.3.0",
+          "openssl": "4.0.2",
+          "digest": "3.2.1"
+        },
+        "openssl_default": false,
+        "digest_default": false,
+        "libcrypto": "OpenSSL 3.0.13 30 Jan 2024",
+        "installed_lib_files": 17,
+        "ordinary_entry": true,
+        "independent_research_comparisons": 42,
+        "independent_checkout_comparisons": 42,
+        "unavailable_comparisons": 24,
+        "legacy_api_checks": 7,
+        "input_rejections": 2,
+        "constructor_rejections": 1,
+        "builder_checks": 16,
+        "total_cases": 134,
+        "holds": "production/distribution/Phase2B/Hostatomic/Stage16; old acquisition gaps and Linuxalltraffic unproved"
+      },
+      "merchant": {
+        "installed_merchant_signing_and_both_receipt_outcomes": true,
+        "ordinary_require": true,
+        "ruby": "4.0.9",
+        "gem_version": "1.0.0"
+      },
+      "installed_conditional_summary": "8 runs, 126 assertions, 0 failures, 0 errors, 0 skips",
+      "installed_diagnostic_summary": "PASS 244 diagnostic checks; no Host ALLOW claim",
+      "installed_examples": [
+        "input_builder:7 scenarios",
+        "merchant_signing",
+        "multi_item_checkout",
+        "direct_checkout",
+        "packaged conditional_checkout"
+      ],
+      "conditional_interop": {
+        "mode": "installed Gem",
+        "negative_codes": [
+          "audience_mismatch",
+          "nonce_mismatch",
+          "checkout_binding_mismatch",
+          "invalid_root_signature"
+        ],
+        "public_flow": "PASS",
+        "receipt_outcomes": [
+          "Success",
+          "Error"
+        ],
+        "wire_sha256": {
+          "checkout_jwt": "51f2c6996a72e2a4cf9aae692e388de906617af69adbfa74fb62cdca0d3516d7",
+          "closed_sd_jwt": "bece11416c175efac4dbf0f1a3f8d60eb1a7a426ed067e3d675cb4098c9d95b0",
+          "root_presentation": "9eefc8a496a74544d9de387efbbf15a86c0108ca4f64485f47589f0620570d74",
+          "terminal_jws": "b0b4d369818131cb6284b59450ebbe5db665c115b037439aa78a25ec2736215d"
+        }
+      },
+      "conditional_interop_summaries": [
+        "PASS conditional Python issuance -> public InputBuilder.verify (installed Gem): immutable Evidence, independent saved Host state, causal audience/nonce/order/untrusted-Agent negatives, authentic Success/Error receipts",
+        "PASS conditional bidirectional official SDK issuance/signatures, 3-row candidate/repeated-product and large 8-row terminal flows, pinned Schemas, complete commitments, normative final SD hash, Success/Error receipts and negatives"
+      ],
+      "installed_comparison_arrays": "Array fields are represented by counts here; complete per-case records are in validation/package-4.0.9/installed.json in the preparation bundle."
+    }
+  ],
+  "independent_reviews": [
+    {
+      "kind": "local independent Codex static review",
+      "source": "ac1c39016c349ecac4f5f2b2dd8b82c7cd086b8f",
+      "reviewer": "/root/next_release_assessment",
+      "scope": "Non-document changes, public interop, packaging, runtime check, workflow",
+      "unresolved_p1_p2": 0
+    },
+    {
+      "kind": "local independent Codex static review",
+      "source": "ac1c39016c349ecac4f5f2b2dd8b82c7cd086b8f",
+      "reviewer": "/root/official_scope_check",
+      "scope": "Public API, documentation, metadata, migration and publication boundaries",
+      "unresolved_p1_p2": 0
+    }
+  ],
+  "resolved_findings": [
+    {
+      "severity": "P2",
+      "finding": "The documented raw-input example uses profile constants not explicitly listed in the 1.x contract.",
+      "resolution": "Public API now retains the named single/multi profile identity/version/body/hash constants and v1 values."
+    }
+  ],
+  "preparation_stops_resolved": [
+    {
+      "stage": "Dependency acquisition",
+      "detail": "The unqualified RubyGems OpenSSL API returned Java-platform metadata; SHA mismatch stopped acquisition before installation. Repeated with platform=ruby and checked platform plus exact SHA256 for all six archives."
+    },
+    {
+      "stage": "Runtime preflight",
+      "detail": "Relocated runtime standard-library paths initially preceded installed Gems. Bundler baseline stopped before source tests. The task-only provider path relocation was corrected; actual JSON/JWT/OpenSSL/Digest/Bundler versions and loaded paths were then confirmed before the successful full runs."
+    }
+  ],
+  "repository_gates": {
+    "as_of_record": "NOT_RUN",
+    "draft_pr": "NOT_CREATED",
+    "github_ci_runs": 0,
+    "max_ci_runs_per_pr": 3,
+    "main_merge": "NOT_DONE",
+    "github_review": "NOT_REQUESTED",
+    "note": "These are the state at this local preparation snapshot. Later PR/CI receipts are recorded separately; local reviews are not GitHub approvals."
+  },
+  "publication": {
+    "rubygems": "NOT_DONE",
+    "tag": "NOT_CREATED",
+    "github_release": "NOT_CREATED",
+    "requires": "Owner decision for the exact final source/archive after repository gates."
+  },
+  "limits": [
+    "Synthetic Issuer/Agent/Merchant and Host state only.",
+    "No general AP2/Payment/real-Issuer or production authorization claim.",
+    "No atomic nonce, live order or payment execution.",
+    "Historical acquisition/production gates are not cleared by this preparation."
+  ],
+  "validation_log_sha256": {
+    "interop-3.4.12.log": "f63714754f69fd9b04baa60f5fff459f76d4fd97bbd283bce57f17f091a63331",
+    "interop-4.0.9.log": "f4d19a37485c617c533f048182b9c3fd33fdae0a03b84bd5c4efa360c6ca9a9d",
+    "package-3.4.12/conditional-installed-tests.log": "6320f68856a2653603644e5a2ad38ddac9ab81e0ed55aa3e8d90f77c16dc0bd7",
+    "package-3.4.12/conditional-installed.log": "283b957cdf1fc28e265c95424da9a48a04e3e425ee6118aa96781b30037585ca",
+    "package-3.4.12/diagnostic.log": "6f9744829ff2c5b5749c8239e0c372052a952f9e61d113af1bd6cc8cf309d297",
+    "package-3.4.12/direct-installed.log": "a1a90b9a72be9991f34ea453dfafa6e37f42e6b04064c9b0f4b02d45e05f49d8",
+    "package-3.4.12/examples.log": "54773f8d1e1ea4d3edb4b1878ad2076e0ce73402a6a184f7e2df520c2d9f46a3",
+    "package-3.4.12/install.log": "d31f19cd8a5a761f19dd381b937aec92edf86ab6c2fca09d942411a85df4b7bd",
+    "package-3.4.12/installed.json": "ad8e90e6a89cfc1a03fe15651ddf1123c74192e7dadd71ad8eb84bf50ce9cd34",
+    "package-3.4.12/merchant-installed.json": "9dc195d65aad793a90161a0515caaa77c7b466b50c86bc82b298acfcbc92e1bc",
+    "package-3.4.12/multi-item-installed.log": "871ffd264200072fabe57f07d4fa4c7bf18ffc3bfe843a29f153b31208221c27",
+    "package-3.4.12/package.json": "f5a53f0eef3b9b583873568006c189551ca1ec54f2b1844fb3efcf5d446681c7",
+    "package-4.0.9/conditional-installed-tests.log": "7e1abebdbc73e109a6b275864a0ce20c5298309500f9fd2a6f2a1c82e7990eee",
+    "package-4.0.9/conditional-installed.log": "283b957cdf1fc28e265c95424da9a48a04e3e425ee6118aa96781b30037585ca",
+    "package-4.0.9/diagnostic.log": "6f9744829ff2c5b5749c8239e0c372052a952f9e61d113af1bd6cc8cf309d297",
+    "package-4.0.9/direct-installed.log": "a1a90b9a72be9991f34ea453dfafa6e37f42e6b04064c9b0f4b02d45e05f49d8",
+    "package-4.0.9/examples.log": "54773f8d1e1ea4d3edb4b1878ad2076e0ce73402a6a184f7e2df520c2d9f46a3",
+    "package-4.0.9/install.log": "d31f19cd8a5a761f19dd381b937aec92edf86ab6c2fca09d942411a85df4b7bd",
+    "package-4.0.9/installed.json": "40ace5a0ee5b437855d339a828b76f0ea62428eb1170c3dd476f461faa8df23c",
+    "package-4.0.9/merchant-installed.json": "c2c808e9792f5c5af5443776a11e106fba40e60b19c114ae115fee3b2e909ffb",
+    "package-4.0.9/multi-item-installed.log": "871ffd264200072fabe57f07d4fa4c7bf18ffc3bfe843a29f153b31208221c27",
+    "package-4.0.9/package.json": "f5a53f0eef3b9b583873568006c189551ca1ec54f2b1844fb3efcf5d446681c7",
+    "source-3.4.12/buyer.log": "c1d90b8f416cbbc4dca359c38e3f777905e46bb9fb88550854ee364de3ca65a0",
+    "source-3.4.12/checkout_receipt.log": "502e514e431b963c6b2cd7c0a71acf494f78a63ba1d9ba6a2282c55d3e3c0ace",
+    "source-3.4.12/conditional_checkout.log": "a9e9d79a929de2b295d1f15d22297291e46a062749193d6b5942a7a4b00b9995",
+    "source-3.4.12/diagnostic.log": "6f9744829ff2c5b5749c8239e0c372052a952f9e61d113af1bd6cc8cf309d297",
+    "source-3.4.12/input_boundary.log": "70b14f2aeda0c0e6960810d70fd74db44512cd06a5b5b3e32f37bea55d0f8fac",
+    "source-3.4.12/input_builder.log": "359fa8f4bb282b48919717290f79b606b1d51e72339b232b4742f72f00854621",
+    "source-3.4.12/integration_matrix.log": "adad2571f7ccea1fe19d61abfa6f929c6d4261d6b51553eaa394687bba2ebd29",
+    "source-3.4.12/multi_constraints.log": "87abb7e07ab2ad4c5de2dd526ebcb95cfe9cd20aac738d28ca369f44dec3b42d",
+    "source-3.4.12/multi_item_integration.log": "9b5e14a657eda7e785dbf1c03c3b0f98575e3bf9c18108926fab781c80afde7d",
+    "source-3.4.12/multi_profile_context.log": "1b71b9273a7631f9cbef800643dda1c1f93979780f25eb11bdb6d1e4590cd66d",
+    "source-3.4.12/purchase_binding.log": "71a3f7a548165ce846a209eb97ff3bad1ffec8addb43120be8c8e1fabbe728ab",
+    "source-3.4.12/root_disclosures.log": "aebdec07858b8e6d124c700a1defe851353a404f7e9c1879dfeee23a6cb4e4c2",
+    "source-3.4.12/root_signature.log": "f1a138df380139c4d0ac01b51ff2e202037654c13def3fd867f8c17163ca936c",
+    "source-3.4.12/ruby_requirement.log": "42f007659adae7392e3b7cba5866dff93b90164cc6ffbcb6239072fc134c8fbc",
+    "source-3.4.12/runtime.json": "7ab90a6bfba4e584eee4d9cbc859711a4a51fe9901bea51d3ad2201e37f04783",
+    "source-3.4.12/scoped_constraints.log": "294b228c9bacd975a4a43b2c261e93b68ccd651c35d21088be95ee305ffd7901",
+    "source-3.4.12/trust_context.log": "8e3609a744ffc287cddb1d0394d158e43d34bdf0e08a286eb88edf7f6a809cfa",
+    "source-3.4.12/verify_checkout.log": "a031b7c3449c2732c50a39426ad9be1eab74a457e1e90d510617203df1ac5b44",
+    "source-4.0.9/buyer.log": "c1d90b8f416cbbc4dca359c38e3f777905e46bb9fb88550854ee364de3ca65a0",
+    "source-4.0.9/checkout_receipt.log": "502e514e431b963c6b2cd7c0a71acf494f78a63ba1d9ba6a2282c55d3e3c0ace",
+    "source-4.0.9/conditional_checkout.log": "4b23c18f09323f96c4a2b702a83cfcc28db86b5d7a26f264723c9af9b54abb63",
+    "source-4.0.9/diagnostic.log": "6f9744829ff2c5b5749c8239e0c372052a952f9e61d113af1bd6cc8cf309d297",
+    "source-4.0.9/input_boundary.log": "16658632d6aa5d11ef92a1c80d82f3ad3909ff7f88334bf6357073b335eddc8f",
+    "source-4.0.9/input_builder.log": "359fa8f4bb282b48919717290f79b606b1d51e72339b232b4742f72f00854621",
+    "source-4.0.9/integration_matrix.log": "adad2571f7ccea1fe19d61abfa6f929c6d4261d6b51553eaa394687bba2ebd29",
+    "source-4.0.9/multi_constraints.log": "87abb7e07ab2ad4c5de2dd526ebcb95cfe9cd20aac738d28ca369f44dec3b42d",
+    "source-4.0.9/multi_item_integration.log": "be08337bd1211b0d74b62e9cacea8ac1ceb0386f349cbb03313cf25e65c4689c",
+    "source-4.0.9/multi_profile_context.log": "1b71b9273a7631f9cbef800643dda1c1f93979780f25eb11bdb6d1e4590cd66d",
+    "source-4.0.9/purchase_binding.log": "b97814d97a8c68546c8b28dd829e3f3d90e6e20d9c741eacdabf1b68ffe096ac",
+    "source-4.0.9/root_disclosures.log": "19347be4839bff970988c5da7496f8dd793ab917358801487d9fc8efbd7d1d00",
+    "source-4.0.9/root_signature.log": "0f6d6d5c43e61b121824b57b952a243714832ceb89a69df521ba440b694b7962",
+    "source-4.0.9/ruby_requirement.log": "42f007659adae7392e3b7cba5866dff93b90164cc6ffbcb6239072fc134c8fbc",
+    "source-4.0.9/runtime.json": "d788b4982884f362bc8e1a04ba86e25750820a0822b35843c1b5659d555c8b73",
+    "source-4.0.9/scoped_constraints.log": "e77715d3b83ccb8f4da6adc21c374c0aa03a281a9dc95db01e0433ece105e5b4",
+    "source-4.0.9/trust_context.log": "8e3609a744ffc287cddb1d0394d158e43d34bdf0e08a286eb88edf7f6a809cfa",
+    "source-4.0.9/verify_checkout.log": "a031b7c3449c2732c50a39426ad9be1eab74a457e1e90d510617203df1ac5b44"
+  },
+  "repository_source_mapping": {
+    "repository_commit": "eb56ac3256b25e908695698fd2747c1dcdfa52c8",
+    "tree": "3cdfe83fda1f2942f0f5a98cfa43c81568c2e7ca",
+    "matches_reviewed_local_candidate_source_tree": true,
+    "reason": "The environment has no git HTTPS credentials. The connected GitHub API recreated the reviewed source tree with identical Git object identity; commit authorship/time differ. candidate_source retains the exact local execution/build identity."
+  }
+}
