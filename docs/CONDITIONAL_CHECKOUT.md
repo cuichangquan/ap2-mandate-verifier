@@ -1,4 +1,4 @@
-# Conditional Checkout delegation — 0.8.0 candidate design
+# Conditional Checkout delegation — 0.8.0 candidate
 
 Adopted AP2 v0.2.0 source remains `b4587ac1d055888a73b4b21750973cffba961793`.
 This is an additive Ruby issuance API for the existing explicit
@@ -107,6 +107,58 @@ SDK behavior and stricter local rules are recorded separately; SDK shortage and
 empty-candidate differences remain in MULTI_ITEM_INTEROP.md. Latest-HEAD Codex
 review and the same candidate Gem installed on both supported Rubies are required.
 
-Status: DESIGN_ONLY until implementation, independent comparison, package tests
-and latest-HEAD review are recorded. No RubyGems push, public tag/Release,
+Status: implemented and locally tested; release gates and final package/review
+evidence are tracked in RELEASE_080_CANDIDATE.md and the external manifest.
+No RubyGems push, public tag/Release,
 production connection or actual payment is authorized by this task.
+
+## Official-source comparison and independent results
+
+On 2026-11-01 official main is `e1ea56db72a6385bce3e5c1112b3a56ce60acb43`.
+GitHub compare from the adopted commit changes only CHANGELOG, CONTRIBUTING,
+README and uv.lock; normative docs, Schemas and SDK code are unchanged. Current
+[Checkout](https://ap2-protocol.org/ap2/checkout_mandate/) and
+[Agent Authorization](https://ap2-protocol.org/ap2/agent_authorization/) pages
+were also read. Adoption stays pinned, with no dependency/source upgrade.
+
+`test/conditional_interop.py` uses the pinned official `sd_jwt.create/verify`,
+`kb_sd_jwt.verify`, JWT sign/verify helpers, unmodified Open/Closed/Checkout/Receipt
+Schemas, independent commitment traversal and SHA256. Ruby Open/Closed is
+verified by Python. Official Python Open issuance plus official JWT helper inline
+Closed signing is accepted by Ruby; both Receipt outcomes work in both directions.
+Keys remain in memory and no runtime network or remote Schema fallback is used.
+
+The official high-level `kb_sd_jwt.create` always discloses `delegate_payload`
+through a commitment and emits `_sd_alg`, even with empty metadata. Its output is
+tested unchanged as an unsupported-form rejection. We do not strip signed claims
+or weaken the existing inline-terminal profile to accept it. The supported inline
+form uses official JWT signing and the same normative claim/hash rules, validated
+independently. Choosing a new selective-disclosure terminal profile is future work.
+This is bounded interoperability, not all SDK helpers or general AP2 compatibility.
+
+The initial Codex P2 on restoration completeness was fixed by sharing the exact
+Root closure walker for structural restoration. Restoration still authenticates
+neither Root nor Agent signatures; full merchant verification remains mandatory.
+Negative tests sign terminals bound to malformed/missing/duplicate Root disclosures
+and require restoration rejection. Package/source results and final review status
+are in [release preparation](RELEASE_080_CANDIDATE.md).
+
+## Handling non-success without replay
+
+```ruby
+case result.status # from InputBuilder.verify / verify_checkout
+when :verified_research
+  # Recheck current application authorization/order/trust; atomically reserve.
+when :rejected
+  # Decline this presentation; do not execute or issue a Success Receipt.
+when :unavailable
+  # Verification could not establish evidence; hold, diagnose and retry only
+  # verification under application policy, without executing the order.
+end
+# Missing/unverified Receipt after submission: retain operation_id => :pending,
+# reconcile the merchant's saved result; do not resubmit a purchase blindly.
+```
+
+Issuance `Invalid` similarly never means that an order was executed; a remote
+signer error may have an uncertain signing outcome, so reconcile the application's
+issuance record before reissuing. SDK operations here perform no payment side effect.

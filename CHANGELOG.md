@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.0 — unreleased candidate
+
+- Adds public `ConditionalCheckout.issue_open/issue_closed/present` for one merchant,
+  1–8 requirements/candidates/lines, exact quantities, candidate choice and repeated
+  product rows under the unchanged multi-item profile. Agent uses its own signer;
+  Open completeness, cnf, Merchant signature and conditions are checked first.
+- Preserves original Open/terminal/Checkout bytes and normative Receipt reference
+  to only the final inline Closed SD-JWT, including its trailing `~`.
+- Includes a standalone installed-Gem example through full merchant Evidence and
+  both Receipt outcomes, English/Japanese Quick Start and release instructions.
+  Existing profiles, Direct, saved formats, Result/Evidence, diagnostic contracts,
+  dependency pins and supported Rubies are unchanged. Publication remains pending.
+
 ## 0.7.0 — 2026-11-01
 
 - Adds `CheckoutJWT.verify` and optional `Buyer.issue_closed/present_closed/verify` for Trusted Agent Provider / Direct Human Present exact-order approval. Supports one merchant and 1–8 lines with multiple products throughout issuance, presentation, merchant verification and Receipt confirmation.

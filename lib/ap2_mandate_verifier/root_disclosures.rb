@@ -31,7 +31,30 @@ module AP2MandateVerifier
         parts.last == "" && !parts.first.empty? && parts[1...-1].none?(&:empty?)
       # No disclosure decode, digest graph or trusted claims before signature.
       payload = RootSignature.verified_payload!(parts.first, issuer_pem)
+      resolve!(parts, payload, multi)
+    end
+
+    # Internal structural restoration only. Never authenticates an issuer.
+    # Shares the exact closure walker with the authenticated verification path.
+    def self.structural_root!(source)
+      wire = InputValidator.snapshot!(source)
+      raise Rejected, :invalid_root_presentation unless wire.ascii_only? && wire.end_with?("~")
+      parts = wire.split("~", -1)
+      raise Rejected, :invalid_root_presentation unless parts.size.between?(3, 68) && parts.last == "" &&
+        parts[0...-1].none?(&:empty?)
+      jwt = parts.first.split(".", -1)
+      raise Rejected, :invalid_root_presentation unless jwt.size == 3
+      RootSignature.send(:dependencies!)
+      header = InputValidator.parse!(RootSignature.send(:decode!, jwt[0], 2_048))
+      CheckoutReceipt.send(:header!, header, "example+sd-jwt")
+      raise Rejected, :invalid_root_presentation unless RootSignature.send(:decode!, jwt[2], 64).bytesize == 64
+      payload = InputValidator.parse!(RootSignature.send(:decode!, jwt[1], 24_576))
+      resolve!(parts, payload, true)
+    end
+
+    def self.resolve!(parts, payload, multi)
       raise Rejected, :unsupported_disclosure_profile unless
+        payload.instance_of?(Hash) &&
         (payload.keys - %w[delegate_payload _sd_alg]).empty? &&
         (!payload.key?("_sd_alg") || payload["_sd_alg"] == "sha-256") &&
         payload["delegate_payload"].instance_of?(Array) && payload["delegate_payload"].size == 1
@@ -118,6 +141,6 @@ module AP2MandateVerifier
     rescue ArgumentError
       raise Rejected, :invalid_disclosure
     end
-    private_class_method :walk!, :decode!, :multi_path?, :multi_paths!
+    private_class_method :walk!, :decode!, :multi_path?, :multi_paths!, :resolve!, :structural_root!
   end
 end

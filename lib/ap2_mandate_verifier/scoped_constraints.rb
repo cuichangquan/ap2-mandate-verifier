@@ -90,7 +90,16 @@ module AP2MandateVerifier
     # Original arrays remain intact; this graph is solely a quantity proof.
     def self.multi_constraints!(details, currency, expected_total)
       open, checkout = details.values_at(:open, :checkout)
-      constraints = open["constraints"]
+      merchant, requirements = multi_open!(open["constraints"])
+      raise Rejected, :constraint_mismatch unless checkout["merchant"] == merchant
+      raise Rejected, :currency_mismatch unless checkout["currency"] == currency
+      amount = multi_checkout!(checkout)
+      raise Rejected, :amount_mismatch unless amount == expected_total
+      quantities_match!(requirements, checkout["line_items"])
+    end
+
+    # Internal shared closed-world Open grammar, also used before issuance.
+    def self.multi_open!(constraints)
       raise Rejected, :unsupported_constraint unless constraints.instance_of?(Array) && constraints.size == 2
       required, allowed = constraints
       exact!(required, %w[items type])
@@ -112,11 +121,7 @@ module AP2MandateVerifier
       exact!(merchant, %w[id name])
       text!(merchant["id"])
       text!(merchant["name"], 512)
-      raise Rejected, :constraint_mismatch unless checkout["merchant"] == merchant
-      raise Rejected, :currency_mismatch unless checkout["currency"] == currency
-      amount = multi_checkout!(checkout)
-      raise Rejected, :amount_mismatch unless amount == expected_total
-      quantities_match!(requirements, checkout["line_items"])
+      [merchant, requirements]
     end
 
     # Also shared with the explicitly selected merchant signing profile.
@@ -249,7 +254,7 @@ module AP2MandateVerifier
       raise Rejected, :amount_mismatch unless values.all? { |entry| entry["amount"] == expected }
     end
     private_class_method :exact!, :one!, :text!, :quantity!, :amount!, :totals!,
-      :multi_constraints!, :bounded_array!, :unique_ids!, :quantities_match!
+      :multi_constraints!, :multi_open!, :bounded_array!, :unique_ids!, :quantities_match!
     private_constant :CORE_INSTANCE_OF
   end
 end

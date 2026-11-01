@@ -8,7 +8,7 @@ module AP2MandateVerifier
       payload = InputBuilder.send(:json!, claims, 12_000)
       pem = InputValidator.snapshot!(public_key_pem, max_bytes: 1_024)
       RootSignature.public_jwk!(pem)
-      raise ArgumentError unless %w[JWT example+sd-jwt].include?(typ)
+      raise ArgumentError unless %w[JWT example+sd-jwt kb+sd-jwt].include?(typ)
       header = Base64.urlsafe_encode64(JSON.generate({"alg" => "ES256", "typ" => typ}), padding: false)
       input = "#{header}.#{Base64.urlsafe_encode64(payload, padding: false)}".freeze
       raw = signer.call(input)

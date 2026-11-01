@@ -2,6 +2,31 @@
 
 [日本語](README.ja.md)
 
+## 0.8.0 candidate: conditional purchase delegation (unpublished)
+
+The candidate adds `ConditionalCheckout.issue_open`, `.issue_closed` and `.present`:
+approve A/B×1 plus C×2, issue Open for a registered Agent key, let that Agent close
+a matching merchant-signed Checkout, then use existing `InputBuilder.verify` and
+`CheckoutReceipt.sign/verify`. All candidates remain disclosed under the unchanged
+multi-item profile. Provider private keys never enter Agent operations.
+[API and trust contract](docs/CONDITIONAL_CHECKOUT.md), [release decision material](docs/RELEASE_080_CANDIDATE.md).
+
+Quick Start on MRI 3.4.12 or 4.0.9, using the locally built candidate identified by
+the release manifest (0.8.0 is **not published**):
+
+```sh
+gem install --local ./ap2_mandate_verifier-0.8.0.gem
+ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "0.8.0").full_gem_path')/examples/conditional_checkout.rb"
+```
+
+The [standalone Ruby example](examples/conditional_checkout.rb) uses only installed
+public APIs, three rows, candidate choice, different requirement quantities and
+repeated products through both Receipt outcomes. Success consumes the operation;
+Error requires a new policy decision; missing Receipt or uncertain effect remains
+pending. Authentication, consent, enrollment, durable replay prevention and actual
+order/payment execution remain app-owned. Existing users need no migration;
+0.7.0 defaults and saved formats remain unchanged.
+
 Published stable is **0.7.0**, adding Direct buyer Checkout issuance, presentation and merchant verification through Receipt confirmation. It supports one merchant and 1–8 lines with multiple products. Existing Open→Closed profiles retain their contracts; see [the publication record](docs/PROJECT_STATUS.md#070-publication).
 
 ## Multiple items and quantities

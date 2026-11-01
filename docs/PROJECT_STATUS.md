@@ -1,5 +1,12 @@
 # 現状メモ / Project status
 
+## 0.8.0条件付き購入委任候補（未公開）
+
+Open発行・Agent Closed生成／提示を既存複数商品profileと完全検証・Receiptへ接続する
+追加APIを準備しています。[仕様](CONDITIONAL_CHECKOUT.md)、[候補判断資料](RELEASE_080_CANDIDATE.md)。
+0.7.0が公開済み安定版です。0.8.0の公開・tag／Release・本番接続・実決済は未実施です。
+GitHub pushは自動承認レビューで拒否され未実行のため、PR／CI／統合は保留です。
+
 <a id="070-publication"></a>
 
 ## 0.7.0公開済み — 現在の配布状態
