@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 — Unreleased candidate
+## 1.0.0 — 2026-11-01
 
 - Defines the supported public API and 1.x compatibility, deprecation and
   maintenance policies for the framework-independent AP2 Ruby SDK. The scope
@@ -13,8 +13,13 @@
 - Updates SDK metadata, current security/support/product guidance and candidate
   package checks. Adds independent Python-generated conditional inputs through
   the installed Gem's public complete verification and Receipt APIs.
-- This is release preparation, not publication. Actual checks and outstanding
-  release gates are recorded with the [candidate](docs/RELEASE_100_CANDIDATE.md).
+- Published 08:13:29.733 UTC; official distribution comparison completed 08:16:01
+  UTC. The 102,912-byte download SHA256
+  `a107101b0178c54ba417be7a2bd7e22feb2fd9a07bda089043e8c5ea8e65e12b`
+  matches the retained candidate and all 33 payloads match release source
+  `59e344ad865ed867d0993120456f9411d82bcdec`.
+  [Release and upgrade](docs/RELEASE_100.md), [publication](docs/POST_RELEASE_100.md).
+  The [candidate record](docs/RELEASE_100_CANDIDATE.md) retains its historical scope.
 
 ## 0.8.0 — 2026-11-01
 

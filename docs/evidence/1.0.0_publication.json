@@ -1,0 +1,170 @@
+{
+  "schema": "ap2.release-publication-verification.1",
+  "started_at_utc": "2026-11-01T08:16:01Z",
+  "status": "PUBLISHED_VERIFIED_EXACT_ARTIFACT",
+  "target": {
+    "name": "ap2_mandate_verifier",
+    "version": "1.0.0",
+    "platform": "ruby"
+  },
+  "read_only_remote_operations": true,
+  "remote_mutations": false,
+  "product_tests_run": false,
+  "rebuild_performed": false,
+  "observations": {
+    "metadata": {
+      "url": "https://rubygems.org/api/v2/rubygems/ap2_mandate_verifier/versions/1.0.0.json?platform=ruby",
+      "http_status": 200,
+      "checked_at_utc": "2026-11-01T08:15:23Z",
+      "raw_file": "rubygems_1.0.0_metadata.json",
+      "response_sha256": "998360c2292db970b06368ce772b4e6c886e7ea045c6b097bb6ebc68cea1d3b7"
+    },
+    "owners": {
+      "url": "https://rubygems.org/api/v1/gems/ap2_mandate_verifier/owners.json",
+      "http_status": 200,
+      "checked_at_utc": "2026-11-01T08:15:23Z",
+      "raw_file": "rubygems_1.0.0_owners.json",
+      "response_sha256": "dbccf69449f9d80cf2a6f87c91c5474bca2cd465a037da3a2dfb950a038bd5c9"
+    },
+    "versions": {
+      "url": "https://rubygems.org/api/v1/versions/ap2_mandate_verifier.json",
+      "http_status": 200,
+      "checked_at_utc": "2026-11-01T08:15:23Z",
+      "raw_file": "rubygems_1.0.0_versions.json",
+      "response_sha256": "72fe50417d723de63532a59569918bb0cf89ef96f785f5790ce5a6a48201b12b"
+    },
+    "merge_commit": {
+      "url": "https://api.github.com/repos/cuichangquan/ap2-mandate-verifier/git/commits/59e344ad865ed867d0993120456f9411d82bcdec",
+      "http_status": 200,
+      "checked_at_utc": "2026-11-01T08:15:23Z",
+      "raw_file": "rubygems_1.0.0_merge_commit.json",
+      "response_sha256": "c9700a8ff0fc6f0411d4c9e698b9dd61a6c2415c151c675e1bc0516f054a11d7"
+    }
+  },
+  "download": {
+    "url": "https://rubygems.org/downloads/ap2_mandate_verifier-1.0.0.gem",
+    "final_url": "https://rubygems.org/downloads/ap2_mandate_verifier-1.0.0.gem",
+    "http_status": 200,
+    "downloaded_at_utc": "2026-11-01T08:16:01Z",
+    "bytes": 102912,
+    "sha256": "a107101b0178c54ba417be7a2bd7e22feb2fd9a07bda089043e8c5ea8e65e12b",
+    "file": "rubygems-ap2_mandate_verifier-1.0.0.gem"
+  },
+  "artifact_comparison": {
+    "expected_bytes": 102912,
+    "expected_sha256": "a107101b0178c54ba417be7a2bd7e22feb2fd9a07bda089043e8c5ea8e65e12b",
+    "retained_candidate_bytes": 102912,
+    "retained_candidate_sha256": "a107101b0178c54ba417be7a2bd7e22feb2fd9a07bda089043e8c5ea8e65e12b",
+    "download_equals_retained_bytes": true,
+    "download_matches_expected": true,
+    "metadata_sha_matches_download": true,
+    "version_list_sha_matches_download": true
+  },
+  "public_metadata": {
+    "name": "ap2_mandate_verifier",
+    "version": "1.0.0",
+    "number": "1.0.0",
+    "platform": "ruby",
+    "prerelease": false,
+    "yanked": false,
+    "version_created_at": "2026-11-01T08:13:29.733Z",
+    "created_at": "2026-11-01T08:13:29.733Z",
+    "built_at": "2026-11-01T00:00:00.000Z",
+    "sha": "a107101b0178c54ba417be7a2bd7e22feb2fd9a07bda089043e8c5ea8e65e12b",
+    "spec_sha": "7bb814a1edb3e229006ccd9a8d149c94932a6e9e1ef45b9e6adb456c0914a1b4",
+    "ruby_version": ">= 3.4.12, < 4.1",
+    "licenses": [
+      "MIT"
+    ],
+    "dependencies": {
+      "development": [],
+      "runtime": [
+        {
+          "name": "base64",
+          "requirements": "= 0.3.0"
+        },
+        {
+          "name": "digest",
+          "requirements": "= 3.2.1"
+        },
+        {
+          "name": "json",
+          "requirements": "= 2.19.9"
+        },
+        {
+          "name": "jwt",
+          "requirements": "= 3.3.0"
+        },
+        {
+          "name": "openssl",
+          "requirements": "= 4.0.2"
+        }
+      ]
+    }
+  },
+  "ownership": {
+    "owners": [
+      {
+        "id": 251922,
+        "handle": "cuichangquan"
+      }
+    ],
+    "expected_owner": "cuichangquan",
+    "expected_owner_present": true
+  },
+  "source": {
+    "release_commit": "59e344ad865ed867d0993120456f9411d82bcdec",
+    "release_tree": "4d72878e73656733b577d55529acc55cb7af6d5b",
+    "merge_tree_verified_by_public_github_api": true,
+    "reviewed_pr_head": "e724e7e4cf2c9f3e54963e41112dc1c8ef5c5f19",
+    "candidate_execution_build_source": "ac1c39016c349ecac4f5f2b2dd8b82c7cd086b8f",
+    "candidate_execution_build_tree": "3cdfe83fda1f2942f0f5a98cfa43c81568c2e7ca",
+    "source_correspondence_basis": "Downloaded Gem equals the retained reviewed candidate byte for byte; all packaged payloads also equal the release tree. RubyGems metadata alone is not a source attestation."
+  },
+  "payload_comparison": {
+    "payload_count": 33,
+    "expected_count": 33,
+    "manifest_hashes_equal": true,
+    "release_tree_mismatches": [],
+    "all_payloads_equal_release_tree": true,
+    "files_sha256": {
+      "LICENSE": "1442143c4265d88eedfc14f25d04298449358c837b0bb58dfa825f84b36391c8",
+      "README.ja.md": "4a52240cf437e6747c46506d08d592c3875d5ec76bb3e5de7ccee567cb55be1f",
+      "README.md": "46edb2bcafc43dbb286abed808fa4f0c3a61bcc8cc10b7556ebdfc996f0df806",
+      "SECURITY.md": "ac3a773bc226febc33820b5c55e6534504a9f8deb8d335dc4ae8e92b1a1e6d4b",
+      "docs/BUYER_DIRECT_CHECKOUT.md": "96c67be9340a152d8bb4d10ea69b812eedce995a7d7b6a54bc0de3e6efca6ed5",
+      "docs/CONDITIONAL_CHECKOUT.md": "6ce7b14e3171525a7cbd4283862f724f98650f3f3e669bfab84345273ef3a2a7",
+      "docs/DIAGNOSTICS.ja.md": "302c87b40cb44bda43af021448ebe83409db96bbb2b0fb9c44e6a3dc78f3d433",
+      "docs/DIAGNOSTICS.md": "881cb7416ac1b18c26042ffa7f3bdbb33ccf5dbc95a2f7394f753271807df056",
+      "docs/INPUT_BUILDER.md": "428dbe89887fa13868dd750d19b524aa614eb8a80268bae6e4fd0c837a69841c",
+      "docs/MERCHANT_SIGNING.md": "31af8ead7fd507d72af4c400f2134e753d6d2297b1d6b85c831b3bd53185eeb4",
+      "docs/MULTI_ITEM_CHECKOUT.md": "3db7caa63b33e7204c8d512ed22403fcceb2b90e198d9e963f13b2610c40b228",
+      "docs/POST_RELEASE_MAINTENANCE.md": "5748948ea9461bfbde8c881a9e927fb0e2c7939718b9acf3c4bdf99472a5c054",
+      "docs/PUBLIC_API.md": "87e60c303e42786f7d1aa25e3409188a765aa6b722d893220320a87bb17b2209",
+      "docs/RELEASE_100_CANDIDATE.md": "8655eb187589c2229b5eeb49479fff2cdac4ba1986099e815a08661aeeb982c0",
+      "docs/SUPPORT_CONTRACT.md": "76a78e6a9876969e7bb127dbcfa4261986158a5902e526bd637466b3f521cbb0",
+      "examples/conditional_checkout.rb": "dd672cc54c4a6650bfff654eb777eddd379c892481b67e58781e297a02c4c5af",
+      "lib/ap2_mandate_verifier.rb": "c4d2f9e797d2a105c421340c0b23620c70646f53813a2934cec300af30486ef8",
+      "lib/ap2_mandate_verifier/buyer.rb": "1a9c129b6eb33ac508472aa634eee7afc4add5a537a5c3cb7d49d12557269588",
+      "lib/ap2_mandate_verifier/checkout_jwt.rb": "d96a1e8ea9d69787ce94c35253b866c0d5fb867b8864cd7a9f93a526adbb8781",
+      "lib/ap2_mandate_verifier/checkout_receipt.rb": "ba37ef2519eb49d46313c2c85cba894e0e644626e33247d227e0b4c26149c303",
+      "lib/ap2_mandate_verifier/conditional_checkout.rb": "685a57939b8a1774dfeb40f2ba2fcb96686f613e4bbe02cb315a82b598e0391e",
+      "lib/ap2_mandate_verifier/diagnostic.rb": "0d2e961d80d5f29d42b49898e2df993f60962766437958adba568cbf9b5d7f1e",
+      "lib/ap2_mandate_verifier/host_binding.rb": "1373efe503ccc5eda817ffd790799fc622d6cb106f8b7da85ef2b3f4693c662e",
+      "lib/ap2_mandate_verifier/input_builder.rb": "a35a5ce9160f0a8816c6dde6eeeeac09724b655d465c5caf7f14acdbe17e3290",
+      "lib/ap2_mandate_verifier/input_validator.rb": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+      "lib/ap2_mandate_verifier/merchant_signature.rb": "f41aafd533dc3f988956c4503325ebbd82dc43a8bc1511e8c26572b4c32e7e70",
+      "lib/ap2_mandate_verifier/purchase_binding.rb": "6f3f966eed59511eed54cc7f28bb8fe83123d43b5b213502a9ea5cc328c53690",
+      "lib/ap2_mandate_verifier/research_result.rb": "6b0bc022e57a2a837e296f2b1bfe9a154d69b4c98fea46e269e2d3f28a1c948b",
+      "lib/ap2_mandate_verifier/result.rb": "ba4fc058784e34a870507446224121a6ba09387137ef2a8c044e02256fc6c64f",
+      "lib/ap2_mandate_verifier/root_disclosures.rb": "7e9d2f51a24c344b54fd4e63e6619108b794b88d0adc003b6cdee821b39a8d65",
+      "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+      "lib/ap2_mandate_verifier/scoped_constraints.rb": "5d50858ba365e2716b635a2888f08f38afda7937be879347dd536d11f7b5d44b",
+      "lib/ap2_mandate_verifier/trust_context.rb": "897936b2fec31e63a673ca15e89485c5254f13a427aafae9504e3c2525601f97"
+    }
+  },
+  "metadata_identity_checks_pass": true,
+  "verification_scope": "Public metadata, owner listing, downloaded archive, retained candidate and all packaged files. Existing dual-MRI local results identify these same candidate bytes. No fresh product tests, installation, build, push, tag or Release mutation in this check.",
+  "completed_at_utc": "2026-11-01T08:16:01Z"
+}
+

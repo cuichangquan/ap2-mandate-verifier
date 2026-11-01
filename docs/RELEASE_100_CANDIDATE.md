@@ -1,4 +1,10 @@
-# 1.0.0 release candidate preparation
+> Historical preparation snapshot. 1.0.0 was subsequently published on
+> 2026-11-01 08:13:29.733 UTC; the 102,912-byte official distribution matches
+> the retained candidate and all 33 payloads match the release source.
+> See [publication](POST_RELEASE_100.md) and [current release/upgrade](RELEASE_100.md).
+> Unpublished and pending statements below describe the preparation checkpoint.
+
+# 1.0.0 candidate — historical preparation
 
 **Unpublished candidate. The currently published release is 0.8.0.**
 The candidate Gem has version `1.0.0`; that metadata is not a publication record.

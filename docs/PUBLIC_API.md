@@ -1,10 +1,11 @@
-# Ruby SDK public API — 1.0.0 candidate
+# Ruby SDK public API — 1.0.0
 
-**Status: unpublished 1.0.0 preparation. Published stable remains 0.8.0.**
-This document defines the proposed 1.x contract for the existing Checkout APIs;
-it adds no runtime behavior, renames or broader accepted formats. Candidate
-validation and remaining release decisions belong to
-[the preparation record](RELEASE_100_CANDIDATE.md).
+**Status: published 1.0.0.**
+This document defines the 1.x contract for the existing Checkout APIs.
+The 1.0.0 release preserves the 0.8.0 runtime behavior, API names and accepted
+formats. Exact distribution identity and validation are in
+[the publication record](POST_RELEASE_100.md); the earlier
+[preparation record](RELEASE_100_CANDIDATE.md) retains its historical status.
 
 The SDK supports human-approved Direct orders and conditional Open → Agent Closed
 delegation for the documented profiles. It runs in plain Ruby. Payment Mandates,
@@ -183,11 +184,11 @@ No received claim selects trusted policy; unknown profiles and constraints fail 
 
 ## Compatibility and internal boundary
 
-The proposed 1.x [versioning, maintenance and deprecation policy](POST_RELEASE_MAINTENANCE.md)
+The 1.x [versioning, maintenance and deprecation policy](POST_RELEASE_MAINTENANCE.md)
 applies to these calls, types, machine meanings, profiles and persistence contracts.
-The `research` names and syntax-only `verify` keep their current meanings. No 0.8.0
-API migration is required by this candidate; an actual 1.0.0 publication remains a
-separate release decision.
+The `research` names and syntax-only `verify` keep their current meanings.
+Documented 0.8.0 API use needs no source migration. Dependency constraints must
+allow 1.0.0; see [upgrading from 0.8.0](../README.md#upgrading-from-080).
 
 Internal `verified_*!` handoffs are not supported ways to inject checked facts;
 [the existing support contract](SUPPORT_CONTRACT.md#result-and-evidence) already

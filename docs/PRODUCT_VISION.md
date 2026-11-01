@@ -1,16 +1,16 @@
 # AP2 Ruby Gemの目指す姿
 
-状態：Ownerの製品・普及方針と、0.8.0公開後の1.0.0準備方針。1.0.0は未公開候補です。本書自体は新機能・デモ公開・Gem公開・納期の約束や実行の承認ではありません。
+状態：Ownerの製品・普及方針。1.0.0は公開済みです。本書自体は新機能・デモ公開・次版公開・納期の約束や実行の承認ではありません。
 初稿時の歴史的な読解基準main：`676ffb9fccf5f575f85cedb0c7dc44416b4ae4d6`。最新の状態と証拠は[PROJECT_STATUS](PROJECT_STATUS.md)を参照してください。
 
-## 現在のプロジェクト目標と優先順位（2026-10-28の目標／2026-11-01の1.0.0準備方針）
+## 現在のプロジェクト目標と優先順位（2026-10-28の目標／2026-11-01の1.0.0公開）
 
 **AP2が普及したとき、Ruby開発者が最初に選ぶOSSになること。**
 
 安全な検証品質を維持しながら、「開発者が実際に試し、導入し、広められること」を優先する。目標はGoogle等からの公式認定を得ることではなく、Ruby開発者に選ばれるOSSになること。公式認定や実Issuerの登場を、OSSの利用体験改善の開始条件にはしない。
 
-1. **フレームワーク非依存のAP2 Ruby SDKとして公開契約を固める。** 公開済み`0.8.0`のDirect／条件付き購入委任について、発行・提示・検証・Checkout Receipt確認を利用できる状態を土台とします。次の`1.0.0`では、公開API、対応profile、互換性、エラー、利用側の責任、保守範囲を明示し、実装と文書・配布候補が一致することを確認します。
-2. **Ruby開発者が短時間で導入できる導線を整える。** Ruby単体で動くQuick Startと、Provider・Agent・Merchantの役割が分かる最小実行例を主な入口にします。入力・信頼前提、失敗と未確定結果の扱いも示します。[既存のRailsデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo)はSDKの利用例として活用します。Rails連携は本Gemの前提や1.0.0の完成条件にはしません。
+1. **フレームワーク非依存のAP2 Ruby SDKとして公開契約を維持する。** 公開済み`1.0.0`はDirect／条件付き購入委任の発行・提示・検証・Checkout Receipt確認を提供し、公開API、対応profile、互換性、エラー、利用側の責任、保守範囲を明示しています。実装・文書・配布物の一致を保ち、1.xの互換性方針に従って改善します。
+2. **Ruby開発者が短時間で導入できる導線を整える。** Ruby単体で動くQuick Startと、Provider・Agent・Merchantの役割が分かる最小実行例を主な入口にします。入力・信頼前提、失敗と未確定結果の扱いも示します。現在`0.8.0`を利用する[既存のRailsデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo)はSDKの利用例として活用します。Rails連携は本Gemの前提や完成条件にはしません。
 3. **利用者と認知度を増やす。** GitHub README、技術記事、デモへの導線、問い合わせ・フィードバックを改善する。成果は単なる研究PR数ではなく、体験・導入・利用者の増加で判断する。
 
 既存の導入文書と合成入力によるローカル実行例を改善し、具体的な不足がない研究・文書・PRを増やさない。デモは保存済みの**合成入力だけ**を扱い、実Issuer・実決済・任意の秘密鍵やMandate入力を受け付けない。Webサイト公開やサーバー運用は今回の対象外。ここに記した優先順位は、公開デプロイ・追加実行や既存の安全性HOLDの解除を承認しない。
@@ -19,7 +19,7 @@
 
 **Ruby開発者が、AP2の複雑な署名・委任ルールを自作せず、安全に扱えるGemを目指します。**
 安全性を主張だけで成立させず、対応仕様・信頼の前提・独立した検証証拠・未対応事項を利用者が確認できる形で提供します。
-検証コアから始め、0.8.0では対応profileの発行・提示・検証・Receiptまでを備えたRuby SDKへ広がりました。1.0.0はこの公開契約を安定させる節目です。今後のprofile拡張は用途と検証根拠に応じて判断し、一般AP2の全機能対応を1.0.0の意味にはしません。
+検証コアから始め、0.8.0では対応profileの発行・提示・検証・Receiptまでを備えたRuby SDKへ広がり、1.0.0でこの公開契約を安定させました。今後のprofile拡張は用途と検証根拠に応じて判断し、一般AP2の全機能対応を1.0.0の意味にはしません。
 
 ## 大切にする設計方針
 
@@ -35,7 +35,7 @@
 
 ### どの処理を誰が担当するか
 
-発行・提示・検証・Receipt確認は、以下の対応profileに限って0.8.0で利用できます。Payment Mandateは将来の検討範囲です。
+発行・提示・検証・Receipt確認は、以下の対応profileに限って1.0.0で利用できます。Payment Mandateは将来の検討範囲です。
 
 | 処理 | 現在のGemが支援すること | Host・外部サービスが担当すること |
 | --- | --- | --- |
@@ -62,19 +62,19 @@ Gem自身が実装済みの検査をHostへ移して省略する方針ではあ�
 
 | 現在確認・承認されていること | 今後目指すこと／未決事項 |
 | --- | --- |
-| [公開済み`0.8.0`](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.8.0)は、既存single-SKUに加え、明示選択するmulti-itemとDirectのprofile v1を提供。Direct／条件付き委任は1 merchant・1〜8明細の範囲で発行・提示・検証・Receipt確認を支援 | **1.0.0は未公開候補。** 現行SDKの公開API・対応範囲・互換性・保守方針を明確にし、候補自体の配布・導入検証を揃える。一般AP2対応、Payment Mandate、Rails adapter、Host DBを1.0.0の必須機能にはしない |
+| [公開済み`1.0.0`](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.0.0)は、既存single-SKUに加え、明示選択するmulti-itemとDirectのprofile v1を提供。Direct／条件付き委任は1 merchant・1〜8明細の範囲で発行・提示・検証・Receipt確認を支援し、公開API・互換性・保守方針を確定 | 利用者の用途と検証根拠に応じて拡張を判断する。一般AP2対応、Payment Mandate、Rails adapter、Host DBは1.0.0の公開契約に含めない |
 | 合成入力での独立比較、公開GemのMBA/Linux包装・導入確認、限定Host/DB研究を保存済み | 実Issuerは未定・信頼未証明で、特定Host/決済の本番運用は未承認。研究用Host/DBコードは本番adapterではない |
 | 固定AP2参照は `b4587ac1d055888a73b4b21750973cffba961793`。現在の支持範囲は既存契約に限定 | 一般AP2/全profile互換、本番安全性、最悪資源・並行性能は証明済みではない |
 
-次の優先作業は[1.0.0の準備](RELEASE_100_CANDIDATE.md)です。新機能数を増やすことより、Rubyから利用する公開契約と失敗時の扱いを明確にし、文書・実装・候補の検証を揃えます。公開済み0.8.0の事実は[公開記録](POST_RELEASE_080.md)、1.xの保守・版更新方針は[公開後の整備](POST_RELEASE_MAINTENANCE.md)に従います。実Issuer信頼・特定Host本番GO・旧Phase 2-Bは引き続き別判断です。Webデモサイトの公開は当面行いません。
+公開済み[1.0.0の導入・更新手順](RELEASE_100.md)を入口に、Rubyから利用する公開契約と失敗時の扱いを伝え、利用者の具体的な課題に沿って改善します。公開済み1.0.0の事実は[公開記録](POST_RELEASE_100.md)、1.xの保守・版更新方針は[公開後の整備](POST_RELEASE_MAINTENANCE.md)に従います。実Issuer信頼・特定Host本番GO・旧Phase 2-Bは引き続き別判断です。Webデモサイトの公開は当面行いません。
 
-固定profile検証専用だった0.1.0の[公開記録](../research/stable010_release_linux_package/README.md#rubygems-publication-verified)、旧研究版pre.3、検証コア第一段階の完成判断は歴史記録として保持します。これらや1.0.0の準備を、全面AP2対応・実Issuer信頼・Host本番GOの証明へ読み替えません。
+固定profile検証専用だった0.1.0の[公開記録](../research/stable010_release_linux_package/README.md#rubygems-publication-verified)、旧研究版pre.3、検証コア第一段階の完成判断は歴史記録として保持します。各版の公開を、全面AP2対応・実Issuer信頼・Host本番GOの証明へ読み替えません。
 この方向性は将来機能・互換性・提供時期を確約せず、追加実装・試験・環境導入・公開を承認しません。実装言語やnative coreの新しい選定も行いません。
 
 ## 既存文書との関係
 
 本書は製品として目指す価値と方向だけを整理し、現行契約や歴史的設計案を置き換えません。
-実際のAPI・導入例は[README](../README.md)、1.0.0で安定させる公開面は[PUBLIC_API](PUBLIC_API.md)、入力と対応範囲は[SUPPORT_CONTRACT](SUPPORT_CONTRACT.md)、現在地と証拠は[PROJECT_STATUS](PROJECT_STATUS.md)・[完成条件](VERIFIER_CORE_COMPLETION_CRITERIA.md)を参照します。
+実際のAPI・導入例は[README](../README.md)、1.0.0で安定させた公開面は[PUBLIC_API](PUBLIC_API.md)、入力と対応範囲は[SUPPORT_CONTRACT](SUPPORT_CONTRACT.md)、現在地と証拠は[PROJECT_STATUS](PROJECT_STATUS.md)・[完成条件](VERIFIER_CORE_COMPLETION_CRITERIA.md)を参照します。
 信頼と利用側の責任は[Issuer/Host最小契約](ISSUER_HOST_MINIMUM_CONTRACT.md)と[Issuer登録前チェックリスト](ISSUER_ONBOARDING_CHECKLIST.md)に従います。
 [API_PROPOSAL](API_PROPOSAL.md)等の過去の設計案は履歴であり、本書から未実装APIを現行機能へ昇格させません。
 
