@@ -1,6 +1,25 @@
 # 現状メモ / Project status
 
-## 1.0.0準備 — 未公開候補
+<a id="100-publication"></a>
+
+## 1.0.0公開済み — 現在の配布状態
+
+2026-11-01 **08:13:29.733 UTC（17:13:29.733 JST）**にRubyGemsへ登録され、
+**08:16:01 UTC**に公式配布Gemと保持候補の完全一致を確認しました。
+102,912 bytes、SHA256 `a107101b0178c54ba417be7a2bd7e22feb2fd9a07bda089043e8c5ea8e65e12b`。
+全33payloadが公開source `59e344ad865ed867d0993120456f9411d82bcdec` のtreeと一致します。
+owner `cuichangquan`、platform `ruby`、non-prerelease、照合時non-yankedです。
+[公開receipt](evidence/1.0.0_publication.json)、[Release・更新手順](RELEASE_100.md)、
+[公開確認記録](POST_RELEASE_100.md)。source対応は保持候補と配布bytes／payloadの一致によるもので、RubyGems自体のsource attestationではありません。
+
+[PR #233](https://github.com/cuichangquan/ap2-mandate-verifier/pull/233)を統合し、
+1.xの[公開API](PUBLIC_API.md)・[互換性と保守](POST_RELEASE_MAINTENANCE.md)を確定しました。
+0.8.0の製品`lib/`・profile/default・保存形式・5固定依存・正式対応MRI 3.4.12／4.0.9は維持します。
+両MRIの17 source suite、同一候補の導入134ケース・診断244チェック・全33payload照合、
+公開完全検証へ接続する独立Python比較は[準備証拠](evidence/1.0.0_preparation.json)に保存済みです。
+今回の配布照合は再build・再push・試験の再実行ではありません。別リポジトリのRailsデモは引き続き0.8.0を使用します。
+
+### 1.0.0準備時点の記録（履歴）
 
 Ownerの「そのまま1.0.0の準備をお願いします」に基づく新しいリリース準備です。
 公開済み0.8.0を基準に、Ruby SDKの[公開API](PUBLIC_API.md)、
@@ -13,7 +32,7 @@ RubyGems push、公開tag/Release、実決済・本番利用はこの準備の�
 
 <a id="080-publication"></a>
 
-## 0.8.0公開済み — 現在の配布状態
+## 0.8.0公開済み — 過去の配布記録
 
 2026-11-01 **06:01:31.103 UTC（15:01:31.103 JST）**にOwnerが公開し、
 **06:03:20 UTC**の公式配布物照合で、承認候補との完全一致を確認しました。
@@ -33,7 +52,7 @@ reviewed HEAD `35749455db7330c0dc9c1497d78e991319cc09bc` と公開sourceのtree�
 
 <a id="070-publication"></a>
 
-## 0.7.0公開済み — 現在の配布状態
+## 0.7.0公開済み — 過去の配布記録
 
 [RubyGems 0.7.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.7.0)はOwner本人のTerminalで2026-11-01 **03:12:46.522 UTC**に公開。**03:14:04 UTC**の公式配布検証で、64,000 bytes、SHA256 `baab8c68355b5e6c9351e7d86a836fab50652cdad662bbc99d1676c5e6134447`が承認済み候補と完全一致し、全24payloadが公開元 `9b4b78a7ed9aa95e7d35e01a64efc1281ba95be3`と一致しました。5固定依存・Ruby要件・non-prerelease・non-yankedも確認。[公開検証記録](evidence/0.7.0_publication.json)。これは候補と実配布bytesの照合であり、RubyGemsによるsource attestationではありません。
 

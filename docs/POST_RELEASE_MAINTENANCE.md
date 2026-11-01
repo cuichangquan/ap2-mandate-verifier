@@ -1,8 +1,8 @@
 # 公開後の整備 / Post-release maintenance
 
-現在の配布版は[0.8.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.8.0)です。フレームワーク非依存のAP2 Ruby SDKとして、対応profileにおけるDirect／条件付き購入委任の発行・提示・検証・Checkout Receipt確認を提供します。現行API・対応範囲は[SUPPORT_CONTRACT](SUPPORT_CONTRACT.md)、公開物と導入確認は[0.8.0公開記録](POST_RELEASE_080.md)を参照してください。**1.0.0は未公開候補**であり、候補の状態と検証は[1.0.0準備記録](RELEASE_100_CANDIDATE.md)に分けて記録します。
+現在の配布版は[1.0.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.0.0)です。フレームワーク非依存のAP2 Ruby SDKとして、対応profileにおけるDirect／条件付き購入委任の発行・提示・検証・Checkout Receipt確認を提供します。現行API・対応範囲は[PUBLIC_API](PUBLIC_API.md)・[SUPPORT_CONTRACT](SUPPORT_CONTRACT.md)、公開物と検証記録は[1.0.0公開記録](POST_RELEASE_100.md)を参照してください。[1.0.0準備記録](RELEASE_100_CANDIDATE.md)は当時の状態を残す履歴です。
 
-The current distribution is 0.8.0, a framework-independent Ruby SDK for the documented AP2 Checkout profiles. It includes Direct and conditional issuance, presentation, verification and Receipt confirmation. Version 1.0.0 is an unpublished candidate. Historical prerelease/candidate/prepublication statements below describe their original stages, not current availability.
+The current distribution is 1.0.0, a framework-independent Ruby SDK with a stable public contract for the documented AP2 Checkout profiles. It includes Direct and conditional issuance, presentation, verification and Receipt confirmation. Historical prerelease/candidate/prepublication statements below describe their original stages, not current availability.
 
 実Issuer信頼・特定Host本番GO・Phase 2-BはHOLDを維持します。一般AP2互換性・Phase2-A全面PASS・E10全面GOは未成立です。EvidenceはHost ALLOW・nonce消費・決済許可ではありません。
 Real Issuer trust, specific Host production GO and Phase 2-B remain HOLD. General AP2 compatibility, full Phase2-A PASS and full E10 GO are not established. Evidence is not Host ALLOW, nonce consumption or payment permission.
@@ -11,13 +11,17 @@ Real Issuer trust, specific Host production GO and Phase 2-B remain HOLD. Genera
 
 | 配布先 / Distribution | 版 / Version | bytes | SHA256 |
 | --- | --- | ---: | --- |
-| [RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.8.0) | 0.8.0（現行配布版 / current release） | 79,872 | `6c07664e4291aa8bc025b152075869322411a0d99861e1267959f1794e99acec` |
+| [RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.0.0) | 1.0.0（現行配布版 / current release） | 102,912 | `a107101b0178c54ba417be7a2bd7e22feb2fd9a07bda089043e8c5ea8e65e12b` |
+| [RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.8.0) | 0.8.0（歴史記録 / historical） | 79,872 | `6c07664e4291aa8bc025b152075869322411a0d99861e1267959f1794e99acec` |
 | [RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0) | 0.1.0（歴史記録 / historical） | 34,304 | `37b2a235b6fab2d9d9765ae985dd9db27afd3b2c5407fe263a6b65314550db32` |
 | [RubyGems](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0.pre.3) | 0.1.0.pre.3 | 37,888 | `8ad627818dc69b450d0fba970dafaf368ec42dd64fb51eec631731027de3882c` |
 | [GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v0.1.0.pre.2) | 0.1.0.pre.2 | 33,280 | `e910659bbebda7aa5f00d63fb579f3b56819d59b5ee7d8b1734a6331f01d8de4` |
 
-0.8.0の公式配布物は保持候補およびsource `5a7394c1b98f000b321423e2c2f80d50b5157808` の全29 payloadと照合済みです。公開日時・照合・対応MRIでの公式Gem導入確認は[0.8.0公開記録](POST_RELEASE_080.md)が根拠です。この表は現行版と以下の歴史記録の対象を示し、全リリース一覧ではありません。
-The 0.8.0 publication record identifies the exact source, distributed artifact and installed-Gem checks. Its observations do not validate a newly built 1.0.0 artifact. The table preserves the historical artifacts discussed below; it is not a complete version inventory.
+1.0.0は2026-11-01 08:13:29.733 UTCに登録され、08:16:01 UTCに公式配布物と保持候補の完全一致、全33 payloadとsource `59e344ad865ed867d0993120456f9411d82bcdec` のtreeとの一致を確認しました。[公開receipt](evidence/1.0.0_publication.json)と[公開記録](POST_RELEASE_100.md)が根拠です。
+The official 1.0.0 distribution matches the exact retained candidate and all 33 payloads of the release source. Source association comes from that byte/payload comparison, not RubyGems source attestation.
+
+過去の0.8.0の公式配布物は保持候補およびsource `5a7394c1b98f000b321423e2c2f80d50b5157808` の全29 payloadと照合済みです。公開日時・照合・対応MRIでの公式Gem導入確認は[0.8.0公開記録](POST_RELEASE_080.md)に保持します。この表は現行版と以下の歴史記録の対象を示し、全リリース一覧ではありません。
+The 0.8.0 observations remain evidence for that release. The table preserves the historical artifacts discussed below; it is not a complete version inventory.
 
 ### 歴史記録：0.1.0公開 / Historical 0.1.0 publication
 
@@ -74,36 +78,36 @@ when a separately approved next version is needed.
   environment failures and security concerns. No response/fix deadline or
   production support commitment is promised.
 
-## 1.xの保守・互換性方針案 / Proposed 1.x maintenance and compatibility
+## 1.xの保守・互換性方針 / 1.x maintenance and compatibility
 
-以下は1.0.0公開に向けた保守方針案です。1.0.0の公開済み表示や、旧版への保守保証ではありません。公開面の対象は[PUBLIC_API](PUBLIC_API.md)、対応profile・信頼前提・環境は[SUPPORT_CONTRACT](SUPPORT_CONTRACT.md)に定義します。
+以下は1.0.0の公開から適用する保守方針です。公開面の対象は[PUBLIC_API](PUBLIC_API.md)、対応profile・信頼前提・環境は[SUPPORT_CONTRACT](SUPPORT_CONTRACT.md)に定義します。0.x等の旧版へ新しい保守保証を与えるものではありません。
 
-- **保守対象：** 1.x公開後は、最新の1.xマイナー系列の最新patchを対象とします。新しい1.xマイナーが公開された後、以前のマイナー系列・0.x・preへのbackportは約束しません。固定保守年数、受付・修正・開示期限、SLA、24時間対応も約束しません。重大未対処問題や保守不能が判明した場合はHOLDとし、対象版・理由・利用者が取れる対応を明記します。
+- **保守対象：** 1.xでは、最新の1.xマイナー系列の最新patchを対象とします。新しい1.xマイナーが公開された後、以前のマイナー系列・0.x・preへのbackportは約束しません。固定保守年数、受付・修正・開示期限、SLA、24時間対応も約束しません。重大未対処問題や保守不能が判明した場合はHOLDとし、対象版・理由・利用者が取れる対応を明記します。
 - **patch：** 文書化された公開契約を保つ不具合修正です。以前誤って受理した不正・未対応入力を拒否して既存契約を回復するセキュリティ修正は含み得ます。その場合も影響版・受理範囲の変化・理由・必要な移行を開示します。
 - **minor：** 既存の公開契約を保つAPI追加、明示選択するprofileの追加、非推奨化の告知です。既定profileや保存済み原文の扱いを黙って変更しません。非推奨化するAPIは移行先を示してminorで告知し、削除は次のmajor以降とします。固定の暦日猶予は設けません。
 - **major：** 公開API、結果・エラーの契約、既定動作、既存profileの受理条件、保存形式、対応環境に対する非互換変更です。セキュリティ対策という理由だけで、文書化された契約変更を互換patchとして扱いません。必要な修正を互換性のために放置せず、影響と移行を明示して適切な版で対応します。
 
-Once 1.x is released, the proposal maintains only the latest patch of its latest minor series. No backports to older minors, 0.x or prereleases, fixed support term, response/fix/disclosure deadlines or SLA are promised. Patch releases preserve the documented public contract; minor releases add compatible capabilities or announce deprecations with migration guidance; incompatible public-contract changes require a major release. Deprecations are announced in a minor release, with removal no earlier than the next major and no fixed calendar notice period.
+The 1.x policy maintains only the latest patch of its latest minor series. No backports to older minors, 0.x or prereleases, fixed support term, response/fix/disclosure deadlines or SLA are promised. Patch releases preserve the documented public contract; minor releases add compatible capabilities or announce deprecations with migration guidance; incompatible public-contract changes require a major release. Deprecations are announced in a minor release, with removal no earlier than the next major and no fixed calendar notice period.
 
 Security fixes may reject inputs previously accepted in violation of the documented contract, including in a patch release, with affected versions, reasons and migration disclosed. An actual documented-contract change is not automatically patch-compatible because it is security-related. Unsupported profiles, real Issuer trust and Host/payment duties are not brought into scope by the 1.0.0 version number. Dependency updates require an explicit compatibility assessment; they are not automatically compatible.
 
 ## 依存と回帰 / Dependencies and regression
 
 担当はOwner／保守者です。Owner採用済みの手動見直し頻度は月1回、および関連advisory判明時・次版判断前です。
-1.xの保守対象案は前節のとおりです。現行0.8.0の報告窓口は維持しますが、旧版backport・固定保守年数・SLAは約束しません。
+1.xの保守対象は前節のとおりです。現行1.0.0の報告窓口は維持しますが、旧版backport・固定保守年数・SLAは約束しません。
 これは定期監視・自動実行・対応期限が稼働中だという宣言でも、実行の包括承認でもありません。
 2026-10-24 JSTの設定確認ではPrivate vulnerability reportingを有効化し、Dependabot alerts／security updatesは無効、version更新用設定ファイルはなしと記録しました。
 これは当時の設定記録であり、今回の文書整備では現在の設定の再確認やDependabot・CI・認証設定の変更はしていません。
 The Owner-adopted manual cadence is monthly, on relevant advisory discovery
-and before a next release. The proposed 1.x maintenance scope is above; the current
-0.8.0 reporting routes remain available without a backport or SLA promise. This is
+and before a next release. The 1.x maintenance scope is above; the current
+1.0.0 reporting routes remain available without a backport or SLA promise. This is
 not an active scheduled monitor, automatic execution authority or response/fix
 deadline. The 2026-10-24 JST setting record is historical: private reporting was
 enabled, Dependabot alerts/security updates were disabled and no version-update
 configuration was present. This documentation update neither rechecks nor changes
 those settings.
 
-1.0.0準備で正式対応環境は広げません。MRI **3.4.12 / 4.0.9**、JSON **2.19.9**、JWT **3.3.0**、base64 **0.3.0**、OpenSSL gem **4.0.2**、Digest **3.2.1**の固定を維持します。RubyGemsの`>= 3.4.12, < 4.1`は依存解決範囲であり、その範囲の全Ruby版・他engine・OS/providerを検証済みとするものではありません。実測環境は各版の検証記録で区別します。
+1.0.0でも正式対応環境は広げません。MRI **3.4.12 / 4.0.9**、JSON **2.19.9**、JWT **3.3.0**、base64 **0.3.0**、OpenSSL gem **4.0.2**、Digest **3.2.1**の固定を維持します。RubyGemsの`>= 3.4.12, < 4.1`は依存解決範囲であり、その範囲の全Ruby版・他engine・OS/providerを検証済みとするものではありません。実測環境は各版の検証記録で区別します。
 Formal runtime support remains exactly MRI 3.4.12 and 4.0.9 with the five dependency pins above. The Gem's Ruby resolution interval does not certify all versions or engines within it, or unmeasured OS/native-provider configurations.
 
 Before proposing an update, assess official Ruby/JSON/JWT/base64/OpenSSL/Digest
@@ -129,7 +133,7 @@ replays are not independent Oracle reruns. Failure, uncertainty or mismatch mean
 STOP/HOLD. Builds, installs, dynamic tests, Actions, dependency changes and releases
 need their own explicit scope/approval; this document grants none.
 
-The [0.8.0 publication record](POST_RELEASE_080.md) remains evidence for that distribution. The [1.0.0 candidate record](RELEASE_100_CANDIDATE.md) reports its own completed and pending validation; this maintenance plan does not assert that those checks have run.
+The [1.0.0 publication record](POST_RELEASE_100.md) identifies the current distribution and its evidence. The [1.0.0 preparation record](RELEASE_100_CANDIDATE.md) and [0.8.0 publication record](POST_RELEASE_080.md) retain their historical identities; old pending states and results are not relabelled as fresh checks.
 
 
 ## 歴史記録：未公開0.1.0候補と採用済み保守条件（2026-10-26 UTC）

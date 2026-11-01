@@ -2,41 +2,41 @@
 
 [English](README.md)
 
-**公開済み安定版は0.8.0です。1.0.0は準備中の未公開候補です。**
+**公開済み安定版は1.0.0です。**
 
-1.0.0では、既存のDirectと条件付きCheckoutの公開API・保守契約を明確にします。
-0.8.0の引数・既定値・profile・結果の意味・保存形式を維持します。
-以下の公開版インストール手順は引き続き0.8.0です。
+1.0.0では、既存のDirectと条件付きCheckoutの公開API・保守契約を確立しました。
+0.8.0の引数・既定値・profile・結果の意味・保存形式と製品実装を維持します。
 [公開API契約](docs/PUBLIC_API.md)、[保守方針](docs/POST_RELEASE_MAINTENANCE.md)、
-[候補版の準備状況](docs/RELEASE_100_CANDIDATE.md)を参照してください。
+[1.0.0 Release notes](docs/RELEASE_100.md)を参照してください。
+公式配布Gemは保持候補と一致し、正確なsource・bytes・検証範囲は[公開照合記録](docs/POST_RELEASE_100.md)に記録しています。
 
-## 条件付き購入委任 — 0.8.0公開済み
+## 条件付き購入委任
 
-`ConditionalCheckout.issue_open`、`.issue_closed`、`.present` を追加します。
+0.8.0で追加した`ConditionalCheckout.issue_open`、`.issue_closed`、`.present` を利用できます。
 A／Bから1個とCを2個という条件を承認サービスが登録Agent鍵へOpenとして発行し、
 Agentが条件に合う販売者署名CheckoutをClosedにします。既存 `InputBuilder.verify` と
 `CheckoutReceipt.sign/verify` へ接続します。全候補開示の複数商品profileを維持し、
 Agent処理へProvider秘密鍵を渡しません。[API・信頼境界](docs/CONDITIONAL_CHECKOUT.md)、
-[Release実行例](docs/RELEASE_080.md)・[公開照合記録](docs/POST_RELEASE_080.md)を参照してください。
+[条件付き委任のコード例](docs/RELEASE_080.md)・[1.0.0公開照合記録](docs/POST_RELEASE_100.md)を参照してください。
 
 正式対応MRI 3.4.12／4.0.9で動くRuby単体の導入例です。source checkoutやRailsは不要です：
 
 ```sh
-gem install ap2_mandate_verifier --version 0.8.0
-ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "0.8.0").full_gem_path')/examples/conditional_checkout.rb"
+gem install ap2_mandate_verifier --version 1.0.0
+ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.0.0").full_gem_path')/examples/conditional_checkout.rb"
 ```
 
 [Ruby単体の実行例](examples/conditional_checkout.rb)はインストール済み公開APIだけを使い、
 3明細・候補選択・異なる要件数量・同一商品の別行からSuccess／Error Receiptまで動きます。
 Success後は消費済み、Error後は再提示方針を再判断、Receipt未到着や結果不明は保留です。
 本人認証・同意・購買権限・信頼先登録・永続的な重複防止・注文や決済の実行はアプリ責務です。
-0.7.0利用者の移行は不要で、既存既定値・保存形式を維持します。0.8.0は公開済みです。
+文書化された0.8.0 APIの利用コードは変更不要です。依存制約の更新は下記を参照してください。
 
-公開済み安定版は **0.8.0** です。Open発行・Agent Closed生成／提示を完全検証とReceiptへ接続し、1販売者・1〜8明細・複数商品・数量・候補選択を扱います。既存DirectとOpen→Closedの契約を維持します。[公開記録](docs/PROJECT_STATUS.md#080-publication)を参照してください。
+Directと条件付き委任は1販売者・1〜8明細・複数商品と数量を扱います。1.0.0でも既存DirectとOpen→Closedの契約を維持します。
 
 ## 複数商品と数量
 
-新profile `ap2.checkout.single_merchant_multi_item` v1は、`InputBuilder.trust`、`CheckoutJWT.sign`、`CheckoutReceipt.reference/sign/verify` に `profile_ref:` を渡して明示選択します。完全検証は認証済みtrustの選択に従います。既定の `ap2.checkout.single_merchant_sku` v1は定義・hash・1明細の受理範囲を維持します。
+複数明細profile `ap2.checkout.single_merchant_multi_item` v1は、`InputBuilder.trust`、`CheckoutJWT.sign`、`CheckoutReceipt.reference/sign/verify` に `profile_ref:` を渡して明示選択します。完全検証は認証済みtrustの選択に従います。既定の `ap2.checkout.single_merchant_sku` v1は定義・hash・1明細の受理範囲を維持します。
 
 単一販売者・単一Checkout・単一通貨で最大8明細を扱い、数量違いと同一商品の別行を支持します。開示候補の商品IDを整数最大流で照合し、全要件と全注文数量を過不足なく一度ずつ充当します。数量不足・余剰は拒否し、要件IDと明細IDは別の識別子です。[詳細・移行案内](docs/MULTI_ITEM_CHECKOUT.md)、[合成入力による一連の動作例](examples/multi_item_checkout.rb)、[公式Python SDKとの数量不足・空候補・Receipt参照の差異](docs/MULTI_ITEM_INTEROP.md)を参照してください。
 
@@ -53,21 +53,31 @@ Rubyで購入委任データを検証する、AP2の固定profile向けGemです
 正式対応は **MRI 3.4.12とMRI 4.0.9** です。利用者が選ぶGem環境で導入します。
 
 ```sh
-gem install ap2_mandate_verifier --version 0.8.0
+gem install ap2_mandate_verifier --version 1.0.0
 ```
 
 BundlerのGemfile：
 
 ```ruby
-gem "ap2_mandate_verifier", "= 0.8.0"
+gem "ap2_mandate_verifier", "~> 1.0"
 ```
 
 runtime依存はJSON 2.19.9、JWT 3.3.0、base64 0.3.0、OpenSSL gem 4.0.2、Digest 3.2.1に固定しています。通常導入には依存の取得・buildが伴い得ます。衝突回避のために固定条件を緩めないでください。Rubyの解決範囲は、その間の全Ruby版・OS・native providerへの対応保証ではありません。[対応契約](docs/SUPPORT_CONTRACT.md)を参照してください。
 
+### 0.8.0からの更新
+
+文書化された0.8.0 API・profile・既定値・保存形式は互換性を維持します。
+`~> 0.8.0`等の依存制約では1.0.0を選択しないため、上記の`~> 1.0`へ変更し、
+アプリケーションのlockfileを更新してください。
+
+```sh
+bundle update ap2_mandate_verifier
+```
+
 ## 販売者署名とReceipt
 
 注文JWTを署名し、利用アプリが明示した処理結果をReceiptとして署名できます。
-0.5.0で追加され、0.8.0でも利用できるAPIです。この抜粋は既定の単一商品profileです。`checkout`は注文Hash、`key`はアプリ所有のP-256鍵、
+0.5.0で追加され、1.0.0でも利用できるAPIです。この抜粋は既定の単一商品profileです。`checkout`は注文Hash、`key`はアプリ所有のP-256鍵、
 `received_closed_sd_jwt`は受信した最終inline SD-JWT原文、`now`はアプリの時計です。
 
 ```ruby
@@ -158,7 +168,7 @@ end
 
 Gemは署名、支持する開示閉包、委任、購入／Host binding、制約・期限を検査します。Hostは認証済み・独立・最新のtrust／鍵／失効、注文・Challenge状態、時計を供給します。実行直前に現在状態と期限を再照合し、nonceの原子消費＋注文CAS、不明結果の回復、最終許可・決済判断を担当します。`prepare`／`restore` は保存元の認証やnonce未使用を証明しません。
 
-公開済み0.8.0は既定の単一商品profileと明示選択の[複数明細profile](docs/MULTI_ITEM_CHECKOUT.md)を維持し、条件付き発行には後者を使います。全候補開示と既存上限を守り、未知・非対応形式は拒否します。一般AP2／全Schema、実Issuer互換性、新しい選択的開示profile、Rails adapter、DB／決済実行、数値性能保証は対象外です。実Issuer・実Hostの本番GOとPhase 2-Bは引き続き別のHOLDです。
+公開済み1.0.0は既定の単一商品profileと明示選択の[複数明細profile](docs/MULTI_ITEM_CHECKOUT.md)を維持し、条件付き発行には後者を使います。全候補開示と既存上限を守り、未知・非対応形式は拒否します。一般AP2／全Schema、実Issuer互換性、新しい選択的開示profile、Rails adapter、DB／決済実行、数値性能保証は対象外です。実Issuer・実Hostの本番GOとPhase 2-Bは引き続き別のHOLDです。
 
 ### APIの使い分け
 
@@ -168,7 +178,7 @@ Gemは署名、支持する開示閉包、委任、購入／Host binding、制�
 | `Buyer.issue_closed/present_closed/verify` | 確定注文を承認するDirect発行・構造確認を伴う提示・Directの完全検証。 |
 | `CheckoutJWT.sign/verify` | 販売者のCheckout署名と、承認前の真正性確認。 |
 | `CheckoutReceipt.reference/sign/verify` | 最終Mandate原文の参照計算、明示的なアプリ結果の署名、Receiptの真正性確認。 |
-| `InputBuilder.verify(**business_information)` | 0.8.0の推奨業務情報経路。入力を組み立て、完全検証します。発行前準備・復元は上の例の別処理です。 |
+| `InputBuilder.verify(**business_information)` | 推奨業務情報経路。入力を組み立て、完全検証します。発行前準備・復元は上の例の別処理です。 |
 | `verify_checkout(**inputs)` | 既存の7入力を直接渡すOpen → Agent Closedの完全検証。trust／selection／Host JSONも呼出側が渡します。 |
 | `verify_research(**inputs)` | 同じ7入力検証経路の維持された名称。非推奨警告はありません。 |
 | `verify(presentation_json:)` | 旧JSON構文検査のみ。成功Evidenceを返しません。 |
@@ -177,10 +187,10 @@ Gemは署名、支持する開示閉包、委任、購入／Host binding、制�
 
 ## 詳細リンク
 
-- [1.x候補の公開API・失敗・profile・保存契約](docs/PUBLIC_API.md)。従来の部分検証APIも維持し、成功Evidenceを返さない意味を変えません。
+- [1.xの公開API・失敗・profile・保存契約](docs/PUBLIC_API.md)。従来の部分検証APIも維持し、成功Evidenceを返さない意味を変えません。
 - [業務情報の一連の利用とRails対応付け](docs/INPUT_BUILDER.ja.md)、[完全Ruby例](examples/input_builder.rb)、[変更前の例](examples/input_builder_before.rb)。
 - [支持入力・上限・Result／Evidence契約](docs/SUPPORT_CONTRACT.md)、[Issuer／Host責務](docs/ISSUER_HOST_MINIMUM_CONTRACT.md)。
-- [0.8.0 Release notes](docs/RELEASE_080.md)、[公開・撤回記録](docs/PROJECT_STATUS.md)、[変更履歴](CHANGELOG.md)。リポジトリREADMEの変更で公開Gemを再build・置換しません。
+- [1.0.0 Release notes](docs/RELEASE_100.md)、[公開・撤回記録](docs/PROJECT_STATUS.md)、[変更履歴](CHANGELOG.md)。リポジトリREADMEの変更で公開Gemを再build・置換しません。
 - [固定commitの旧7入力・保存FULL例](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.ja.md#保存済み合成入力で試す)、[過去版の配布物・provider証拠](research/stable010_release_linux_package/README.md)、[過去の概念図](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.ja.md#図で見るap2の概念)。履歴は保存していますが、現在の連携手順や対応範囲を広げる根拠ではありません。
 - [脆弱性報告](SECURITY.md)、[保守方針](docs/POST_RELEASE_MAINTENANCE.md)、[製品方針](docs/PRODUCT_VISION.md)。秘密鍵・実Mandate・個人情報を報告に含めないでください。
 

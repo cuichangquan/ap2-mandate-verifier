@@ -2,11 +2,11 @@
 
 ## 現在の対象と限界 / Current scope
 
-[Published 0.8.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.8.0) is a framework-independent Ruby SDK for the documented AP2 Checkout profiles, including Direct and conditional issuance, presentation, verification and Checkout Receipt confirmation. See [publication evidence](docs/POST_RELEASE_080.md) and [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md) for its scope and limitations. **1.0.0 is an unpublished candidate**, with its proposed stable surface and release status in [PUBLIC_API](docs/PUBLIC_API.md) and [release preparation](docs/RELEASE_100_CANDIDATE.md).
+[Published 1.0.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.0.0) is a framework-independent Ruby SDK for the documented AP2 Checkout profiles, including Direct and conditional issuance, presentation, verification and Checkout Receipt confirmation. See [publication evidence](docs/POST_RELEASE_100.md), the stable [PUBLIC_API](docs/PUBLIC_API.md) and [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md) for its scope and limitations.
 
-現在の配布版は、対応profileのDirect／条件付き購入委任の発行・提示・検証・Checkout Receipt確認を備えた、フレームワーク非依存のRuby SDK **0.8.0**です。**1.0.0は準備中の未公開候補**です。1.x公開後の保守対象案は最新マイナー系列の最新修正版のみとし、旧マイナー・0.x・preへのbackportは約束しません。現行版の報告窓口は以下のままです。保守対象・互換性・セキュリティ修正の扱いは[公開後の整備](docs/POST_RELEASE_MAINTENANCE.md)を参照してください。
+現在の配布版は、対応profileのDirect／条件付き購入委任の発行・提示・検証・Checkout Receipt確認を備えた、フレームワーク非依存のRuby SDK **1.0.0**です。1.xの保守対象は最新マイナー系列の最新修正版のみとし、旧マイナー・0.x・preへのbackportは約束しません。現行版の報告窓口は以下のままです。保守対象・互換性・セキュリティ修正の扱いは[公開後の整備](docs/POST_RELEASE_MAINTENANCE.md)を参照してください。
 
-The proposed 1.x policy covers only the latest patch of the latest 1.x minor series once released; older minors, 0.x and prereleases carry no backport promise. Existing reporting routes below remain available for the current release. See [maintenance and compatibility](docs/POST_RELEASE_MAINTENANCE.md). The pre.3, 0.1.0 candidate and R2 statements below are historical records of those stages, not the current release status.
+The 1.x policy covers only the latest patch of the latest 1.x minor series; older minors, 0.x and prereleases carry no backport promise. Existing reporting routes below remain available for the current release. See [maintenance and compatibility](docs/POST_RELEASE_MAINTENANCE.md). The pre.3, 0.1.0 candidate and R2 statements below are historical records of those stages, not the current release status.
 
 Evidence is not Host ALLOW or payment permission. Real Issuer trust, specific Host production GO and Phase 2-B remain HOLD; general AP2/full Schema, full Phase2-A PASS, worst-resource/concurrency and global native/runtime safety are not established. No SLA, fixed support term or response/fix deadline is promised. Existing provider/JSON advisory-metadata and communication-accounting limitations remain recorded; publication does not erase them. New execution, changes or releases require their own approval.
 

@@ -1,13 +1,22 @@
 # AP2 Checkout Ruby SDK — support contract and history
 
-## Current contract and unpublished 1.0.0 preparation
+## Current contract — published 1.0.0
 
-**Published stable remains 0.8.0. The working 1.0.0 candidate is unpublished.**
-The candidate preserves the existing product implementation and acceptance
-contracts. Its intended 1.x public surface is catalogued in
-[PUBLIC_API](PUBLIC_API.md); candidate evidence and outstanding decisions are in
-[the preparation record](RELEASE_100_CANDIDATE.md). Historical observations below
-are not new 1.0.0 test results.
+**Published stable is 1.0.0.** It preserves the 0.8.0 product implementation and
+acceptance contracts. The stable 1.x public surface is catalogued in
+[PUBLIC_API](PUBLIC_API.md); exact distribution identity and validation are in
+[the publication record](POST_RELEASE_100.md). The earlier
+[preparation record](RELEASE_100_CANDIDATE.md) and older observations below retain
+their historical scope; they are not new post-publication test results.
+
+Registered 2026-11-01 **08:13:29.733 UTC**; official download comparison completed
+**08:16:01 UTC**. The 102,912-byte Gem, SHA256
+`a107101b0178c54ba417be7a2bd7e22feb2fd9a07bda089043e8c5ea8e65e12b`,
+matches the retained candidate exactly, and all 33 payloads match source
+`59e344ad865ed867d0993120456f9411d82bcdec`. Source association comes from
+candidate/payload comparison, not RubyGems source attestation.
+[Publication receipt](evidence/1.0.0_publication.json). The published Gem's documents
+retain their preparation snapshot; repository updates do not rebuild or replace it.
 
 | Current supported flow | Contract |
 | --- | --- |
@@ -30,12 +39,16 @@ The app owns current trust, consent, durable state and final execution. Ruby SDK
 support does not establish general AP2 compatibility, Payment support, actual
 Issuer trust or a particular Host's production authorization.
 
-The [maintenance policy](POST_RELEASE_MAINTENANCE.md) governs proposed 1.x
+The [maintenance policy](POST_RELEASE_MAINTENANCE.md) governs 1.x
 versioning, dependency changes, security corrections and deprecation. The sections
 below preserve older publication evidence and API details; statements explicitly
 scoped to old versions do not remove the current flows listed above.
 
-## Published 0.8.0 conditional delegation
+Documented 0.8.0 API use needs no source migration. A constraint such as `~> 0.8.0`
+does not select 1.0.0; use an appropriate 1.x constraint such as `~> 1.0` and update
+the application lockfile. See [release and migration notes](RELEASE_100.md).
+
+## Historical 0.8.0: conditional delegation
 
 `ConditionalCheckout.issue_open/issue_closed/present` add conditional delegation
 issuance and original-wire presentation under the unchanged explicit multi-item
@@ -43,7 +56,7 @@ profile v1. [Contract, errors, limits and application responsibilities](CONDITIO
 The packaged standalone example uses only public installed APIs. No old default,
 profile definition/hash, Result/Evidence/diagnostic, saved record or Receipt
 acceptance condition is changed. All candidates remain required; no new selective
-disclosure profile is introduced. Published stable is 0.8.0, registered
+disclosure profile is introduced. Version 0.8.0 was registered
 2026-11-01 06:01:31.103 UTC and compared 06:03:20 UTC: 79,872 bytes, SHA256
 `6c07664e4291aa8bc025b152075869322411a0d99861e1267959f1794e99acec`.
 All29 payloads match published source `5a7394c1b98f000b321423e2c2f80d50b5157808`.
@@ -61,7 +74,7 @@ match source `9b4b78a7ed9aa95e7d35e01a64efc1281ba95be3`.
 [Publication record](PROJECT_STATUS.md#070-publication). Older version statements below
 retain their historical scope; they do not exclude the new Direct APIs.
 
-## Current source: explicit multi-item profile
+## Historical 0.6.0: explicit multi-item profile
 
 Published **0.6.0** adds the explicitly
 selected `ap2.checkout.single_merchant_multi_item` v1 across input preparation,
