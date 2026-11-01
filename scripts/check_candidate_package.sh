@@ -40,3 +40,6 @@ cat "$out_dir/direct-installed.log"
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
   ruby "$work_dir/installed/gems/ap2_mandate_verifier-0.8.0/examples/conditional_checkout.rb" > "$out_dir/conditional-installed.log"
 cat "$out_dir/conditional-installed.log"
+GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 \
+  ruby -r "$source_dir/test/runtime_dependencies.rb" "$source_dir/test/conditional_checkout_test.rb" > "$out_dir/conditional-installed-tests.log"
+cat "$out_dir/conditional-installed-tests.log"
