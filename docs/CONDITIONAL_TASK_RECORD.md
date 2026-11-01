@@ -48,16 +48,34 @@ Initial independent Codex P2: restoration only counted Root segments. Fixed via
 the existing exact closure walker, with malformed/missing/duplicate Root cases
 bound to independently signed terminals. No substantive finding is waived.
 
-External blocker: push of design branch
+Initial external blocker (historical, before 14:41 JST approval): push of design branch
 `feature/conditional-checkout-080` to `cuichangquan/ap2-mandate-verifier` was
 rejected by automatic approval review before execution. Exact reason:
 “Pushing a branch to the external GitHub repository is an external commitment and
 public side effect; the available trusted user text does not explicitly authorize
 this exact push.” No alternate route, API, retry, remote ref or PR was created.
-Draft PR, GitHub Codex review, Actions and merge are NOT_RUN. Independent local
+At that checkpoint Draft PR, GitHub Codex review, Actions and merge were NOT_RUN. Independent local
 review and all authorized local preparation continue. Actual GitHub protection
 conditions must be satisfied when the denied push is explicitly authorized.
-No owner approval review is authorized/submitted. GitHub CI budget used 0/3.
+No owner approval review was authorized/submitted. GitHub CI budget then used 0/3.
+
+Owner's 2026-11-01 14:41 JST explicit approval resolves this exact push blocker and
+authorizes Draft PR, existing-budget CI, independent latest-HEAD review/fixes and
+conditional Squash Merge only after all scope/test/review/thread/protection gates.
+Retained source `638c57ccd8ef52e7b132a4674522935c91936e1c`, original 79,360-byte
+candidate SHA256 `c5c6df621a2e1ae79187c68e5ef1a09e7c9e5c1d76f6b9645297301c5b0d4782`
+and remote main/ref state were checked before resumption. A first HTTPS attempt
+with username `git` failed authentication without sending a ref; existing gh
+keyring authentication was confirmed and the authenticated owner username used.
+No credentials/settings were created or changed. Target branch push succeeded,
+[Draft PR #231](https://github.com/cuichangquan/ap2-mandate-verifier/pull/231)
+was created and Codex review requested. Existing Merchant workflow first run:
+[41277992519](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/41277992519),
+attempt1, two MRI jobs, initially in progress. No additional workflow triggered.
+Final source/Gem identities, superseded artifacts, CI budget and exact-HEAD review
+results are retained in the PR and external manifest/report. Final artifacts are
+rebuilt and normally installed on both Rubies after any packaged content change.
+Owner approval reviews and public tag/Release/RubyGems push remain unauthorized.
 
 STOP: denied operations, unexpected network/CI/cost, private data exposure,
 unresolved substantive P1/P2, trust/source/dependency relaxation, profile break,

@@ -44,15 +44,18 @@ closure); fixed through shared structural parsing and signed negative regression
 Latest-HEAD independent review must be completed and identified in the external
 verification report. Review no-findings alone is not a security proof.
 
-Draft PR branch push was denied by automatic approval review before execution:
-the reviewer required explicit authorization for that exact public GitHub push.
-No alternate transport or API was used to bypass it. Draft PR, GitHub Codex review,
-GitHub Actions and merge remain NOT_RUN pending that decision. No owner approval
-review was submitted. Local implementation and package preparation continue.
+Initial Draft PR branch push was denied by automatic approval review before
+execution. Owner subsequently explicitly authorized the specified commit/branch
+push, Draft PR, existing-budget CI, latest-HEAD Codex review/fixes and conditional
+Squash Merge at 2026-11-01 14:41 JST. The branch was pushed and
+[Draft PR #231](https://github.com/cuichangquan/ap2-mandate-verifier/pull/231)
+created. No alternate route bypassed the denial; authorization resolved it first.
+No owner approval review is submitted. Current exact-HEAD review, CI and merge
+results are recorded in that PR and the external final verification report.
 Only existing `merchant-source-package.yml` is expected to trigger for this diff:
 two MRI jobs in one workflow run, existing Ubuntu runner/15-minute job timeout,
 public dependencies, no secrets, extra cost zero. No workflow edits. Issue #101's
-maximum 3 runs/PR is a ceiling, no blind reruns; budget consumed here: 0/3.
+maximum 3 runs/PR is a ceiling, no blind reruns; the PR records every consumed run.
 
 ## Build and final candidate evidence
 
@@ -94,4 +97,5 @@ revocation/key lifecycle, persistence/CAS/nonce consumption, execution and payme
 remain app responsibilities. Payment Mandates, budgets, repeating/split orders,
 User Credentials and tax/shipping/discount engines remain out of scope.
 Production/real wallet/payment/deployment, RubyGems push and public tag/Release
-are NOT_RUN. Until PR/review/CI gates are met this is **not release-ready**.
+are NOT_RUN. Release readiness requires the final exact-HEAD PR/review/CI and
+package gates; the external report records their actual completion state.

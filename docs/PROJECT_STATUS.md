@@ -5,7 +5,10 @@
 Open発行・Agent Closed生成／提示を既存複数商品profileと完全検証・Receiptへ接続する
 追加APIを準備しています。[仕様](CONDITIONAL_CHECKOUT.md)、[候補判断資料](RELEASE_080_CANDIDATE.md)。
 0.7.0が公開済み安定版です。0.8.0の公開・tag／Release・本番接続・実決済は未実施です。
-GitHub pushは自動承認レビューで拒否され未実行のため、PR／CI／統合は保留です。
+初回push拒否はOwnerの2026-11-01 14:41 JSTの個別承認で解消しました。
+[PR #231](https://github.com/cuichangquan/ap2-mandate-verifier/pull/231)で
+最新HEADレビュー・既存CI・保護条件を確認し、成立後のみSquash Mergeします。
+最終候補のsource・SHA256・サイズ・通常インストール結果は外部manifestで固定します。
 
 <a id="070-publication"></a>
 

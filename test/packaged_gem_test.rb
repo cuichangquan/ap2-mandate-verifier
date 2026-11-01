@@ -172,7 +172,7 @@ original_snapshot = validator.method(:snapshot!)
   end
 end
 need(builder_rows.size == 16, "installed builder case accounting")
-puts JSON.pretty_generate(scope:"UNRELEASED040_CANDIDATE_NOT_HOST_ALLOW",candidate_version:spec.version.to_s,
+puts JSON.pretty_generate(scope:"CONDITIONAL_CHECKOUT_CANDIDATE_NOT_HOST_ALLOW",candidate_version:spec.version.to_s,
  ruby:RUBY_VERSION,ruby_platform:RUBY_PLATFORM,dependencies:versions,openssl_default:Gem.loaded_specs.fetch("openssl").default_gem?,
  digest_default:Gem.loaded_specs.fetch("digest").default_gem?,libcrypto:OpenSSL::OPENSSL_LIBRARY_VERSION,installed_lib_files:loaded.size,ordinary_entry:true,
  independent_research_comparisons:rows,independent_checkout_comparisons:checkout_rows,unavailable_comparisons:unavailable_rows,legacy_api_checks:legacy.size,input_rejections:2,constructor_rejections:1,builder_checks:builder_rows,total_cases:134,
