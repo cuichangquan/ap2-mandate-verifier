@@ -18,7 +18,8 @@ No verified prior artifact or previous task checkout was modified.
 All 17 source-suite entry points pass offline on MRI 3.4.12 and 4.0.9. Existing
 regression includes Direct, both old profiles, signed missing/unknown/duplicate
 disclosures, original-wire binding, InputBuilder save/restore, Result/Evidence,
-diagnostics and Receipt outcomes. New tests add 8 cases / 123 assertions for
+diagnostics and Receipt outcomes. New tests add 8 cases (123 assertions on MRI
+3.4.12 / 126 on MRI 4.0.9, including installed-Gem execution) for
 issuance, sign-before-check prevention, bounds, 8×8 candidate/requirement cases,
 same-product separate rows, wrong keys/time/audience/nonce, restoration closure,
 and exact final Closed Receipt reference. A long-ID/title eight-row Checkout
