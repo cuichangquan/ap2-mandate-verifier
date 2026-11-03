@@ -1,8 +1,16 @@
 # 現状メモ / Project status
 
+<a id="120-publication"></a>
+
+## 1.2.0公開済み — 現在の配布状態
+
+2026-11-03 12:30:27.200 UTCにOwnerが公開。公式metadata・実配布Gem・承認候補が129,536bytes、SHA256 `327ddb9f19e2b6348631ccb38838abd8247b4b7c2dfeb3ce2cf53bc2b0961443`で全バイト一致します。公開source `52ebc7cb37f20967d4a53d88c57e347b0bc4b769`はreviewed `fd79d2c230eaa2cd2d65f4bb7394351b5a60c1ea`と同一treeです。全44source/archive/installed payloadを両MRIで確認しました。
+
+新しい明示的なSelectivePaymentで支払先／決済手段候補を必要な分だけ提示し、必須条件・委任・原文参照を検証します。1.1.0の既定API／profileは維持。[公開検証](POST_RELEASE_120.md)、[API・限界](SELECTIVE_PAYMENT.md)、[単体比較例](../examples/selective_payment.rb)。相関subsetは別Openが必要で、Python相互運用は明示低水準adapterの範囲です。
+
 <a id="110-publication"></a>
 
-## 1.1.0公開済み — 現在の配布状態
+## 1.1.0公開済み — 過去の配布記録
 
 2026-11-03 09:20:11.580 UTCにOwnerが公開。公式metadataと配布Gemを独立取得し、115,200 bytes、SHA256 `4c64cf5b6c61ae4395577828093a6f4022c35cf18b6ad1bcfcb9f95fbb4f43c9`が承認候補と全バイト一致しました。公開source `89e779cadeac0ea7941e68f12951eed13f1b8081` はreviewed/tested `631537ec52c33c3472fd856da55faeff3fb62203`と同一treeです。
 

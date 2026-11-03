@@ -1,22 +1,22 @@
-# AP2 Mandate Verifier — Checkout委任のRuby SDK
+# AP2 Mandate Verifier — Checkout・PaymentのRuby SDK
 
-### 次期1.2.0候補：Payment候補の選択的開示（未公開）
+### 公開済み1.2.0：Payment候補の選択的開示
 
-公開済み安定版は引き続き1.1.0です。新しい明示的な`SelectivePayment` profileで、支払先・決済手段の非選択候補を送らずに検証できます。必須条件・委任・原文参照は省略しません。[API・プライバシー・Python差分](docs/SELECTIVE_PAYMENT.md)、[保持／送信を比較するRuby単体例](examples/selective_payment.rb)、[候補・公開準備](docs/RELEASE_120_CANDIDATE.md)。既存`Payment`の既定profileは変更しません。
+公開済み1.2.0の明示的な`SelectivePayment` profileで、支払先・決済手段の非選択候補を送らずに検証できます。必須条件・委任・原文参照は省略しません。[API・プライバシー・Python差分](docs/SELECTIVE_PAYMENT.md)、[保持／送信を比較するRuby単体例](examples/selective_payment.rb)、[公開照合記録](docs/POST_RELEASE_120.md)。既存`Payment`の既定profileは変更しません。
 
 
-### 公開済み1.1.0：Payment
+### Payment発行・検証（1.1.0から継続）
 
 Direct／条件付きPayment Mandateと成功／エラーPayment Receiptを追加しました。[API・制約・信頼境界](docs/PAYMENT.md)、[Ruby単体サンプル](examples/payment.rb)、[公開照合記録](docs/POST_RELEASE_110.md)、[GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v1.1.0)。検証成功は実行許可ではなく、永続的・原子的な単発利用管理と実決済は利用アプリの責任です。
 
 ```sh
-gem install ap2_mandate_verifier --version 1.1.0
-ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.1.0").full_gem_path')/examples/payment.rb"
+gem install ap2_mandate_verifier --version 1.2.0
+ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.2.0").full_gem_path')/examples/payment.rb"
 ```
 
 [English](README.md)
 
-**公開済み安定版は1.1.0です。**
+**公開済み安定版は1.2.0です。**
 
 1.0.0では、既存のDirectと条件付きCheckoutの公開API・保守契約を確立しました。
 0.8.0の引数・既定値・profile・結果の意味・保存形式と製品実装を維持します。
@@ -36,8 +36,8 @@ Agent処理へProvider秘密鍵を渡しません。[API・信頼境界](docs/CO
 正式対応MRI 3.4.12／4.0.9で動くRuby単体の導入例です。source checkoutやRailsは不要です：
 
 ```sh
-gem install ap2_mandate_verifier --version 1.1.0
-ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.1.0").full_gem_path')/examples/conditional_checkout.rb"
+gem install ap2_mandate_verifier --version 1.2.0
+ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.2.0").full_gem_path')/examples/conditional_checkout.rb"
 ```
 
 [Ruby単体の実行例](examples/conditional_checkout.rb)はインストール済み公開APIだけを使い、
@@ -67,7 +67,7 @@ Rubyで購入委任データを検証する、AP2の固定profile向けGemです
 正式対応は **MRI 3.4.12とMRI 4.0.9** です。利用者が選ぶGem環境で導入します。
 
 ```sh
-gem install ap2_mandate_verifier --version 1.1.0
+gem install ap2_mandate_verifier --version 1.2.0
 ```
 
 BundlerのGemfile：

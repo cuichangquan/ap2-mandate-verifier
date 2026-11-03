@@ -1,3 +1,5 @@
+> Historical preparation snapshot. The exact approved candidate is now published; see [publication evidence](POST_RELEASE_120.md). Earlier approval boundaries below describe that checkpoint.
+
 # 1.2.0 candidate — unpublished, Owner decision required
 
 Published1.1.0 remains the released SDK. This is preparation for an additive opt-in Payment candidate-disclosure profile. No RubyGems push/yank, formal tag, GitHub Release, announcement or deployment is authorized by this document. The Owner decides final version and publication after reviewing exact source/artifact/verification identity in Issue#238.

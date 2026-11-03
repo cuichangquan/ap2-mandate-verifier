@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.0 candidate (unpublished)
+## 1.2.0 — 2026-11-03
 
 - Add explicit conditional `SelectivePayment` candidate-array disclosure with payee-only/instrument-only/both modes, exact reduced-wire delegation, mandatory-condition closure and Cartesian approval guard.
 - Add privacy/signed-negative/original-wire tests, honest pinned SDK profile-adapter interoperability, installed Ruby example and candidate preparation. Existing1.1.0 defaults/formats/Receipt references remain unchanged.

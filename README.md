@@ -1,22 +1,22 @@
-# AP2 Mandate Verifier — Ruby SDK for Checkout delegation
+# AP2 Mandate Verifier — Ruby SDK for Checkout and Payment
 
-### Unpublished1.2.0 candidate: selective Payment
+### Published1.2.0: selective Payment
 
-Published1.1.0 remains the stable release. The next candidate adds explicit `SelectivePayment` candidate-array disclosure: retain confidential full issuance, send selected payee/instrument disclosures only, and verify every mandatory condition and exact original-wire reference. [Profile/API/privacy/Python limits](docs/SELECTIVE_PAYMENT.md), [plain Ruby retained-vs-sent example](examples/selective_payment.rb), [candidate release preparation](docs/RELEASE_120_CANDIDATE.md). Existing `Payment` defaults remain unchanged.
+Published1.2.0 adds explicit `SelectivePayment` candidate-array disclosure: retain confidential full issuance, send selected payee/instrument disclosures only, and verify every mandatory condition and exact original-wire reference. [Profile/API/privacy/Python limits](docs/SELECTIVE_PAYMENT.md), [plain Ruby retained-vs-sent example](examples/selective_payment.rb), [verified publication](docs/POST_RELEASE_120.md). Existing `Payment` defaults remain unchanged.
 
 
-### Published 1.1.0: Payment
+### Payment lifecycle (since1.1.0)
 
 1.1.0 adds Direct and conditional Payment Mandates plus signed Success/Error Payment Receipts. [Payment APIs and constraints](docs/PAYMENT.md), [plain Ruby lifecycle sample](examples/payment.rb), [verified publication](docs/POST_RELEASE_110.md), [GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v1.1.0). Verification does not grant execution permission; durable atomic one-use state and actual payment remain application responsibilities.
 
 ```sh
-gem install ap2_mandate_verifier --version 1.1.0
-ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.1.0").full_gem_path')/examples/payment.rb"
+gem install ap2_mandate_verifier --version 1.2.0
+ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.2.0").full_gem_path')/examples/payment.rb"
 ```
 
 [日本語](README.ja.md)
 
-**Published stable: 1.1.0.**
+**Published stable: 1.2.0.**
 
 1.0.0 establishes the stable public contract for the existing
 Direct and conditional Checkout APIs. It preserves 0.8.0 signatures, defaults,
@@ -40,8 +40,8 @@ multi-item profile. Provider private keys never enter Agent operations.
 Ruby-only Quick Start on MRI 3.4.12 or 4.0.9; no source checkout or Rails required:
 
 ```sh
-gem install ap2_mandate_verifier --version 1.1.0
-ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.1.0").full_gem_path')/examples/conditional_checkout.rb"
+gem install ap2_mandate_verifier --version 1.2.0
+ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.2.0").full_gem_path')/examples/conditional_checkout.rb"
 ```
 
 The [standalone Ruby example](examples/conditional_checkout.rb) uses only installed
@@ -75,7 +75,7 @@ The [Rails demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readm
 Formal support is **MRI 3.4.12 and MRI 4.0.9**. In your chosen Gem environment:
 
 ```sh
-gem install ap2_mandate_verifier --version 1.1.0
+gem install ap2_mandate_verifier --version 1.2.0
 ```
 
 Or add to your Gemfile:
