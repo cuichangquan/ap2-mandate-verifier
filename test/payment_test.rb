@@ -181,6 +181,10 @@ module PaymentTest
     assert(!P.verify(**args.merge(open_sd_jwt: new_open, closed_sd_jwt: new_closed)).verified?, "signed unsupported form")
   end
   invalid { P.issue_open(**open_args.merge(constraints: [])) }
+  oversized = Marshal.load(Marshal.dump(conditions))
+  oversized[1]["allowed"] = Array.new(8) { |i| {"id" => i.to_s + "i"*511, "name" => "n"*512, "website" => "w"*512} }
+  oversized[2]["allowed"] = Array.new(8) { |i| {"id" => i.to_s + "i"*511, "type" => "t"*512, "description" => "d"*512} }
+  invalid { P.issue_open(**open_args.merge(constraints: oversized)) }
   invalid { P.issue_open(**open_args.merge(fixed: {"unknown" => "secret"})) }
   invalid { P.issue_closed(**close_args.merge(agent_public_key_pem: wrong.public_to_pem, signer: signer.call(wrong))) }
   receipts = []

@@ -320,8 +320,10 @@ module AP2MandateVerifier
       RootSignature.send(:dependencies!)
       require "securerandom"
       disclosure = Buyer.send(:encode, [Buyer.send(:encode, SecureRandom.random_bytes(16)), value])
-      MerchantSignature.sign!({"delegate_payload" => [{"..." => digest(disclosure)}], "_sd_alg" => "sha-256"}, signer, key,
+      wire = MerchantSignature.sign!({"delegate_payload" => [{"..." => digest(disclosure)}], "_sd_alg" => "sha-256"}, signer, key,
         typ: "example+sd-jwt") + "~" + disclosure + "~"
+      final!(wire, conditional: false)
+      wire
     end
     def self.digest(wire) = Base64.urlsafe_encode64(Digest::SHA256.digest(wire), padding: false)
     def self.exact!(v, fields) = PurchaseBinding.send(:exact!, v, fields)
