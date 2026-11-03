@@ -1,5 +1,10 @@
 # AP2 Mandate Verifier — Checkout委任のRuby SDK
 
+### 次期1.2.0候補：Payment候補の選択的開示（未公開）
+
+公開済み安定版は引き続き1.1.0です。新しい明示的な`SelectivePayment` profileで、支払先・決済手段の非選択候補を送らずに検証できます。必須条件・委任・原文参照は省略しません。[API・プライバシー・Python差分](docs/SELECTIVE_PAYMENT.md)、[保持／送信を比較するRuby単体例](examples/selective_payment.rb)、[候補・公開準備](docs/RELEASE_120_CANDIDATE.md)。既存`Payment`の既定profileは変更しません。
+
+
 ### 公開済み1.1.0：Payment
 
 Direct／条件付きPayment Mandateと成功／エラーPayment Receiptを追加しました。[API・制約・信頼境界](docs/PAYMENT.md)、[Ruby単体サンプル](examples/payment.rb)、[公開照合記録](docs/POST_RELEASE_110.md)、[GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v1.1.0)。検証成功は実行許可ではなく、永続的・原子的な単発利用管理と実決済は利用アプリの責任です。

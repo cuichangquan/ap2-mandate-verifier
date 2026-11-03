@@ -201,3 +201,7 @@ observable error behavior, or the documented profile identities and bounds.
 ## Additive published 1.1.0 Payment APIs
 
 The preceding 1.0.0 Checkout contract remains unchanged. New `Payment` and `PaymentReceipt` APIs have a separate [Payment contract](PAYMENT.md); they are available in 1.1.0 and later, not in 1.0.0.
+
+## Unpublished1.2.0 candidate
+
+New explicit `SelectivePayment` APIs are described in the [candidate contract](SELECTIVE_PAYMENT.md). They do not alter the published1.1.0 `Payment` default profile or Receipt reference format. They are not yet available in the public1.1.0 Gem.

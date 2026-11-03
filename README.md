@@ -1,5 +1,10 @@
 # AP2 Mandate Verifier — Ruby SDK for Checkout delegation
 
+### Unpublished1.2.0 candidate: selective Payment
+
+Published1.1.0 remains the stable release. The next candidate adds explicit `SelectivePayment` candidate-array disclosure: retain confidential full issuance, send selected payee/instrument disclosures only, and verify every mandatory condition and exact original-wire reference. [Profile/API/privacy/Python limits](docs/SELECTIVE_PAYMENT.md), [plain Ruby retained-vs-sent example](examples/selective_payment.rb), [candidate release preparation](docs/RELEASE_120_CANDIDATE.md). Existing `Payment` defaults remain unchanged.
+
+
 ### Published 1.1.0: Payment
 
 1.1.0 adds Direct and conditional Payment Mandates plus signed Success/Error Payment Receipts. [Payment APIs and constraints](docs/PAYMENT.md), [plain Ruby lifecycle sample](examples/payment.rb), [verified publication](docs/POST_RELEASE_110.md), [GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v1.1.0). Verification does not grant execution permission; durable atomic one-use state and actual payment remain application responsibilities.

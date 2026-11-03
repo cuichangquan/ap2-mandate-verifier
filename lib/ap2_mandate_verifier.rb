@@ -17,6 +17,7 @@ require_relative "ap2_mandate_verifier/buyer"
 require_relative "ap2_mandate_verifier/conditional_checkout"
 require_relative "ap2_mandate_verifier/payment"
 require_relative "ap2_mandate_verifier/payment_receipt"
+require_relative "ap2_mandate_verifier/selective_payment"
 
 module AP2MandateVerifier
   # Accepts original JSON bytes only. Syntax validity is not AP2 validity,
