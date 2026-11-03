@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 candidate (unpublished)
+
+- Add explicit conditional `SelectivePayment` candidate-array disclosure with payee-only/instrument-only/both modes, exact reduced-wire delegation, mandatory-condition closure and Cartesian approval guard.
+- Add privacy/signed-negative/original-wire tests, honest pinned SDK profile-adapter interoperability, installed Ruby example and candidate preparation. Existing1.1.0 defaults/formats/Receipt references remain unchanged.
+- Detach mutable Agent-key inputs and recheck copied Checkout time consistently in Payment verification/issuance; preserve API signatures and safe accepted formats.
+
+
 ## 1.1.0 — 2026-11-03
 
 - Add Direct and one-hop conditional Payment issuance, presentation and complete verification with original Checkout binding and strict amount/payee/instrument/fixed-value checks.

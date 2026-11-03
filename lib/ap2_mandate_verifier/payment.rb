@@ -76,6 +76,7 @@ module AP2MandateVerifier
     # Provider signer is deliberately absent. Existing signed Open grants the hop.
     def self.issue_closed(open_sd_jwt:, payment:, trusted_provider_public_key_pem:, agent_public_key_pem:,
                           audience:, nonce:, verified_at:, signer:)
+      agent_public_key_pem = InputValidator.snapshot!(agent_public_key_pem, max_bytes: 1_024)
       opening, root = verified_root!(open_sd_jwt, trusted_provider_public_key_pem)
       open!(opening); valid_now!(opening, verified_at)
       raise Invalid unless opening.fetch("cnf") == {"jwk" => RootSignature.public_jwk!(agent_public_key_pem)}
@@ -124,6 +125,10 @@ module AP2MandateVerifier
       checkout_inputs = checkout_inputs.to_h do |key, value|
         [key, key == :verified_at ? value : InputValidator.snapshot!(value, max_bytes: limits.fetch(key, 131_072))]
       end.freeze
+      raise Invalid unless checkout_inputs[:verified_at] == verified_at
+      if checkout_mode == :conditional
+        expected_agent_public_key_pem = InputValidator.snapshot!(expected_agent_public_key_pem, max_bytes: 1_024)
+      end
       expected = copy_details!(expected_payment)
       case checkout_mode
       when :direct

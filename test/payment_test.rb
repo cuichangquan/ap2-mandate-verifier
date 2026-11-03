@@ -135,6 +135,48 @@ module PaymentTest
   end
   assert(P.present(closed_sd_jwt: closed.closed_sd_jwt, open_sd_jwt: opening).chain == closed.chain, "restore chain")
   terminal = payload(closed.closed_sd_jwt)
+  # Concurrent key rotation must not bind cnf with A and authenticate B.
+  %i[verify issue_closed].each do |entry|
+    shared_agent = agent.public_to_pem.dup
+    original_jwk = M::RootSignature.method(:public_jwk!)
+    changed = false
+    M::RootSignature.define_singleton_method(:public_jwk!) do |key|
+      value = original_jwk.call(key)
+      caller = caller_locations(1, 1).first
+      if !changed && caller.path.end_with?("/payment.rb") && caller.base_label == entry.to_s
+        shared_agent.replace(wrong.public_to_pem)
+        changed = true
+      end
+      value
+    end
+    begin
+      if entry == :verify
+        forged = sign_claims(terminal, wrong, "kb+sd-jwt")
+        assert(!P.verify(**args.merge(expected_agent_public_key_pem: shared_agent, closed_sd_jwt: forged)).verified?, "Agent cnf/signature snapshot consistency")
+      else
+        invalid { P.issue_closed(**close_args.merge(agent_public_key_pem: shared_agent, signer: signer.call(wrong))) }
+      end
+      assert(changed, "Agent mutation stage exercised")
+    ensure
+      M::RootSignature.define_singleton_method(:public_jwk!, original_jwk)
+    end
+  end
+  clock_inputs = raw.dup
+  original_snapshot = M::InputValidator.method(:snapshot!)
+  changed_clock = false
+  M::InputValidator.define_singleton_method(:snapshot!) do |source, **options|
+    if !changed_clock && source.equal?(clock_inputs[:trust_json])
+      clock_inputs[:verified_at] = NOW + 1
+      changed_clock = true
+    end
+    original_snapshot.call(source, **options)
+  end
+  begin
+    assert(!P.verify(**args.merge(checkout_inputs: clock_inputs)).verified?, "copied Checkout clock equals Payment clock")
+    assert(changed_clock, "clock mutation stage exercised")
+  ensure
+    M::InputValidator.define_singleton_method(:snapshot!, original_snapshot)
+  end
   {expected_agent_public_key_pem: wrong.public_to_pem, expected_audience: "wrong", expected_nonce: "wrong",
    trusted_provider_public_key_pem: wrong.public_to_pem,
    checkout_inputs: raw.merge(host_checkout_jws: "secret")}.each do |k, v|
