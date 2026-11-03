@@ -1,6 +1,6 @@
-# Payment candidate disclosure — unpublished1.2.0 profile
+# Payment candidate disclosure — published1.2.0 profile
 
-Published1.1.0 remains available with its unchanged complete-content Payment profile. New `AP2MandateVerifier::SelectivePayment` is an explicit opt-in conditional-only profile: `ap2.payment.selective_candidates.1`. Existing `Payment` remains strict and does not accept this new Open format. Existing Checkout/Payment/Receipt keyword/default/result/storage/reference contracts are unchanged. Payment verification/issuance additionally detaches mutable Agent-key inputs consistently and rechecks copied Checkout time; this tightens snapshot safety without changing supported formats or defaults. This is a framework-independent Ruby API; Rails is optional.
+[1.2.0 is published](POST_RELEASE_120.md). The1.1.0 complete-content Payment profile remains unchanged. New `AP2MandateVerifier::SelectivePayment` is an explicit opt-in conditional-only profile: `ap2.payment.selective_candidates.1`. Existing `Payment` remains strict and does not accept this new Open format. Existing Checkout/Payment/Receipt keyword/default/result/storage/reference contracts are unchanged. Payment verification/issuance additionally detaches mutable Agent-key inputs consistently and rechecks copied Checkout time; this tightens snapshot safety without changing supported formats or defaults. This is a framework-independent Ruby API; Rails is optional.
 
 ## Normative source and policy boundary
 
@@ -58,10 +58,10 @@ Official generic crypto verification and Schema validation are not this profile'
 
 At most8payees/8instruments, one Agent hop, one immediate payment, supported1.1.0 integer minor units/currencies and600-second lifetime. Only known candidate-array disclosures are supported; no generic arbitrary SD or Checkout selective-disclosure extension. Open wire is limited to65,536bytes, root compactJWT to16,384bytes, each decoded disclosure to24,576bytes, and total disclosures to2–17. Each candidate array has1–8entries; selected presentation requires one revealed candidate per selective axis. Existing JSON depth24, finalClosed32,769-byte wire and per-field bounds are reused. All structural/signing bounds are checked before signer effects. Recurrence/budget/PISP/execution_date/risk_data, arbitrary delegation, unsupported algorithms and unknown constraints reject.
 
-After installing the candidate with its pinned dependencies:
+After installing published1.2.0 with its pinned dependencies:
 
 ```sh
 ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.2.0").full_gem_path')/examples/selective_payment.rb"
 ```
 
-The runnable example prints retained/transmitted disclosure counts and byte counts, confirms unchanged issuer JWT and changed presentation bytes, verifies chosen Payment and both Receipt outcomes without printing unselected values/disclosures. Its approved matrix is explicitly synthetic; real code reads protected consent. The application owns user authentication/consent, key enrollment/custody/revocation, current order/trust, final authorization, payment, durable one-use identity and atomic state transitions. Missing/invalid Receipt or uncertain processing remains pending, never automatic retry permission. Candidate status and exact artifact verification are in [release preparation](RELEASE_120_CANDIDATE.md).
+The runnable example prints retained/transmitted disclosure counts and byte counts, confirms unchanged issuer JWT and changed presentation bytes, verifies chosen Payment and both Receipt outcomes without printing unselected values/disclosures. Its approved matrix is explicitly synthetic; real code reads protected consent. The application owns user authentication/consent, key enrollment/custody/revocation, current order/trust, final authorization, payment, durable one-use identity and atomic state transitions. Missing/invalid Receipt or uncertain processing remains pending, never automatic retry permission. Exact published artifact verification is in [publication evidence](POST_RELEASE_120.md); [release preparation](RELEASE_120_CANDIDATE.md) retains the historical candidate checkpoint.

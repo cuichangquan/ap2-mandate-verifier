@@ -1,0 +1,110 @@
+{
+  "verified_at_utc": "2026-11-03T12:40:37.722785+00:00",
+  "name": "ap2_mandate_verifier",
+  "version": "1.2.0",
+  "platform": "ruby",
+  "registered_at": "2026-11-03T12:30:27.200Z",
+  "prerelease": false,
+  "yanked": false,
+  "ruby_requirement": ">= 3.4.12, < 4.1",
+  "runtime_dependencies": [
+    {
+      "name": "base64",
+      "requirements": "= 0.3.0"
+    },
+    {
+      "name": "digest",
+      "requirements": "= 3.2.1"
+    },
+    {
+      "name": "json",
+      "requirements": "= 2.19.9"
+    },
+    {
+      "name": "jwt",
+      "requirements": "= 3.3.0"
+    },
+    {
+      "name": "openssl",
+      "requirements": "= 4.0.2"
+    }
+  ],
+  "bytes": 129536,
+  "sha256": "327ddb9f19e2b6348631ccb38838abd8247b4b7c2dfeb3ce2cf53bc2b0961443",
+  "candidate_registry_github_archives_byte_identical": true,
+  "payloads": 44,
+  "all_payloads_match_release_source_and_installed": true,
+  "release_source_sha": "52ebc7cb37f20967d4a53d88c57e347b0bc4b769",
+  "reviewed_tested_sha": "fd79d2c230eaa2cd2d65f4bb7394351b5a60c1ea",
+  "release_tree": "8e823b7dc9a97322d0a8bf1e6f59b080f3461cbc",
+  "files_sha256": {
+    "LICENSE": "1442143c4265d88eedfc14f25d04298449358c837b0bb58dfa825f84b36391c8",
+    "README.ja.md": "d7b703e994294678eb8c2b7fbadd8b326e1361cd7a6cd5ccdf2058cec81a9de7",
+    "README.md": "8b59877592af92f51924b82c19fcfddbacdbfc1e008e914ea61885b9608eec2c",
+    "SECURITY.md": "3308faded0eaad624c5caf7477d59d6f172804588e910975873ef6a657010a06",
+    "docs/BUYER_DIRECT_CHECKOUT.md": "96c67be9340a152d8bb4d10ea69b812eedce995a7d7b6a54bc0de3e6efca6ed5",
+    "docs/CONDITIONAL_CHECKOUT.md": "6ce7b14e3171525a7cbd4283862f724f98650f3f3e669bfab84345273ef3a2a7",
+    "docs/DIAGNOSTICS.ja.md": "302c87b40cb44bda43af021448ebe83409db96bbb2b0fb9c44e6a3dc78f3d433",
+    "docs/DIAGNOSTICS.md": "881cb7416ac1b18c26042ffa7f3bdbb33ccf5dbc95a2f7394f753271807df056",
+    "docs/INPUT_BUILDER.md": "428dbe89887fa13868dd750d19b524aa614eb8a80268bae6e4fd0c837a69841c",
+    "docs/MERCHANT_SIGNING.md": "31af8ead7fd507d72af4c400f2134e753d6d2297b1d6b85c831b3bd53185eeb4",
+    "docs/MULTI_ITEM_CHECKOUT.md": "3db7caa63b33e7204c8d512ed22403fcceb2b90e198d9e963f13b2610c40b228",
+    "docs/PAYMENT.md": "1ace0e5370cf0e0c4a24b0482c05b97c9eb6c26c38c1757f22f37a8bb6370720",
+    "docs/POST_RELEASE_110.md": "64dbb263349818a52bf23d9f532a96b7b4b13f11d196741485a00a334240b412",
+    "docs/POST_RELEASE_MAINTENANCE.md": "d6662cd35a86d4b8f24a2d350cfef80f3e0b7a1c21bde079757da1b1ae6b5ea0",
+    "docs/PUBLIC_API.md": "040a76b1df4134390f5ec0c17cdcb4e96c40b70bcf349ce313c19b380c1f0916",
+    "docs/RELEASE_100_CANDIDATE.md": "4c67c42b9d9987272bb9ef826c48651f7179888549dfe89e973589c8820555df",
+    "docs/RELEASE_110_CANDIDATE.md": "3b39f01263190c89586d1a58adb24e5e4180c78c3da9b96487ff19b2ba29315f",
+    "docs/RELEASE_120_CANDIDATE.md": "1cbd03b488aca2d075f81130999d88502bf11c8f1f5177ffc9a79548625d0c41",
+    "docs/SELECTIVE_PAYMENT.md": "d987cadf20b47d717276331efdbd699a92f1598c82de1b65b863470f0662190d",
+    "docs/SUPPORT_CONTRACT.md": "fe48c918918d644bd580e9bdd3d6f80b1a0341a0360b36065149d2cd4e8cb0b3",
+    "docs/evidence/1.1.0_publication.json": "75d40d0e20d96d475636aad642b6f9d3cf6dfd8d40e691d343139e12a6b73598",
+    "examples/conditional_checkout.rb": "dd672cc54c4a6650bfff654eb777eddd379c892481b67e58781e297a02c4c5af",
+    "examples/payment.rb": "48706d40d97d21c616d4b34f6c8d78c58fa57a7266dfaa81739a971b48cfa019",
+    "examples/selective_payment.rb": "3eee3ec073a9af3dc238934e25f94c4fc31f04933bcd3ad7dba7c04dc140281c",
+    "lib/ap2_mandate_verifier.rb": "a4e758959897b94e50ddb5b8507573052f83f2328aca3e2abf36236a6602fae2",
+    "lib/ap2_mandate_verifier/buyer.rb": "1a9c129b6eb33ac508472aa634eee7afc4add5a537a5c3cb7d49d12557269588",
+    "lib/ap2_mandate_verifier/checkout_jwt.rb": "d96a1e8ea9d69787ce94c35253b866c0d5fb867b8864cd7a9f93a526adbb8781",
+    "lib/ap2_mandate_verifier/checkout_receipt.rb": "ba37ef2519eb49d46313c2c85cba894e0e644626e33247d227e0b4c26149c303",
+    "lib/ap2_mandate_verifier/conditional_checkout.rb": "685a57939b8a1774dfeb40f2ba2fcb96686f613e4bbe02cb315a82b598e0391e",
+    "lib/ap2_mandate_verifier/diagnostic.rb": "0d2e961d80d5f29d42b49898e2df993f60962766437958adba568cbf9b5d7f1e",
+    "lib/ap2_mandate_verifier/host_binding.rb": "1373efe503ccc5eda817ffd790799fc622d6cb106f8b7da85ef2b3f4693c662e",
+    "lib/ap2_mandate_verifier/input_builder.rb": "a35a5ce9160f0a8816c6dde6eeeeac09724b655d465c5caf7f14acdbe17e3290",
+    "lib/ap2_mandate_verifier/input_validator.rb": "395f8e6f2012ab400d7b17f1fdcf4ee63a3c1c9622da4f2b32d35b522542bf00",
+    "lib/ap2_mandate_verifier/merchant_signature.rb": "f41aafd533dc3f988956c4503325ebbd82dc43a8bc1511e8c26572b4c32e7e70",
+    "lib/ap2_mandate_verifier/payment.rb": "91af62a9f0db8226c10d3dd92b157dd11bccc2320afc27f55a2b44c706a88679",
+    "lib/ap2_mandate_verifier/payment_receipt.rb": "31ad00de7c733810c6b243dcaf9880576cc3e552892eeeadaf16d212f2179335",
+    "lib/ap2_mandate_verifier/purchase_binding.rb": "6f3f966eed59511eed54cc7f28bb8fe83123d43b5b213502a9ea5cc328c53690",
+    "lib/ap2_mandate_verifier/research_result.rb": "6b0bc022e57a2a837e296f2b1bfe9a154d69b4c98fea46e269e2d3f28a1c948b",
+    "lib/ap2_mandate_verifier/result.rb": "ba4fc058784e34a870507446224121a6ba09387137ef2a8c044e02256fc6c64f",
+    "lib/ap2_mandate_verifier/root_disclosures.rb": "7e9d2f51a24c344b54fd4e63e6619108b794b88d0adc003b6cdee821b39a8d65",
+    "lib/ap2_mandate_verifier/root_signature.rb": "d9b68d989700a0c103f80004e14fb2d3aa992f823434e07bf2971f63052519dd",
+    "lib/ap2_mandate_verifier/scoped_constraints.rb": "5d50858ba365e2716b635a2888f08f38afda7937be879347dd536d11f7b5d44b",
+    "lib/ap2_mandate_verifier/selective_payment.rb": "745267414e4e31afcf20d00ef523aee60628a767ed6e82b5de39e28907c81864",
+    "lib/ap2_mandate_verifier/trust_context.rb": "897936b2fec31e63a673ca15e89485c5254f13a427aafae9504e3c2525601f97"
+  },
+  "tag": "v1.2.0",
+  "tag_object": "7463195d07faaa333cd0480b120100077889b632",
+  "github_release": {
+    "id": 432672816,
+    "published_at": "2026-11-03T12:33:58Z",
+    "draft": false,
+    "prerelease": false,
+    "target_commitish": "52ebc7cb37f20967d4a53d88c57e347b0bc4b769",
+    "url": "https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v1.2.0"
+  },
+  "postpublication_validation": {
+    "mri": [
+      "3.4.12",
+      "4.0.9"
+    ],
+    "ordinary_install_and_all_file_comparison": "PASS both endpoints; exact release-source snapshot; no rebuild",
+    "selective_assertions_each_installed": 120,
+    "payment_assertions_each_installed": 119,
+    "published_guides": "PASS both endpoints; EN/JA QuickStarts, retained Checkout/Payment, installed selective sample",
+    "installed_official_sdk_profile_adapter": "PASS Ruby3.4.12/Python3.11.2;4cases eachdirection TOTAL across3modes+slot1,16Receipts,24negativecontrols",
+    "interop_limit": "explicit official low-level adapter and independent strictprofile/privacy/hashoracle; not fullfacade support"
+  },
+  "source_association_limit": "Retained approved candidate and each payload comparison associate distribution with source; not RubyGems source attestation",
+  "no_repush_after_registration": true
+}

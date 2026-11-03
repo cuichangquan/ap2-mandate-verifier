@@ -1,6 +1,6 @@
 # Ruby SDK public API — 1.x
 
-**Status: published 1.1.0; the original 1.0.0 Checkout contract below is preserved.**
+**Status: published 1.2.0; the original 1.0.0 Checkout contract below is preserved.**
 This document defines the 1.x contract for the existing Checkout APIs.
 The 1.0.0 release preserves the 0.8.0 runtime behavior, API names and accepted
 formats. Exact distribution identity and validation are in
@@ -202,6 +202,6 @@ observable error behavior, or the documented profile identities and bounds.
 
 The preceding 1.0.0 Checkout contract remains unchanged. New `Payment` and `PaymentReceipt` APIs have a separate [Payment contract](PAYMENT.md); they are available in 1.1.0 and later, not in 1.0.0.
 
-## Unpublished1.2.0 candidate
+## Published1.2.0 selective Payment
 
-New explicit `SelectivePayment` APIs are described in the [candidate contract](SELECTIVE_PAYMENT.md). They do not alter the published1.1.0 `Payment` default profile or Receipt reference format. They are not yet available in the public1.1.0 Gem.
+New explicit `SelectivePayment` APIs are described in the [selective Payment contract](SELECTIVE_PAYMENT.md). They do not alter the published1.1.0 `Payment` default profile or Receipt reference format. They are available in1.2.0 and later, not in1.1.0.
