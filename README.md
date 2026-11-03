@@ -1,5 +1,10 @@
 # AP2 Mandate Verifier — Ruby SDK for Checkout delegation
 
+### Unpublished next candidate: Payment
+
+The proposed 1.1.0 candidate adds Direct and conditional Payment Mandates plus signed Success/Error Payment Receipts. It is **not published**. Published 1.0.0 remains Checkout-only. See [Payment APIs, supported constraints and trust boundaries](docs/PAYMENT.md), the [plain Ruby lifecycle sample](examples/payment.rb), and [release preparation](docs/RELEASE_110_CANDIDATE.md). Verification does not grant execution permission; durable one-use state and actual payment remain application responsibilities.
+
+
 [日本語](README.ja.md)
 
 **Published stable: 1.0.0.**
