@@ -1,3 +1,5 @@
+> Historical preparation snapshot. The exact approved candidate is now published; see [publication evidence](POST_RELEASE_110.md). The original approval boundaries below describe that earlier checkpoint.
+
 # 1.1.0 candidate — publication requires Owner approval
 
 Status: unpublished candidate. Published 1.0.0 remains available and unchanged. The source version 1.1.0 is a proposal for additive Payment APIs under the existing 1.x Checkout contract. Do not tag, publish GitHub Release, push/yank RubyGems, announce or deploy on the basis of this document.

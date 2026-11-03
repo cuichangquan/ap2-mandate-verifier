@@ -1,6 +1,6 @@
-# Ruby SDK public API — 1.0.0
+# Ruby SDK public API — 1.x
 
-**Status: published 1.0.0.**
+**Status: published 1.1.0; the original 1.0.0 Checkout contract below is preserved.**
 This document defines the 1.x contract for the existing Checkout APIs.
 The 1.0.0 release preserves the 0.8.0 runtime behavior, API names and accepted
 formats. Exact distribution identity and validation are in
@@ -198,6 +198,6 @@ details, not extension hooks. Ruby visibility alone does not make them an SDK AP
 This does not remove the published partial-verification entries above, their
 observable error behavior, or the documented profile identities and bounds.
 
-## Additive unpublished 1.1.0 candidate
+## Additive published 1.1.0 Payment APIs
 
-The preceding 1.0.0 Checkout contract remains unchanged. New `Payment` and `PaymentReceipt` APIs have a separate [candidate contract](PAYMENT.md); they are not available in published 1.0.0.
+The preceding 1.0.0 Checkout contract remains unchanged. New `Payment` and `PaymentReceipt` APIs have a separate [Payment contract](PAYMENT.md); they are available in 1.1.0 and later, not in 1.0.0.
