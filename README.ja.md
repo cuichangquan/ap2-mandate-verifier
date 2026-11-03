@@ -1,5 +1,10 @@
 # AP2 Mandate Verifier — Checkout委任のRuby SDK
 
+### 次期候補：Payment（未公開）
+
+1.1.0案ではDirect／条件付きPayment Mandateと成功／エラーPayment Receiptを追加します。**まだ公開されていません。公開済み1.0.0はCheckout対応です。** [新API・制約・信頼境界](docs/PAYMENT.md)、[Ruby単体サンプル](examples/payment.rb)、[公開準備](docs/RELEASE_110_CANDIDATE.md)を参照してください。検証成功は実行許可ではなく、永続的・原子的な単発利用管理と実決済は利用アプリの責任です。
+
+
 [English](README.md)
 
 **公開済み安定版は1.0.0です。**

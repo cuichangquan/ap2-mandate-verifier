@@ -197,3 +197,7 @@ catalogs, internal constant layouts and research/test scripts are implementation
 details, not extension hooks. Ruby visibility alone does not make them an SDK API.
 This does not remove the published partial-verification entries above, their
 observable error behavior, or the documented profile identities and bounds.
+
+## Additive unpublished 1.1.0 candidate
+
+The preceding 1.0.0 Checkout contract remains unchanged. New `Payment` and `PaymentReceipt` APIs have a separate [candidate contract](PAYMENT.md); they are not available in published 1.0.0.
