@@ -84,8 +84,10 @@ module AP2MandateVerifier
       audience = InputValidator.snapshot!(audience, max_bytes: 512)
       nonce = InputValidator.snapshot!(nonce, max_bytes: 512)
       text!(audience, 512); text!(nonce, 512)
-      terminal = MerchantSignature.sign!({"delegate_payload" => [value], "iat" => verified_at,
-        "aud" => audience, "nonce" => nonce, "sd_hash" => digest(root)}, signer, agent_public_key_pem, typ: "kb+sd-jwt")
+      claims = {"delegate_payload" => [value], "iat" => verified_at,
+        "aud" => audience, "nonce" => nonce, "sd_hash" => digest(root)}
+      preflight!(claims, "kb+sd-jwt")
+      terminal = MerchantSignature.sign!(claims, signer, agent_public_key_pem, typ: "kb+sd-jwt")
       Presentation.send(:new, root, terminal + "~")
     end
 
@@ -321,15 +323,19 @@ module AP2MandateVerifier
       require "securerandom"
       disclosure = Buyer.send(:encode, [Buyer.send(:encode, SecureRandom.random_bytes(16)), value])
       claims = {"delegate_payload" => [{"..." => digest(disclosure)}], "_sd_alg" => "sha-256"}
-      # Bound the entire presentation before a remote signer can have effects.
-      # ES256's 64-byte signature has a fixed encoded length; no signing occurs.
-      preview = [Buyer.send(:encode, {"alg" => "ES256", "typ" => "example+sd-jwt"}),
-        Buyer.send(:encode, claims), Buyer.send(:encode, "\0" * 64)].join(".") + "~" + disclosure + "~"
-      final!(preview, conditional: false)
+      preflight!(claims, "example+sd-jwt", disclosure)
       wire = MerchantSignature.sign!(claims, signer, key,
         typ: "example+sd-jwt") + "~" + disclosure + "~"
       final!(wire, conditional: false)
       wire
+    end
+    def self.preflight!(claims, typ, disclosure = nil)
+      # Bound every new Mandate signature before remote signer effects. ES256
+      # signatures have a fixed 64-byte width; this performs no cryptography.
+      compact = [Buyer.send(:encode, {"alg" => "ES256", "typ" => typ}),
+        Buyer.send(:encode, claims), Buyer.send(:encode, "\0" * 64)].join(".")
+      wire = compact + "~" + (disclosure ? disclosure + "~" : "")
+      final!(wire, conditional: typ == "kb+sd-jwt")
     end
     def self.digest(wire) = Base64.urlsafe_encode64(Digest::SHA256.digest(wire), padding: false)
     def self.exact!(v, fields) = PurchaseBinding.send(:exact!, v, fields)

@@ -187,6 +187,30 @@ module PaymentTest
   called = false
   invalid { P.issue_open(**open_args.merge(constraints: oversized, signer: ->(_) { called = true; raise "secret" })) }
   assert(!called, "oversize rejection occurs before signer side effects")
+  # JSON escape expansion can fit the terminal's decoded limit yet exceed its
+  # compact wire limit. Open excludes aud/nonce and remains a usable root.
+  control = "\u0001" * 512
+  large_payment = details.merge("payee" => {"id" => control, "name" => control, "website" => control},
+    "payment_instrument" => {"id" => control, "type" => control, "description" => control})
+  large_conditions = [conditions[0], {"type" => "payment.allowed_payees", "allowed" => [large_payment["payee"]]},
+    {"type" => "payment.allowed_payment_instruments", "allowed" => [large_payment["payment_instrument"]]}]
+  large_open = P.issue_open(**open_args.merge(constraints: large_conditions, fixed: {}))
+  candidate = nil
+  (1..512).each do |n|
+    claim = {"delegate_payload" => [large_payment.merge("vct" => "mandate.payment.1", "iat" => NOW, "exp" => NOW+60)],
+      "iat" => NOW, "aud" => control, "nonce" => "\u0001"*n,
+      "sd_hash" => Base64.urlsafe_encode64(Digest::SHA256.digest(large_open), padding: false)}
+    body = JSON.generate(claim)
+    preview = Base64.urlsafe_encode64(JSON.generate({"alg" => "ES256", "typ" => "kb+sd-jwt"}), padding: false) + "." +
+      Base64.urlsafe_encode64(body, padding: false) + "." + "A"*86
+    candidate = "\u0001"*n if body.bytesize <= 24_576 && preview.bytesize > 32_768
+    break if candidate
+  end
+  assert(!candidate.nil?, "independent decoded-valid compact-oversize terminal boundary")
+  called = false
+  invalid { P.issue_closed(**close_args.merge(open_sd_jwt: large_open, payment: large_payment, audience: control,
+    nonce: candidate, signer: ->(_) { called = true; raise "secret" })) }
+  assert(!called, "terminal preflight occurs before signer side effects")
   invalid { P.issue_open(**open_args.merge(fixed: {"unknown" => "secret"})) }
   invalid { P.issue_closed(**close_args.merge(agent_public_key_pem: wrong.public_to_pem, signer: signer.call(wrong))) }
   receipts = []
