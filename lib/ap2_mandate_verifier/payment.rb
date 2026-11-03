@@ -320,7 +320,13 @@ module AP2MandateVerifier
       RootSignature.send(:dependencies!)
       require "securerandom"
       disclosure = Buyer.send(:encode, [Buyer.send(:encode, SecureRandom.random_bytes(16)), value])
-      wire = MerchantSignature.sign!({"delegate_payload" => [{"..." => digest(disclosure)}], "_sd_alg" => "sha-256"}, signer, key,
+      claims = {"delegate_payload" => [{"..." => digest(disclosure)}], "_sd_alg" => "sha-256"}
+      # Bound the entire presentation before a remote signer can have effects.
+      # ES256's 64-byte signature has a fixed encoded length; no signing occurs.
+      preview = [Buyer.send(:encode, {"alg" => "ES256", "typ" => "example+sd-jwt"}),
+        Buyer.send(:encode, claims), Buyer.send(:encode, "\0" * 64)].join(".") + "~" + disclosure + "~"
+      final!(preview, conditional: false)
+      wire = MerchantSignature.sign!(claims, signer, key,
         typ: "example+sd-jwt") + "~" + disclosure + "~"
       final!(wire, conditional: false)
       wire

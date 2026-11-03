@@ -184,7 +184,9 @@ module PaymentTest
   oversized = Marshal.load(Marshal.dump(conditions))
   oversized[1]["allowed"] = Array.new(8) { |i| {"id" => i.to_s + "i"*511, "name" => "n"*512, "website" => "w"*512} }
   oversized[2]["allowed"] = Array.new(8) { |i| {"id" => i.to_s + "i"*511, "type" => "t"*512, "description" => "d"*512} }
-  invalid { P.issue_open(**open_args.merge(constraints: oversized)) }
+  called = false
+  invalid { P.issue_open(**open_args.merge(constraints: oversized, signer: ->(_) { called = true; raise "secret" })) }
+  assert(!called, "oversize rejection occurs before signer side effects")
   invalid { P.issue_open(**open_args.merge(fixed: {"unknown" => "secret"})) }
   invalid { P.issue_closed(**close_args.merge(agent_public_key_pem: wrong.public_to_pem, signer: signer.call(wrong))) }
   receipts = []
