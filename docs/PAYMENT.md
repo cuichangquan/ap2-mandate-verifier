@@ -1,6 +1,6 @@
-# Payment APIs — unpublished 1.1.0 candidate
+# Payment APIs — published 1.1.0
 
-Published 1.0.0 remains the Checkout-only API contract. These additive APIs do not change its arguments, defaults, profiles, accepted inputs, results, storage or Checkout Receipt references. The Gem is framework independent; Rails is optional.
+Published 1.0.0 established the Checkout-only API contract; [1.1.0 is now published](POST_RELEASE_110.md). These additive APIs do not change its arguments, defaults, profiles, accepted inputs, results, storage or Checkout Receipt references. The Gem is framework independent; Rails is optional.
 
 ## Supported profile and specification
 
@@ -61,7 +61,7 @@ Wire limit is 32,769 bytes, one final `~` plus at most one content disclosure, d
 
 SDK verification is not final execution approval or payment success. User authentication/consent, key storage/enrollment/revocation, current order/trust policy, actual payment, durable one-use identity and atomic reservation/consumption belong to the app. Recheck them immediately before execution. No SDK object prevents replay across calls/processes. Persist original Open/final strings and exact Checkout inputs in protected storage; use present, then reverify with current external inputs. Never deserialize a successful Verification as proof. An authentic Error is not automatic retry permission. Missing/unverifiable Receipt or uncertain processing stays pending and requires reconciliation.
 
-After installing the candidate Gem offline, run:
+After installing published 1.1.0, run:
 
 ```sh
 ruby -e 's=Gem::Specification.find_by_name("ap2_mandate_verifier", "1.1.0"); require File.join(s.full_gem_path, "examples/payment.rb"); PaymentExample.run'

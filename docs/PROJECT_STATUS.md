@@ -1,8 +1,16 @@
 # 現状メモ / Project status
 
+<a id="110-publication"></a>
+
+## 1.1.0公開済み — 現在の配布状態
+
+2026-11-03 09:20:11.580 UTCにOwnerが公開。公式metadataと配布Gemを独立取得し、115,200 bytes、SHA256 `4c64cf5b6c61ae4395577828093a6f4022c35cf18b6ad1bcfcb9f95fbb4f43c9`が承認候補と全バイト一致しました。公開source `89e779cadeac0ea7941e68f12951eed13f1b8081` はreviewed/tested `631537ec52c33c3472fd856da55faeff3fb62203`と同一treeです。
+
+Direct／条件付きPayment、基本制約・Checkout参照、成功／エラーPayment Receiptを追加。1.0.0 Checkout契約・依存pinは維持。[公開検証](POST_RELEASE_110.md)、[API](PAYMENT.md)、[単体例](../examples/payment.rb)。ブラウザーのWebAuthnエラー表示と公開実物の照合は別であり、再pushはしていません。
+
 <a id="100-publication"></a>
 
-## 1.0.0公開済み — 現在の配布状態
+## 1.0.0公開済み — 過去の配布記録
 
 2026-11-01 **08:13:29.733 UTC（17:13:29.733 JST）**にRubyGemsへ登録され、
 **08:16:01 UTC**に公式配布Gemと保持候補の完全一致を確認しました。

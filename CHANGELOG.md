@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 candidate (unpublished)
+## 1.1.0 — 2026-11-03
 
 - Add Direct and one-hop conditional Payment issuance, presentation and complete verification with original Checkout binding and strict amount/payee/instrument/fixed-value checks.
 - Add signed Success/Error Payment Receipts, independent issuer/payment ID/time/reference verification, and separate authenticity/outcome predicates.

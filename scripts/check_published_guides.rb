@@ -3,7 +3,7 @@ require "ap2_mandate_verifier"
 require "json"
 require "open3"
 spec = Gem.loaded_specs.fetch("ap2_mandate_verifier")
-abort "published 1.0.0 not installed" unless spec.version.to_s == "1.0.0"
+abort "published 1.1.0 not installed" unless spec.version.to_s == "1.1.0"
 root = File.expand_path("..", __dir__)
 abort "source library loaded" if File.realpath(spec.full_gem_path).start_with?(root + "/")
 %w[README.md README.ja.md].each do |name|
@@ -39,7 +39,7 @@ abort "installed conditional example failed" unless status.success? && output.li
   "Success=consumed; Error=policy decision; missing Receipt/uncertain commit=pending",
   "Synthetic only; evidence and Receipt authenticity are not payment completion."]
 puts output
-# The 0.8.0 conditional flow remains the canonical sample for the unchanged 1.0.0 API.
+# The 0.8.0 conditional flow remains the canonical sample for the unchanged 1.1.0 API.
 release = File.read(File.join(root, "docs/RELEASE_080.md")).scan(/```ruby\n(.*?)```/m).flatten.fetch(0)
 prelude = <<~RUBY
   require "ap2_mandate_verifier"
@@ -72,4 +72,14 @@ RUBY
 output, error, status = Open3.capture3(Gem.ruby, "-e", prelude + release)
 abort "Release snippet failed" unless status.success? && output.lines.map(&:strip) == ["Conditional verified=true", "Receipt verified=true purchase_succeeded=false"]
 puts output
-puts "PASS installed published 1.0.0 guides, standalone conditional example and retained 0.8.0 flow; no Gem build"
+puts "PASS installed published 1.1.0 guides, standalone conditional example and retained 0.8.0 flow; no Gem build"
+
+installed_payment = File.join(spec.full_gem_path, "examples/payment.rb")
+output, error, status = Open3.capture3(Gem.ruby, installed_payment)
+abort "installed Payment example failed" unless status.success? &&
+  output.include?("Direct and conditional Payment: verified; no execution permission granted") &&
+  output.scan("Payment Receipt Success: authentic=true; reported_success=true").size == 2 &&
+  output.scan("Payment Receipt Error: authentic=true; reported_success=false").size == 2 &&
+  output.include?("Missing/invalid Receipt = pending; no automatic retry.")
+puts output
+puts "PASS installed published 1.1.0 Payment Direct/conditional and both Receipt outcomes; no source overlay"
