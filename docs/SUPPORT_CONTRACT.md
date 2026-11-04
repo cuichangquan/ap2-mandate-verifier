@@ -1,8 +1,8 @@
 # AP2 Checkout Ruby SDK — support contract and history
 
-## Current published and candidate scope
+## Current published scope
 
-Published stable is1.4.0: [verified publication](POST_RELEASE_140.md). The1.5.0 candidate adds opt-in [transactional Payment acceptance](PAYMENT_ACCEPTANCE.md) while preserving all existing1.x verifier APIs, defaults and stored formats. The SQLite reference adapter additionally requires optional pinned driver2.10.2 and a protected local persistent filesystem; other adapters require their own atomicity/durability validation. No new external exactly-once or production authorization guarantee is made. Final1.5 publication remains Owner-held.
+Published stable is1.5.0: [verified publication](POST_RELEASE_150.md). It adds opt-in [transactional Payment acceptance](PAYMENT_ACCEPTANCE.md) while preserving all existing1.x verifier APIs, defaults and stored formats. The SQLite reference adapter additionally requires optional pinned driver2.10.2 and a protected local persistent filesystem; other adapters require their own atomicity/durability validation. No new external exactly-once or production authorization guarantee is made.
 
 ## Historical1.0.0 baseline contract
 

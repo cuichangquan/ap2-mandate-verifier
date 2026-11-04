@@ -1,5 +1,7 @@
 # 1.5.0 release candidate preparation
 
+Historical preparation snapshot: Owner subsequently approved publication; [actual distribution and release verification](POST_RELEASE_150.md). Production connections and real payments remain outside scope.
+
 Release candidate preparation; final exact-source/artifact/review/CI evidence is recorded in the PR and external manifest. RubyGems/public tag/GitHub Release/production connection/real payment remain HOLD pending Owner decision.
 
 ## Proposed notes and main use
