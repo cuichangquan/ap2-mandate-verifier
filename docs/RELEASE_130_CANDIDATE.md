@@ -1,5 +1,7 @@
 # 1.3.0 release candidate preparation
 
+**Historical prepublication record. 1.3.0 is now published; see [verified publication](POST_RELEASE_130.md). Do not repeat its push or rebuild a substitute artifact.**
+
 Status: release candidate prepared; final evidence and GO/HOLD judgment are tracked in [Issue #241](https://github.com/cuichangquan/ap2-mandate-verifier/issues/241). **Publication remains HOLD pending the Owner’s final decision.** RubyGems publication, formal v1.3.0 tag, GitHub Release and announcements require the Owner’s final approval. No production deployment or real payment is included.
 
 ## Proposed release notes
