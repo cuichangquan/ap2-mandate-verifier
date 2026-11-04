@@ -1,4 +1,4 @@
-# Selective Checkout Mandates (1.3.0 candidate)
+# Selective Checkout Mandates (published 1.3.0)
 
 This explicit profile lets an application retain a confidential complete Open Checkout Mandate and send only the merchant and product candidates needed for a purchase. Every requirement and quantity remains visible and enforced. The existing complete Checkout profiles and their defaults remain available.
 
@@ -39,7 +39,7 @@ Configure `InputBuilder.trust(..., profile_ref: SelectiveCheckout::PROFILE_REF)`
 
 For Payment, pass `checkout_profile_ref: SelectiveCheckout::PROFILE_REF` explicitly to `Payment.issue_open` or `SelectivePayment.issue_open`, and supply the reduced Checkout Open as `open_checkout_sd_jwt`. The default is unchanged. `SelectivePayment.verify` still takes the seven original Checkout verification inputs and rechecks the full Host-bound chain.
 
-Run the installed candidate’s [standalone Checkout example](../examples/selective_checkout.rb) and [combined Checkout/Payment example](../examples/selective_checkout_payment.rb). They generate synthetic keys in memory, compare retained/sent disclosures and authenticate both Success/Error Receipt alternatives without executing a purchase.
+Run the installed Gem’s [standalone Checkout example](../examples/selective_checkout.rb) and [combined Checkout/Payment example](../examples/selective_checkout_payment.rb). They generate synthetic keys in memory, compare retained/sent disclosures and authenticate both Success/Error Receipt alternatives without executing a purchase.
 
 ## Verification and quantities
 
@@ -68,3 +68,5 @@ The adopted AP2 source remains pinned to `b4587ac1d055888a73b4b21750973cffba9617
 The pinned Python SDK high-level presentation helper does not expose this candidate selection/profile flow. Interoperability must distinguish official low-level signatures/chain/typed Schema checks from the strict subset adapter. In particular, its max-flow helper may accept an empty candidate list as a wildcard or accept underfilled demand; this SDK requires nonempty disclosed candidates and exact quantity coverage. Official SDK acceptance alone is not a strict quantity oracle.
 
 Source interoperability observed two Checkout scenarios in each direction, eight Success/Error Receipt checks and 28 negative controls under Ruby 3.4.12 / Python 3.11.2. The Python terminal adapter uses the official JWT primitive plus an exact reduced-wire `sd_hash`, because the SDK’s generic key-binding creator discloses its final payload while this supported Checkout grammar requires an inline final Closed payload. Source and installed-candidate evidence, final review and CI are recorded separately in the release preparation report; these limited synthetic observations do not establish production trust.
+
+[Verified public artifact, tag and Release](POST_RELEASE_130.md). The original candidate preparation remains historical in [release preparation](RELEASE_130_CANDIDATE.md).

@@ -1,6 +1,6 @@
 # Ruby SDK public API — 1.x
 
-**Status: published 1.2.0; the original 1.0.0 Checkout contract below is preserved.**
+**Status: published 1.3.0; the original 1.0.0 Checkout contract below is preserved.**
 This document defines the 1.x contract for the existing Checkout APIs.
 The 1.0.0 release preserves the 0.8.0 runtime behavior, API names and accepted
 formats. Exact distribution identity and validation are in
@@ -206,8 +206,8 @@ The preceding 1.0.0 Checkout contract remains unchanged. New `Payment` and `Paym
 
 New explicit `SelectivePayment` APIs are described in the [selective Payment contract](SELECTIVE_PAYMENT.md). They do not alter the published1.1.0 `Payment` default profile or Receipt reference format. They are available in1.2.0 and later, not in1.1.0.
 
-## 1.3.0 candidate: selective Checkout
+## Published 1.3.0: selective Checkout
 
-The additive `SelectiveCheckout` profile is included in the 1.3.0 candidate. See the [candidate contract](SELECTIVE_CHECKOUT.md) for mandatory disclosure, independent candidate semantics, original-wire references and application responsibilities. It is not available in the published 1.2.0 package. Existing complete profile defaults are preserved.
+The additive `SelectiveCheckout` profile is available in published 1.3.0. See the [candidate contract](SELECTIVE_CHECKOUT.md) for mandatory disclosure, independent candidate semantics, original-wire references and application responsibilities. It is not available in the published 1.2.0 package. Existing complete profile defaults are preserved.
 
 For the explicit selective Checkout profile, Evidence `original_root_graph_closure` records that every signed commitment and supplied disclosure was inspected and accounted for, allowing unresolved candidate leaves only at registered positions. It does not certify hidden preimages, their schema or uniqueness, or consent provenance. The checked scope covers the visible candidate subset and all mandatory conditions.
