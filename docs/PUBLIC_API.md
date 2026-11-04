@@ -211,3 +211,7 @@ New explicit `SelectivePayment` APIs are described in the [selective Payment con
 The additive `SelectiveCheckout` profile is available in published 1.3.0. See the [candidate contract](SELECTIVE_CHECKOUT.md) for mandatory disclosure, independent candidate semantics, original-wire references and application responsibilities. It is not available in the published 1.2.0 package. Existing complete profile defaults are preserved.
 
 For the explicit selective Checkout profile, Evidence `original_root_graph_closure` records that every signed commitment and supplied disclosure was inspected and accounted for, allowing unresolved candidate leaves only at registered positions. It does not certify hidden preimages, their schema or uniqueness, or consent provenance. The checked scope covers the visible candidate subset and all mandatory conditions.
+
+## 1.4.0 candidate: explicit Payment policy profiles
+
+`PaymentPolicy::PROFILE_REF` and `SELECTIVE_PROFILE_REF` opt into PISP/execution constraints in existing `Payment`, `SelectivePayment` and `PaymentReceipt` APIs via `profile_ref:`. Verification additionally requires independently trusted `trusted_pisp:` and `execution_at:`; missing context is never filled from claims. New Open issuance requires `candidate_policy: :independent`. Both new fields are mandatory in Closed, even when only one new Open constraint is used. See [strict parsing, condition stages, API additions and official limitations](PAYMENT_POLICY.md). Old defaults, grammar and result meanings remain unchanged. No scheduler/payment execution is added.

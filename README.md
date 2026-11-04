@@ -1,5 +1,10 @@
 # AP2 Mandate Verifier — Ruby SDK for Checkout and Payment
 
+### 1.4.0 candidate: PISP and execution-date conditions
+
+The next candidate adds explicit Payment profiles for approved PISPs and parsed inclusive execution windows, bound to independent application provider/time context. Existing1.x defaults remain unchanged. It is not published yet. [Contract/API/official differences](docs/PAYMENT_POLICY.md), [plain Ruby three-mode example](examples/payment_policy.rb), [release gates](docs/RELEASE_140_CANDIDATE.md).
+
+
 ### Published 1.3.0: selective Checkout and Payment
 
 Keep the complete approved Open confidential and disclose only the merchant/products needed for Checkout, then selected payee/instrument candidates for Payment. Every mandatory condition and quantity remains enforced. [Profile/API/privacy/Python limits](docs/SELECTIVE_CHECKOUT.md), [plain Ruby combined lifecycle](examples/selective_checkout_payment.rb), [verified publication](docs/POST_RELEASE_130.md).

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0 — Unreleased candidate
+
+- Add explicit complete/selective Payment profiles for allowed PISP and execution-date constraints, with independently trusted provider/execution context.
+- Parse execution instants strictly and enforce inclusive bounds without lexical comparison; keep new conditions fully visible.
+- Integrate Direct/conditional Payment, selective Checkout/Payment and exact Payment Receipt references while preserving existing1.x defaults.
+- Publication remains reserved for Owner judgment after exact candidate verification.
+
 ## 1.3.0 — Unreleased candidate
 
 - Add an explicit selective Checkout profile that discloses selected merchant and product candidates while retaining every mandatory requirement and quantity.

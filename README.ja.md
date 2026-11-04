@@ -1,5 +1,10 @@
 # AP2 Mandate Verifier — Checkout・PaymentのRuby SDK
 
+### 1.4.0候補：PISPと支払い実行日時の条件
+
+次期候補では、承認したPISPと実行可能期間を指定し、アプリが独立して確認した決済サービス・実行予定時刻と照合できます。日時は文字列比較せず解析し、旧1.xの既定動作を維持します。まだ公開していません。[仕様・API・公式との差](docs/PAYMENT_POLICY.md)、[3方式を実行するRuby例](examples/payment_policy.rb)、[公開前の確認](docs/RELEASE_140_CANDIDATE.md)。
+
+
 ### 公開済み1.3.0：CheckoutとPaymentの選択的開示
 
 承認済みの完全Openを安全に保持し、Checkoutの販売者・商品候補、Paymentの支払先・決済手段から必要な情報だけを提示できます。全必須条件と数量の検証を維持します。[仕様・API・Python差分](docs/SELECTIVE_CHECKOUT.md)、[Ruby単体の一連の例](examples/selective_checkout_payment.rb)、[公開照合記録](docs/POST_RELEASE_130.md)。
