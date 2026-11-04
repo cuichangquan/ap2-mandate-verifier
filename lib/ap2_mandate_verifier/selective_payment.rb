@@ -16,7 +16,9 @@ module AP2MandateVerifier
     # protected approval record. This confidential issuance MUST NOT be sent.
     def self.issue_open(open_checkout_sd_jwt:, constraints:, fixed:, approved_combinations:, selective:,
                         agent_public_key_pem:, issued_at:, expires_at:, signer:, public_key_pem:,
-                        checkout_profile_ref: ScopedConstraints::MULTI_PROFILE_REF)
+                        checkout_profile_ref: ScopedConstraints::MULTI_PROFILE_REF, profile_ref: PROFILE_REF, candidate_policy: nil)
+      profile_ref = PaymentPolicy.profile!(profile_ref, selective: true)
+      PaymentPolicy.candidate_policy!(profile_ref, candidate_policy)
       RootSignature.send(:dependencies!)
       raise Invalid unless %i[payees instruments both].include?(selective)
       checkout = Payment.send(:checkout_open!, open_checkout_sd_jwt, profile_ref: checkout_profile_ref)
@@ -24,10 +26,10 @@ module AP2MandateVerifier
       raise Invalid unless cs.instance_of?(Array)
       cs << {"type" => "payment.reference", "conditional_transaction_id" => digest(checkout)}
       value = InputBuilder.send(:copy!, fixed)
-      raise Invalid unless value.instance_of?(Hash) && (value.keys - Payment::FIELDS.drop(1)).empty?
+      raise Invalid unless value.instance_of?(Hash) && (value.keys - PaymentPolicy.fields(profile_ref).drop(1)).empty?
       opening = value.merge("vct" => "mandate.payment.open.1", "iat" => issued_at, "exp" => expires_at,
         "cnf" => {"jwk" => RootSignature.public_jwk!(agent_public_key_pem)}, "constraints" => cs)
-      Payment.send(:open!, opening)
+      Payment.send(:open!, opening, profile_ref: profile_ref)
       payees = constraint!(opening, "payment.allowed_payees").fetch("allowed")
       instruments = constraint!(opening, "payment.allowed_payment_instruments").fetch("allowed")
       pairs = InputBuilder.send(:copy!, approved_combinations)
@@ -47,18 +49,19 @@ module AP2MandateVerifier
       end
       content = []
       pointer = disclose!(opening, content)
-      payload = {"ap2_profile" => PROFILE_REF, "_sd_alg" => "sha-256", "delegate_payload" => [pointer]}
+      payload = {"ap2_profile" => profile_ref, "_sd_alg" => "sha-256", "delegate_payload" => [pointer]}
       preview = [encode({"alg" => "ES256", "typ" => "example+sd-jwt"}), encode(payload), encode("\0" * 64)].join(".")
       wire = ([preview] + content + disclosures + [""]).join("~")
-      parse!(wire, complete: true) # Full wire/disclosure bounds BEFORE signer effects.
+      parse!(wire, complete: true, profile_ref: profile_ref) # Full wire/disclosure bounds BEFORE signer effects.
       jwt = MerchantSignature.sign!(payload, signer, public_key_pem, typ: "example+sd-jwt")
       ([jwt] + content + disclosures + [""]).join("~").freeze
     end
 
     # Each selective index selects one original signed candidate slot. For an
     # inline/nonselective axis, pass nil: every approved inline value is visible.
-    def self.select(open_sd_jwt:, payee_index:, instrument_index:)
-      parsed = parse!(open_sd_jwt, complete: true)
+    def self.select(open_sd_jwt:, payee_index:, instrument_index:, profile_ref: PROFILE_REF)
+      profile_ref = PaymentPolicy.profile!(profile_ref, selective: true)
+      parsed = parse!(open_sd_jwt, complete: true, profile_ref: profile_ref)
       keep = [parsed.fetch(:content_digest)]
       {"payment.allowed_payees" => payee_index, "payment.allowed_payment_instruments" => instrument_index}.each do |type, index|
         c = constraint!(parsed.fetch(:original), type)
@@ -74,42 +77,47 @@ module AP2MandateVerifier
         end
       end
       wire = ([parsed.fetch(:compact)] + parsed.fetch(:disclosures).select { |d| keep.include?(digest(d)) } + [""]).join("~")
-      parse!(wire, complete: false)
+      parse!(wire, complete: false, profile_ref: profile_ref)
       wire.freeze
     end
 
     def self.issue_closed(open_presentation:, payment:, trusted_provider_public_key_pem:, agent_public_key_pem:,
-                          audience:, nonce:, verified_at:, signer:)
+                          audience:, nonce:, verified_at:, signer:, profile_ref: PROFILE_REF)
+      profile_ref = PaymentPolicy.profile!(profile_ref, selective: true)
       agent = InputValidator.snapshot!(agent_public_key_pem, max_bytes: 1_024)
       provider = InputValidator.snapshot!(trusted_provider_public_key_pem, max_bytes: 1_024)
       aud = InputValidator.snapshot!(audience, max_bytes: 512)
       challenge = InputValidator.snapshot!(nonce, max_bytes: 512)
-      parsed = authenticated!(open_presentation, provider)
+      parsed = authenticated!(open_presentation, provider, profile_ref: profile_ref)
       opening = parsed.fetch(:opening)
       Payment.send(:valid_now!, opening, verified_at)
       raise Invalid unless opening.fetch("cnf") == {"jwk" => RootSignature.public_jwk!(agent)}
-      closed = Payment.send(:copy_details!, payment).merge("vct" => "mandate.payment.1", "iat" => verified_at, "exp" => opening.fetch("exp"))
-      Payment.send(:closed!, closed); Payment.send(:conditions!, opening, closed)
+      closed = Payment.send(:copy_details!, payment, profile_ref: profile_ref).merge("vct" => "mandate.payment.1", "iat" => verified_at, "exp" => opening.fetch("exp"))
+      Payment.send(:closed!, closed, profile_ref: profile_ref); Payment.send(:conditions!, opening, closed, profile_ref: profile_ref)
       Payment.send(:text!, aud, 512); Payment.send(:text!, challenge, 512)
       claims = {"delegate_payload" => [closed], "iat" => verified_at, "aud" => aud, "nonce" => challenge,
         "sd_hash" => digest(parsed.fetch(:wire))}
-      Payment.send(:preflight!, claims, "kb+sd-jwt")
+      claims["ap2_profile"] = profile_ref if PaymentPolicy.enabled?(profile_ref)
+      Payment.send(:preflight!, claims, "kb+sd-jwt", profile_ref: profile_ref)
       terminal = MerchantSignature.sign!(claims, signer, agent, typ: "kb+sd-jwt")
       Payment::Presentation.send(:new, parsed.fetch(:wire), terminal + "~")
     end
 
     # Structural restoration only. It never authenticates a stored presentation.
-    def self.present(open_presentation:, closed_sd_jwt:)
-      root = parse!(open_presentation, complete: false)
-      terminal, wire = Payment.send(:final!, closed_sd_jwt, conditional: true)
+    def self.present(open_presentation:, closed_sd_jwt:, profile_ref: PROFILE_REF)
+      profile_ref = PaymentPolicy.profile!(profile_ref, selective: true)
+      root = parse!(open_presentation, complete: false, profile_ref: profile_ref)
+      terminal, wire = Payment.send(:final!, closed_sd_jwt, conditional: true, profile_ref: profile_ref)
       closed = terminal.fetch("delegate_payload").first
-      bind_terminal!(root, terminal, closed)
+      bind_terminal!(root, terminal, closed, profile_ref: profile_ref)
       Payment::Presentation.send(:new, root.fetch(:wire), wire)
     end
 
     def self.verify(open_presentation:, closed_sd_jwt:, checkout_inputs:, expected_payment:,
                     trusted_provider_public_key_pem:, expected_agent_public_key_pem:,
-                    expected_audience:, expected_nonce:, verified_at:)
+                    expected_audience:, expected_nonce:, verified_at:, profile_ref: PROFILE_REF, trusted_pisp: nil, execution_at: nil)
+      profile_ref = PaymentPolicy.profile!(profile_ref, selective: true)
+      context = PaymentPolicy.context!(profile_ref, trusted_pisp, execution_at)
       CheckoutReceipt.send(:epoch!, verified_at)
       agent = InputValidator.snapshot!(expected_agent_public_key_pem, max_bytes: 1_024)
       provider = InputValidator.snapshot!(trusted_provider_public_key_pem, max_bytes: 1_024)
@@ -123,7 +131,7 @@ module AP2MandateVerifier
         [key, key == :verified_at ? value : InputValidator.snapshot!(value, max_bytes: limits.fetch(key, 131_072))]
       end.freeze
       raise Invalid unless inputs.size == fields.size && fields.all? { |f| inputs.key?(f) } && inputs[:verified_at] == verified_at
-      expected = Payment.send(:copy_details!, expected_payment)
+      expected = Payment.send(:copy_details!, expected_payment, profile_ref: profile_ref)
       checkout = AP2MandateVerifier.verify_checkout(**inputs)
       raise Invalid unless checkout.success?
       raise Invalid unless expected.fetch("transaction_id") == digest(inputs.fetch(:host_checkout_jws))
@@ -132,39 +140,40 @@ module AP2MandateVerifier
       raise Invalid unless expected.fetch("payee").fetch("id") == binding.fetch("merchant_id") &&
         amount.fetch("currency") == binding.fetch("currency") && amount.fetch("amount") == binding.fetch("expected_total")
       Payment.send(:bind_checkout!, expected, Payment.send(:jwt_payload!, inputs.fetch(:host_checkout_jws), "JWT"))
-      parsed = authenticated!(open_presentation, provider)
+      parsed = authenticated!(open_presentation, provider, profile_ref: profile_ref)
       opening = parsed.fetch(:opening)
       Payment.send(:valid_now!, opening, verified_at)
       raise Invalid unless opening.fetch("cnf") == {"jwk" => RootSignature.public_jwk!(agent)}
-      terminal, wire = Payment.send(:final!, closed_sd_jwt, conditional: true)
+      terminal, wire = Payment.send(:final!, closed_sd_jwt, conditional: true, profile_ref: profile_ref)
       RootSignature.verified_payload!(wire.split("~", -1).first, agent,
         expected_typ: "kb+sd-jwt", max_bytes: 32_768)
       Payment.send(:text!, aud, 512); Payment.send(:text!, nonce, 512)
       raise Invalid unless terminal.fetch("aud") == aud && terminal.fetch("nonce") == nonce &&
         terminal.fetch("iat") <= verified_at && verified_at - terminal.fetch("iat") <= 300
       closed = terminal.fetch("delegate_payload").first
-      bind_terminal!(parsed, terminal, closed)
+      bind_terminal!(parsed, terminal, closed, profile_ref: profile_ref)
       Payment.send(:valid_now!, closed, verified_at)
       ref = constraint!(opening, "payment.reference").fetch("conditional_transaction_id")
-      raise Invalid unless ref == digest(inputs.fetch(:root_presentation)) && closed.slice(*Payment::FIELDS) == expected
+      PaymentPolicy.bind_context!(closed, context) if context
+      raise Invalid unless ref == digest(inputs.fetch(:root_presentation)) && closed.slice(*PaymentPolicy.fields(profile_ref)) == expected
       Payment::Verification.send(:new, closed, wire)
     rescue StandardError, LoadError
       Payment::Verification.send(:new)
     end
 
-    def self.bind_terminal!(root, terminal, closed)
+    def self.bind_terminal!(root, terminal, closed, profile_ref: PROFILE_REF)
       opening = root.fetch(:opening)
-      Payment.send(:closed!, closed)
+      Payment.send(:closed!, closed, profile_ref: profile_ref)
       raise Invalid unless terminal.fetch("sd_hash") == digest(root.fetch(:wire)) && terminal.fetch("iat") == closed.fetch("iat") &&
         closed.fetch("iat") >= opening.fetch("iat") && closed.fetch("exp") <= opening.fetch("exp")
-      Payment.send(:conditions!, opening, closed)
+      Payment.send(:conditions!, opening, closed, profile_ref: profile_ref)
     end
-    def self.authenticated!(wire, key)
-      parsed = parse!(wire, complete: false)
+    def self.authenticated!(wire, key, profile_ref: PROFILE_REF)
+      parsed = parse!(wire, complete: false, profile_ref: profile_ref)
       RootSignature.verified_payload!(parsed.fetch(:compact), key, max_bytes: 16_384)
       parsed
     end
-    def self.parse!(source, complete:)
+    def self.parse!(source, complete:, profile_ref: PROFILE_REF)
       RootSignature.send(:dependencies!)
       wire = InputValidator.snapshot!(source, max_bytes: MAX_WIRE)
       raise Invalid unless wire.ascii_only? && wire.end_with?("~")
@@ -174,7 +183,7 @@ module AP2MandateVerifier
       compact = InputValidator.snapshot!(compact, max_bytes: 16_384)
       claims = Payment.send(:jwt_payload!, compact, "example+sd-jwt")
       Payment.send(:exact!, claims, %w[ap2_profile _sd_alg delegate_payload])
-      raise Invalid unless claims["ap2_profile"] == PROFILE_REF && claims["_sd_alg"] == "sha-256" &&
+      raise Invalid unless claims["ap2_profile"] == profile_ref && claims["_sd_alg"] == "sha-256" &&
         claims["delegate_payload"].instance_of?(Array) && claims["delegate_payload"].size == 1
       pointer = claims.fetch("delegate_payload").first
       Payment.send(:exact!, pointer, ["..."])
@@ -218,7 +227,7 @@ module AP2MandateVerifier
       end
       raise Invalid if slots.values.all?(&:empty?)
       raise Invalid unless used.sort == values.keys.sort
-      Payment.send(:open!, opening) # Only candidate markers were resolved/omitted.
+      Payment.send(:open!, opening, profile_ref: profile_ref) # Only candidate markers were resolved/omitted.
       {wire: wire, compact: compact, disclosures: disclosures, opening: opening,
         original: original, content_digest: content_digest, slots: slots, values: values}
     end

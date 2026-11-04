@@ -14,9 +14,10 @@ expected = (expected + %w[docs/PAYMENT.md docs/RELEASE_110_CANDIDATE.md examples
 expected = (expected + %w[docs/SELECTIVE_PAYMENT.md docs/RELEASE_120_CANDIDATE.md examples/selective_payment.rb]).sort
 expected = (expected + %w[docs/POST_RELEASE_110.md docs/evidence/1.1.0_publication.json]).sort
 expected = (expected + %w[docs/SELECTIVE_CHECKOUT.md docs/RELEASE_130_CANDIDATE.md examples/selective_checkout.rb examples/selective_checkout_payment.rb]).sort
+expected = (expected + %w[docs/PAYMENT_POLICY.md docs/RELEASE_140_CANDIDATE.md examples/payment_policy.rb]).sort
 raise "package whitelist" unless files == expected && spec.extensions.empty?
 versions = {"base64"=>"= 0.3.0","json"=>"= 2.19.9","jwt"=>"= 3.3.0","openssl"=>"= 4.0.2","digest"=>"= 3.2.1"}
-raise "package metadata" unless spec.name == "ap2_mandate_verifier" && spec.version.to_s == "1.3.0" &&
+raise "package metadata" unless spec.name == "ap2_mandate_verifier" && spec.version.to_s == "1.4.0" &&
   spec.required_ruby_version == Gem::Requirement.new(">= 3.4.12", "< 4.1") && spec.license == "MIT" &&
   spec.runtime_dependencies.to_h { |d| [d.name, d.requirement.to_s] } == versions
 package.extract_files(ARGV.fetch(1))
