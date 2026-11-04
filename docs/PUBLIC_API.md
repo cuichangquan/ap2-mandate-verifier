@@ -215,3 +215,9 @@ For the explicit selective Checkout profile, Evidence `original_root_graph_closu
 ## Published1.4.0: explicit Payment policy profiles
 
 `PaymentPolicy::PROFILE_REF` and `SELECTIVE_PROFILE_REF` opt into PISP/execution constraints in existing `Payment`, `SelectivePayment` and `PaymentReceipt` APIs via `profile_ref:`. Verification additionally requires independently trusted `trusted_pisp:` and `execution_at:`; missing context is never filled from claims. New Open issuance requires `candidate_policy: :independent`. Both new fields are mandatory in Closed, even when only one new Open constraint is used. See [strict parsing, condition stages, API additions and official limitations](PAYMENT_POLICY.md). Old defaults, grammar and result meanings remain unchanged. No scheduler/payment execution is added.
+
+## 1.5.0 candidate: application-side Payment acceptance
+
+`PaymentAcceptance::Service` takes a transactional `store:` adapter. `accept` invokes existing raw verifiers then atomically checks an enrolled protected occurrence and reserves it; `start` requires fresh raw verification and exact first signed wires before fenced CAS. `finish`, `unknown`, `lookup` and `reconcile` retain first-wire/Receipt/processor-key bindings and never automatically release or reissue a Ticket. No existing verifier result is reinterpreted as Host ALLOW.
+
+`SQLiteStore.create(path:)` explicitly initializes once; `new(path:)` opens an existing supported database and requires optional `sqlite3 = 2.10.2`. Base runtime dependencies remain unchanged. `authorize!` and `revoke!` are protected Host operations, never request-derived approval flags. See [all parameters, states, adapter guarantees, supported reuse and recovery limits](PAYMENT_ACCEPTANCE.md).

@@ -1,5 +1,18 @@
 # AP2 Mandate Verifier — Checkout・PaymentのRuby SDK
 
+### 1.5.0候補：Payment受理の原子性と冪等性支援
+
+保護された業務上の支払い単位を原子的に予約し、開始前に全検証をやり直します。応答消失・結果不明では自動再実行せず、元のReceiptを照合して復旧できます。未公開候補です。[組込み・永続store・安全性契約](docs/PAYMENT_ACCEPTANCE.md)、[Ruby単体の復旧例](examples/payment_acceptance.rb)、[公開前の確認](docs/RELEASE_150_CANDIDATE.md)。
+
+```ruby
+accepted = service.accept(**trusted_scope, mode: :conditional, verification_inputs: raw_inputs)
+dispatch = service.start(ticket: accepted.ticket, verification_inputs: fresh_inputs) if accepted.ticket
+# 実際のprocessor呼出しはアプリ側。同じdispatch.processor_keyを使います。
+```
+
+検証成功・永続予約・決済完了は別の事象です。承認済みoccurrenceの保護、全worker共通の永続store、processorの冪等性・照会が必要です。旧1.xのverifierは変更せず、SQLite参照driverは任意の別依存です。
+
+
 ### 公開済み1.4.0：PISPと支払い実行日時の条件
 
 承認したPISPと実行可能期間を指定し、アプリが独立して確認した決済サービス・実行予定時刻と照合できます。日時は解析した瞬間で比較し、旧1.xの既定動作を維持します。[仕様・API・公式との差](docs/PAYMENT_POLICY.md)、[3方式のRuby例](examples/payment_policy.rb)、[公開照合記録](docs/POST_RELEASE_140.md)。

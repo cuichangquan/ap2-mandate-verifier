@@ -2,15 +2,17 @@
 
 ## 現在の対象と限界 / Current scope
 
-[Published 1.0.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.0.0) is a framework-independent Ruby SDK for the documented AP2 Checkout profiles, including Direct and conditional issuance, presentation, verification and Checkout Receipt confirmation. See [publication evidence](docs/POST_RELEASE_100.md), the stable [PUBLIC_API](docs/PUBLIC_API.md) and [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md) for its scope and limitations.
+[Published 1.4.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.4.0) is a framework-independent Ruby SDK for the documented AP2 Checkout profiles, including Direct/conditional Checkout and Payment, selective disclosure, PISP/date conditions and Receipt confirmation. See [publication evidence](docs/POST_RELEASE_140.md), the stable [PUBLIC_API](docs/PUBLIC_API.md) and [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md) for its scope and limitations.
 
-現在の配布版は、対応profileのDirect／条件付き購入委任の発行・提示・検証・Checkout Receipt確認を備えた、フレームワーク非依存のRuby SDK **1.0.0**です。1.xの保守対象は最新マイナー系列の最新修正版のみとし、旧マイナー・0.x・preへのbackportは約束しません。現行版の報告窓口は以下のままです。保守対象・互換性・セキュリティ修正の扱いは[公開後の整備](docs/POST_RELEASE_MAINTENANCE.md)を参照してください。
+現在の配布版は、対応profileのDirect／条件付き購入委任の発行・提示・検証・Checkout Receipt確認を備えた、フレームワーク非依存のRuby SDK **1.4.0**です。1.xの保守対象は最新マイナー系列の最新修正版のみとし、旧マイナー・0.x・preへのbackportは約束しません。現行版の報告窓口は以下のままです。保守対象・互換性・セキュリティ修正の扱いは[公開後の整備](docs/POST_RELEASE_MAINTENANCE.md)を参照してください。
 
 The 1.x policy covers only the latest patch of the latest 1.x minor series; older minors, 0.x and prereleases carry no backport promise. Existing reporting routes below remain available for the current release. See [maintenance and compatibility](docs/POST_RELEASE_MAINTENANCE.md). The pre.3, 0.1.0 candidate and R2 statements below are historical records of those stages, not the current release status.
 
 Evidence is not Host ALLOW or payment permission. Real Issuer trust, specific Host production GO and Phase 2-B remain HOLD; general AP2/full Schema, full Phase2-A PASS, worst-resource/concurrency and global native/runtime safety are not established. No SLA, fixed support term or response/fix deadline is promised. Existing provider/JSON advisory-metadata and communication-accounting limitations remain recorded; publication does not erase them. New execution, changes or releases require their own approval.
 
 EvidenceはHost ALLOW・決済許可ではありません。実Issuer信頼、特定Host本番GO、Phase 2-BはHOLDを維持し、一般AP2/全Schema・Phase2-A全面PASS・最悪資源/並行性能・native/runtime全面安全性は未証明です。SLA・固定保守年数・受付/修正期限は約束せず、既存のprovider/JSON勧告metadata・通信会計の限界を保持します。本記録は新たな実行・変更・公開を許可しません。
+
+1.5.0 is an unpublished opt-in acceptance/idempotency candidate. Its store coordinates protected business occurrences and one start handle; it does not change existing verifier/Host authority contracts or prove external exactly-once/settlement. Store adapters, current authority/order/nonce CAS, filesystem/database recovery and processor lookup/idempotency require application guarantees. No memory fallback or timeout-based re-execution is safe. See [the candidate contract](docs/PAYMENT_ACCEPTANCE.md).
 
 ## 歴史記録：pre.3の対象と限界 / Historical pre.3 scope
 

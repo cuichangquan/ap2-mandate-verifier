@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0 — Unreleased candidate
+
+- Add opt-in transactional Payment acceptance with protected authorization/occurrence enrollment, stable business-operation identity, atomic reservation and fenced processing transitions.
+- Preserve first signed wires, processor idempotency key and Receipt binding across retries/re-signing; unknown outcomes never automatically reopen.
+- Add an optional durable SQLite reference adapter, fresh full verification before start, concurrency/crash/restart examples and diagnostics. Existing1.x verifier defaults and base runtime dependencies remain unchanged.
+- Publication remains reserved for Owner decision.
+
 ## 1.4.0 — Unreleased candidate
 
 - Add explicit complete/selective Payment profiles for allowed PISP and execution-date constraints, with independently trusted provider/execution context.
