@@ -208,6 +208,6 @@ New explicit `SelectivePayment` APIs are described in the [selective Payment con
 
 ## 1.3.0 candidate: selective Checkout
 
-The additive `SelectiveCheckout` profile is under preparation. See the [candidate contract](SELECTIVE_CHECKOUT.md) for mandatory disclosure, independent candidate semantics, original-wire references and application responsibilities. It is not available in the published 1.2.0 package. Existing complete profile defaults are preserved.
+The additive `SelectiveCheckout` profile is included in the 1.3.0 candidate. See the [candidate contract](SELECTIVE_CHECKOUT.md) for mandatory disclosure, independent candidate semantics, original-wire references and application responsibilities. It is not available in the published 1.2.0 package. Existing complete profile defaults are preserved.
 
 For the explicit selective Checkout profile, Evidence `original_root_graph_closure` records that every signed commitment and supplied disclosure was inspected and accounted for, allowing unresolved candidate leaves only at registered positions. It does not certify hidden preimages, their schema or uniqueness, or consent provenance. The checked scope covers the visible candidate subset and all mandatory conditions.
