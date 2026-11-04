@@ -1,6 +1,6 @@
 # Ruby SDK public API — 1.x
 
-**Status: published 1.4.0; the original 1.0.0 Checkout contract below is preserved.**
+**Status: published 1.5.0; the original 1.0.0 Checkout contract below is preserved.**
 This document defines the 1.x contract for the existing Checkout APIs.
 The 1.0.0 release preserves the 0.8.0 runtime behavior, API names and accepted
 formats. Exact distribution identity and validation are in
@@ -216,7 +216,7 @@ For the explicit selective Checkout profile, Evidence `original_root_graph_closu
 
 `PaymentPolicy::PROFILE_REF` and `SELECTIVE_PROFILE_REF` opt into PISP/execution constraints in existing `Payment`, `SelectivePayment` and `PaymentReceipt` APIs via `profile_ref:`. Verification additionally requires independently trusted `trusted_pisp:` and `execution_at:`; missing context is never filled from claims. New Open issuance requires `candidate_policy: :independent`. Both new fields are mandatory in Closed, even when only one new Open constraint is used. See [strict parsing, condition stages, API additions and official limitations](PAYMENT_POLICY.md). Old defaults, grammar and result meanings remain unchanged. No scheduler/payment execution is added.
 
-## 1.5.0 candidate: application-side Payment acceptance
+## Published1.5.0: application-side Payment acceptance
 
 `PaymentAcceptance::Service` takes a transactional `store:` adapter. `accept` invokes existing raw verifiers then atomically checks an enrolled protected occurrence and reserves it; `start` requires fresh raw verification and exact first signed wires before fenced CAS. `finish`, `unknown`, `lookup` and `reconcile` retain first-wire/Receipt/processor-key bindings and never automatically release or reissue a Ticket. No existing verifier result is reinterpreted as Host ALLOW.
 

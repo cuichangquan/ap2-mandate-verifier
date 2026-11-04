@@ -1,4 +1,6 @@
-# Payment acceptance and idempotency support (1.5.0 candidate)
+# Payment acceptance and idempotency support (published1.5.0)
+
+[Verified public distribution](POST_RELEASE_150.md).
 
 This opt-in application-side coordinator separates three events: cryptographic verification, durable reservation of an approved business occurrence, and an external payment processor’s outcome. Existing1.x verifiers and their result meanings remain unchanged. The SDK does not call a processor, transfer funds or promise distributed exactly-once execution.
 
