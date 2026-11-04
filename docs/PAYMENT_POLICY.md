@@ -1,4 +1,4 @@
-# PISP and execution-date Payment constraints (1.4.0 candidate)
+# PISP and execution-date Payment constraints (published1.4.0)
 
 New explicit complete/selective Payment profiles add `payment.allowed_pisps` and `payment.execution_date` without changing the existing1.x defaults. Direct and conditional issuance, presentation, strict verification, selective Checkout/Payment and Payment Receipt references share the existing cryptographic and Host verification paths. This SDK remains framework independent and performs no payment scheduling or execution.
 
@@ -45,7 +45,7 @@ The new profiles require both explicit `pisp` and `execution_date` in Closed and
 
 The official PISP Schema describes the domain as secured by an eIDAS QWAC certificate. This library does not fetch/validate QWACs, establish legal authorization or authenticate a network endpoint from text. Applications own certificate/channel validation, enrollment, revocation and the provenance/freshness of their trusted PISP input. A syntactically valid domain or valid Mandate signature does not establish those facts.
 
-`execution_at` is an independently controlled application execution-plan/operational instant. It must represent the same instant as signed `execution_date`. It is distinct from `verified_at`, which checks signature/Mandate freshness. Future plan verification does not prove that execution occurred or will later occur under that context. At the actual execution gate, the application must recheck the actual provider/time/current approval and a valid Mandate, atomically consume one-use state and reconcile uncertain outcomes. The SDK does not schedule, call a PISP or settle a payment.
+`execution_at` is an independently controlled application execution-plan/operational instant. It must represent the same instant as signed `execution_date`. It is distinct from `verified_at`, which checks signature/Mandate freshness. Future plan verification does not prove that execution occurred or will later occur under that context. The existing maximum600secondMandate lifetime is unchanged; a future execution date does not extend its expiry. At the actual execution gate, the application must recheck the actual provider/time/current approval and a valid Mandate, atomically consume one-use state and reconcile uncertain outcomes. The SDK does not schedule, call a PISP or settle a payment.
 
 ## Date semantics
 
@@ -68,3 +68,5 @@ Direct Payment uses exact protected `approved_payment`, including PISP and execu
 Adopted source remains AP2v0.2.0 `b4587ac1d055888a73b4b21750973cffba961793`: [Payment specification](https://github.com/google-agentic-commerce/AP2/blob/b4587ac1d055888a73b4b21750973cffba961793/docs/ap2/payment_mandate.md), [Open Schema](https://github.com/google-agentic-commerce/AP2/blob/b4587ac1d055888a73b4b21750973cffba961793/code/sdk/schemas/ap2/open_payment_mandate.json), [PISP Schema](https://github.com/google-agentic-commerce/AP2/blob/b4587ac1d055888a73b4b21750973cffba961793/code/sdk/schemas/ap2/types/pisp.json).
 
 The normative text requires inclusive execution bounds. Schema permits weakly typed strings; it does not itself enforce this strict timestamp subset. The pinned Python evaluator compares date strings lexically and permits absent dates even with a date constraint. Its PISP evaluator does compare all three identity fields. Ruby’s parsed/context-bound behavior is an explicit safer supported subset, not an unqualified claim that all official high-level helpers behave identically. Source interoperability observed three lifecycle cases in each direction (Direct/complete conditional/selective conditional), twelve Receipt checks and62 negatives, plus six explicitly recorded upstream date-check disagreements. Separate positive variants cover PISP-only/date-only/one-sided constraints. Exact signed-wire hashes and actual runtime provenance are recorded with the candidate; supported claims do not extend to QWAC provenance, execution or generic AP2 conformance.
+
+[Verified public artifact, tag and Release](POST_RELEASE_140.md). The original candidate preparation is retained as [historical evidence](RELEASE_140_CANDIDATE.md).

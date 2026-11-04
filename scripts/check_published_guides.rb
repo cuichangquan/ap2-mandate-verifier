@@ -3,7 +3,7 @@ require "ap2_mandate_verifier"
 require "json"
 require "open3"
 spec = Gem.loaded_specs.fetch("ap2_mandate_verifier")
-abort "published 1.3.0 not installed" unless spec.version.to_s == "1.3.0"
+abort "published 1.4.0 not installed" unless spec.version.to_s == "1.4.0"
 root = File.expand_path("..", __dir__)
 abort "source library loaded" if File.realpath(spec.full_gem_path).start_with?(root + "/")
 %w[README.md README.ja.md].each do |name|
@@ -72,7 +72,7 @@ RUBY
 output, error, status = Open3.capture3(Gem.ruby, "-e", prelude + release)
 abort "Release snippet failed" unless status.success? && output.lines.map(&:strip) == ["Conditional verified=true", "Receipt verified=true purchase_succeeded=false"]
 puts output
-puts "PASS installed published 1.3.0 guides, standalone conditional example and retained 0.8.0 flow; no Gem build"
+puts "PASS installed published 1.4.0 guides, standalone conditional example and retained 0.8.0 flow; no Gem build"
 
 installed_payment = File.join(spec.full_gem_path, "examples/payment.rb")
 output, error, status = Open3.capture3(Gem.ruby, installed_payment)
@@ -82,7 +82,7 @@ abort "installed Payment example failed" unless status.success? &&
   output.scan("Payment Receipt Error: authentic=true; reported_success=false").size == 2 &&
   output.include?("Missing/invalid Receipt = pending; no automatic retry.")
 puts output
-puts "PASS installed published 1.3.0 Payment Direct/conditional and both Receipt outcomes; no source overlay"
+puts "PASS installed published 1.4.0 Payment Direct/conditional and both Receipt outcomes; no source overlay"
 
 installed_selective = File.join(spec.full_gem_path, "examples/selective_payment.rb")
 output, error, status = Open3.capture3(Gem.ruby, installed_selective)
@@ -95,7 +95,7 @@ abort "installed selective Payment example failed" unless status.success? &&
   output.scan("Payment Receipt Success: authentic=true; reported_success=true").size == 1 &&
   output.scan("Payment Receipt Error: authentic=true; reported_success=false").size == 1
 puts output
-puts "PASS installed published1.3.0 selective Payment retained/transmitted comparison and Receipts; no source overlay"
+puts "PASS installed published1.4.0 selective Payment retained/transmitted comparison and Receipts; no source overlay"
 
 %w[selective_checkout selective_checkout_payment].each do |example|
   output, error, status = Open3.capture3(Gem.ruby, File.join(spec.full_gem_path, "examples", "#{example}.rb"))
@@ -105,5 +105,13 @@ puts "PASS installed published1.3.0 selective Payment retained/transmitted compa
     output.include?("Receipt Success: authentic=true") && output.include?("Receipt Error: authentic=true")
   abort "combined Payment example failed" if example.end_with?("payment") &&
     !(output.include?("Selected Payment verified=true") && output.include?("Payment Receipt Error: authentic=true"))
-  puts "PASS physically installed published1.3.0 #{example}; no source overlay or Gem build"
+  puts "PASS physically installed published1.4.0 #{example}; no source overlay or Gem build"
 end
+
+output, error, status = Open3.capture3(Gem.ruby, File.join(spec.full_gem_path, "examples/payment_policy.rb"))
+abort "published Payment policy example failed" unless status.success? &&
+  output.include?("Direct: approved PISP/date verified; wrong independent PISP/time rejected") &&
+  output.include?("Conditional: allowed PISP/inclusive window verified; outside window rejected") &&
+  output.include?("Selective: Checkout and Payment verified") &&
+  output.include?("Success/Error Payment Receipts authenticated for all three modes")
+puts "PASS physically installed published1.4.0 PISP/date profiles, three modes, negatives and Receipts; no source overlay or Gem build"
