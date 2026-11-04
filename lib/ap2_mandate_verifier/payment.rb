@@ -59,9 +59,9 @@ module AP2MandateVerifier
     # Reference is calculated over exact original Open Checkout, never rebuilt JSON.
     # The app authenticates consent to these conditions before invoking this API.
     def self.issue_open(open_checkout_sd_jwt:, constraints:, fixed:, agent_public_key_pem:,
-                        issued_at:, expires_at:, signer:, public_key_pem:)
+                        issued_at:, expires_at:, signer:, public_key_pem:, checkout_profile_ref: ScopedConstraints::MULTI_PROFILE_REF)
       RootSignature.send(:dependencies!)
-      root = checkout_open!(open_checkout_sd_jwt)
+      root = checkout_open!(open_checkout_sd_jwt, profile_ref: checkout_profile_ref)
       conditions = InputBuilder.send(:copy!, constraints)
       raise Invalid unless conditions.instance_of?(Array)
       conditions << {"type" => "payment.reference", "conditional_transaction_id" => digest(root)}
@@ -271,9 +271,15 @@ module AP2MandateVerifier
       CheckoutReceipt.send(:epoch!, now)
       raise Invalid unless v.fetch("iat") <= now && now < v.fetch("exp")
     end
-    def self.checkout_open!(wire)
+    def self.checkout_open!(wire, profile_ref: ScopedConstraints::MULTI_PROFILE_REF)
       wire = InputValidator.snapshot!(wire)
-      opening = RootDisclosures.send(:structural_root!, wire).fetch("delegate_payload").first
+      profile = InputValidator.snapshot!(profile_ref, max_bytes: 256)
+      opening = if profile == TrustContext::SELECTIVE_PROFILE_REF
+        SelectiveCheckout.send(:parse!, wire, complete: false).fetch(:opening)
+      else
+        raise Invalid unless profile == ScopedConstraints::MULTI_PROFILE_REF
+        RootDisclosures.send(:structural_root!, wire).fetch("delegate_payload").first
+      end
       raise Invalid unless opening.fetch("vct") == "mandate.checkout.open.1"
       wire
     end

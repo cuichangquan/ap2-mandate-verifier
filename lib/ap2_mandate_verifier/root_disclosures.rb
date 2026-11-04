@@ -22,6 +22,14 @@ module AP2MandateVerifier
     # Internal handoff only: signature and entire closure are verified first.
     # AP2 semantics, constraints and Host authorization remain unvalidated.
     def self.verified_root!(source, issuer_pem, profile_ref: TrustContext::PROFILE_REF)
+      if profile_ref == TrustContext::SELECTIVE_PROFILE_REF
+        begin
+          parsed = SelectiveCheckout.send(:authenticated!, source, issuer_pem)
+          return {"delegate_payload" => [parsed.fetch(:opening)]}
+        rescue SelectiveCheckout::Invalid, KeyError
+          raise Rejected.new(:unsupported_disclosure_profile), cause: nil
+        end
+      end
       multi = profile_ref == "ap2.checkout.single_merchant_multi_item"
       raise Rejected, :unsupported_disclosure_profile unless multi || profile_ref == TrustContext::PROFILE_REF
       wire = InputValidator.snapshot!(source)
