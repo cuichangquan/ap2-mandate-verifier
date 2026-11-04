@@ -1,5 +1,7 @@
 # 1.4.0 candidate preparation
 
+**Historical prepublication record.1.4.0 is now public; see [verified publication](POST_RELEASE_140.md). Do not repeat its push or substitute a rebuilt artifact.**
+
 Status: release candidate preparation. Final exact-source/package/CI evidence and GO/HOLD recommendation are recorded in the PR and external manifest after verification. RubyGems publication, formalv1.4.0 tag, GitHub Release, announcements, deployment and real payment remain HOLD for Owner decision.
 
 ## Proposed notes
