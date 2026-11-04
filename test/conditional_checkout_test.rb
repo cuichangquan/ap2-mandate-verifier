@@ -3,7 +3,7 @@ require "minitest/autorun"
 if ENV["AP2_INSTALLED"] == "1"
   require "ap2_mandate_verifier"
   spec = Gem.loaded_specs.fetch("ap2_mandate_verifier")
-  raise "source accidentally loaded" unless spec.version.to_s == "1.4.0" &&
+  raise "source accidentally loaded" unless spec.version.to_s == "1.5.0" &&
     !File.realpath(spec.full_gem_path).start_with?(File.realpath(File.join(__dir__, "..")) + "/")
 else
   require_relative "../lib/ap2_mandate_verifier"

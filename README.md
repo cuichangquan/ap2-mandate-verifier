@@ -1,5 +1,18 @@
 # AP2 Mandate Verifier — Ruby SDK for Checkout and Payment
 
+### 1.5.0 candidate: transactional Payment acceptance
+
+Reserve a protected business occurrence atomically, reverify before one fenced start, and recover the original Receipt after response loss without reopening an uncertain attempt. This candidate is not published. [Integration/store/security contract](docs/PAYMENT_ACCEPTANCE.md), [plain Ruby recovery example](examples/payment_acceptance.rb), [release gates](docs/RELEASE_150_CANDIDATE.md).
+
+```ruby
+accepted = service.accept(**trusted_scope, mode: :conditional, verification_inputs: raw_inputs)
+dispatch = service.start(ticket: accepted.ticket, verification_inputs: fresh_inputs) if accepted.ticket
+# Application-owned processor call uses dispatch.processor_key; no SDK payment call.
+```
+
+Verification, durable reservation and settlement are separate. Use protected enrollment, one authoritative store and processor idempotency/lookup; no automatic timeout release. Existing1.x verifiers remain unchanged. The optional SQLite reference driver is installed separately.
+
+
 ### Published1.4.0: PISP and execution-date Payment conditions
 
 Explicit Payment profiles now constrain approved PISPs and parsed inclusive execution windows, bound to independent application provider/time context. Existing1.x defaults remain unchanged. [Contract/API/official differences](docs/PAYMENT_POLICY.md), [plain Ruby three-mode example](examples/payment_policy.rb), [verified publication](docs/POST_RELEASE_140.md).
