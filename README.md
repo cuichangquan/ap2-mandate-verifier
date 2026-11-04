@@ -1,5 +1,10 @@
 # AP2 Mandate Verifier — Ruby SDK for Checkout and Payment
 
+### 1.3.0 candidate: selective Checkout
+
+The next candidate adds merchant and product candidate selection with all required quantities retained, plus a combined selective Checkout/Payment Ruby lifecycle. It is not published yet. [Contract and limitations](docs/SELECTIVE_CHECKOUT.md), [release gates](docs/RELEASE_130_CANDIDATE.md). Published installation instructions below remain on 1.2.0.
+
+
 ### Published1.2.0: selective Payment
 
 Published1.2.0 adds explicit `SelectivePayment` candidate-array disclosure: retain confidential full issuance, send selected payee/instrument disclosures only, and verify every mandatory condition and exact original-wire reference. [Profile/API/privacy/Python limits](docs/SELECTIVE_PAYMENT.md), [plain Ruby retained-vs-sent example](examples/selective_payment.rb), [verified publication](docs/POST_RELEASE_120.md). Existing `Payment` defaults remain unchanged.

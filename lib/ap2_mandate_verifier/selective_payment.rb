@@ -15,10 +15,11 @@ module AP2MandateVerifier
     # All candidates and their exact Cartesian authorization come from a
     # protected approval record. This confidential issuance MUST NOT be sent.
     def self.issue_open(open_checkout_sd_jwt:, constraints:, fixed:, approved_combinations:, selective:,
-                        agent_public_key_pem:, issued_at:, expires_at:, signer:, public_key_pem:)
+                        agent_public_key_pem:, issued_at:, expires_at:, signer:, public_key_pem:,
+                        checkout_profile_ref: ScopedConstraints::MULTI_PROFILE_REF)
       RootSignature.send(:dependencies!)
       raise Invalid unless %i[payees instruments both].include?(selective)
-      checkout = Payment.send(:checkout_open!, open_checkout_sd_jwt)
+      checkout = Payment.send(:checkout_open!, open_checkout_sd_jwt, profile_ref: checkout_profile_ref)
       cs = InputBuilder.send(:copy!, constraints)
       raise Invalid unless cs.instance_of?(Array)
       cs << {"type" => "payment.reference", "conditional_transaction_id" => digest(checkout)}
@@ -242,9 +243,10 @@ module AP2MandateVerifier
 
     %i[issue_open select issue_closed present verify].each do |name|
       implementation = method(name)
+      required = implementation.parameters.filter_map { |kind, field| field if kind == :keyreq }.freeze
       fields = implementation.parameters.map(&:last).freeze
       define_singleton_method(name) do |**args|
-        unless (fields - args.keys).empty? && (args.keys - fields).empty?
+        unless (required - args.keys).empty? && (args.keys - fields).empty?
           next Payment::Verification.send(:new) if name == :verify
           raise Invalid
         end

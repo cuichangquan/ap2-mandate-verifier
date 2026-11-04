@@ -2,9 +2,9 @@
 
 Gem::Specification.new do |spec|
   spec.name = "ap2_mandate_verifier"
-  spec.version = "1.2.0"
+  spec.version = "1.3.0"
   spec.summary = "Ruby SDK for supported AP2 Checkout and Payment Mandates"
-  spec.description = "Framework-independent Ruby SDK for supported AP2 Checkout profiles: Merchant JWT signing, Direct and conditional Mandate issuance and presentation, full verification with immutable Evidence, Checkout Receipts, Direct and conditional Payment Mandates, and Payment Receipts. Adds opt-in selective Payment candidate disclosure. Requires independently trusted application inputs; verification does not grant purchase or payment permission."
+  spec.description = "Framework-independent Ruby SDK for supported AP2 Checkout profiles: Merchant JWT signing, Direct and conditional Mandate issuance and presentation, full verification with immutable Evidence, Checkout Receipts, Direct and conditional Payment Mandates, and Payment Receipts. Adds opt-in selective Checkout and Payment candidate disclosure. Requires independently trusted application inputs; verification does not grant purchase or payment permission."
   spec.authors = ["AP2 Mandate Verifier contributors"]
   spec.license = "MIT"
   spec.homepage = "https://github.com/cuichangquan/ap2-mandate-verifier"
@@ -13,6 +13,7 @@ Gem::Specification.new do |spec|
   spec.files += %w[docs/PAYMENT.md docs/RELEASE_110_CANDIDATE.md examples/payment.rb]
   spec.files += %w[docs/SELECTIVE_PAYMENT.md docs/RELEASE_120_CANDIDATE.md examples/selective_payment.rb]
   spec.files += %w[docs/POST_RELEASE_110.md docs/evidence/1.1.0_publication.json]
+  spec.files += %w[docs/SELECTIVE_CHECKOUT.md docs/RELEASE_130_CANDIDATE.md examples/selective_checkout.rb examples/selective_checkout_payment.rb]
   spec.require_paths = ["lib"]
   spec.required_ruby_version = [">= 3.4.12", "< 4.1"]
   spec.add_runtime_dependency "json", "= 2.19.9"

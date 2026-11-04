@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.0 — Unreleased candidate
+
+- Add an explicit selective Checkout profile that discloses selected merchant and product candidates while retaining every mandatory requirement and quantity.
+- Preserve full Host trust/challenge/order verification and integer maximum-flow quantity coverage.
+- Integrate selective Checkout with selective Payment, exact original-wire references and both Receipt lifecycles.
+- Preserve existing complete profiles and default APIs; publication remains subject to Owner judgment.
+
 ## 1.2.0 — 2026-11-03
 
 - Add explicit conditional `SelectivePayment` candidate-array disclosure with payee-only/instrument-only/both modes, exact reduced-wire delegation, mandatory-condition closure and Cartesian approval guard.

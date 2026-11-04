@@ -1,5 +1,10 @@
 # AP2 Mandate Verifier — Checkout・PaymentのRuby SDK
 
+### 1.3.0候補：Checkoutの選択的開示
+
+次期候補では、販売者・商品の非選択候補を送らず、全明細の必要数量を検証できます。CheckoutとPaymentの両方を選択的に開示するRuby単体例も用意します。まだ公開していません。[仕様・制限](docs/SELECTIVE_CHECKOUT.md)、[公開前の確認項目](docs/RELEASE_130_CANDIDATE.md)。以下の公開版導入手順は1.2.0です。
+
+
 ### 公開済み1.2.0：Payment候補の選択的開示
 
 公開済み1.2.0の明示的な`SelectivePayment` profileで、支払先・決済手段の非選択候補を送らずに検証できます。必須条件・委任・原文参照は省略しません。[API・プライバシー・Python差分](docs/SELECTIVE_PAYMENT.md)、[保持／送信を比較するRuby単体例](examples/selective_payment.rb)、[公開照合記録](docs/POST_RELEASE_120.md)。既存`Payment`の既定profileは変更しません。

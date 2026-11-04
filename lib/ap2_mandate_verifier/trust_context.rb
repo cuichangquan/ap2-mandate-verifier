@@ -12,6 +12,10 @@ module AP2MandateVerifier
     MULTI_PROFILE_VERSION = "1"
     MULTI_PROFILE_BODY = '{"profile_ref":"ap2.checkout.single_merchant_multi_item","version":"1","ap2_source":"b4587ac1d055888a73b4b21750973cffba961793","algorithm":"ES256","key_format":"canonical-public-SPKI-P256-SHA256","root_type":"example+sd-jwt","terminal_type":"kb+sd-jwt","checkout_type":"JWT","disclosure_path_semantics":"root-walker-with-synthetic-disclosed-edges","disclosure_positions":["delegate_payload[0]","delegate_payload[0].disclosed.constraints[0].items[*].acceptable_items[*]","delegate_payload[0].disclosed.constraints[1].allowed[0]"],"constraints":["checkout.line_items","checkout.allowed_merchants"],"max_disclosures":66,"max_disclosure_segment_bytes":8192,"max_root_bytes":131072,"max_graph_nodes":2048,"max_graph_depth":24,"max_array_entries":16,"max_line_items":8,"max_requirements":8,"max_candidates_per_requirement":8,"quantity_matching":"integer-max-flow-product-id-exact-coverage","duplicate_line_ids":"reject","duplicate_requirement_ids":"reject","same_product_multiple_lines":"allow","amount_model":"integer-minor-unit-no-tax-shipping-discount"}'.freeze
     MULTI_PROFILE_HASH = Digest::SHA256.hexdigest(MULTI_PROFILE_BODY).freeze
+    SELECTIVE_PROFILE_REF = "ap2.checkout.selective_candidates.1".freeze
+    SELECTIVE_PROFILE_VERSION = "1".freeze
+    SELECTIVE_PROFILE_BODY = '{"profile_ref":"ap2.checkout.selective_candidates.1","version":"1","ap2_source":"b4587ac1d055888a73b4b21750973cffba961793","algorithm":"ES256","root_type":"example+sd-jwt","terminal_type":"kb+sd-jwt","checkout_type":"JWT","signed_profile_marker":"ap2_profile","mandatory_content":"all-requirements-id-quantity-cnf-iat-exp","selective_positions":["constraints[0].items[*].acceptable_items[*]","constraints[1].allowed[*]"],"max_disclosures":73,"max_disclosure_segment_bytes":8192,"max_root_bytes":131072,"max_requirements":8,"max_candidates_per_requirement":8,"max_merchants":8,"merchant_selection":"exactly-one","item_selection":"nonempty-subset-per-requirement","candidate_policy":"independent-lists-no-correlation","quantity_matching":"integer-max-flow-product-id-exact-coverage","amount_model":"integer-minor-unit-no-tax-shipping-discount"}'.freeze
+    SELECTIVE_PROFILE_HASH = Digest::SHA256.hexdigest(SELECTIVE_PROFILE_BODY).freeze
 
     # Explicit Host policy registration. Signed token claims never select this.
     def self.profile!(reference)
@@ -20,6 +24,8 @@ module AP2MandateVerifier
         {ref: PROFILE_REF, version: PROFILE_VERSION, body: PROFILE_BODY, hash: PROFILE_HASH}.freeze
       when MULTI_PROFILE_REF
         {ref: MULTI_PROFILE_REF, version: MULTI_PROFILE_VERSION, body: MULTI_PROFILE_BODY, hash: MULTI_PROFILE_HASH}.freeze
+      when SELECTIVE_PROFILE_REF
+        {ref: SELECTIVE_PROFILE_REF, version: SELECTIVE_PROFILE_VERSION, body: SELECTIVE_PROFILE_BODY, hash: SELECTIVE_PROFILE_HASH}.freeze
       else
         reject!(:unsupported_trust_profile)
       end
