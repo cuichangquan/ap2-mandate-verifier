@@ -1,30 +1,30 @@
-# 1.6.0 candidate: bounded repeated Payment approval
+# 1.6.0 candidate: long Open and UTC-monthly JPY acceptance
 
-Unpublished candidate preparation. RubyGems publication, formal tag and GitHub Release require the Owner's explicit GO. No production/payment execution is authorized by candidate tests or merge.
+Unpublished preparation; RubyGems, formal tag and GitHub Release require OwnerGO. No production/payment authority follows from tests, review or merge. The earlier bounded ON_DEMAND candidate is retained separately as historical evidence; it is not replaced in the registry.
 
-## Proposed notes
+## Proposed notes and primary use
 
-Explicit `RecurringPayment` complete/selective profiles support **JPY integer amounts and ON_DEMAND finite recurrence**. One signed Open can serve several separately approved occurrences within the unchanged600second validity. Mandatory recurrence/budget constraints stay visible. Existing1.x default profiles, public verifier meanings, five base dependencies, seven-input Checkout contract and schema1 ledgers remain compatible.
+New explicit `LongPayment` complete Checkout/Payment profiles reuse one signed Open pair across approved UTC calendar months. Their shared content `iat`/`exp` stays fixed (maximum400days); outer KB proofs, challenge/order/current keys and starts are fresh. Existing defaults, seven-input contract and old600/7200second profiles remain unchanged. The bounded `RecurringPayment` complete/selective profiles remain available.
 
-Optional `PaymentAcceptance::RecurringSQLiteStore` provides protected series enrollment, active revocation and durable reservation usage. Count and JPY amount are charged in the same transaction as first occurrence reservation. Re-sign/retry does not create allowance. Unknown outcomes, errors, crashes and authentic Error Receipts never refund capacity or grant a second execution handle. Existing original-wire Receipt reconciliation remains available.
+Optional schema3 `PaymentAcceptance::LongSQLiteStore` atomically checks current protected authority, active Root, period/count/JPY budget and occurrence state. Protected CAS Root/Issuer/Agent replacement preserves complete economic terms, principal identities, original agreement end and accumulated usage. Authority invalidation/revocation blocks starts; old pending Tickets never revive through a generation update. Unknown/Error/crash never refunds capacity, reissues a Ticket or loses the first signed wires/Receipt reference.
 
 ```ruby
 accepted = service.accept(**trusted_scope, mode: :conditional, verification_inputs: raw_inputs)
 execution = service.start(ticket: accepted.ticket, verification_inputs: fresh_raw_inputs) if accepted.ticket
-usage = store.usage(tenant_id: "tenant", merchant_id: "shop", approval_id: "consent-42")
-# usage is reserved count/amount, NOT settled spending or permission to execute.
+# execution.valid_until is short; the application owns prompt processor dispatch.
+usage = store.usage(**trusted_series_scope) # reserved totals/current epoch, not settlement
 ```
 
-[Plain Ruby lifecycle and upper-limit rejection](../examples/recurring_payment.rb), [API/security/migration contract](RECURRING_PAYMENT.md).
+[12-period installed Ruby lifecycle](../examples/long_payment_acceptance.rb), [wire-only lifecycle](../examples/long_payment.rb), [API/security/migration/Python contract](LONG_PAYMENT.md).
 
-## Scope decision and release recommendation boundary
+## Exact boundary
 
-The broader monthly-subscription goal is **deferred/HOLD**: official recurrence calendar semantics and budget monetary units remain underspecified; relevant PRs are unmerged and the Python evaluator is weaker. This candidate must never be presented as completing calendar recurrence, non-JPY budgets or long-lived subscription authorization. A limited1.6.0 publication is a separate Owner decision after reviewing this reduced explicit scope and evidence. Do not turn missing scope into a compatibility or interoperability claim.
+The additional MONTHLY meaning is an explicit Host/profile policy: one immutable window within each UTC calendar month, no more than one window per month. It is not generic AP2 calendar conformance, rolling intervals, local timezone/DST billing or catch-up. JPY budget uses exact signed integers; the current Python evaluator's100xJPY conversion and missing cadence evaluation are documented disagreements. Actual SDK constructors/facade/chain/Schema comparisons use explicit Enum/profile/integer/inline adapters, not a claim of unmodified high-level compatibility.
 
-The new schema2 adapter is not an automatic migration. Existing usage must not be discarded by opening an empty ledger. One authoritative protected durable store, authenticated stable consent/occurrence IDs, current authority/order/nonce atomicity and processor query/idempotency remain application responsibilities. No scheduling, production durability, external exactly-once settlement or generic official-AP2 conformance is promised.
+External trust/consent/order provenance and freshness, registry synchronization into the ledger, nonce/order CAS, one protected authoritative store, history migration, processor idempotency/query and settlement remain application responsibilities. No built-in external revocation feed, scheduler, payment call, remote exactly-once, auto-refund or automatic schema1/2 migration is supplied. Long selective/PISP/date combinations, other currencies/timezones and arbitrary AP2 formats remain unsupported.
 
-## Required evidence and publication procedure
+## Release gates
 
-Before release: both supportedMRI3.4.12/4.0.9 full regression and same-archive installation; signed positives/negatives and mandatory-disclosure tests; independent multi-process count/budget race, crash/restart and transaction rollback oracles; selective candidate privacy and scope binding; pinned official schema/Python comparisons with observed disagreements; exact-HEAD independent review with no unresolved substantiveP1/P2; Draft-first PRs, greenCI and verified reviewed/merged tree equality; normal demo regression and optional candidate example; reproducible fixed builder and complete source/archive/installed payload comparison.
+Both supportedMRI3.4.12/4.0.9 full regressions and the same physically installed archive; every payload source/archive/installed byte hash; 12-month leap-year positives, causal signed negatives/current key tests; independent8process same-period/count/budget races, realSIGKILL/restart, fsynced mock effects, rollback, Root/key replacement, revocation and original historical Receipt; installed pinnedPython interop with exactwire disagreements; optional-driver absence; normal demo regression and strict candidate context; independent latest-HEAD review with no unresolved substantiveP1/P2; Draft-first PRs, successful CI, reviewed/merged tree equality; fixed-builder repeat and merged-source byte-identical build.
 
-Candidate bytes/checksum and exact merged source are recorded externally to avoid self-referential package hashes. Only after explicit OwnerGO may the exact candidate be pushed once; inspect registry before any uncertain retry. Download and compare actual registry bytes before formal tag/Release. No workflow may publish or deploy on merge.
+Source/hash/count evidence is recorded outside its own package. Only an explicit OwnerGO for the final exact archive permits one publication attempt. Verify actual registry bytes before formal tag/Release; inspect uncertain outcomes before retries. No merge/push workflow may publish or deploy.

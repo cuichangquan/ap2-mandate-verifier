@@ -6,7 +6,7 @@ Published stable is1.5.0: [verified publication](POST_RELEASE_150.md). It adds o
 
 ## Unpublished1.6.0 subset
 
-The additive candidate supports only explicit JPY integer / ON_DEMAND finite recurrence within unchanged600second validity, with a new optional durable quota store. Calendar subscriptions and other currencies remain deferred. Existing schema1 storage and1.x defaults remain unchanged. See [scope, responsibilities and migration limits](RECURRING_PAYMENT.md).
+The additive candidate retains bounded JPY/ON_DEMAND profiles and adds an explicit complete [LongPayment JPY/UTC-month profile](LONG_PAYMENT.md), with up to400day content, fresh proof/start checks and optional schema3 authority/period storage. General calendar/timezone semantics and other currencies remain unsupported. Existing schema1/2,1.x defaults and short-profile limits remain unchanged; no automatic history migration is provided.
 
 ## Historical1.0.0 baseline contract
 

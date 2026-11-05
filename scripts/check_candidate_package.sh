@@ -95,3 +95,17 @@ done
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 AP2_GEM_VERSION=1.6.0 \
   ruby "$source_dir/test/recurring_process_oracle.rb" > "$out_dir/recurring-process-installed.log"
 cat "$out_dir/recurring-process-installed.log"
+
+for example in long_payment long_payment_acceptance; do
+  GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
+    ruby "$work_dir/installed/gems/ap2_mandate_verifier-1.6.0/examples/${example}.rb" > "$out_dir/${example}-example.log"
+  cat "$out_dir/${example}-example.log"
+done
+for suite in long_payment long_payment_acceptance; do
+  GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 \
+    ruby -r "$source_dir/test/runtime_dependencies.rb" "$source_dir/test/${suite}_test.rb" > "$out_dir/${suite}-installed.log"
+  cat "$out_dir/${suite}-installed.log"
+done
+GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 AP2_GEM_VERSION=1.6.0 \
+  ruby "$source_dir/test/long_payment_process_oracle.rb" > "$out_dir/long-process-installed.log"
+cat "$out_dir/long-process-installed.log"

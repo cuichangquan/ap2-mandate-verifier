@@ -72,7 +72,7 @@ module AP2MandateVerifier
 
     def self.validate!(checkout, profile_ref: TrustContext::PROFILE_REF)
       profile_ref = InputValidator.snapshot!(profile_ref, max_bytes: 256)
-      if [ScopedConstraints::MULTI_PROFILE_REF, TrustContext::SELECTIVE_PROFILE_REF].include?(profile_ref)
+      if [ScopedConstraints::MULTI_PROFILE_REF, TrustContext::SELECTIVE_PROFILE_REF, TrustContext::LONG_PROFILE_REF].include?(profile_ref)
         ScopedConstraints.multi_checkout!(checkout)
         return nil
       end

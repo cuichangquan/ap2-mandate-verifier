@@ -159,6 +159,10 @@ module AP2MandateVerifier
       end
 
       def start!(ticket:, verified_at:, instruction:, signed_wires:)
+        start_record!(ticket: ticket, verified_at: verified_at, instruction: instruction, signed_wires: signed_wires)
+      end
+
+      def start_record!(ticket:, verified_at:, instruction:, signed_wires:, authority: nil, fresh_valid_until: nil)
         key, fence = ticket_parts!(ticket)
         transaction do
           row = @db.get_first_row("SELECT state,CASE WHEN length(CAST(record AS BLOB))<=1048576 THEN record ELSE NULL END FROM ap2_attempts WHERE operation_key=? AND fence=?", [key, fence])
@@ -169,8 +173,13 @@ module AP2MandateVerifier
           grant = @db.get_first_row("SELECT active,CASE WHEN length(CAST(instruction AS BLOB))<=131072 THEN instruction END FROM ap2_approvals WHERE operation_key=?", [key])
           raise Invalid unless grant && grant[0] == 1 && grant[1] == instruction &&
             record["instruction"] == instruction && record["signed_wires"] == signed_wires
+          if fresh_valid_until
+            CheckoutReceipt.send(:epoch!, fresh_valid_until)
+            record["valid_until"] = [record.fetch("valid_until"), fresh_valid_until].min
+          end
           next nil unless verified_at >= record["accepted_at"] && verified_at < record["valid_until"]
           validate_start!(record, verified_at)
+          validate_current_authority!(record, verified_at, authority)
           record["state"] = "processing"
           record["started_at"] = verified_at
           @db.execute("UPDATE ap2_attempts SET state='processing',record=? WHERE operation_key=? AND fence=? AND state='reserved'", [JSON.generate(record), key, fence])
@@ -178,6 +187,8 @@ module AP2MandateVerifier
           record
         end
       end
+
+      private :start_record!
 
       def ticket_record!(ticket:)
         key, fence = ticket_parts!(ticket)
@@ -249,11 +260,14 @@ module AP2MandateVerifier
       # Extension hooks execute inside the SAME SQLite transaction as reservation/start.
       # The old schema must never accept a profile requiring an absent quota ledger.
       def approval_policy!(profile)
-        raise Invalid if RecurringPayment.profile?(profile)
+        raise Invalid if RecurringPayment.profile?(profile) || LongPayment.profile?(profile)
       end
       def validate_reservation!(_scope, record) = approval_policy!(record.fetch("profile_ref"))
       def charge_reservation!(_scope, _record); end
       def validate_start!(_record, _verified_at); end
+      def validate_current_authority!(_record, _at, authority)
+        raise Invalid unless authority.nil?
+      end
       def ticket_parts!(ticket)
         raise Invalid unless ticket.instance_of?(Ticket)
         key = ticket.send(:key)

@@ -62,7 +62,7 @@ module AP2MandateVerifier
     # Protected approval record must cover every payment detail, not just amount.
     def self.issue_direct(payment:, approved_payment:, issued_at:, expires_at:, signer:, public_key_pem:, profile_ref: PROFILE_REF)
       profile_ref = PaymentPolicy.profile!(profile_ref)
-      raise Invalid if PaymentPolicy.recurring?(profile_ref)
+      raise Invalid if PaymentPolicy.recurring?(profile_ref) || PaymentPolicy.long?(profile_ref)
       value = copy_details!(payment, profile_ref: profile_ref)
       raise Invalid unless value == copy_details!(approved_payment, profile_ref: profile_ref)
       closed = value.merge("vct" => "mandate.payment.1", "iat" => issued_at, "exp" => expires_at)
@@ -77,6 +77,7 @@ module AP2MandateVerifier
                         profile_ref: PROFILE_REF, candidate_policy: nil)
       profile_ref = PaymentPolicy.profile!(profile_ref)
       PaymentPolicy.candidate_policy!(profile_ref, candidate_policy)
+      raise Invalid if PaymentPolicy.long?(profile_ref) && checkout_profile_ref != LongPayment::CHECKOUT_PROFILE_REF
       RootSignature.send(:dependencies!)
       root = checkout_open!(open_checkout_sd_jwt, profile_ref: checkout_profile_ref)
       conditions = InputBuilder.send(:copy!, constraints)
@@ -98,7 +99,8 @@ module AP2MandateVerifier
       opening, root = verified_root!(open_sd_jwt, trusted_provider_public_key_pem, profile_ref: profile_ref)
       open!(opening, profile_ref: profile_ref); valid_now!(opening, verified_at)
       raise Invalid unless opening.fetch("cnf") == {"jwk" => RootSignature.public_jwk!(agent_public_key_pem)}
-      value = copy_details!(payment, profile_ref: profile_ref).merge("vct" => "mandate.payment.1", "iat" => verified_at, "exp" => opening.fetch("exp"))
+      value = copy_details!(payment, profile_ref: profile_ref).merge("vct" => "mandate.payment.1",
+        "iat" => PaymentPolicy.long?(profile_ref) ? opening.fetch("iat") : verified_at, "exp" => opening.fetch("exp"))
       closed!(value, profile_ref: profile_ref); conditions!(opening, value, profile_ref: profile_ref)
       audience = InputValidator.snapshot!(audience, max_bytes: 512)
       nonce = InputValidator.snapshot!(nonce, max_bytes: 512)
@@ -120,6 +122,9 @@ module AP2MandateVerifier
         opening, root = root!(open_sd_jwt, profile_ref: profile_ref)
         open!(opening, profile_ref: profile_ref)
         raise Invalid unless closed.fetch("sd_hash") == digest(root)
+        if PaymentPolicy.long?(profile_ref)
+          raise Invalid unless %w[iat exp].all? { |f| closed.fetch("delegate_payload").first.fetch(f) == opening.fetch(f) }
+        end
         conditions!(opening, closed.fetch("delegate_payload").first, profile_ref: profile_ref)
       end
       Presentation.send(:new, open_sd_jwt && root, wire)
@@ -134,7 +139,7 @@ module AP2MandateVerifier
                     profile_ref: PROFILE_REF, trusted_pisp: nil, execution_at: nil)
       profile_ref = PaymentPolicy.profile!(profile_ref)
       context = PaymentPolicy.context!(profile_ref, trusted_pisp, execution_at)
-      raise Invalid if checkout_mode == :direct && PaymentPolicy.recurring?(profile_ref)
+      raise Invalid if checkout_mode == :direct && (PaymentPolicy.recurring?(profile_ref) || PaymentPolicy.long?(profile_ref))
       trusted_provider_public_key_pem = InputValidator.snapshot!(trusted_provider_public_key_pem, max_bytes: 1_024)
       if checkout_mode == :conditional
         expected_agent_public_key_pem = InputValidator.snapshot!(expected_agent_public_key_pem, max_bytes: 1_024)
@@ -156,6 +161,11 @@ module AP2MandateVerifier
         [key, key == :verified_at ? value : InputValidator.snapshot!(value, max_bytes: limits.fetch(key, 131_072))]
       end.freeze
       raise Invalid unless checkout_inputs[:verified_at] == verified_at
+      if PaymentPolicy.long?(profile_ref)
+        host = InputValidator.parse!(checkout_inputs.fetch(:host_json))
+        LongPayment.authority!(checkout_inputs: checkout_inputs, provider_key: trusted_provider_public_key_pem,
+          agent_key: expected_agent_public_key_pem, merchant_id: host.fetch("binding").fetch("merchant_id"), verified_at: verified_at)
+      end
       if checkout_mode == :conditional
         expected_agent_public_key_pem = InputValidator.snapshot!(expected_agent_public_key_pem, max_bytes: 1_024)
       end
@@ -194,8 +204,12 @@ module AP2MandateVerifier
           verified_at - terminal.fetch("iat") <= 300
         claims = terminal.fetch("delegate_payload").first
         closed!(claims, profile_ref: profile_ref); valid_now!(claims, verified_at)
-        raise Invalid unless terminal.fetch("iat") == claims.fetch("iat") && claims.fetch("iat") >= opening.fetch("iat") &&
-          claims.fetch("exp") <= opening.fetch("exp")
+        if PaymentPolicy.long?(profile_ref)
+          raise Invalid unless %w[iat exp].all? { |f| claims.fetch(f) == opening.fetch(f) }
+        else
+          raise Invalid unless terminal.fetch("iat") == claims.fetch("iat") && claims.fetch("iat") >= opening.fetch("iat") &&
+            claims.fetch("exp") <= opening.fetch("exp")
+        end
         conditions!(opening, claims, profile_ref: profile_ref)
         reference = opening.fetch("constraints").find { |c| c["type"] == "payment.reference" }
         raise Invalid unless reference.fetch("conditional_transaction_id") == digest(checkout_inputs.fetch(:root_presentation))
@@ -231,16 +245,20 @@ module AP2MandateVerifier
       exact!(value, PaymentPolicy.fields(profile_ref))
       raise Invalid unless value["transaction_id"].instance_of?(String) && value["transaction_id"].match?(/\A[A-Za-z0-9_-]{43}\z/)
       payee!(value["payee"]); amount!(value["payment_amount"]); instrument!(value["payment_instrument"])
-      raise Invalid if PaymentPolicy.recurring?(profile_ref) && value["payment_amount"]["currency"] != "JPY"
+      raise Invalid if (PaymentPolicy.recurring?(profile_ref) || PaymentPolicy.long?(profile_ref)) && value["payment_amount"]["currency"] != "JPY"
       PaymentPolicy.details!(value) if PaymentPolicy.enabled?(profile_ref)
       value
     end
     def self.closed!(value, profile_ref: PROFILE_REF)
       exact!(value, PaymentPolicy.fields(profile_ref) + %w[vct iat exp])
       raise Invalid unless value["vct"] == "mandate.payment.1"
-      copy_details!(value.slice(*PaymentPolicy.fields(profile_ref)), profile_ref: profile_ref); times!(value)
+      copy_details!(value.slice(*PaymentPolicy.fields(profile_ref)), profile_ref: profile_ref); times!(value, profile_ref: profile_ref)
     end
-    def self.open!(value, profile_ref: PROFILE_REF)
+    def self.open!(value, profile_ref: PROFILE_REF, base_constraints: false)
+      if PaymentPolicy.long?(profile_ref) && !base_constraints
+        open!(LongPayment.send(:constraints!, value), profile_ref: profile_ref, base_constraints: true)
+        return nil
+      end
       if PaymentPolicy.recurring?(profile_ref)
         open!(RecurringPayment.send(:constraints!, value))
         return nil
@@ -252,7 +270,7 @@ module AP2MandateVerifier
       end
       raise Invalid unless value.instance_of?(Hash) && (value.keys - FIELDS.drop(1) - %w[vct iat exp cnf constraints]).empty?
       raise Invalid unless value["vct"] == "mandate.payment.open.1"
-      times!(value); exact!(value["cnf"], ["jwk"])
+      times!(value, profile_ref: profile_ref); exact!(value["cnf"], ["jwk"])
       jwk = value["cnf"]["jwk"]
       exact!(jwk, %w[kty crv x y])
       raise Invalid unless jwk["kty"] == "EC" && jwk["crv"] == "P-256" &&
@@ -281,6 +299,10 @@ module AP2MandateVerifier
       end
     end
     def self.conditions!(opening, closed, profile_ref: PROFILE_REF)
+      if PaymentPolicy.long?(profile_ref)
+        LongPayment.send(:conditions!, opening, closed)
+        return nil
+      end
       if PaymentPolicy.recurring?(profile_ref)
         RecurringPayment.send(:conditions!, opening, closed)
         return nil
@@ -317,9 +339,10 @@ module AP2MandateVerifier
       ScopedConstraints.send(:amount!, v["amount"])
       raise Invalid unless ScopedConstraints::CURRENCIES.include?(v["currency"])
     end
-    def self.times!(v)
+    def self.times!(v, profile_ref: PROFILE_REF)
       %w[iat exp].each { |f| CheckoutReceipt.send(:epoch!, v[f]) }
-      raise Invalid unless v["exp"] > v["iat"] && v["exp"] - v["iat"] <= MAX_LIFETIME
+      limit = PaymentPolicy.long?(profile_ref) ? LongPayment::MAX_CONTENT_LIFETIME : MAX_LIFETIME
+      raise Invalid unless v["exp"] > v["iat"] && v["exp"] - v["iat"] <= limit
     end
     def self.valid_now!(v, now)
       CheckoutReceipt.send(:epoch!, now)
@@ -330,6 +353,8 @@ module AP2MandateVerifier
       profile = InputValidator.snapshot!(profile_ref, max_bytes: 256)
       opening = if profile == TrustContext::SELECTIVE_PROFILE_REF
         SelectiveCheckout.send(:parse!, wire, complete: false).fetch(:opening)
+      elsif defined?(LongPayment) && profile == LongPayment::CHECKOUT_PROFILE_REF
+        RootDisclosures.send(:structural_root!, wire, profile_ref: profile).fetch("delegate_payload").first
       else
         raise Invalid unless profile == ScopedConstraints::MULTI_PROFILE_REF
         RootDisclosures.send(:structural_root!, wire).fetch("delegate_payload").first
@@ -376,7 +401,7 @@ module AP2MandateVerifier
         value = Buyer.send(:decode_disclosure!, disclosure, 2)
         claims = claims.merge("delegate_payload" => [value[1]])
       end
-      if PaymentPolicy.recurring?(profile_ref) && !conditional
+      if (PaymentPolicy.recurring?(profile_ref) || PaymentPolicy.long?(profile_ref)) && !conditional
         raise Invalid unless claims.fetch("delegate_payload").first.instance_of?(Hash) &&
           claims.fetch("delegate_payload").first["vct"] == "mandate.payment.open.1"
       end

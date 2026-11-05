@@ -50,7 +50,12 @@ module AP2MandateVerifier
       header!(header, "kb+sd-jwt")
       raise Invalid unless signature.bytesize == 64
       # Existing inline terminal grammar only, never general SD resolution.
-      PurchaseBinding.send(:exact!, claims, %w[aud delegate_payload iat nonce sd_hash])
+      fields = %w[aud delegate_payload iat nonce sd_hash]
+      if profile_ref == TrustContext::LONG_PROFILE_REF
+        fields += ["ap2_profile"]
+        raise Invalid unless claims["ap2_profile"] == profile_ref
+      end
+      PurchaseBinding.send(:exact!, claims, fields)
       %w[aud nonce sd_hash].each { |field| text!(claims[field], 512) }
       epoch!(claims["iat"])
       raise Invalid unless claims["sd_hash"].match?(/\A[A-Za-z0-9_-]{43}\z/)
@@ -58,6 +63,10 @@ module AP2MandateVerifier
       PurchaseBinding.send(:exact!, closed, %w[checkout_hash checkout_jwt exp iat vct])
       raise Invalid unless closed["vct"] == "mandate.checkout.1"
       epoch!(closed["iat"]); epoch!(closed["exp"])
+      if profile_ref == TrustContext::LONG_PROFILE_REF
+        PurchaseBinding.send(:times!, closed, closed["iat"], profile_ref: profile_ref)
+        raise Invalid unless claims["iat"] >= closed["iat"] && claims["iat"] < closed["exp"]
+      end
       raise Invalid unless closed["exp"] > closed["iat"] && closed["checkout_hash"].instance_of?(String) &&
         closed["checkout_hash"].match?(/\A[A-Za-z0-9_-]{43}\z/)
       checkout = InputValidator.snapshot!(closed["checkout_jwt"], max_bytes: 16_384)

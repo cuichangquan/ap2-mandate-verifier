@@ -48,13 +48,18 @@ module AP2MandateVerifier
       open = root.fetch("delegate_payload").first
       exact!(open, %w[cnf constraints exp iat vct])
       raise Rejected, :unsupported_purchase_profile unless open["vct"] == "mandate.checkout.open.1"
-      times!(open, verified_at)
+      times!(open, verified_at, profile_ref: profile_ref)
       exact!(open["cnf"], %w[jwk])
       exact!(open["cnf"]["jwk"], %w[kty crv x y])
       raise Rejected, :agent_key_mismatch unless open["cnf"]["jwk"] == RootSignature.public_jwk!(agent_pem)
 
       terminal = RootSignature.verified_payload!(terminal_wire, agent_pem, expected_typ: "kb+sd-jwt")
-      exact!(terminal, %w[aud delegate_payload iat nonce sd_hash])
+      fields = %w[aud delegate_payload iat nonce sd_hash]
+      if profile_ref == TrustContext::LONG_PROFILE_REF
+        fields += ["ap2_profile"]
+        raise Rejected, :unsupported_purchase_profile unless terminal["ap2_profile"] == profile_ref
+      end
+      exact!(terminal, fields)
       raise Rejected, :root_binding_mismatch unless terminal["sd_hash"] == hash(root_wire)
       raise Rejected, :audience_mismatch unless terminal["aud"] == aud
       raise Rejected, :nonce_mismatch unless terminal["nonce"] == nonce
@@ -66,7 +71,7 @@ module AP2MandateVerifier
       closed = payloads.first
       exact!(closed, %w[checkout_hash checkout_jwt exp iat vct])
       raise Rejected, :unsupported_purchase_profile unless closed["vct"] == "mandate.checkout.1"
-      times!(closed, verified_at)
+      times!(closed, verified_at, profile_ref: profile_ref)
       # R06 fixed shared claims: no shortening or extending Issuer iat/exp.
       raise Rejected, :delegation_claim_mismatch unless closed["iat"] == open["iat"] && closed["exp"] == open["exp"]
       raise Rejected, :checkout_binding_mismatch unless closed["checkout_jwt"] == checkout_wire &&
@@ -90,11 +95,12 @@ module AP2MandateVerifier
       raise RootSignature::Unavailable, :purchase_context_unavailable
     end
 
-    def self.times!(claims, now)
+    def self.times!(claims, now, profile_ref: TrustContext::PROFILE_REF)
       iat, exp = claims.values_at("iat", "exp")
+      limit = profile_ref == TrustContext::LONG_PROFILE_REF ? LongPayment::MAX_CONTENT_LIFETIME : 7_200
       raise Rejected, :invalid_purchase_time unless integer?(iat) && integer?(exp) &&
         iat.between?(0, MAX_EPOCH) && exp.between?(0, MAX_EPOCH) &&
-        iat <= now && now < exp && exp > iat && exp - iat <= 7_200
+        iat <= now && now < exp && exp > iat && exp - iat <= limit
     end
 
     def self.exact!(value, keys)

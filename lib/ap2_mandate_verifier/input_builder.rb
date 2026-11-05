@@ -113,7 +113,7 @@ module AP2MandateVerifier
       value = InputValidator.parse!(wire)
       shape!(value, %w[format_version profile_ref profile_version challenge], "saved_challenge")
       invalid!("saved_challenge", :unsupported_saved_format) unless
-        [TrustContext::PROFILE_REF, TrustContext::MULTI_PROFILE_REF, TrustContext::SELECTIVE_PROFILE_REF].include?(value["profile_ref"])
+        [TrustContext::PROFILE_REF, TrustContext::MULTI_PROFILE_REF, TrustContext::SELECTIVE_PROFILE_REF, TrustContext::LONG_PROFILE_REF].include?(value["profile_ref"])
       profile = TrustContext.profile!(value["profile_ref"])
       invalid!("saved_challenge", :unsupported_saved_format) unless value.values_at("format_version", "profile_ref", "profile_version") ==
         [FORMAT_VERSION, profile[:ref], profile[:version]]
