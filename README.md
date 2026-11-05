@@ -4,6 +4,13 @@
 
 Explicit JPY integer / ON_DEMAND profiles add finite count and cumulative reservation limits under one signed Open. Atomic durable quotas share the occurrence reservation transaction; retries, unknown outcomes and Error Receipts never replenish allowance. Calendar frequencies and non-JPY budgets are unsupported; the existing600second validity is unchanged. This candidate is not published. [Contract and limitations](docs/RECURRING_PAYMENT.md), [Ruby example and over-limit rejection](examples/recurring_payment.rb), [release gates](docs/RELEASE_160_CANDIDATE.md).
 
+```ruby
+# After protected series/occurrence enrollment; signed JPY/ON_DEMAND profile only.
+accepted = service.accept(**trusted_scope, mode: :conditional, verification_inputs: raw_inputs)
+execution = service.start(ticket: accepted.ticket, verification_inputs: fresh_raw_inputs) if accepted.ticket
+usage = store.usage(**trusted_series_scope) # reserved count/JPY, not settled spend
+```
+
 ### Published1.5.0: transactional Payment acceptance
 
 Reserve a protected business occurrence atomically, reverify before one fenced start, and recover the original Receipt after response loss without reopening an uncertain attempt. [Verified publication](docs/POST_RELEASE_150.md). [Integration/store/security contract](docs/PAYMENT_ACCEPTANCE.md), [plain Ruby recovery example](examples/payment_acceptance.rb), [release gates](docs/RELEASE_150_CANDIDATE.md).
