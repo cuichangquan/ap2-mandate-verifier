@@ -1,144 +1,111 @@
 # AP2 Mandate Verifier — Checkout・PaymentのRuby SDK
 
-### 公開済み1.6.0：長期Openと月次JPY受理
+[English](README.md) · **公開済み安定版：1.6.0** · [Quick Start](docs/QUICK_START.ja.md)
 
-明示的な長期profileで、同じCheckout／Payment Openを承認済みUTCカレンダー月に継続利用できます。内容の期限は最大400日でも、提示証明と開始時の実行期限は短く検証します。保護された権限世代・Root／鍵更新・原子的な期間／回数／JPY予約で、再送や更新による枠のリセットを防ぎます。旧profile・既定API・7入力契約は維持。Owner承認後に公開済みです。[配布物・検証記録](docs/POST_RELEASE_160.md)。[契約・API・Pythonとの差](docs/LONG_PAYMENT.md)、[12期間のRuby受理・Receipt例](examples/long_payment_acceptance.rb)、[公開前確認](docs/RELEASE_160_CANDIDATE.md)。短期の[ON_DEMAND完全／選択的profile](docs/RECURRING_PAYMENT.md)も利用できます。
+対応するAP2 Checkout・Payment MandateをRubyだけで発行・提示・検証できます。
+購入者が何を承認し、Agentが何を選べるか、署名済みの注文・支払いが条件を満たすかを
+アプリで確認したいときに使います。Rails依存はありません。
+**検証成功は購入・決済成功ではなく、SDKは決済を実行しません。**
 
-```ruby
-# Protected enrollment + current authority synchronization are application duties.
-accepted = service.accept(**trusted_scope, mode: :conditional, verification_inputs: raw_inputs)
-execution = service.start(ticket: accepted.ticket, verification_inputs: fresh_raw_inputs) if accepted.ticket
-usage = store.usage(**trusted_series_scope) # reservations, not settlement
-```
-
-### 公開済み1.5.0：Payment受理の原子性と冪等性支援
-
-保護された業務上の支払い単位を原子的に予約し、開始前に全検証をやり直します。応答消失・結果不明では自動再実行せず、元のReceiptを照合して復旧できます。[公開照合記録](docs/POST_RELEASE_150.md)。[組込み・永続store・安全性契約](docs/PAYMENT_ACCEPTANCE.md)、[Ruby単体の復旧例](examples/payment_acceptance.rb)、[公開前の確認](docs/RELEASE_150_CANDIDATE.md)。
-
-```ruby
-accepted = service.accept(**trusted_scope, mode: :conditional, verification_inputs: raw_inputs)
-dispatch = service.start(ticket: accepted.ticket, verification_inputs: fresh_inputs) if accepted.ticket
-# 実際のprocessor呼出しはアプリ側。同じdispatch.processor_keyを使います。
-```
-
-検証成功・永続予約・決済完了は別の事象です。承認済みoccurrenceの保護、全worker共通の永続store、processorの冪等性・照会が必要です。旧1.xのverifierは変更せず、SQLite参照driverは任意の別依存です。
-
-
-### 公開済み1.4.0：PISPと支払い実行日時の条件
-
-承認したPISPと実行可能期間を指定し、アプリが独立して確認した決済サービス・実行予定時刻と照合できます。日時は解析した瞬間で比較し、旧1.xの既定動作を維持します。[仕様・API・公式との差](docs/PAYMENT_POLICY.md)、[3方式のRuby例](examples/payment_policy.rb)、[公開照合記録](docs/POST_RELEASE_140.md)。
-
-### 公開済み1.3.0：CheckoutとPaymentの選択的開示
-
-承認済みの完全Openを安全に保持し、Checkoutの販売者・商品候補、Paymentの支払先・決済手段から必要な情報だけを提示できます。全必須条件と数量の検証を維持します。[仕様・API・Python差分](docs/SELECTIVE_CHECKOUT.md)、[Ruby単体の一連の例](examples/selective_checkout_payment.rb)、[公開照合記録](docs/POST_RELEASE_130.md)。
-
-### 公開済み1.2.0：Payment候補の選択的開示
-
-公開済み1.2.0の明示的な`SelectivePayment` profileで、支払先・決済手段の非選択候補を送らずに検証できます。必須条件・委任・原文参照は省略しません。[API・プライバシー・Python差分](docs/SELECTIVE_PAYMENT.md)、[保持／送信を比較するRuby単体例](examples/selective_payment.rb)、[公開照合記録](docs/POST_RELEASE_120.md)。既存`Payment`の既定profileは変更しません。
-
-
-### Payment発行・検証（1.1.0から継続）
-
-Direct／条件付きPayment Mandateと成功／エラーPayment Receiptを追加しました。[API・制約・信頼境界](docs/PAYMENT.md)、[Ruby単体サンプル](examples/payment.rb)、[公開照合記録](docs/POST_RELEASE_110.md)、[GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v1.1.0)。検証成功は実行許可ではなく、永続的・原子的な単発利用管理と実決済は利用アプリの責任です。
+## まず動かす
 
 ```sh
 gem install ap2_mandate_verifier --version 1.6.0
-ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')/examples/payment.rb"
+AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')"
+ruby "$AP2_GEM_DIR/examples/conditional_checkout.rb"
+ruby "$AP2_GEM_DIR/examples/payment.rb"
 ```
 
-[English](README.md)
+Gem同梱例で合成鍵・承認を作り、Mandateの発行・提示・検証から、代替の成功／拒否Receiptの
+真正性確認まで試せます。真正なError Receiptは失敗を通知します。
+アカウント・認証情報・DB・Railsは不要です。対応Ruby導入済みなら約10分が目安です。
+依存buildやDockerの初回取得には追加時間がかかる場合があります。
 
-**公開済み安定版は1.6.0です。**
+**次へ：** [手順と期待出力を示すQuick Start](docs/QUICK_START.ja.md)で、
+12のUTC月と累計JPY予算超過の拒否まで試せます。
+[Dockerデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)も公開済み**1.6.0**を使用し、
+ローカルのCheckout画面とRuby単体のPayment例を用意しています。
 
-1.0.0では、既存のDirectと条件付きCheckoutの公開API・保守契約を確立しました。
-0.8.0の引数・既定値・profile・結果の意味・保存形式と製品実装を維持します。
-[公開API契約](docs/PUBLIC_API.md)、[保守方針](docs/POST_RELEASE_MAINTENANCE.md)、
-[1.0.0 Release notes](docs/RELEASE_100.md)を参照してください。
-公式配布Gemは保持候補と一致し、正確なsource・bytes・検証範囲は[公開照合記録](docs/POST_RELEASE_100.md)に記録しています。
+## 利用方式を選ぶ
 
-## 条件付き購入委任
+Checkoutは注文内容、Checkout Mandateはその承認・委任を表します。
+Payment MandateはCheckout承認を参照し、支払い条件を追加します。
+Receiptは元の最終Mandateに対するアプリの結果通知を認証するもので、精算を独立に証明しません。
 
-0.8.0で追加した`ConditionalCheckout.issue_open`、`.issue_closed`、`.present` を利用できます。
-A／Bから1個とCを2個という条件を承認サービスが登録Agent鍵へOpenとして発行し、
-Agentが条件に合う販売者署名CheckoutをClosedにします。既存 `InputBuilder.verify` と
-`CheckoutReceipt.sign/verify` へ接続します。全候補開示の複数商品profileを維持し、
-Agent処理へProvider秘密鍵を渡しません。[API・信頼境界](docs/CONDITIONAL_CHECKOUT.md)、
-[条件付き委任のコード例](docs/RELEASE_080.md)・[1.0.0公開照合記録](docs/POST_RELEASE_100.md)を参照してください。
+| 方式 | 用途 | API／ガイド |
+| --- | --- | --- |
+| Direct | 購入者が確定した署名済み注文・支払いを承認する | `Buyer`、`Payment.issue_direct` · [Checkout](docs/BUYER_DIRECT_CHECKOUT.md)／[Payment](docs/PAYMENT.md) |
+| 条件付き委任 | 購入者が候補と上限を承認し、登録済みAgentが範囲内で選ぶ | `ConditionalCheckout`、`Payment.issue_open/issue_closed/present` · [Checkout](docs/CONDITIONAL_CHECKOUT.md) |
+| 選択的開示 | 完全な承認済みOpenを安全に保持し、販売者・商品または支払先・決済手段の選択候補だけ送る | `SelectiveCheckout`、`SelectivePayment` · [Checkout](docs/SELECTIVE_CHECKOUT.md)／[Payment](docs/SELECTIVE_PAYMENT.md) |
+| 長期Open | 同じCheckout／Payment Openを明示UTC月で再利用し、有限回数・累計JPY予算を制限する | `LongPayment`、`PaymentAcceptance::LongSQLiteStore` · [契約](docs/LONG_PAYMENT.md) |
 
-正式対応MRI 3.4.12／4.0.9で動くRuby単体の導入例です。source checkoutやRailsは不要です：
+Direct／条件付きCheckoutは明示的な複数明細profileで1販売者・最大8明細と数量に対応します。
+既定の単一商品profileは1明細の契約を維持します。選択的profileでも必須条件と数量は残り、
+候補数・順序・issuer JWTのリンク可能性は隠しません。
+長期Openは独立した完全開示profileです（content最大400日、提示証明は短命）。
+選択的開示やPISP／日時profileとの合成は対象外です。
+**UTC月次profileはAP2の汎用MONTHLY仕様への完全準拠を意味しません。**
 
-```sh
-gem install ap2_mandate_verifier --version 1.6.0
-ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')/examples/conditional_checkout.rb"
-```
+ほかに明示的な[PISP／実行日時条件](docs/PAYMENT_POLICY.md)、
+[原子的受理・復旧支援](docs/PAYMENT_ACCEPTANCE.md)、
+短期の[ON_DEMAND回数／JPY予算profile](docs/RECURRING_PAYMENT.md)があります。
+既存1.x APIの引数・既定値・profile・保存形式は維持します。
 
-[Ruby単体の実行例](examples/conditional_checkout.rb)はインストール済み公開APIだけを使い、
-3明細・候補選択・異なる要件数量・同一商品の別行からSuccess／Error Receiptまで動きます。
-Success後は消費済み、Error後は再提示方針を再判断、Receipt未到着や結果不明は保留です。
-本人認証・同意・購買権限・信頼先登録・永続的な重複防止・注文や決済の実行はアプリ責務です。
-文書化された0.8.0 APIの利用コードは変更不要です。依存制約の更新は下記を参照してください。
+## 役割からAPIを選ぶ
 
-Directと条件付き委任は1販売者・1〜8明細・複数商品と数量を扱います。1.0.0でも既存DirectとOpen→Closedの契約を維持します。
+| アプリ内の役割 | 入口 |
+| --- | --- |
+| 販売者バックエンド | `CheckoutJWT.sign`、`CheckoutReceipt.sign/verify` |
+| 信頼された承認バックエンド | 同意前に`CheckoutJWT.verify`、`Buyer.issue_closed`または`ConditionalCheckout.issue_open`、対応するPayment発行 |
+| 登録済みAgent | `Buyer.present_closed`または条件付きの`issue_closed/present`。対応profileでは選択的API。Provider秘密鍵は承認バックエンド内に保持 |
+| 販売者・支払い検証側 | Directは`Buyer.verify`、条件付きCheckoutは`InputBuilder.prepare/restore/verify`、PaymentとCheckout結合は`Payment.verify`、選択的／長期は専用API |
+| Receipt受信側 | `CheckoutReceipt.verify`、`PaymentReceipt.verify`。真正性と通知結果を両方確認 |
+| 永続的なPayment受理を管理するアプリ | `PaymentAcceptance::Service`と対応する保護store。[組込み契約](docs/PAYMENT_ACCEPTANCE.md) |
 
-## 複数商品と数量
+`verify_checkout`（別名`verify_research`）は7入力の条件付きCheckout完全検証です。
+業務レコードからの入力には`InputBuilder`を推奨します。
+旧`verify(presentation_json:)`は構文検査のみで、成功Evidenceを返しません。
+[厳密なAPI・結果・例外契約](docs/PUBLIC_API.md)を確認してください。
 
-複数明細profile `ap2.checkout.single_merchant_multi_item` v1は、`InputBuilder.trust`、`CheckoutJWT.sign`、`CheckoutReceipt.reference/sign/verify` に `profile_ref:` を渡して明示選択します。完全検証は認証済みtrustの選択に従います。既定の `ap2.checkout.single_merchant_sku` v1は定義・hash・1明細の受理範囲を維持します。
+## 導入と対応環境
 
-単一販売者・単一Checkout・単一通貨で最大8明細を扱い、数量違いと同一商品の別行を支持します。開示候補の商品IDを整数最大流で照合し、全要件と全注文数量を過不足なく一度ずつ充当します。数量不足・余剰は拒否し、要件IDと明細IDは別の識別子です。[詳細・移行案内](docs/MULTI_ITEM_CHECKOUT.md)、[合成入力による一連の動作例](examples/multi_item_checkout.rb)、[公式Python SDKとの数量不足・空候補・Receipt参照の差異](docs/MULTI_ITEM_INTEROP.md)を参照してください。
+正式対応は**MRI 3.4.12と4.0.9**です。今回の手順をGemfileで使う場合は
+`gem "ap2_mandate_verifier", "= 1.6.0"`を指定します。
+安定1.xを追うアプリでは`"~> 1.0"`を使いlockfile更新を確認できます。
+`~> 0.8.0`は1.xを選択しません。[移行案内](docs/RELEASE_100.md)に互換性の詳細を残しています。
 
-Rubyで購入委任データを検証する、AP2の固定profile向けGemです。署名データを、Hostが独立して渡す信頼情報・注文情報と照合し、不変のEvidenceを返します。**検証成功は購入許可・決済許可ではありません。**
+runtime依存はJSON 2.19.9、JWT 3.3.0、base64 0.3.0、OpenSSL gem 4.0.2、Digest 3.2.1に固定。
+導入時に依存取得・native buildを伴う場合があります。衝突回避のために固定条件を緩めないでください。
+解決可能なRuby範囲は全Ruby版・OS・providerの認証ではありません。[対応契約](docs/SUPPORT_CONTRACT.md)。
 
-`InputBuilder` は業務情報から検証入力を作り、Gem独自のtrust／selection／Host JSON、fingerprint、署名原文のdigest計算を担当します。誰を信頼するかの選択、期待する注文・Challenge状態・時計は利用者が渡します。Rails非依存で、通信・DB・決済処理は行いません。
+## アプリに組み込む前の責任境界
 
-## ローカルデモを試す
+core verifierはネットワーク・決済を実行しません。任意のacceptance storeはローカルDBの
+トランザクションを実行し、SQLite driverは別途導入が必要です。
+**検証・永続予約・アプリの実行許可・精算はそれぞれ別です。**
 
-[Railsデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)は公開済み0.8.0とInputBuilderを通常経路で使います。既存のOpen→Agent Closed検証・複数商品・Success/Error Receipt画面を維持し、条件承認／発行UIは実装していません。その一連の処理は上記Ruby単体例を使ってください。DockerならホストRuby導入は不要で、実Challenge発行・nonce消費・購入や決済は行いません。
+本人認証・同意・保護された承認記録・独立した最新の信頼鍵／失効／profile policy・注文／Challenge状態・時計は
+アプリの責任です。実行前に現在の権限を再照合し、単発利用状態を永続的・原子的に消費し、
+不明結果を扱い、processorを呼ぶかを判断します。
+SDK受理やReceipt認証は実Issuerの信頼やprocessorのexactly-onceを保証しません。
+Receipt不在・不正・結果不明は照合待ちとし、timeout／Errorで自動再実行・枠の返却をしません。
 
-## インストール
+未知・非対応形式は拒否します。例外・unavailable・結果なしは実行許可になりません。
+秘密鍵・Mandate／nonce原文をログに出さず、保存したEvidenceを認証済み資格情報として扱わないでください。
+一般AP2／全Schema準拠、実Issuer互換性、本番GOは主張しません。
+[Issuer／Host責務](docs/ISSUER_HOST_MINIMUM_CONTRACT.md)、[安全性](SECURITY.md)、[受理支援の限界](docs/PAYMENT_ACCEPTANCE.md)。
 
-正式対応は **MRI 3.4.12とMRI 4.0.9** です。利用者が選ぶGem環境で導入します。
+## 詳細と保持した検証記録
 
-```sh
-gem install ap2_mandate_verifier --version 1.6.0
-```
+- [公開API](docs/PUBLIC_API.md)、[InputBuilder](docs/INPUT_BUILDER.ja.md)、[診断](docs/DIAGNOSTICS.ja.md)。
+- [1.6.0公開照合](docs/POST_RELEASE_160.md)、[変更履歴](CHANGELOG.md)、[公開・撤回履歴](docs/PROJECT_STATUS.md)、[保守方針](docs/POST_RELEASE_MAINTENANCE.md)。
+- [販売者署名](docs/MERCHANT_SIGNING.md)、[複数明細](docs/MULTI_ITEM_CHECKOUT.md)、[Python差分](docs/MULTI_ITEM_INTEROP.md)。
 
-BundlerのGemfile：
+過去版・研究文書は当時の証拠として保持し、現在の導入経路とは区別します。
+リポジトリの文書更新は公開済み1.6.0 Gemの再build・置換ではありません。
 
-```ruby
-gem "ap2_mandate_verifier", "~> 1.0"
-```
-
-runtime依存はJSON 2.19.9、JWT 3.3.0、base64 0.3.0、OpenSSL gem 4.0.2、Digest 3.2.1に固定しています。通常導入には依存の取得・buildが伴い得ます。衝突回避のために固定条件を緩めないでください。Rubyの解決範囲は、その間の全Ruby版・OS・native providerへの対応保証ではありません。[対応契約](docs/SUPPORT_CONTRACT.md)を参照してください。
-
-### 0.8.0からの更新
-
-文書化された0.8.0 API・profile・既定値・保存形式は互換性を維持します。
-`~> 0.8.0`等の依存制約では1.0.0を選択しないため、上記の`~> 1.0`へ変更し、
-アプリケーションのlockfileを更新してください。
-
-```sh
-bundle update ap2_mandate_verifier
-```
-
-## 販売者署名とReceipt
-
-注文JWTを署名し、利用アプリが明示した処理結果をReceiptとして署名できます。
-0.5.0で追加され、1.0.0でも利用できるAPIです。この抜粋は既定の単一商品profileです。`checkout`は注文Hash、`key`はアプリ所有のP-256鍵、
-`received_closed_sd_jwt`は受信した最終inline SD-JWT原文、`now`はアプリの時計です。
-
-```ruby
-signing = AP2MandateVerifier::CheckoutJWT
-signed = signing.sign(checkout: checkout, signer: signing.es256_signer(private_key: key),
-                      public_key_pem: key.public_to_pem)
-# signed.jwtの原文を保持し、InputBuilderのhost_checkout_jwsへ渡します。
-receipt = AP2MandateVerifier::CheckoutReceipt.sign(closed_sd_jwt: received_closed_sd_jwt,
-  issuer: "shop", outcome: "Error", error: "declined", error_description: "Application declined",
-  issued_at: now, signer: signing.es256_signer(private_key: key), public_key_pem: key.public_to_pem)
-```
-
-受信時は独立した信頼鍵・期待署名者・明示時刻範囲・対象Mandateの原文参照を照合します。
-真正な拒否は `verified? == true`、`purchase_succeeded? == false` です。
-[完全動作例](examples/merchant_signing.rb)と[対応原文形状・SDKとの差異](docs/MERCHANT_SIGNING.md)を参照してください。
+<details>
+<summary>source checkoutで試すInputBuilder（発展）</summary>
 
 ## InputBuilderの最小例
 
@@ -188,68 +155,5 @@ end
 
 検証時に `prepare` をやり直したり、保存hash／参照を現在値に合わせて更新したりしないでください。注文・信頼情報・署名原文の変化は検出できるままにします。保存済みtrust JSONは `restore_trust` で再シリアライズせず読み戻せます。[完全例](examples/input_builder.rb)には正常・改ざん・期限切れがあり、[利用案内](docs/INPUT_BUILDER.ja.md)に業務field・原文復元・Railsモデル対応付けを示しています。
 
-## 結果と責任境界
 
-次の表は、InputBuilderまたは `verify_checkout` によるOpen → Agent Closedの
-完全検証に適用します。Direct・Checkout・Receiptは、それぞれの `verified?` や
-例外契約を維持します。[API別の結果・失敗契約](docs/PUBLIC_API.md#result-object-and-failure-contracts)を参照してください。
-
-| 結果 | 意味と利用者の処理 |
-| --- | --- |
-| `:verified_research` / `:scoped_research_verified`、`success? == true` | 不変のEvidenceに固定profileの検査事実があります。購入を許可するかは、Hostが別途判断します。 |
-| `:rejected`、`rejected? == true` | Evidenceなし。停止して `result.code` を確認します。 |
-| `:unavailable`、`unavailable? == true` | Evidenceなし。停止します。依存・処理の失敗だけで業務入力が不正とは断定しません。 |
-
-失敗時は追加の確認ヒントを取得できます。成功時の診断は `nil` です。
-
-```ruby
-if (diagnostic = result.diagnostic)
-  puts diagnostic.to_h(locale: :ja) # 英語は :en
-end
-```
-
-`stage / field / reason / hint` は確認候補であり、status/codeや判定を変えません。特定不能な項目・原因は断定しません。[詳しい診断ガイド](docs/DIAGNOSTICS.ja.md)を参照してください。
-
-例外・プロセス終了・結果なしでも、購入を許可しません。raw入力・nonceをログに出したり、シリアライズしたEvidenceを認証済みの資格情報として扱ったりしないでください。
-
-Gemは署名、支持する開示閉包、委任、購入／Host binding、制約・期限を検査します。Hostは認証済み・独立・最新のtrust／鍵／失効、注文・Challenge状態、時計を供給します。実行直前に現在状態と期限を再照合し、nonceの原子消費＋注文CAS、不明結果の回復、最終許可・決済判断を担当します。`prepare`／`restore` は保存元の認証やnonce未使用を証明しません。
-
-公開済み1.0.0は既定の単一商品profileと明示選択の[複数明細profile](docs/MULTI_ITEM_CHECKOUT.md)を維持し、条件付き発行には後者を使います。全候補開示と既存上限を守り、未知・非対応形式は拒否します。一般AP2／全Schema、実Issuer互換性、新しい選択的開示profile、Rails adapter、DB／決済実行、数値性能保証は対象外です。実Issuer・実Hostの本番GOとPhase 2-Bは引き続き別のHOLDです。
-
-### APIの使い分け
-
-| 入口 | 役割 |
-| --- | --- |
-| `ConditionalCheckout.issue_open/issue_closed/present` | 条件付き発行・原文提示。販売者による完全検証は別途必須です。 |
-| `Buyer.issue_closed/present_closed/verify` | 確定注文を承認するDirect発行・構造確認を伴う提示・Directの完全検証。 |
-| `CheckoutJWT.sign/verify` | 販売者のCheckout署名と、承認前の真正性確認。 |
-| `CheckoutReceipt.reference/sign/verify` | 最終Mandate原文の参照計算、明示的なアプリ結果の署名、Receiptの真正性確認。 |
-| `InputBuilder.verify(**business_information)` | 推奨業務情報経路。入力を組み立て、完全検証します。発行前準備・復元は上の例の別処理です。 |
-| `verify_checkout(**inputs)` | 既存の7入力を直接渡すOpen → Agent Closedの完全検証。trust／selection／Host JSONも呼出側が渡します。 |
-| `verify_research(**inputs)` | 同じ7入力検証経路の維持された名称。非推奨警告はありません。 |
-| `verify(presentation_json:)` | 旧JSON構文検査のみ。成功Evidenceを返しません。 |
-
-`InputBuilder.verify` の不足keywordを含む組み立て引数不正は `:rejected / :invalid_host_context`、組み立て中の依存・予期しない失敗は `:unavailable / :research_verification_unavailable` です。完全検証に入った後のcodeは維持します。一方、直接の `verify_checkout`／`verify_research` の不足・未知keywordは `:unavailable / :research_verification_unavailable` です。これらの非成功では、すべて `success? == false`、`evidence == nil` になります。形状・上限・Rubyの引数束縛上の注意は[正確な契約](docs/SUPPORT_CONTRACT.md#full-entry-and-required-inputs)を参照してください。
-
-## 詳細リンク
-
-- [1.xの公開API・失敗・profile・保存契約](docs/PUBLIC_API.md)。従来の部分検証APIも維持し、成功Evidenceを返さない意味を変えません。
-- [業務情報の一連の利用とRails対応付け](docs/INPUT_BUILDER.ja.md)、[完全Ruby例](examples/input_builder.rb)、[変更前の例](examples/input_builder_before.rb)。
-- [支持入力・上限・Result／Evidence契約](docs/SUPPORT_CONTRACT.md)、[Issuer／Host責務](docs/ISSUER_HOST_MINIMUM_CONTRACT.md)。
-- [1.0.0 Release notes](docs/RELEASE_100.md)、[公開・撤回記録](docs/PROJECT_STATUS.md)、[変更履歴](CHANGELOG.md)。リポジトリREADMEの変更で公開Gemを再build・置換しません。
-- [固定commitの旧7入力・保存FULL例](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.ja.md#保存済み合成入力で試す)、[過去版の配布物・provider証拠](research/stable010_release_linux_package/README.md)、[過去の概念図](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.ja.md#図で見るap2の概念)。履歴は保存していますが、現在の連携手順や対応範囲を広げる根拠ではありません。
-- [脆弱性報告](SECURITY.md)、[保守方針](docs/POST_RELEASE_MAINTENANCE.md)、[製品方針](docs/PRODUCT_VISION.md)。秘密鍵・実Mandate・個人情報を報告に含めないでください。
-
-MIT。[LICENSE](LICENSE)を参照。
-
-### 購入側Direct Checkout（公開済み0.7.0）
-
-`CheckoutJWT.verify`で承認前に販売者署名を検証し、Trusted Surfaceの
-承認バックエンドから`Buyer.issue_closed`を呼びます。Shopping Agentは
-`Buyer.present_closed`で提示し、販売者は`Buyer.verify`で検証します。
-Receiptは`profile_ref: Buyer::PROFILE_REF`で生成・確認します。
-1販売者・1〜8明細・複数商品と数量を一貫して扱えます。既存2profileと
-Open→Agent ClosedのAPI契約は維持します。
-[仕様・責任境界](docs/BUYER_DIRECT_CHECKOUT.md)と
-[承認からReceiptまでの実行例](examples/direct_checkout.rb)を参照してください。
-検証成功は購買権限や実決済成功を意味しません。[短い動作確認済みサンプル](docs/RELEASE_070.md)も参照してください。
+</details>
