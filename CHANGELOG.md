@@ -14,21 +14,21 @@
 - Add opt-in transactional Payment acceptance with protected authorization/occurrence enrollment, stable business-operation identity, atomic reservation and fenced processing transitions.
 - Preserve first signed wires, processor idempotency key and Receipt binding across retries/re-signing; unknown outcomes never automatically reopen.
 - Add an optional durable SQLite reference adapter, fresh full verification before start, concurrency/crash/restart examples and diagnostics. Existing1.x verifier defaults and base runtime dependencies remain unchanged.
-- Publication remains reserved for Owner decision.
+- Published after Owner approval; [verified publication](docs/POST_RELEASE_150.md).
 
 ## 1.4.0 — 2026-11-04
 
 - Add explicit complete/selective Payment profiles for allowed PISP and execution-date constraints, with independently trusted provider/execution context.
 - Parse execution instants strictly and enforce inclusive bounds without lexical comparison; keep new conditions fully visible.
 - Integrate Direct/conditional Payment, selective Checkout/Payment and exact Payment Receipt references while preserving existing1.x defaults.
-- Publication remains reserved for Owner judgment after exact candidate verification.
+- Published after Owner approval; [verified publication](docs/POST_RELEASE_140.md).
 
 ## 1.3.0 — 2026-11-04
 
 - Add an explicit selective Checkout profile that discloses selected merchant and product candidates while retaining every mandatory requirement and quantity.
 - Preserve full Host trust/challenge/order verification and integer maximum-flow quantity coverage.
 - Integrate selective Checkout with selective Payment, exact original-wire references and both Receipt lifecycles.
-- Preserve existing complete profiles and default APIs; publication remains subject to Owner judgment.
+- Preserve existing complete profiles and default APIs; [verified publication](docs/POST_RELEASE_130.md) records the subsequent Owner-approved release.
 
 ## 1.2.0 — 2026-11-03
 

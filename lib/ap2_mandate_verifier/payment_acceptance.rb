@@ -75,12 +75,17 @@ module AP2MandateVerifier
         record = if LongPayment.profile?(old.fetch("profile_ref"))
           @store.start_long!(ticket: ticket, verified_at: fresh.fetch("accepted_at"),
             instruction: fresh.fetch("instruction"), signed_wires: fresh.fetch("signed_wires"),
-            authority_binding: fresh.fetch("authority_binding"))
+            authority_binding: fresh.fetch("authority_binding"), valid_until: fresh.fetch("valid_until"))
         else
           @store.start!(ticket: ticket, verified_at: fresh.fetch("accepted_at"),
             instruction: fresh.fetch("instruction"), signed_wires: fresh.fetch("signed_wires"))
         end
-        Execution.send(:new, record) if record
+        if record
+          # Existing adapters retain their public signature. The returned handle
+          # must still expose the freshly verified shorter Host deadline.
+          record = record.merge("valid_until" => [record.fetch("valid_until"), fresh.fetch("valid_until")].min)
+          Execution.send(:new, record)
+        end
       rescue StandardError, LoadError
         nil # An uncertain commit NEVER produces an execution handle.
       end

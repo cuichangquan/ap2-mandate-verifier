@@ -162,7 +162,7 @@ module AP2MandateVerifier
         start_record!(ticket: ticket, verified_at: verified_at, instruction: instruction, signed_wires: signed_wires)
       end
 
-      def start_record!(ticket:, verified_at:, instruction:, signed_wires:, authority: nil)
+      def start_record!(ticket:, verified_at:, instruction:, signed_wires:, authority: nil, fresh_valid_until: nil)
         key, fence = ticket_parts!(ticket)
         transaction do
           row = @db.get_first_row("SELECT state,CASE WHEN length(CAST(record AS BLOB))<=1048576 THEN record ELSE NULL END FROM ap2_attempts WHERE operation_key=? AND fence=?", [key, fence])
@@ -173,6 +173,10 @@ module AP2MandateVerifier
           grant = @db.get_first_row("SELECT active,CASE WHEN length(CAST(instruction AS BLOB))<=131072 THEN instruction END FROM ap2_approvals WHERE operation_key=?", [key])
           raise Invalid unless grant && grant[0] == 1 && grant[1] == instruction &&
             record["instruction"] == instruction && record["signed_wires"] == signed_wires
+          if fresh_valid_until
+            CheckoutReceipt.send(:epoch!, fresh_valid_until)
+            record["valid_until"] = [record.fetch("valid_until"), fresh_valid_until].min
+          end
           next nil unless verified_at >= record["accepted_at"] && verified_at < record["valid_until"]
           validate_start!(record, verified_at)
           validate_current_authority!(record, verified_at, authority)

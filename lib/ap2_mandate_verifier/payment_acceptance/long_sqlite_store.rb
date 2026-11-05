@@ -132,9 +132,10 @@ module AP2MandateVerifier
         end
       end
 
-      def start_long!(ticket:, verified_at:, instruction:, signed_wires:, authority_binding:)
+      def start_long!(ticket:, verified_at:, instruction:, signed_wires:, authority_binding:, valid_until:)
+        CheckoutReceipt.send(:epoch!, valid_until)
         start_record!(ticket: ticket, verified_at: verified_at, instruction: instruction, signed_wires: signed_wires,
-          authority: PaymentAcceptance.copy!(authority_binding))
+          authority: PaymentAcceptance.copy!(authority_binding), fresh_valid_until: valid_until)
       end
 
       private

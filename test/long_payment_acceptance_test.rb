@@ -88,6 +88,22 @@ module LongPaymentAcceptanceTest
     assert(reserve(count_store,count_f,"2028-03")[1].status == :rejected && usage(count_store,count_f)[:reserved_amount]+40000 <= 200000,"count-only rejection")
     count_store.close
 
+    # Fresh Host authority can shorten a challenge without changing any signed
+    # Checkout/Payment bytes. Both the handle and persisted deadline must shrink.
+    narrow = A::LongSQLiteStore.create(path:File.join(dir,"narrow")); E.enroll_series(narrow,f)
+    narrow_item, narrow_result = reserve(narrow,f,"2028-01")
+    fresh_raw = Marshal.load(Marshal.dump(narrow_item[:raw]))
+    host = JSON.parse(fresh_raw[:checkout_inputs][:host_json])
+    host["challenge"]["not_after"] = W.now("2028-01")+10
+    fresh_raw[:checkout_inputs][:host_json] = JSON.generate(host)
+    assert(L.verify(**fresh_raw).verified?,"narrowed challenge positive current-time control")
+    assert(fresh_raw[:closed_sd_jwt] == narrow_item[:raw][:closed_sd_jwt] && fresh_raw[:checkout_inputs][:terminal_jws] == narrow_item[:raw][:checkout_inputs][:terminal_jws],"all signed wires unchanged in narrowed control")
+    narrow_execution = A::Service.new(store:narrow).start(ticket:narrow_result.ticket,verification_inputs:fresh_raw)
+    assert(narrow_execution && narrow_execution.valid_until == W.now("2028-01")+10,"fresh deadline intersects returned capability")
+    db = SQLite3::Database.new(File.join(dir,"narrow")); stored_deadline = JSON.parse(db.get_first_value("SELECT record FROM ap2_attempts"))["valid_until"];db.close
+    assert(stored_deadline == W.now("2028-01")+10,"fresh deadline persisted atomically with processing CAS")
+    narrow.close
+
     # First-attempt wrong period cannot hide behind duplicate tombstones.
     wrong = A::LongSQLiteStore.create(path:File.join(dir,"wrong")); E.enroll_series(wrong,f)
     item = E.occurrence(f,period:"2028-01")
