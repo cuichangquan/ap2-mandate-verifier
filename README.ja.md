@@ -1,14 +1,14 @@
 # AP2 Mandate Verifier — Checkout・PaymentのRuby SDK
 
-### 1.6.0候補：回数・予算付きPayment受理
+### 1.6.0候補：長期Openと月次JPY受理
 
-明示的なJPY整数・ON_DEMAND profileで、同一Openの利用回数と累計予約額を永続的・原子的に制限します。再試行・結果不明・Error Receiptでは枠を戻しません。月次等の頻度・他通貨は未対応で、既存の600秒有効期間を維持します。未公開候補です。[契約・制限](docs/RECURRING_PAYMENT.md)、[Ruby例と上限超過の拒否](examples/recurring_payment.rb)、[公開前確認](docs/RELEASE_160_CANDIDATE.md)。
+明示的な長期profileで、同じCheckout／Payment Openを承認済みUTCカレンダー月に継続利用できます。内容の期限は最大400日でも、提示証明と開始時の実行期限は短く検証します。保護された権限世代・Root／鍵更新・原子的な期間／回数／JPY予約で、再送や更新による枠のリセットを防ぎます。旧profile・既定API・7入力契約は維持。未公開で、最終公開判断はOwnerに留保します。[契約・API・Pythonとの差](docs/LONG_PAYMENT.md)、[12期間のRuby受理・Receipt例](examples/long_payment_acceptance.rb)、[公開前確認](docs/RELEASE_160_CANDIDATE.md)。短期の[ON_DEMAND完全／選択的profile](docs/RECURRING_PAYMENT.md)も利用できます。
 
 ```ruby
-# After protected series/occurrence enrollment; signed JPY/ON_DEMAND profile only.
+# Protected enrollment + current authority synchronization are application duties.
 accepted = service.accept(**trusted_scope, mode: :conditional, verification_inputs: raw_inputs)
 execution = service.start(ticket: accepted.ticket, verification_inputs: fresh_raw_inputs) if accepted.ticket
-usage = store.usage(**trusted_series_scope) # reserved count/JPY, not settled spend
+usage = store.usage(**trusted_series_scope) # reservations, not settlement
 ```
 
 ### 公開済み1.5.0：Payment受理の原子性と冪等性支援

@@ -37,10 +37,11 @@ module AP2MandateVerifier
       private_class_method :new
     end
     class Execution
-      attr_reader :processor_key, :closed_sd_jwt, :reference, :payment
+      attr_reader :processor_key, :closed_sd_jwt, :reference, :payment, :valid_until
       def initialize(record)
         @processor_key, @closed_sd_jwt, @reference = record.values_at("processor_key", "closed_sd_jwt", "reference").map(&:freeze)
         @payment = ResearchEvidence.send(:copy_frozen, record.fetch("payment"))
+        @valid_until = record.fetch("valid_until")
         freeze
       end
       def inspect = "#<AP2MandateVerifier::PaymentAcceptance::Execution>"
@@ -71,8 +72,14 @@ module AP2MandateVerifier
         old = @store.ticket_record!(ticket: ticket)
         fresh = verified_record(old.fetch("mode").to_sym, verification_inputs, old.fetch("scope"))
         raise Invalid unless old.fetch("instruction") == fresh.fetch("instruction") && old.fetch("signed_wires") == fresh.fetch("signed_wires")
-        record = @store.start!(ticket: ticket, verified_at: fresh.fetch("accepted_at"),
-          instruction: fresh.fetch("instruction"), signed_wires: fresh.fetch("signed_wires"))
+        record = if LongPayment.profile?(old.fetch("profile_ref"))
+          @store.start_long!(ticket: ticket, verified_at: fresh.fetch("accepted_at"),
+            instruction: fresh.fetch("instruction"), signed_wires: fresh.fetch("signed_wires"),
+            authority_binding: fresh.fetch("authority_binding"))
+        else
+          @store.start!(ticket: ticket, verified_at: fresh.fetch("accepted_at"),
+            instruction: fresh.fetch("instruction"), signed_wires: fresh.fetch("signed_wires"))
+        end
         Execution.send(:new, record) if record
       rescue StandardError, LoadError
         nil # An uncertain commit NEVER produces an execution handle.
@@ -86,7 +93,7 @@ module AP2MandateVerifier
         result = case mode
         when :direct, :conditional
           raise Invalid unless args[:checkout_mode] == mode
-          Payment.verify(**args)
+          LongPayment.profile?(profile) ? LongPayment.verify(**args) : Payment.verify(**args)
         when :selective then SelectivePayment.verify(**args)
         else raise Invalid
         end
@@ -113,11 +120,21 @@ module AP2MandateVerifier
         else
           checkout_args.slice(:root_presentation, :terminal_jws, :host_checkout_jws)
         end
-        {"scope" => scope, "mode" => mode.to_s, "profile_ref" => profile, "instruction" => instruction,
+        authority = nil
+        if LongPayment.profile?(profile)
+          authority = LongPayment.authority!(checkout_inputs: checkout_args,
+            provider_key: args.fetch(:trusted_provider_public_key_pem), agent_key: args.fetch(:expected_agent_public_key_pem),
+            merchant_id: scope.fetch("merchant_id"), verified_at: args.fetch(:verified_at))
+          proof = Payment.send(:jwt_payload!, closed.split("~", 2).first, "kb+sd-jwt")
+          valid_until = [valid_until, authority.fetch(:valid_until), proof.fetch("iat") + 301].min
+        end
+        record = {"scope" => scope, "mode" => mode.to_s, "profile_ref" => profile, "instruction" => instruction,
           "payment" => result.payment, "closed_sd_jwt" => closed, "reference" => result.reference,
           "signed_wires" => {"payment" => args.slice(:open_sd_jwt, :open_presentation, :closed_sd_jwt).transform_keys(&:to_s),
             "checkout" => checkout_wires.transform_keys(&:to_s)},
           "accepted_at" => args.fetch(:verified_at), "valid_until" => valid_until}
+        record["authority_binding"] = authority.fetch(:authority_binding) if authority
+        record
       end
       public
 

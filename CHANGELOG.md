@@ -1,27 +1,29 @@
 # Changelog
 
-## 1.6.0 candidate — bounded repeated Payment approval
+## 1.6.0 candidate — explicit long Open and UTC-monthly JPY acceptance
 
 - Explicit complete/selective JPY integer / ON_DEMAND finite recurrence/budget profiles.
 - Optional new-schema durable series store charges count and amount atomically with occurrence reservation; no retry/unknown/Error allowance refund.
-- Preserve1.x defaults, schema1 storage, seven-input contract and600second lifetime. Calendar frequency and non-JPY budgets deferred; see docs/RECURRING_PAYMENT.md.
+- Add separate long Checkout/Payment profiles, shared content times and short fresh KB proofs; up to400days only on explicit new profiles.
+- Add schema3 protected current-authority epochs, immutable UTC month windows, Root/key replacement with economic/principal continuity, and quota-preserving revocation/reconciliation.
+- Preserve1.x defaults, schema1/2 and old600/7200second limits; no automatic migration. Other timezones/currencies and generic AP2 MONTHLY semantics remain unsupported; see docs/LONG_PAYMENT.md.
 - Unpublished; Owner release decision required.
 
-## 1.5.0 — Unreleased candidate
+## 1.5.0 — 2026-11-04
 
 - Add opt-in transactional Payment acceptance with protected authorization/occurrence enrollment, stable business-operation identity, atomic reservation and fenced processing transitions.
 - Preserve first signed wires, processor idempotency key and Receipt binding across retries/re-signing; unknown outcomes never automatically reopen.
 - Add an optional durable SQLite reference adapter, fresh full verification before start, concurrency/crash/restart examples and diagnostics. Existing1.x verifier defaults and base runtime dependencies remain unchanged.
 - Publication remains reserved for Owner decision.
 
-## 1.4.0 — Unreleased candidate
+## 1.4.0 — 2026-11-04
 
 - Add explicit complete/selective Payment profiles for allowed PISP and execution-date constraints, with independently trusted provider/execution context.
 - Parse execution instants strictly and enforce inclusive bounds without lexical comparison; keep new conditions fully visible.
 - Integrate Direct/conditional Payment, selective Checkout/Payment and exact Payment Receipt references while preserving existing1.x defaults.
 - Publication remains reserved for Owner judgment after exact candidate verification.
 
-## 1.3.0 — Unreleased candidate
+## 1.3.0 — 2026-11-04
 
 - Add an explicit selective Checkout profile that discloses selected merchant and product candidates while retaining every mandatory requirement and quantity.
 - Preserve full Host trust/challenge/order verification and integer maximum-flow quantity coverage.

@@ -1,14 +1,14 @@
 # AP2 Mandate Verifier — Ruby SDK for Checkout and Payment
 
-### 1.6.0 candidate: bounded repeated Payment approval
+### 1.6.0 candidate: long Open and monthly JPY acceptance
 
-Explicit JPY integer / ON_DEMAND profiles add finite count and cumulative reservation limits under one signed Open. Atomic durable quotas share the occurrence reservation transaction; retries, unknown outcomes and Error Receipts never replenish allowance. Calendar frequencies and non-JPY budgets are unsupported; the existing600second validity is unchanged. This candidate is not published. [Contract and limitations](docs/RECURRING_PAYMENT.md), [Ruby example and over-limit rejection](examples/recurring_payment.rb), [release gates](docs/RELEASE_160_CANDIDATE.md).
+An explicit long profile reuses the same signed Checkout/Payment Open pair across approved UTC calendar months. Content can last up to400days while each outer proof/start stays short-lived. Protected authority epochs, root/key replacement and atomic period/count/JPY reservations prevent retries or renewal from resetting allowance. Old profiles/defaults and the seven-input contract are unchanged. Unpublished; Owner release decision pending. [Contract/API and Python differences](docs/LONG_PAYMENT.md), [twelve-period Ruby acceptance/Receipt example](examples/long_payment_acceptance.rb), [release gates](docs/RELEASE_160_CANDIDATE.md). The bounded [ON_DEMAND complete/selective profiles](docs/RECURRING_PAYMENT.md) remain available.
 
 ```ruby
-# After protected series/occurrence enrollment; signed JPY/ON_DEMAND profile only.
+# Protected enrollment + current authority synchronization are application duties.
 accepted = service.accept(**trusted_scope, mode: :conditional, verification_inputs: raw_inputs)
 execution = service.start(ticket: accepted.ticket, verification_inputs: fresh_raw_inputs) if accepted.ticket
-usage = store.usage(**trusted_series_scope) # reserved count/JPY, not settled spend
+usage = store.usage(**trusted_series_scope) # reservations, not settlement
 ```
 
 ### Published1.5.0: transactional Payment acceptance

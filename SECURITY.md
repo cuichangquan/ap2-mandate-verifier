@@ -2,7 +2,7 @@
 
 ## 1.6.0 candidate boundary
 
-The unpublished1.6.0 candidate adds only explicit JPY integer / ON_DEMAND recurrence quotas in a new durable schema. Mandatory count/budget constraints stay visible; historical quota is enforced only by the atomic acceptance adapter. Calendar frequencies, other currencies, longer validity and automatic refunds/retry execution are unsupported. Stable authenticated agreement/occurrence IDs, one authoritative ledger, current authority and processor reconciliation remain application responsibilities. See [the candidate contract](docs/RECURRING_PAYMENT.md).
+The unpublished1.6.0 candidate adds bounded ON_DEMAND and separate explicit [long JPY/UTC-month profiles](docs/LONG_PAYMENT.md). Mandatory count/budget constraints remain visible; historical quota and current authority are enforced only by the protected atomic acceptance adapter. Long content up to400days is separate from short proof/start validity. External registry freshness/provenance and synchronization, consent, one authoritative ledger, current order/nonce CAS and processor reconciliation remain application responsibilities. No automatic revocation feed, refund, retry execution or settlement is supplied. Old short profiles remain unchanged.
 
 ## 現在の対象と限界 / Current scope
 

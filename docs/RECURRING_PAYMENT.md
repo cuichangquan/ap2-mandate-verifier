@@ -1,6 +1,6 @@
 # Repeated Payment approval: explicit JPY/ON_DEMAND subset (1.6.0 candidate)
 
-This additive profile supports several separately approved Payment occurrences under one signed Open, with finite occurrence and cumulative JPY reservation limits. It is not a scheduler, generic recurring-payment implementation or payment executor. Existing profiles, seven-input Checkout contract, default verifier results and 600-second Mandate lifetime remain unchanged. Calendar subscriptions such as twelve monthly payments are **not supported**.
+This additive profile supports several separately approved Payment occurrences under one signed Open, with finite occurrence and cumulative JPY reservation limits. It is not a scheduler, generic recurring-payment implementation or payment executor. Existing profiles, seven-input Checkout contract, default verifier results and 600-second Mandate lifetime remain unchanged. This bounded profile does not provide long subscriptions. The separate [LongPayment profile](LONG_PAYMENT.md) adds explicit UTC-calendar-month windows and long content with fresh proofs.
 
 ## Specification boundary
 

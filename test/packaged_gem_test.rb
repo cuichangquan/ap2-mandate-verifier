@@ -23,7 +23,7 @@ root = File.realpath(spec.full_gem_path)
 prohibited = File.realpath(ARGV.fetch(3)) + "/"
 need(!root.start_with?(prohibited), "candidate loaded from repository")
 loaded = $LOADED_FEATURES.select { |f| f.include?("/ap2_mandate_verifier") && f.end_with?(".rb") }
-need(loaded.size == 26 && loaded.all? { |f| File.realpath(f).start_with?(root + "/") }, "ordinary installed entry")
+need(loaded.size == 28 && loaded.all? { |f| File.realpath(f).start_with?(root + "/") }, "ordinary installed entry")
 package = JSON.parse(File.read(ARGV.fetch(2)))
 need(loaded.all? { |f| rel=File.realpath(f).delete_prefix(root+"/"); Digest::SHA256.file(f).hexdigest == package.fetch("files_sha256").fetch(rel) }, "installed source identity")
 input_raw = File.binread(ARGV.fetch(0)); expected_raw = File.binread(ARGV.fetch(1))
