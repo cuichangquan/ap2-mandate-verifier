@@ -1,153 +1,121 @@
 # AP2 Mandate Verifier — Ruby SDK for Checkout and Payment
 
-### Published 1.6.0: long Open and monthly JPY acceptance
+[日本語](README.ja.md) · **Published stable: 1.6.0** · [Quick Start](docs/QUICK_START.md)
 
-An explicit long profile reuses the same signed Checkout/Payment Open pair across approved UTC calendar months. Content can last up to400days while each outer proof/start stays short-lived. Protected authority epochs, root/key replacement and atomic period/count/JPY reservations prevent retries or renewal from resetting allowance. Old profiles/defaults and the seven-input contract are unchanged. Published after Owner approval; [verified distribution and tests](docs/POST_RELEASE_160.md). [Contract/API and Python differences](docs/LONG_PAYMENT.md), [twelve-period Ruby acceptance/Receipt example](examples/long_payment_acceptance.rb), [release gates](docs/RELEASE_160_CANDIDATE.md). The bounded [ON_DEMAND complete/selective profiles](docs/RECURRING_PAYMENT.md) remain available.
+Issue, present and verify supported AP2 Checkout and Payment Mandates in plain Ruby.
+Use this Gem when your app needs to check what a buyer approved, what an Agent may
+choose, and whether signed Checkout/Payment data stays within those conditions.
+No Rails dependency. **Verification success is not purchase or payment success; the SDK never executes payments.**
 
-```ruby
-# Protected enrollment + current authority synchronization are application duties.
-accepted = service.accept(**trusted_scope, mode: :conditional, verification_inputs: raw_inputs)
-execution = service.start(ticket: accepted.ticket, verification_inputs: fresh_raw_inputs) if accepted.ticket
-usage = store.usage(**trusted_series_scope) # reservations, not settlement
-```
-
-### Published1.5.0: transactional Payment acceptance
-
-Reserve a protected business occurrence atomically, reverify before one fenced start, and recover the original Receipt after response loss without reopening an uncertain attempt. [Verified publication](docs/POST_RELEASE_150.md). [Integration/store/security contract](docs/PAYMENT_ACCEPTANCE.md), [plain Ruby recovery example](examples/payment_acceptance.rb), [release gates](docs/RELEASE_150_CANDIDATE.md).
-
-```ruby
-accepted = service.accept(**trusted_scope, mode: :conditional, verification_inputs: raw_inputs)
-dispatch = service.start(ticket: accepted.ticket, verification_inputs: fresh_inputs) if accepted.ticket
-# Application-owned processor call uses dispatch.processor_key; no SDK payment call.
-```
-
-Verification, durable reservation and settlement are separate. Use protected enrollment, one authoritative store and processor idempotency/lookup; no automatic timeout release. Existing1.x verifiers remain unchanged. The optional SQLite reference driver is installed separately.
-
-
-### Published1.4.0: PISP and execution-date Payment conditions
-
-Explicit Payment profiles now constrain approved PISPs and parsed inclusive execution windows, bound to independent application provider/time context. Existing1.x defaults remain unchanged. [Contract/API/official differences](docs/PAYMENT_POLICY.md), [plain Ruby three-mode example](examples/payment_policy.rb), [verified publication](docs/POST_RELEASE_140.md).
-
-### Published 1.3.0: selective Checkout and Payment
-
-Keep the complete approved Open confidential and disclose only the merchant/products needed for Checkout, then selected payee/instrument candidates for Payment. Every mandatory condition and quantity remains enforced. [Profile/API/privacy/Python limits](docs/SELECTIVE_CHECKOUT.md), [plain Ruby combined lifecycle](examples/selective_checkout_payment.rb), [verified publication](docs/POST_RELEASE_130.md).
-
-### Published1.2.0: selective Payment
-
-Published1.2.0 adds explicit `SelectivePayment` candidate-array disclosure: retain confidential full issuance, send selected payee/instrument disclosures only, and verify every mandatory condition and exact original-wire reference. [Profile/API/privacy/Python limits](docs/SELECTIVE_PAYMENT.md), [plain Ruby retained-vs-sent example](examples/selective_payment.rb), [verified publication](docs/POST_RELEASE_120.md). Existing `Payment` defaults remain unchanged.
-
-
-### Payment lifecycle (since1.1.0)
-
-1.1.0 adds Direct and conditional Payment Mandates plus signed Success/Error Payment Receipts. [Payment APIs and constraints](docs/PAYMENT.md), [plain Ruby lifecycle sample](examples/payment.rb), [verified publication](docs/POST_RELEASE_110.md), [GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v1.1.0). Verification does not grant execution permission; durable atomic one-use state and actual payment remain application responsibilities.
+## Start here
 
 ```sh
 gem install ap2_mandate_verifier --version 1.6.0
-ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')/examples/payment.rb"
+AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')"
+ruby "$AP2_GEM_DIR/examples/conditional_checkout.rb"
+ruby "$AP2_GEM_DIR/examples/payment.rb"
 ```
 
-[日本語](README.ja.md)
+These installed examples create synthetic keys and approvals, issue/present/verify
+Mandates, then authenticate alternative Success and Error Receipts. An authentic
+Error Receipt reports failure. No account, credentials, database or Rails required.
+Allow about ten minutes with a supported Ruby already installed; dependency builds
+and Docker's first download can take longer.
 
-**Published stable: 1.6.0.**
+**Next:** [step-by-step Quick Start and expected output](docs/QUICK_START.md),
+including twelve UTC months and a cumulative JPY budget rejection.
+[Docker demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)
+uses published **1.6.0**, with local Checkout screens and Ruby Payment examples.
 
-1.0.0 establishes the stable public contract for the existing
-Direct and conditional Checkout APIs. It preserves 0.8.0 signatures, defaults,
-profiles, result meanings, saved formats and runtime implementation.
-See [the public API contract](docs/PUBLIC_API.md),
-[maintenance policy](docs/POST_RELEASE_MAINTENANCE.md) and
-[1.0.0 release notes](docs/RELEASE_100.md). The official Gem matches the retained
-candidate; [publication verification](docs/POST_RELEASE_100.md) records its exact
-source, bytes and validation scope.
+## Choose a workflow
 
-## Conditional purchase delegation
+Checkout describes the order; a Checkout Mandate records approval/delegation for it.
+A Payment Mandate adds payment conditions and references the Checkout approval.
+Receipts authenticate an application's reported outcome for the original final Mandate;
+they do not independently prove settlement.
 
-Available since 0.8.0, `ConditionalCheckout.issue_open`, `.issue_closed` and `.present`
-support this flow:
-approve A/B×1 plus C×2, issue Open for a registered Agent key, let that Agent close
-a matching merchant-signed Checkout, then use existing `InputBuilder.verify` and
-`CheckoutReceipt.sign/verify`. All candidates remain disclosed under the unchanged
-multi-item profile. Provider private keys never enter Agent operations.
-[API and trust contract](docs/CONDITIONAL_CHECKOUT.md), [conditional code sample](docs/RELEASE_080.md) and [1.0.0 publication verification](docs/POST_RELEASE_100.md).
+| Workflow | Use when | API / guide |
+| --- | --- | --- |
+| Direct | Buyer approves an exact signed order/payment | `Buyer`, `Payment.issue_direct` · [Checkout](docs/BUYER_DIRECT_CHECKOUT.md) / [Payment](docs/PAYMENT.md) |
+| Conditional delegation | Buyer approves candidates and limits; registered Agent chooses within them | `ConditionalCheckout`, `Payment.issue_open/issue_closed/present` · [Checkout](docs/CONDITIONAL_CHECKOUT.md) |
+| Selective disclosure | Keep the full approved Open private and send selected merchant/product or payee/instrument candidates | `SelectiveCheckout`, `SelectivePayment` · [Checkout](docs/SELECTIVE_CHECKOUT.md) / [Payment](docs/SELECTIVE_PAYMENT.md) |
+| Long Open | Reuse one approved Checkout/Payment Open pair across explicit UTC months, with finite count and cumulative JPY budget | `LongPayment`, `PaymentAcceptance::LongSQLiteStore` · [contract](docs/LONG_PAYMENT.md) |
 
-Ruby-only Quick Start on MRI 3.4.12 or 4.0.9; no source checkout or Rails required:
+Direct and conditional Checkout support one merchant and up to eight lines with
+quantities under the explicit multi-item profile. The default single-SKU profile
+retains its one-line contract. Selective profiles retain all mandatory conditions
+and quantities; candidate count/order and issuer-JWT linkability are not hidden.
+Long Open is a separate complete-disclosure profile (content up to 400 days,
+short-lived proofs); it does not compose with selective or PISP/date profiles.
+**Its UTC-monthly profile is not full compliance with generic AP2 MONTHLY semantics.**
 
-```sh
-gem install ap2_mandate_verifier --version 1.6.0
-ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')/examples/conditional_checkout.rb"
-```
+Other explicit options: [PISP / execution-date constraints](docs/PAYMENT_POLICY.md),
+[transactional acceptance and recovery](docs/PAYMENT_ACCEPTANCE.md), and bounded
+[ON_DEMAND count / JPY budget profiles](docs/RECURRING_PAYMENT.md).
+Existing 1.x API signatures, defaults, profiles and saved formats remain supported.
 
-The [standalone Ruby example](examples/conditional_checkout.rb) uses only installed
-public APIs, three rows, candidate choice, different requirement quantities and
-repeated products through both Receipt outcomes. Success consumes the operation;
-Error requires a new policy decision; missing Receipt or uncertain effect remains
-pending. Authentication, consent, enrollment, durable replay prevention and actual
-order/payment execution remain app-owned. Documented 0.8.0 API use needs no source
-migration; update the dependency constraint as described below.
+## Choose your API by role
 
-Direct and conditional workflows cover one merchant and 1–8 Checkout lines,
-including multiple products and quantities. Existing Direct and both Open→Closed
-profiles retain their contracts in 1.0.0.
+| Your component | Start with |
+| --- | --- |
+| Merchant backend | `CheckoutJWT.sign`; `CheckoutReceipt.sign/verify` |
+| Trusted approval backend | `CheckoutJWT.verify` before consent; `Buyer.issue_closed` or `ConditionalCheckout.issue_open`; corresponding Payment issuance |
+| Registered Agent | `Buyer.present_closed`, or conditional `issue_closed/present`; selective variants for supported disclosure profiles. Provider private keys stay in the approval backend. |
+| Merchant / payment verifier | `Buyer.verify` for Direct; `InputBuilder.prepare/restore/verify` for conditional Checkout; `Payment.verify` for Payment plus Checkout binding; explicit selective/long variants |
+| Receipt consumer | `CheckoutReceipt.verify`, `PaymentReceipt.verify`; check authenticity **and** reported outcome |
+| App managing durable Payment acceptance | `PaymentAcceptance::Service` and the appropriate protected store; [integration contract](docs/PAYMENT_ACCEPTANCE.md) |
 
-## Multiple items and quantities
+`verify_checkout` (also `verify_research`) is the complete seven-input conditional
+Checkout entry. `InputBuilder` is the recommended business-record adapter.
+Legacy `verify(presentation_json:)` checks syntax only and never returns successful
+Evidence. [Exact APIs and result/error conventions](docs/PUBLIC_API.md).
 
-Explicitly select `profile_ref: "ap2.checkout.single_merchant_multi_item"` when creating trust with `InputBuilder.trust`, signing a checkout with `CheckoutJWT.sign`, and using `CheckoutReceipt.reference/sign/verify`. The complete verifier follows the authenticated trust selection. The default `ap2.checkout.single_merchant_sku` v1 retains its exact definition, hash and one-line acceptance range.
+## Install and support
 
-The multi-item v1 profile supports one merchant, one checkout, one currency and up to eight lines, with different quantities and repeated product IDs on distinct lines. It matches all disclosed product candidates using integer maximum flow: every requirement and every ordered unit must be consumed exactly once. Quantity shortages and extras reject. Requirement IDs and checkout line IDs are distinct identifiers. See the [multi-item contract and migration](docs/MULTI_ITEM_CHECKOUT.md), [synthetic runnable lifecycle](examples/multi_item_checkout.rb), and [official Python SDK differences](docs/MULTI_ITEM_INTEROP.md) for shortage, empty-candidate and Receipt-reference behavior.
+Formal support: **MRI 3.4.12 and 4.0.9**. For this walkthrough use
+`gem "ap2_mandate_verifier", "= 1.6.0"` in a Gemfile. Applications following stable
+1.x may use `"~> 1.0"` and review lockfile updates. `~> 0.8.0` excludes 1.x;
+[upgrade notes](docs/RELEASE_100.md) retain the compatibility details.
 
-Verify purchase-delegation data in Ruby using a deliberately fixed AP2 profile. The Gem checks signed data against independently supplied Host trust and order information, then returns immutable Evidence. **Verification success is not purchase or payment permission.**
+Runtime pins: JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2,
+Digest 3.2.1. Installation may download/build native dependencies. Do not loosen
+pins to bypass a conflict. The resolution interval does not certify every Ruby,
+OS or provider. [Support contract](docs/SUPPORT_CONTRACT.md).
 
-`InputBuilder` converts business records into verification inputs: it creates the Gem-specific trust/selection/Host JSON, fingerprints and original-wire digests for you. You still choose whom to trust and supply the expected order, challenge state and clock. The Gem is Rails-independent and performs no network, database or payment operations.
+## Responsibilities before using this in your app
 
-## Try the local demo
+The core verifier performs no network or payment operations. Optional acceptance
+stores perform local database transactions; SQLite requires a separately installed
+driver. **Verification, durable reservation, application authorization and settlement
+are separate events.**
 
-The [Rails demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme) uses published 0.8.0 and InputBuilder by default. Its Docker instructions require no host Ruby installation. It retains the existing synthetic Open→Agent Closed verification, multi-item and Success/Error Receipt screens. It has no conditional approval/issuance UI; use the standalone Ruby example above for that lifecycle. It is local-only and performs no real challenge issuance, nonce consumption or purchase/payment.
+Your app owns authentication, consent, protected approval records, independently
+trusted current keys/revocation/profile policy, order/challenge state and clock.
+It must recheck current authority, durably consume one-use state atomically, handle
+uncertain results, and decide whether to call a processor. SDK acceptance and
+Receipt authentication do not establish real Issuer trust or processor exactly-once.
+Missing/invalid Receipt or unknown effect stays pending for reconciliation; do not
+automatically retry or refund allowance on timeout/Error.
 
-## Install
+Unknown/unsupported forms fail closed. Exceptions, unavailable results and missing
+results never authorize an operation. Do not log private keys, raw Mandates/nonces
+or treat serialized Evidence as an authenticated credential. General AP2/all-Schema
+conformance, real-Issuer interoperability and production GO are not claimed.
+[Issuer/Host responsibilities](docs/ISSUER_HOST_MINIMUM_CONTRACT.md),
+[security policy](SECURITY.md), [acceptance boundaries](docs/PAYMENT_ACCEPTANCE.md).
 
-Formal support is **MRI 3.4.12 and MRI 4.0.9**. In your chosen Gem environment:
+## Reference and retained evidence
 
-```sh
-gem install ap2_mandate_verifier --version 1.6.0
-```
+- [Public API](docs/PUBLIC_API.md), [InputBuilder guide](docs/INPUT_BUILDER.md), [diagnostics](docs/DIAGNOSTICS.md).
+- [1.6.0 publication verification](docs/POST_RELEASE_160.md), [changelog](CHANGELOG.md), [project/publication history](docs/PROJECT_STATUS.md), [maintenance policy](docs/POST_RELEASE_MAINTENANCE.md).
+- [Merchant signing](docs/MERCHANT_SIGNING.md), [multiple items](docs/MULTI_ITEM_CHECKOUT.md), [Python differences](docs/MULTI_ITEM_INTEROP.md).
 
-Or add to your Gemfile:
+Historical release and research documents remain evidence for their recorded
+versions, not the current onboarding path. Repository documentation changes do
+not rebuild or replace the already published 1.6.0 Gem.
 
-```ruby
-gem "ap2_mandate_verifier", "~> 1.0"
-```
-
-Runtime dependencies are pinned to JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1. Normal installation may download/build dependencies; do not relax the pins to work around a conflict. The Ruby resolution interval is not certification of every Ruby version, OS or native provider. See the [support contract](docs/SUPPORT_CONTRACT.md).
-
-### Upgrading from 0.8.0
-
-Documented 0.8.0 APIs, profiles, defaults and saved formats remain compatible.
-A constraint such as `~> 0.8.0` excludes 1.0.0. Change it to `~> 1.0` as above and
-update this Gem in the application's lockfile:
-
-```sh
-bundle update ap2_mandate_verifier
-```
-
-## Merchant signing and Receipt
-
-Create a signed checkout, then sign the application's explicit outcome. These APIs were added in 0.5.0 and remain available in 1.0.0; the excerpt uses the default single-SKU profile.
-Here `checkout` is the application order Hash, `key` its P-256 signing key,
-`received_closed_sd_jwt` the original final inline SD-JWT and `now` the application clock:
-
-```ruby
-signing = AP2MandateVerifier::CheckoutJWT
-signed = signing.sign(checkout: checkout, signer: signing.es256_signer(private_key: key),
-                      public_key_pem: key.public_to_pem)
-# Retain signed.jwt unchanged; use it as InputBuilder's host_checkout_jws.
-receipt = AP2MandateVerifier::CheckoutReceipt.sign(closed_sd_jwt: received_closed_sd_jwt,
-  issuer: "shop", outcome: "Error", error: "declined", error_description: "Application declined",
-  issued_at: now, signer: signing.es256_signer(private_key: key), public_key_pem: key.public_to_pem)
-```
-
-Receipt verification separately checks a trusted public key, expected issuer,
-explicit time window and original closed-Mandate reference. An authentic Error
-Receipt has `verified? == true` and `purchase_succeeded? == false`.
-See the [complete runnable example](examples/merchant_signing.rb) and [API contract / SDK differences](docs/MERCHANT_SIGNING.md).
+<details>
+<summary>Source-checkout InputBuilder walkthrough (advanced)</summary>
 
 ## A small InputBuilder example
 
@@ -197,74 +165,5 @@ Expected for these unchanged synthetic inputs: `verified_research/scoped_researc
 
 Do not call `prepare` again during verification or update saved hashes/references to match current values. Changed orders, trust or signed bytes must remain detectable. Persisted trust JSON can be loaded with `restore_trust` without reserializing it. The [complete example](examples/input_builder.rb) includes normal/tampered/expired cases; the [input guide](docs/INPUT_BUILDER.md) explains the business fields, exact restoration and Rails model mapping.
 
-## Results and responsibility boundaries
 
-The following table applies to complete Open → Agent Closed verification through
-InputBuilder or `verify_checkout`. Direct, Checkout and Receipt APIs retain their
-own `verified?` or exception contracts; see [all result conventions](docs/PUBLIC_API.md#result-object-and-failure-contracts).
-
-| Result | Meaning and next step |
-| --- | --- |
-| `:verified_research` / `:scoped_research_verified`, `success? == true` | Immutable Evidence contains checked facts for the fixed profile. The Host must still decide whether to authorize the purchase. |
-| `:rejected`, `rejected? == true` | No Evidence. Stop and inspect `result.code`. |
-| `:unavailable`, `unavailable? == true` | No Evidence. Stop; a dependency or processing failure is not proof of invalid business data. |
-
-On failure, inspect supplemental check candidates. Successful results have no failure diagnostic.
-
-```ruby
-if (diagnostic = result.diagnostic)
-  puts diagnostic.to_h(locale: :en) # :ja for Japanese
-end
-```
-
-`stage / field / reason / hint` are guidance; they do not change status/code or the verdict. Unknown fields/causes are not asserted. See the [diagnostic guide](docs/DIAGNOSTICS.md).
-
-Exceptions, process failure and missing results also never authorize an operation. Do not log raw inputs/nonces or treat serialized Evidence as an authenticated credential.
-
-The Gem checks signatures, supported disclosure closure, delegation, purchase/Host bindings, constraints and validity. The Host supplies authenticated, independent and current trust/keys/revocation, order/challenge state and clock. Before acting, it rechecks current state and validity, atomically consumes the nonce with order CAS, handles uncertain outcomes, and makes the final authorization/payment decision. `prepare`/`restore` do not authenticate storage or prove an unused nonce.
-
-Published 1.0.0 retains the default `ap2.checkout.single_merchant_sku` v1 and the
-explicit [multi-item profile](docs/MULTI_ITEM_CHECKOUT.md). Conditional issuance
-uses that multi-item profile, with all candidates disclosed and existing limits.
-Unknown/unsupported forms fail closed. General AP2/all-Schema support, real Issuer
-interoperability, new selective-disclosure profiles, Rails adapters, DB/payment
-execution and numeric performance guarantees remain outside scope. Real
-Issuer/Host production GO and Phase 2-B remain separate HOLDs.
-
-### Which API should I use?
-
-| Entry | Role |
-| --- | --- |
-| `ConditionalCheckout.issue_open/issue_closed/present` | Conditional issuance and original-wire presentation; full merchant verification remains required. |
-| `Buyer.issue_closed/present_closed/verify` | Direct exact-order issuance, structural presentation and full Direct verification. |
-| `CheckoutJWT.sign/verify` | Merchant Checkout signing and authentication before approval. |
-| `CheckoutReceipt.reference/sign/verify` | Original final-Mandate reference, explicit application outcome signing and Receipt authentication. |
-| `InputBuilder.verify(**business_information)` | Recommended business-data path. Assembles inputs and runs complete verification; preparation and restoration are separate steps shown above. |
-| `verify_checkout(**inputs)` | Complete Open → Agent Closed verification with the existing seven inputs, including caller-supplied trust/selection/Host JSON. |
-| `verify_research(**inputs)` | Retained name for the same seven-input verification pipeline; no deprecation warning. |
-| `verify(presentation_json:)` | Legacy JSON syntax check only. Never returns successful Evidence. |
-
-Malformed assembly arguments, including missing keywords, to `InputBuilder.verify` return `:rejected / :invalid_host_context`. Assembly dependency/unexpected failures return `:unavailable / :research_verification_unavailable`; results from the complete core retain their codes. In contrast, missing/unknown keywords to the direct `verify_checkout` / `verify_research` entries return `:unavailable / :research_verification_unavailable`. Every such failure has `success? == false` and `evidence == nil`. See [the exact contract](docs/SUPPORT_CONTRACT.md#full-entry-and-required-inputs) for shapes, bounds and Ruby argument-binding caveats.
-
-## More detail
-
-- [1.x public API, errors, profiles and persistence contract](docs/PUBLIC_API.md). Existing partial-verification APIs remain supported and never return successful Evidence.
-- [Business-data lifecycle and Rails mapping](docs/INPUT_BUILDER.md), [complete Ruby example](examples/input_builder.rb) and [before/after example](examples/input_builder_before.rb).
-- [Supported inputs, limits and Result/Evidence contract](docs/SUPPORT_CONTRACT.md); [Issuer/Host responsibilities](docs/ISSUER_HOST_MINIMUM_CONTRACT.md).
-- [1.0.0 Release notes](docs/RELEASE_100.md), [publication/withdrawal records](docs/PROJECT_STATUS.md) and [changelog](CHANGELOG.md). Repository README changes do not rebuild or replace published Gem bytes.
-- [Pinned historical seven-input / saved FULL example](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.md#try-the-saved-synthetic-example), [older artifact/provider evidence](research/stable010_release_linux_package/README.md) and [historical conceptual diagrams](https://github.com/cuichangquan/ap2-mandate-verifier/blob/e0ab9fb21045e89fc58fb06145eeda4855b2dc54/README.md#illustrated-concepts-japanese-diagrams). These records are preserved, not current integration instructions or broader support claims.
-- [Security reporting](SECURITY.md), [maintenance policy](docs/POST_RELEASE_MAINTENANCE.md) and [product direction](docs/PRODUCT_VISION.md). Do not include secrets, real Mandates or personal data in reports.
-
-MIT. See [LICENSE](LICENSE).
-
-### Buyer Direct checkout (published 0.7.0)
-
-Trusted Surface backends can verify a merchant Checkout before approval, issue a
-Provider-signed Closed Mandate, and let the Shopping Agent present it. The new
-`AP2MandateVerifier::Buyer` module verifies Direct Closed-only presentations at
-the merchant and uses `CheckoutReceipt` with `profile_ref: Buyer::PROFILE_REF`.
-One merchant, 1–8 lines, multiple products and quantities are supported end to end.
-Existing Open→Agent Closed APIs and both profiles retain their contracts.
-See [API and responsibility contract](docs/BUYER_DIRECT_CHECKOUT.md) and the
-[runnable approval-to-Receipt example](examples/direct_checkout.rb). Verification
-is not purchasing authority or payment success. See the [short verified buyer-flow sample](docs/RELEASE_070.md).
+</details>
