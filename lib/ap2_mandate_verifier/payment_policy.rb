@@ -10,14 +10,17 @@ module AP2MandateVerifier
     def self.enabled?(profile)
       [PROFILE_REF, SELECTIVE_PROFILE_REF].include?(profile)
     end
+    def self.recurring?(profile) = defined?(RecurringPayment) && RecurringPayment.profile?(profile)
+    def self.marked?(profile) = enabled?(profile) || recurring?(profile)
     def self.profile!(value, selective: false)
       profile = InputValidator.snapshot!(value, max_bytes: 256)
       old, current = selective ? [SelectivePayment::PROFILE_REF, SELECTIVE_PROFILE_REF] : [Payment::PROFILE_REF, PROFILE_REF]
-      raise Payment::Invalid unless [old, current].include?(profile)
+      recurring = defined?(RecurringPayment) && (selective ? RecurringPayment::SELECTIVE_PROFILE_REF : RecurringPayment::PROFILE_REF)
+      raise Payment::Invalid unless [old, current, recurring].compact.include?(profile)
       profile
     end
     def self.candidate_policy!(profile, policy)
-      raise Payment::Invalid unless enabled?(profile) ? policy == :independent : policy.nil?
+      raise Payment::Invalid unless marked?(profile) ? policy == :independent : policy.nil?
     end
     def self.fields(profile) = Payment::FIELDS + (enabled?(profile) ? FIELDS : [])
     def self.pisp!(value)
