@@ -1,8 +1,8 @@
 # AP2 Mandate Verifier — Ruby SDK for Checkout and Payment
 
-### 1.6.0 candidate: long Open and monthly JPY acceptance
+### Published 1.6.0: long Open and monthly JPY acceptance
 
-An explicit long profile reuses the same signed Checkout/Payment Open pair across approved UTC calendar months. Content can last up to400days while each outer proof/start stays short-lived. Protected authority epochs, root/key replacement and atomic period/count/JPY reservations prevent retries or renewal from resetting allowance. Old profiles/defaults and the seven-input contract are unchanged. Unpublished; Owner release decision pending. [Contract/API and Python differences](docs/LONG_PAYMENT.md), [twelve-period Ruby acceptance/Receipt example](examples/long_payment_acceptance.rb), [release gates](docs/RELEASE_160_CANDIDATE.md). The bounded [ON_DEMAND complete/selective profiles](docs/RECURRING_PAYMENT.md) remain available.
+An explicit long profile reuses the same signed Checkout/Payment Open pair across approved UTC calendar months. Content can last up to400days while each outer proof/start stays short-lived. Protected authority epochs, root/key replacement and atomic period/count/JPY reservations prevent retries or renewal from resetting allowance. Old profiles/defaults and the seven-input contract are unchanged. Published after Owner approval; [verified distribution and tests](docs/POST_RELEASE_160.md). [Contract/API and Python differences](docs/LONG_PAYMENT.md), [twelve-period Ruby acceptance/Receipt example](examples/long_payment_acceptance.rb), [release gates](docs/RELEASE_160_CANDIDATE.md). The bounded [ON_DEMAND complete/selective profiles](docs/RECURRING_PAYMENT.md) remain available.
 
 ```ruby
 # Protected enrollment + current authority synchronization are application duties.
@@ -42,13 +42,13 @@ Published1.2.0 adds explicit `SelectivePayment` candidate-array disclosure: reta
 1.1.0 adds Direct and conditional Payment Mandates plus signed Success/Error Payment Receipts. [Payment APIs and constraints](docs/PAYMENT.md), [plain Ruby lifecycle sample](examples/payment.rb), [verified publication](docs/POST_RELEASE_110.md), [GitHub Release](https://github.com/cuichangquan/ap2-mandate-verifier/releases/tag/v1.1.0). Verification does not grant execution permission; durable atomic one-use state and actual payment remain application responsibilities.
 
 ```sh
-gem install ap2_mandate_verifier --version 1.5.0
-ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.5.0").full_gem_path')/examples/payment.rb"
+gem install ap2_mandate_verifier --version 1.6.0
+ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')/examples/payment.rb"
 ```
 
 [日本語](README.ja.md)
 
-**Published stable: 1.5.0.**
+**Published stable: 1.6.0.**
 
 1.0.0 establishes the stable public contract for the existing
 Direct and conditional Checkout APIs. It preserves 0.8.0 signatures, defaults,
@@ -72,8 +72,8 @@ multi-item profile. Provider private keys never enter Agent operations.
 Ruby-only Quick Start on MRI 3.4.12 or 4.0.9; no source checkout or Rails required:
 
 ```sh
-gem install ap2_mandate_verifier --version 1.5.0
-ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.5.0").full_gem_path')/examples/conditional_checkout.rb"
+gem install ap2_mandate_verifier --version 1.6.0
+ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')/examples/conditional_checkout.rb"
 ```
 
 The [standalone Ruby example](examples/conditional_checkout.rb) uses only installed
@@ -107,7 +107,7 @@ The [Rails demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readm
 Formal support is **MRI 3.4.12 and MRI 4.0.9**. In your chosen Gem environment:
 
 ```sh
-gem install ap2_mandate_verifier --version 1.5.0
+gem install ap2_mandate_verifier --version 1.6.0
 ```
 
 Or add to your Gemfile:

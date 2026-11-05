@@ -1,6 +1,6 @@
 # Ruby SDK public API — 1.x
 
-**Status: published 1.5.0; the original 1.0.0 Checkout contract below is preserved.**
+**Status: published 1.6.0; the original 1.0.0 Checkout contract below is preserved.**
 This document defines the 1.x contract for the existing Checkout APIs.
 The 1.0.0 release preserves the 0.8.0 runtime behavior, API names and accepted
 formats. Exact distribution identity and validation are in

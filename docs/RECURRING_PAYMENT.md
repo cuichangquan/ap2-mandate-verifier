@@ -1,4 +1,6 @@
-# Repeated Payment approval: explicit JPY/ON_DEMAND subset (1.6.0 candidate)
+# Repeated Payment approval: explicit JPY/ON_DEMAND subset (1.6.0)
+
+Published on RubyGems; [exact distribution and validation](POST_RELEASE_160.md). Packaged preparation notes retain their historical scope.
 
 This additive profile supports several separately approved Payment occurrences under one signed Open, with finite occurrence and cumulative JPY reservation limits. It is not a scheduler, generic recurring-payment implementation or payment executor. Existing profiles, seven-input Checkout contract, default verifier results and 600-second Mandate lifetime remain unchanged. This bounded profile does not provide long subscriptions. The separate [LongPayment profile](LONG_PAYMENT.md) adds explicit UTC-calendar-month windows and long content with fresh proofs.
 
@@ -51,4 +53,4 @@ The recurring reference adapter uses an explicit **new schema2 database** with t
 
 One authoritative durable local ledger must serve every worker and occurrence for an agreement. A per-process database, multiple independent stores, rollback/loss, restoring a stale backup or splitting one consent into fresh IDs destroys the protection. Authenticated stable identities, genuine consent, full-Open confidentiality, current order/nonce/revocation CAS, processor idempotency/query and outcome reconciliation remain application duties. Custom adapters must make authorization, quota checks/updates, occurrence reservation and fenced start atomic with current authority. An external precheck followed by an independent database write is insufficient.
 
-No actual Issuer/Host provenance, production durability, external exactly-once settlement, refund semantics, distributed coordination, automatic scheduling, non-JPY budgets or calendar recurrence is claimed. This candidate covers bounded ON_DEMAND repeated use within existing validity; the broader monthly-subscription goal remains deferred pending a precise safe contract.
+No actual Issuer/Host provenance, production durability, external exactly-once settlement, refund semantics, distributed coordination, automatic scheduling, non-JPY budgets or calendar recurrence is claimed. This profile covers bounded ON_DEMAND repeated use within existing validity; the separate [LongPayment contract](LONG_PAYMENT.md) defines the supported local UTC-calendar-month policy.

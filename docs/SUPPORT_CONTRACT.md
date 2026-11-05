@@ -2,11 +2,11 @@
 
 ## Current published scope
 
-Published stable is1.5.0: [verified publication](POST_RELEASE_150.md). It adds opt-in [transactional Payment acceptance](PAYMENT_ACCEPTANCE.md) while preserving all existing1.x verifier APIs, defaults and stored formats. The SQLite reference adapter additionally requires optional pinned driver2.10.2 and a protected local persistent filesystem; other adapters require their own atomicity/durability validation. No new external exactly-once or production authorization guarantee is made.
+Published stable is1.6.0: [verified publication](POST_RELEASE_160.md). It adds opt-in [transactional Payment acceptance](PAYMENT_ACCEPTANCE.md) while preserving all existing1.x verifier APIs, defaults and stored formats. The SQLite reference adapter additionally requires optional pinned driver2.10.2 and a protected local persistent filesystem; other adapters require their own atomicity/durability validation. No new external exactly-once or production authorization guarantee is made.
 
-## Unpublished1.6.0 subset
+## Published1.6.0 subset
 
-The additive candidate retains bounded JPY/ON_DEMAND profiles and adds an explicit complete [LongPayment JPY/UTC-month profile](LONG_PAYMENT.md), with up to400day content, fresh proof/start checks and optional schema3 authority/period storage. General calendar/timezone semantics and other currencies remain unsupported. Existing schema1/2,1.x defaults and short-profile limits remain unchanged; no automatic history migration is provided.
+The additive release retains bounded JPY/ON_DEMAND profiles and adds an explicit complete [LongPayment JPY/UTC-month profile](LONG_PAYMENT.md), with up to400day content, fresh proof/start checks and optional schema3 authority/period storage. General calendar/timezone semantics and other currencies remain unsupported. Existing schema1/2,1.x defaults and short-profile limits remain unchanged; no automatic history migration is provided.
 
 ## Historical1.0.0 baseline contract
 

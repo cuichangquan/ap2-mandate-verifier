@@ -1,4 +1,6 @@
-# Long Open Payment: explicit JPY / UTC monthly profile (1.6.0 candidate)
+# Long Open Payment: explicit JPY / UTC monthly profile (1.6.0)
+
+Published on RubyGems; [exact distribution and validation](POST_RELEASE_160.md). Packaged preparation notes retain their historical scope.
 
 `LongPayment` supports one signed Open Checkout and one signed Open Payment reused across approved UTC calendar months. Every Closed preserves its own Open's content `iat`/`exp`; each outer KB proof is fresh, bound to audience/nonce/original presentation. Content validity and permission to start execution are separate. This is a framework-independent Ruby SDK; no Rails, scheduler or payment processor is required or invoked.
 

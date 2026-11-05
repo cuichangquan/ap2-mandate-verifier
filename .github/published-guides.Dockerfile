@@ -1,9 +1,9 @@
 ARG RUBY_VERSION=3.4.12
 FROM ruby:${RUBY_VERSION}-bookworm
 RUN gem install --no-document json:2.19.9 jwt:3.3.0 base64:0.3.0 openssl:4.0.2 digest:3.2.1 && \
-    curl --fail --silent --show-error --proto '=https' --max-time 60 https://rubygems.org/downloads/ap2_mandate_verifier-1.5.0.gem -o /tmp/published.gem && \
-    test "$(wc -c < /tmp/published.gem)" -eq 160256 && \
-    echo '9fdd419d031ff10b17c5a9bf31afc74a5f03a70cdcb442d7b4c561f6f90f1802  /tmp/published.gem' | sha256sum -c - && \
+    curl --fail --silent --show-error --proto '=https' --max-time 60 https://rubygems.org/downloads/ap2_mandate_verifier-1.6.0.gem -o /tmp/published.gem && \
+    test "$(wc -c < /tmp/published.gem)" -eq 186368 && \
+    echo '62de85123e1379c538c9c4302b71a9c55c590162591169a4e335aaa03a8991f8  /tmp/published.gem' | sha256sum -c - && \
     gem install --local --no-document /tmp/published.gem && rm /tmp/published.gem
 # Optional reference persistence driver for tests/examples, not a Gem runtime dependency.
 RUN set -eu; \

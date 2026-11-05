@@ -1,13 +1,13 @@
 # Changelog
 
-## 1.6.0 candidate — explicit long Open and UTC-monthly JPY acceptance
+## 1.6.0 — 2026-11-05 — explicit long Open and UTC-monthly JPY acceptance
 
 - Explicit complete/selective JPY integer / ON_DEMAND finite recurrence/budget profiles.
 - Optional new-schema durable series store charges count and amount atomically with occurrence reservation; no retry/unknown/Error allowance refund.
 - Add separate long Checkout/Payment profiles, shared content times and short fresh KB proofs; up to400days only on explicit new profiles.
 - Add schema3 protected current-authority epochs, immutable UTC month windows, Root/key replacement with economic/principal continuity, and quota-preserving revocation/reconciliation.
 - Preserve1.x defaults, schema1/2 and old600/7200second limits; no automatic migration. Other timezones/currencies and generic AP2 MONTHLY semantics remain unsupported; see docs/LONG_PAYMENT.md.
-- Unpublished; Owner release decision required.
+- Published after Owner approval; [exact distribution and verification](docs/POST_RELEASE_160.md).
 
 ## 1.5.0 — 2026-11-04
 
