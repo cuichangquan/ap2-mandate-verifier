@@ -5,6 +5,7 @@ module AP2MandateVerifier
     # Optional local durable reference. Production adapters must preserve the
     # same protected-authorization + claim transaction and CAS guarantees.
     class SQLiteStore
+      SCHEMA_VERSION = 1
       DRIVER_VERSION = "2.10.2".freeze
       RECEIPT_FIELDS = %w[trusted_public_key_pem expected_issuer expected_payment_id not_before not_after].freeze
       SCHEMA = {
@@ -12,6 +13,12 @@ module AP2MandateVerifier
         "ap2_approvals" => "CREATE TABLE ap2_approvals (operation_key TEXT PRIMARY KEY, tenant TEXT NOT NULL, merchant TEXT NOT NULL, approval TEXT NOT NULL, occurrence TEXT NOT NULL, scope TEXT NOT NULL, instruction TEXT NOT NULL, receipt_context TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1)), UNIQUE(tenant,merchant,approval,occurrence))",
         "ap2_attempts" => "CREATE TABLE ap2_attempts (operation_key TEXT PRIMARY KEY REFERENCES ap2_approvals(operation_key), tenant TEXT NOT NULL, merchant TEXT NOT NULL, closed_reference TEXT NOT NULL, fence TEXT NOT NULL, state TEXT NOT NULL CHECK(state IN ('reserved','processing','unknown','receipt_success','receipt_error')), record TEXT NOT NULL, UNIQUE(tenant,merchant,closed_reference))"
       }.transform_values(&:freeze).freeze
+      INDEXES = [
+        ["sqlite_autoindex_ap2_approvals_1", "ap2_approvals"],
+        ["sqlite_autoindex_ap2_approvals_2", "ap2_approvals"],
+        ["sqlite_autoindex_ap2_attempts_1", "ap2_attempts"],
+        ["sqlite_autoindex_ap2_attempts_2", "ap2_attempts"]
+      ].map(&:freeze).freeze
       def self.create(**arguments)
         raise Unavailable unless arguments.keys == [:path]
         path = arguments.fetch(:path)
@@ -48,12 +55,9 @@ module AP2MandateVerifier
         @db = SQLite3::Database.new(@path, flags: SQLite3::Constants::Open::READWRITE)
         @db.busy_timeout = 5000
         unless creating
-          raise Unavailable unless @db.get_first_value("PRAGMA user_version") == 1 && @db.execute("PRAGMA quick_check") == [["ok"]]
-          expected = SCHEMA.map { |name,sql| ["table", name, name, sql] } +
-            [["index", "sqlite_autoindex_ap2_approvals_1", "ap2_approvals", nil],
-             ["index", "sqlite_autoindex_ap2_approvals_2", "ap2_approvals", nil],
-             ["index", "sqlite_autoindex_ap2_attempts_1", "ap2_attempts", nil],
-             ["index", "sqlite_autoindex_ap2_attempts_2", "ap2_attempts", nil]]
+          raise Unavailable unless @db.get_first_value("PRAGMA user_version") == self.class::SCHEMA_VERSION && @db.execute("PRAGMA quick_check") == [["ok"]]
+          expected = self.class::SCHEMA.map { |name,sql| ["table", name, name, sql] } +
+            self.class::INDEXES.map { |name,table| ["index", name, table, nil] }
           actual = @db.execute("SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name")
           raise Unavailable unless actual == expected.sort_by { |row| row.first(2) }
           identities = @db.execute("SELECT identity FROM ap2_store")
@@ -70,11 +74,9 @@ module AP2MandateVerifier
           require "securerandom"
           @store_id = SecureRandom.hex(32)
           @db.execute("BEGIN IMMEDIATE")
-          @db.execute(SCHEMA.fetch("ap2_store"))
+          self.class::SCHEMA.each_value { |sql| @db.execute(sql) }
           @db.execute("INSERT INTO ap2_store(identity) VALUES (?)", [@store_id])
-          @db.execute(SCHEMA.fetch("ap2_approvals"))
-          @db.execute(SCHEMA.fetch("ap2_attempts"))
-          @db.execute("PRAGMA user_version=1")
+          @db.execute("PRAGMA user_version=#{self.class::SCHEMA_VERSION}")
           @db.execute("COMMIT")
         end
         @mutex = Mutex.new
@@ -91,6 +93,7 @@ module AP2MandateVerifier
         scope = PaymentAcceptance.scope!({"tenant_id" => tenant_id, "merchant_id" => merchant_id,
           "operation_id" => operation_id, "approval_id" => approval_id, "occurrence_id" => occurrence_id, "order_id" => order_id})
         profile = PaymentAcceptance.profile!(mode, profile_ref)
+        approval_policy!(profile)
         cart = InputBuilder.send(:copy!, checkout)
         raise Invalid unless cart["id"] == scope["order_id"] && cart.dig("merchant", "id") == scope["merchant_id"]
         instruction = PaymentAcceptance.instruction!(mode, profile, cart, payment)
@@ -128,6 +131,7 @@ module AP2MandateVerifier
           check_grant!(grant)
           raise Invalid unless grant[3] == 1
           raise Conflict unless grant[0] == PaymentAcceptance.canonical(scope) && grant[1] == instruction
+          validate_reservation!(scope, record)
           old = load_record(key)
           if old
             raise Conflict unless old["instruction"] == instruction
@@ -136,6 +140,7 @@ module AP2MandateVerifier
           reused = @db.get_first_value("SELECT operation_key FROM ap2_attempts WHERE tenant=? AND merchant=? AND closed_reference=?",
             [scope.fetch("tenant_id"), scope.fetch("merchant_id"), record.fetch("reference")])
           raise Conflict if reused
+          charge_reservation!(scope, record)
           require "securerandom"
           fence = SecureRandom.hex(32)
           value = record.merge("state" => "reserved", "processor_key" => SecureRandom.hex(32),
@@ -165,6 +170,7 @@ module AP2MandateVerifier
           raise Invalid unless grant && grant[0] == 1 && grant[1] == instruction &&
             record["instruction"] == instruction && record["signed_wires"] == signed_wires
           next nil unless verified_at >= record["accepted_at"] && verified_at < record["valid_until"]
+          validate_start!(record, verified_at)
           record["state"] = "processing"
           record["started_at"] = verified_at
           @db.execute("UPDATE ap2_attempts SET state='processing',record=? WHERE operation_key=? AND fence=? AND state='reserved'", [JSON.generate(record), key, fence])
@@ -240,6 +246,14 @@ module AP2MandateVerifier
       end
 
       private
+      # Extension hooks execute inside the SAME SQLite transaction as reservation/start.
+      # The old schema must never accept a profile requiring an absent quota ledger.
+      def approval_policy!(profile)
+        raise Invalid if RecurringPayment.profile?(profile)
+      end
+      def validate_reservation!(_scope, record) = approval_policy!(record.fetch("profile_ref"))
+      def charge_reservation!(_scope, _record); end
+      def validate_start!(_record, _verified_at); end
       def ticket_parts!(ticket)
         raise Invalid unless ticket.instance_of?(Ticket)
         key = ticket.send(:key)

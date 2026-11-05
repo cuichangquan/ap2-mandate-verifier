@@ -4,6 +4,10 @@
 
 Published stable is1.5.0: [verified publication](POST_RELEASE_150.md). It adds opt-in [transactional Payment acceptance](PAYMENT_ACCEPTANCE.md) while preserving all existing1.x verifier APIs, defaults and stored formats. The SQLite reference adapter additionally requires optional pinned driver2.10.2 and a protected local persistent filesystem; other adapters require their own atomicity/durability validation. No new external exactly-once or production authorization guarantee is made.
 
+## Unpublished1.6.0 subset
+
+The additive candidate supports only explicit JPY integer / ON_DEMAND finite recurrence within unchanged600second validity, with a new optional durable quota store. Calendar subscriptions and other currencies remain deferred. Existing schema1 storage and1.x defaults remain unchanged. See [scope, responsibilities and migration limits](RECURRING_PAYMENT.md).
+
 ## Historical1.0.0 baseline contract
 
 **Published stable is 1.0.0.** It preserves the 0.8.0 product implementation and

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0 candidate — bounded repeated Payment approval
+
+- Explicit complete/selective JPY integer / ON_DEMAND finite recurrence/budget profiles.
+- Optional new-schema durable series store charges count and amount atomically with occurrence reservation; no retry/unknown/Error allowance refund.
+- Preserve1.x defaults, schema1 storage, seven-input contract and600second lifetime. Calendar frequency and non-JPY budgets deferred; see docs/RECURRING_PAYMENT.md.
+- Unpublished; Owner release decision required.
+
 ## 1.5.0 — Unreleased candidate
 
 - Add opt-in transactional Payment acceptance with protected authorization/occurrence enrollment, stable business-operation identity, atomic reservation and fenced processing transitions.

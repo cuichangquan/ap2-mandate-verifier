@@ -1,5 +1,9 @@
 # AP2 Mandate Verifier — Ruby SDK for Checkout and Payment
 
+### 1.6.0 candidate: bounded repeated Payment approval
+
+Explicit JPY integer / ON_DEMAND profiles add finite count and cumulative reservation limits under one signed Open. Atomic durable quotas share the occurrence reservation transaction; retries, unknown outcomes and Error Receipts never replenish allowance. Calendar frequencies and non-JPY budgets are unsupported; the existing600second validity is unchanged. This candidate is not published. [Contract and limitations](docs/RECURRING_PAYMENT.md), [Ruby example and over-limit rejection](examples/recurring_payment.rb), [release gates](docs/RELEASE_160_CANDIDATE.md).
+
 ### Published1.5.0: transactional Payment acceptance
 
 Reserve a protected business occurrence atomically, reverify before one fenced start, and recover the original Receipt after response loss without reopening an uncertain attempt. [Verified publication](docs/POST_RELEASE_150.md). [Integration/store/security contract](docs/PAYMENT_ACCEPTANCE.md), [plain Ruby recovery example](examples/payment_acceptance.rb), [release gates](docs/RELEASE_150_CANDIDATE.md).
