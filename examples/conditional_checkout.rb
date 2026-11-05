@@ -8,7 +8,7 @@ module ConditionalCheckoutExample
   PROFILE = M::ConditionalCheckout::PROFILE_REF
   NOW = 1_800_000_000
   def self.totals(n) = %w[subtotal total].map { |type| {"type" => type, "amount" => n} }
-  def self.run
+  def self.run(currency: "USD")
     provider, agent, merchant = Array.new(3) { OpenSSL::PKey::EC.generate("prime256v1") }
     seller = {"id" => "shop", "name" => "Office supplies"}
     # This protected record is created AFTER application authentication, display
@@ -25,7 +25,7 @@ module ConditionalCheckoutExample
         "quantity" => 1, "totals" => totals(100)}
     end
     order = {"id" => "office-1", "merchant" => seller, "status" => "ready_for_complete",
-      "currency" => "USD", "line_items" => lines, "totals" => totals(300), "links" => []}
+      "currency" => currency, "line_items" => lines, "totals" => totals(300), "links" => []}
     checkout = M::CheckoutJWT.sign(checkout: order, profile_ref: PROFILE,
       signer: M::CheckoutJWT.es256_signer(private_key: merchant), public_key_pem: merchant.public_to_pem)
 
@@ -41,7 +41,7 @@ module ConditionalCheckoutExample
       "not_before" => NOW - 1, "not_after" => NOW + 1000, "records" => records},
       tenant_id: "tenant", verified_at: NOW, profile_ref: PROFILE, **selectors)
     host_order = {"tenant_id" => "tenant", "buyer_account_id" => "buyer", "order_id" => "office-1",
-      "merchant_id" => "shop", "audience" => "merchant-host", "order_version" => "1", "currency" => "USD", "expected_total" => 300}
+      "merchant_id" => "shop", "audience" => "merchant-host", "order_version" => "1", "currency" => currency, "expected_total" => 300}
     host_inputs = {trust: trust, order: host_order, root_presentation: opening.root_presentation, host_checkout_jws: checkout.jwt}
     saved = M::InputBuilder.prepare(**host_inputs, challenge_id: "challenge-1", nonce: "synthetic-one-use-nonce",
       issuer_id: "host", not_before: NOW, not_after: NOW + 60)

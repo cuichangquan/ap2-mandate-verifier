@@ -16,6 +16,8 @@ on:
       - 'examples/selective_checkout_payment.rb'
       - 'examples/payment_policy.rb'
       - 'examples/payment_acceptance.rb'
+      - 'examples/recurring_payment.rb'
+      - 'docs/RECURRING_PAYMENT.md'
       - 'docs/PAYMENT_ACCEPTANCE.md'
       - 'docs/PAYMENT_POLICY.md'
       - 'docs/SELECTIVE_CHECKOUT.md'
@@ -53,7 +55,7 @@ jobs:
           set -euo pipefail
           [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
           git diff --name-only "$BASE_SHA" HEAD > "$RUNNER_TEMP/changed-paths"
-          if grep -Eq '^(examples/payment_acceptance\.rb$|examples/payment_policy\.rb$|examples/selective_checkout(_payment)?\.rb$|lib/|test/|ap2_mandate_verifier\.gemspec$|scripts/check_ruby_compatibility\.sh$|scripts/check_runtime\.rb$|scripts/check_candidate_package\.sh$|\.github/merchant-ci\.Dockerfile$)' "$RUNNER_TEMP/changed-paths"; then
+          if grep -Eq '^(examples/recurring_payment\.rb$|examples/payment_acceptance\.rb$|examples/payment_policy\.rb$|examples/selective_checkout(_payment)?\.rb$|lib/|test/|ap2_mandate_verifier\.gemspec$|scripts/check_ruby_compatibility\.sh$|scripts/check_runtime\.rb$|scripts/check_candidate_package\.sh$|\.github/merchant-ci\.Dockerfile$)' "$RUNNER_TEMP/changed-paths"; then
             echo 'product=true' >> "$GITHUB_OUTPUT"
           else
             echo 'product=false' >> "$GITHUB_OUTPUT"

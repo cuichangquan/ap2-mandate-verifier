@@ -1,5 +1,9 @@
 # Security policy / 脆弱性の報告
 
+## 1.6.0 candidate boundary
+
+The unpublished1.6.0 candidate adds only explicit JPY integer / ON_DEMAND recurrence quotas in a new durable schema. Mandatory count/budget constraints stay visible; historical quota is enforced only by the atomic acceptance adapter. Calendar frequencies, other currencies, longer validity and automatic refunds/retry execution are unsupported. Stable authenticated agreement/occurrence IDs, one authoritative ledger, current authority and processor reconciliation remain application responsibilities. See [the candidate contract](docs/RECURRING_PAYMENT.md).
+
 ## 現在の対象と限界 / Current scope
 
 [Published 1.5.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.5.0) is a framework-independent Ruby SDK for the documented AP2 Checkout profiles, including Direct/conditional Checkout and Payment, selective disclosure, PISP/date conditions and Receipt confirmation. See [publication evidence](docs/POST_RELEASE_150.md), the stable [PUBLIC_API](docs/PUBLIC_API.md) and [SUPPORT_CONTRACT](docs/SUPPORT_CONTRACT.md) for its scope and limitations.

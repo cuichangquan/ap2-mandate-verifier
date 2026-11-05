@@ -62,6 +62,7 @@ module AP2MandateVerifier
     # Protected approval record must cover every payment detail, not just amount.
     def self.issue_direct(payment:, approved_payment:, issued_at:, expires_at:, signer:, public_key_pem:, profile_ref: PROFILE_REF)
       profile_ref = PaymentPolicy.profile!(profile_ref)
+      raise Invalid if PaymentPolicy.recurring?(profile_ref)
       value = copy_details!(payment, profile_ref: profile_ref)
       raise Invalid unless value == copy_details!(approved_payment, profile_ref: profile_ref)
       closed = value.merge("vct" => "mandate.payment.1", "iat" => issued_at, "exp" => expires_at)
@@ -104,7 +105,7 @@ module AP2MandateVerifier
       text!(audience, 512); text!(nonce, 512)
       claims = {"delegate_payload" => [value], "iat" => verified_at,
         "aud" => audience, "nonce" => nonce, "sd_hash" => digest(root)}
-      claims["ap2_profile"] = profile_ref if PaymentPolicy.enabled?(profile_ref)
+      claims["ap2_profile"] = profile_ref if PaymentPolicy.marked?(profile_ref)
       preflight!(claims, "kb+sd-jwt", profile_ref: profile_ref)
       terminal = MerchantSignature.sign!(claims, signer, agent_public_key_pem, typ: "kb+sd-jwt")
       Presentation.send(:new, root, terminal + "~")
@@ -133,6 +134,7 @@ module AP2MandateVerifier
                     profile_ref: PROFILE_REF, trusted_pisp: nil, execution_at: nil)
       profile_ref = PaymentPolicy.profile!(profile_ref)
       context = PaymentPolicy.context!(profile_ref, trusted_pisp, execution_at)
+      raise Invalid if checkout_mode == :direct && PaymentPolicy.recurring?(profile_ref)
       trusted_provider_public_key_pem = InputValidator.snapshot!(trusted_provider_public_key_pem, max_bytes: 1_024)
       if checkout_mode == :conditional
         expected_agent_public_key_pem = InputValidator.snapshot!(expected_agent_public_key_pem, max_bytes: 1_024)
@@ -209,7 +211,7 @@ module AP2MandateVerifier
 
     def self.reference(closed_sd_jwt:, profile_ref: PROFILE_REF)
       profile_ref = InputValidator.snapshot!(profile_ref, max_bytes: 256)
-      raise Invalid unless profile_ref == PROFILE_REF || PaymentPolicy.enabled?(profile_ref)
+      raise Invalid unless profile_ref == PROFILE_REF || PaymentPolicy.marked?(profile_ref)
       # No trust or authorization claim: parse either supported final grammar.
       wire = InputValidator.snapshot!(closed_sd_jwt, max_bytes: 32_769)
       payload = jwt_payload!(wire.split("~", -1).first, nil)
@@ -229,6 +231,7 @@ module AP2MandateVerifier
       exact!(value, PaymentPolicy.fields(profile_ref))
       raise Invalid unless value["transaction_id"].instance_of?(String) && value["transaction_id"].match?(/\A[A-Za-z0-9_-]{43}\z/)
       payee!(value["payee"]); amount!(value["payment_amount"]); instrument!(value["payment_instrument"])
+      raise Invalid if PaymentPolicy.recurring?(profile_ref) && value["payment_amount"]["currency"] != "JPY"
       PaymentPolicy.details!(value) if PaymentPolicy.enabled?(profile_ref)
       value
     end
@@ -238,6 +241,10 @@ module AP2MandateVerifier
       copy_details!(value.slice(*PaymentPolicy.fields(profile_ref)), profile_ref: profile_ref); times!(value)
     end
     def self.open!(value, profile_ref: PROFILE_REF)
+      if PaymentPolicy.recurring?(profile_ref)
+        open!(RecurringPayment.send(:constraints!, value))
+        return nil
+      end
       if PaymentPolicy.enabled?(profile_ref)
         base = PaymentPolicy.constraints!(value)
         open!(base)
@@ -274,6 +281,10 @@ module AP2MandateVerifier
       end
     end
     def self.conditions!(opening, closed, profile_ref: PROFILE_REF)
+      if PaymentPolicy.recurring?(profile_ref)
+        RecurringPayment.send(:conditions!, opening, closed)
+        return nil
+      end
       if PaymentPolicy.enabled?(profile_ref)
         PaymentPolicy.conditions!(opening, closed)
         base = PaymentPolicy.constraints!(opening)
@@ -343,7 +354,7 @@ module AP2MandateVerifier
       claims = jwt_payload!(compact, conditional ? "kb+sd-jwt" : "example+sd-jwt")
       fields = conditional ? %w[delegate_payload iat aud nonce sd_hash] : %w[delegate_payload _sd_alg]
       fields += ["_sd_alg"] if conditional && claims.key?("_sd_alg")
-      if PaymentPolicy.enabled?(profile_ref)
+      if PaymentPolicy.marked?(profile_ref)
         fields += ["ap2_profile"]
         raise Invalid unless claims["ap2_profile"] == profile_ref
       end
@@ -365,6 +376,10 @@ module AP2MandateVerifier
         value = Buyer.send(:decode_disclosure!, disclosure, 2)
         claims = claims.merge("delegate_payload" => [value[1]])
       end
+      if PaymentPolicy.recurring?(profile_ref) && !conditional
+        raise Invalid unless claims.fetch("delegate_payload").first.instance_of?(Hash) &&
+          claims.fetch("delegate_payload").first["vct"] == "mandate.payment.open.1"
+      end
       [claims, wire]
     end
     def self.root!(source, profile_ref: PROFILE_REF)
@@ -381,7 +396,7 @@ module AP2MandateVerifier
       require "securerandom"
       disclosure = Buyer.send(:encode, [Buyer.send(:encode, SecureRandom.random_bytes(16)), value])
       claims = {"delegate_payload" => [{"..." => digest(disclosure)}], "_sd_alg" => "sha-256"}
-      claims["ap2_profile"] = profile_ref if PaymentPolicy.enabled?(profile_ref)
+      claims["ap2_profile"] = profile_ref if PaymentPolicy.marked?(profile_ref)
       preflight!(claims, "example+sd-jwt", disclosure, profile_ref: profile_ref)
       wire = MerchantSignature.sign!(claims, signer, key,
         typ: "example+sd-jwt") + "~" + disclosure + "~"

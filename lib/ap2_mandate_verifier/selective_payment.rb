@@ -97,7 +97,7 @@ module AP2MandateVerifier
       Payment.send(:text!, aud, 512); Payment.send(:text!, challenge, 512)
       claims = {"delegate_payload" => [closed], "iat" => verified_at, "aud" => aud, "nonce" => challenge,
         "sd_hash" => digest(parsed.fetch(:wire))}
-      claims["ap2_profile"] = profile_ref if PaymentPolicy.enabled?(profile_ref)
+      claims["ap2_profile"] = profile_ref if PaymentPolicy.marked?(profile_ref)
       Payment.send(:preflight!, claims, "kb+sd-jwt", profile_ref: profile_ref)
       terminal = MerchantSignature.sign!(claims, signer, agent, typ: "kb+sd-jwt")
       Payment::Presentation.send(:new, parsed.fetch(:wire), terminal + "~")

@@ -1,5 +1,16 @@
 # AP2 Mandate Verifier — Checkout・PaymentのRuby SDK
 
+### 1.6.0候補：回数・予算付きPayment受理
+
+明示的なJPY整数・ON_DEMAND profileで、同一Openの利用回数と累計予約額を永続的・原子的に制限します。再試行・結果不明・Error Receiptでは枠を戻しません。月次等の頻度・他通貨は未対応で、既存の600秒有効期間を維持します。未公開候補です。[契約・制限](docs/RECURRING_PAYMENT.md)、[Ruby例と上限超過の拒否](examples/recurring_payment.rb)、[公開前確認](docs/RELEASE_160_CANDIDATE.md)。
+
+```ruby
+# After protected series/occurrence enrollment; signed JPY/ON_DEMAND profile only.
+accepted = service.accept(**trusted_scope, mode: :conditional, verification_inputs: raw_inputs)
+execution = service.start(ticket: accepted.ticket, verification_inputs: fresh_raw_inputs) if accepted.ticket
+usage = store.usage(**trusted_series_scope) # reserved count/JPY, not settled spend
+```
+
 ### 公開済み1.5.0：Payment受理の原子性と冪等性支援
 
 保護された業務上の支払い単位を原子的に予約し、開始前に全検証をやり直します。応答消失・結果不明では自動再実行せず、元のReceiptを照合して復旧できます。[公開照合記録](docs/POST_RELEASE_150.md)。[組込み・永続store・安全性契約](docs/PAYMENT_ACCEPTANCE.md)、[Ruby単体の復旧例](examples/payment_acceptance.rb)、[公開前の確認](docs/RELEASE_150_CANDIDATE.md)。
