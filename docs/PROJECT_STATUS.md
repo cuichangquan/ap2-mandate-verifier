@@ -1,5 +1,9 @@
 # 現状メモ / Project status
 
+## 1.6.0公開済み — 現在の配布状態
+
+2026-11-05にOwnerが公開。長期Open・UTC月次JPYと短期ON_DEMAND制約を明示profileで提供します。[正確なsource・配布物・公開後検証](POST_RELEASE_160.md)。以下の旧版記録は履歴です。
+
 <a id="120-publication"></a>
 
 ## 1.2.0公開済み — 現在の配布状態

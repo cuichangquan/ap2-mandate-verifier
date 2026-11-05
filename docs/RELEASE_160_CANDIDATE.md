@@ -1,6 +1,6 @@
 # 1.6.0 candidate: long Open and UTC-monthly JPY acceptance
 
-Unpublished preparation; RubyGems, formal tag and GitHub Release require OwnerGO. No production/payment authority follows from tests, review or merge. The earlier bounded ON_DEMAND candidate is retained separately as historical evidence; it is not replaced in the registry.
+Historical preparation record. Owner subsequently approved publication; [the publication record](POST_RELEASE_160.md) supersedes the availability status below. No production/payment authority follows from tests, review or merge. The earlier bounded ON_DEMAND candidate is retained separately as historical evidence; it is not replaced in the registry.
 
 ## Proposed notes and primary use
 
