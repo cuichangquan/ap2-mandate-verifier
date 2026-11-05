@@ -29,7 +29,7 @@ module AP2MandateVerifier
       raise RootSignature::Unavailable, :constraint_context_unavailable unless
         CURRENCIES.include?(currency) && CORE_INSTANCE_OF.bind_call(expected_total_minor, Integer) &&
         expected_total_minor.between?(0, MAX_AMOUNT)
-      if [MULTI_PROFILE_REF, TrustContext::SELECTIVE_PROFILE_REF].include?(profile_ref)
+      if [MULTI_PROFILE_REF, TrustContext::SELECTIVE_PROFILE_REF, TrustContext::LONG_PROFILE_REF].include?(profile_ref)
         details = PurchaseBinding.verified_details!(**binding_inputs, profile_ref: profile_ref)
         multi_constraints!(details, currency, expected_total_minor)
         return details

@@ -30,7 +30,8 @@ module AP2MandateVerifier
           raise Rejected.new(:unsupported_disclosure_profile), cause: nil
         end
       end
-      multi = profile_ref == "ap2.checkout.single_merchant_multi_item"
+      long = profile_ref == TrustContext::LONG_PROFILE_REF
+      multi = long || profile_ref == "ap2.checkout.single_merchant_multi_item"
       raise Rejected, :unsupported_disclosure_profile unless multi || profile_ref == TrustContext::PROFILE_REF
       wire = InputValidator.snapshot!(source)
       raise Rejected, :invalid_root_presentation unless wire.ascii_only? && wire.end_with?("~")
@@ -39,12 +40,13 @@ module AP2MandateVerifier
         parts.last == "" && !parts.first.empty? && parts[1...-1].none?(&:empty?)
       # No disclosure decode, digest graph or trusted claims before signature.
       payload = RootSignature.verified_payload!(parts.first, issuer_pem)
-      resolve!(parts, payload, multi)
+      resolve!(parts, payload, multi, marker_profile: long ? profile_ref : nil)
     end
 
     # Internal structural restoration only. Never authenticates an issuer.
     # Shares the exact closure walker with the authenticated verification path.
-    def self.structural_root!(source)
+    def self.structural_root!(source, profile_ref: nil)
+      raise Rejected, :unsupported_disclosure_profile unless profile_ref.nil? || profile_ref == TrustContext::LONG_PROFILE_REF
       wire = InputValidator.snapshot!(source)
       raise Rejected, :invalid_root_presentation unless wire.ascii_only? && wire.end_with?("~")
       parts = wire.split("~", -1)
@@ -57,13 +59,14 @@ module AP2MandateVerifier
       CheckoutReceipt.send(:header!, header, "example+sd-jwt")
       raise Rejected, :invalid_root_presentation unless RootSignature.send(:decode!, jwt[2], 64).bytesize == 64
       payload = InputValidator.parse!(RootSignature.send(:decode!, jwt[1], 24_576))
-      resolve!(parts, payload, true)
+      resolve!(parts, payload, true, marker_profile: profile_ref)
     end
 
-    def self.resolve!(parts, payload, multi)
+    def self.resolve!(parts, payload, multi, marker_profile: nil)
       raise Rejected, :unsupported_disclosure_profile unless
         payload.instance_of?(Hash) &&
-        (payload.keys - %w[delegate_payload _sd_alg]).empty? &&
+        (payload.keys - (marker_profile ? %w[delegate_payload _sd_alg ap2_profile] : %w[delegate_payload _sd_alg])).empty? &&
+        (!marker_profile || payload["ap2_profile"] == marker_profile) &&
         (!payload.key?("_sd_alg") || payload["_sd_alg"] == "sha-256") &&
         payload["delegate_payload"].instance_of?(Array) && payload["delegate_payload"].size == 1
       require "digest"

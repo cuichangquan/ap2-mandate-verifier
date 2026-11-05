@@ -11,12 +11,14 @@ module AP2MandateVerifier
       [PROFILE_REF, SELECTIVE_PROFILE_REF].include?(profile)
     end
     def self.recurring?(profile) = defined?(RecurringPayment) && RecurringPayment.profile?(profile)
-    def self.marked?(profile) = enabled?(profile) || recurring?(profile)
+    def self.long?(profile) = defined?(LongPayment) && LongPayment.profile?(profile)
+    def self.marked?(profile) = enabled?(profile) || recurring?(profile) || long?(profile)
     def self.profile!(value, selective: false)
       profile = InputValidator.snapshot!(value, max_bytes: 256)
       old, current = selective ? [SelectivePayment::PROFILE_REF, SELECTIVE_PROFILE_REF] : [Payment::PROFILE_REF, PROFILE_REF]
       recurring = defined?(RecurringPayment) && (selective ? RecurringPayment::SELECTIVE_PROFILE_REF : RecurringPayment::PROFILE_REF)
-      raise Payment::Invalid unless [old, current, recurring].compact.include?(profile)
+      long = defined?(LongPayment) && !selective && LongPayment::PROFILE_REF
+      raise Payment::Invalid unless [old, current, recurring, long].compact.include?(profile)
       profile
     end
     def self.candidate_policy!(profile, policy)
