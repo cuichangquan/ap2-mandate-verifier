@@ -12,6 +12,12 @@ The explicit `ap2.payment.recurring.jpy_on_demand.complete.1` and `.selective.1`
 
 Every Open must visibly include exactly one `payment.agent_recurrence` (`frequency: ON_DEMAND`, positive finite `max_occurrences`) and one `payment.budget` (`currency: JPY`, positive integer `max`), alongside the existing payee, instrument, amount range and Checkout reference constraints. Mandatory conditions cannot be hidden. In the selective profile, only registered payee/instrument candidate leaves may be withheld. An old profile never silently gains recurrence support.
 
+## Measured interoperability
+
+The pinned official Python facade fails recurrence issuance with an Enum JSON-serialization error. Its generated Budget model also converts integer600 to600.0, which is outside this integer-only signed profile. The explicit low-level test adapter serializes enums in JSON mode, preserves the original integer JPY budget, and adds the signed profile marker. It does not claim that the unmodified high-level facade supports this profile.
+
+Fresh Ruby/Python keys exercise complete and selective Open/Closed chains in both directions, official schema/typed parsing, eight alternative Success/Error Receipts and fifteen signed negative checks (missing/hidden mandatory constraints, unsupported frequency/count, exact presentation binding and Receipt reference). The official SDK is evaluated at zero historical usage; an independent oracle checks mandatory disclosure and selected-candidate privacy. These are scoped wire/crypto comparisons. Durable aggregate enforcement is exercised separately through the Ruby store/process tests and is not supplied or certified by the official SDK.
+
 ## Integration
 
 `RecurringPayment` provides issuance, selection, presentation and stateless verification for the explicit profiles. Stateless verification authenticates each presentation and visible per-payment limits; **it cannot establish historical count or remaining budget**. Applications requiring repeated acceptance use `PaymentAcceptance::Service` with `PaymentAcceptance::RecurringSQLiteStore`, or a separately validated adapter preserving the same transaction contract.
