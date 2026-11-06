@@ -21,6 +21,15 @@ SQLite永続化例は、実際のOS/CPUに合った任意driverを別途使い�
 | Linux AMD64, both MRI versions | Native `ubuntu-24.04`; same checks; x86_64 SQLite native Gem | CI pending |
 | macOS / Windows | Gem-only; would require their own pinned native runtime/dependency evidence | NOT_RUN |
 
+Local native Linux ARM64 checks passed both MRI versions: full existing source and
+candidate suites, published guides, all 68 published payload hashes and 28 loaded
+SDK files. Five causal identity-negative probes passed. See the
+[validation record](evidence/platform160_validation.json). Native hosted CI is still
+pending; local source candidates are not the published archive.
+
+両MRIのローカルLinux ARM64検証は合格しました。公開Gemの全68ファイルと読み込んだ
+28ファイルを照合し、5種類の改変・source混入も拒否しました。ネイティブCIは実行待ちです。
+
 Do not read a configured matrix as a passing observation. Consult the exact PR
 commit and its Actions logs. The runner, Docker server and container architectures
 must match; these jobs install no QEMU and explicitly select the matching native image platform.

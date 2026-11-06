@@ -1,0 +1,114 @@
+{
+  "status": "LOCAL_NATIVE_ARM64_PASS_CI_PENDING",
+  "tested_commit": "d53aebd4860f2efc87c5ffa9181a8ebb7ebe7306",
+  "base_main": "b4a23d08c40dac3975dbd5cd6fce59c4801bcd71",
+  "date_utc": "2026-11-06",
+  "scope": "SDK only; no Rails app, real Issuer, payments, release or runtime changes",
+  "local_environment": "Native Linux ARM64 Docker engine on ARM64 Mac; not macOS Ruby validation",
+  "test_limits": {
+    "network": "none",
+    "cpus": 2,
+    "memory_mib": 768,
+    "pids": 128,
+    "source_timeout_seconds": 300,
+    "candidate_timeout_seconds": 300,
+    "published_guides_timeout_seconds": 120
+  },
+  "published": {
+    "version": "1.6.0",
+    "bytes": 186368,
+    "sha256": "62de85123e1379c538c9c4302b71a9c55c590162591169a4e335aaa03a8991f8",
+    "source_lib_matches_published_payload": true
+  },
+  "mri": {
+    "3.4.12": {
+      "source_regression": "PASS",
+      "candidate_installation": "PASS",
+      "candidate_artifact_sha256": "564c53180815889c6d768c9d1ee30f3bede1c1bc6591736e303fd9f4df6e6302",
+      "candidate_artifact_bytes": 181760,
+      "candidate_source_archive_installed_match": true,
+      "published_guides": "PASS",
+      "published_payload_files_verified": 68,
+      "published_loaded_sdk_files_verified": 28,
+      "platform": "aarch64-linux",
+      "sqlite_version": "2.10.2",
+      "sqlite_platform": "aarch64-linux-gnu",
+      "native_openssl_package": "libssl3|3.0.22-1~deb12u2|arm64|install ok installed",
+      "native_openssl_package_verify": "PASS",
+      "rails_loaded": false,
+      "image_ids": {
+        "source": "sha256:c021de491edcaf2b062b28664e55be3a8c1e2d55810c9e5a3507e3264230b31a",
+        "published": "sha256:3638300eab99397b034fd3bf9a6f884e51d4f7d2ff6e3beec6a84fa355cc662d"
+      },
+      "local_log_sha256": {
+        "source-candidate.log": "cf44af8f5ced810d84082105178d5a4f8854b2766f6f088002a05c3c13506048",
+        "published.log": "411674a537a359f68a66b981b8ece7b55fd785580aa22fd8bceeaf5b429064b0",
+        "published-runtime.json": "ab9335cb41cdbfa64b5f5597b419207603096d66eb4a05fc5e22ad553ac7f808",
+        "published-platform.json": "9b867b8f9abb6a67d6b853208badc91b01cef37c0fcf55e398aaa74016e54b6d"
+      }
+    },
+    "4.0.9": {
+      "source_regression": "PASS",
+      "candidate_installation": "PASS",
+      "candidate_artifact_sha256": "a8739664b15524bcd1f431bd2c69ba0306b9f1307e6fdc302b3707548bdd0c36",
+      "candidate_artifact_bytes": 181760,
+      "candidate_source_archive_installed_match": true,
+      "published_guides": "PASS",
+      "published_payload_files_verified": 68,
+      "published_loaded_sdk_files_verified": 28,
+      "platform": "aarch64-linux",
+      "sqlite_version": "2.10.2",
+      "sqlite_platform": "aarch64-linux-gnu",
+      "native_openssl_package": "libssl3|3.0.22-1~deb12u2|arm64|install ok installed",
+      "native_openssl_package_verify": "PASS",
+      "rails_loaded": false,
+      "image_ids": {
+        "source": "sha256:815a6d66816a199810c7ddf848b582f86c007f217925a86409c3163397988145",
+        "published": "sha256:fb401defe01dd4823713eb66aa0136cea2e951c319444886cb766bd50d2b9459"
+      },
+      "local_log_sha256": {
+        "source-candidate.log": "7b32233487f46cdb1d1ea2b65ecb07871a4b4de6c36f1ee9e50f8200b3dbe9dd",
+        "published.log": "f0084dee4017cd7b361b7a3f978171ea1d724b59b5d69e05f22ebf56006c2836",
+        "published-runtime.json": "0dbe53b73a166c71e4655d9545782a3b898071b95efd87c7eed99aeb59a1620c",
+        "published-platform.json": "5a2e740840d760dbfeabac9aaaf7af4fd7814d1e306ad276166e38d0a9bec0cf"
+      }
+    }
+  },
+  "identity_negative_probes": {
+    "status": "PASS",
+    "ruby": "3.4.12",
+    "cases": [
+      "wrong archive size",
+      "wrong archive SHA256",
+      "RUBYLIB injection",
+      "activated installed spec with source-loaded SDK features",
+      "tampered installed payload"
+    ],
+    "log_sha256": "2c29c319ddd3dcac78f29898188ce01b03b78ea7b4098b5dfcf69c5117ff540d"
+  },
+  "candidate_identity_note": "Each MRI built its own non-release candidate; candidate archive hashes differ. Both published checks used the same immutable RubyGems archive SHA256.",
+  "native_ci": {
+    "status": "NOT_RUN",
+    "required": [
+      "3.4.12/AMD64",
+      "4.0.9/AMD64",
+      "3.4.12/ARM64",
+      "4.0.9/ARM64"
+    ]
+  },
+  "node24": {
+    "action": "actions/checkout",
+    "release": "v7.0.1",
+    "sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+    "manifest_runtime": "node24",
+    "baseline_warning_run": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42135644076",
+    "updated_run_log_warning_check": "NOT_RUN"
+  },
+  "macos_windows": "NOT_RUN; official exact native Ruby versions exist, but OS-specific native dependency/provider checks remain unvalidated.",
+  "limitations": [
+    "Synthetic local single-host evidence only; not production safety, real Issuer provenance, general AP2 conformance or settlement.",
+    "Local log hashes identify retained evidence, not public downloads. Native CI run links will provide public replay logs.",
+    "Syntax-only preflight used a pre-existing AMD64 image under emulation; no product success is inferred from it.",
+    "No Gem publication, version/tag/release modification, deployment or real payment."
+  ]
+}
