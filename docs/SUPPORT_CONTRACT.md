@@ -36,6 +36,16 @@ retain their preparation snapshot; repository updates do not rebuild or replace 
 Formal support remains MRI 3.4.12 and MRI 4.0.9 with JSON 2.19.9, JWT 3.3.0,
 base64 0.3.0, OpenSSL gem 4.0.2 and Digest 3.2.1. The Gem's Ruby resolution range
 does not certify every intervening version, engine, OS or native provider.
+Platform scope and reproducible native Linux ARM64/AMD64 checks are recorded in
+[PLATFORM_SUPPORT](PLATFORM_SUPPORT.md). SDK support is independent of the Rails
+demo. macOS/Windows 1.6.0 are NOT_RUN, not certified by Ruby's resolution range.
+The core has no Rails or SQLite runtime dependency; optional reference persistence
+uses an OS/CPU-specific SQLite driver. Source candidate checks never substitute
+for the immutable published archive's SHA256 and installed payload checks.
+
+環境ごとの実測範囲は上記リンクを正本とし、RailsデモとSDK単体を分けます。
+macOS・Windowsは未検証です。公開Gemとローカル候補の証拠は流用しません。
+
 AP2 source `b4587ac1d055888a73b4b21750973cffba961793`, the three documented v1
 profile identities and InputBuilder preparation format `1` remain unchanged.
 
