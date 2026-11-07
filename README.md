@@ -8,7 +8,7 @@ choose, and whether signed Checkout/Payment data stays within those conditions.
 No Rails dependency. **Verification success is not purchase or payment success; the SDK never executes payments.**
 
 
-**Platforms:** MRI 3.4.12 / 4.0.9; Linux ARM64 and AMD64 have separate native CI lanes. Rails demo compatibility is separate. macOS/Windows are not yet validated for this release. See [platform evidence and reproduction](docs/PLATFORM_SUPPORT.md).
+**Platforms:** MRI 3.4.12 / 4.0.9; native published-Gem checks passed on Linux ARM64/AMD64, macOS Intel/Apple Silicon and Windows Server 2022 X64. These observations cover the recorded OS images; Rails demo compatibility is separate. See [platform evidence and reproduction](docs/PLATFORM_SUPPORT.md).
 
 ## Start here
 

@@ -8,7 +8,7 @@ clocks; they do not contact a processor. Ten minutes is a walkthrough target aft
 Ruby/dependencies are ready, not an installation-time guarantee.
 
 
-Platform scope: the SDK is Rails-independent. Linux ARM64/AMD64 checks distinguish the published Gem from source candidates; macOS/Windows are not yet validated. See [platform support](PLATFORM_SUPPORT.md). The optional SQLite examples require the driver for your Ruby/CPU/OS; do not copy a native Gem from another architecture.
+Platform scope: the SDK is Rails-independent. Published-Gem checks passed on native Linux ARM64/AMD64, macOS Intel/Apple Silicon and Windows Server 2022 X64 with both supported MRIs. Published and source-candidate evidence remain separate. See [platform support](PLATFORM_SUPPORT.md). The optional SQLite examples require the driver for your Ruby/CPU/OS; do not copy a native Gem from another architecture.
 
 ## 1. Install and locate the published examples
 

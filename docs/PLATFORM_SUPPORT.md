@@ -19,7 +19,8 @@ SQLite永続化例は、実際のOS/CPUに合った任意driverを別途使い�
 | --- | --- | --- |
 | Linux ARM64, both MRI versions | Native `ubuntu-24.04-arm`; Debian bookworm containers; SDK source/candidate and published Gem | PASS: [native run](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42314708194) |
 | Linux AMD64, both MRI versions | Native `ubuntu-24.04`; same checks; x86_64 SQLite native Gem | PASS: [native run](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42314708194) |
-| macOS / Windows | Gem-only; would require their own pinned native runtime/dependency evidence | NOT_RUN |
+| macOS 15 Intel / Apple Silicon, both MRI versions | Native standard `macos-15-intel` / `macos-15`; published core first, optional SQLite separately | PASS: [native run](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42320884925) |
+| Windows Server 2022 X64, both MRI versions | Native standard `windows-2022`; published core first, optional SQLite separately | PASS: [native run](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42320884925) |
 
 Local native Linux ARM64 checks passed both MRI versions: full existing source and
 candidate suites, published guides, all 68 published payload hashes and 28 loaded
@@ -41,16 +42,55 @@ Any local AMD64 container on ARM hardware is emulated and must be labelled separ
 設定済みマトリクスは合格証拠ではありません。対象HEADのActions結果を確認します。
 runner・Docker server・containerのCPU一致を必須にし、エミュレーションと区別します。
 ARM Mac上のLinux containerはmacOS Rubyの検証ではありません。
-Official `ruby/setup-ruby` at `b3aaceaef7e0ee231b499e7b5f49c03fc1d32199`
-declares Node24; ruby-builder and RubyInstaller publish both exact MRI versions.
-However this repository's native-provider audit uses Debian `dpkg` and Linux
-`/proc/self/maps`, and Windows native dependency builds may require MSYS2 packages.
-No macOS/Windows-specific equivalent provider audit has been run here. Next step:
-separate core Gem-only hash/load/example checks from Linux provider and persistence
-checks, validate pinned native dependencies, then add scoped standard hosted jobs.
+## Native macOS / Windows checks / ネイティブ検証
 
-macOS/Windowsは対応外と断定せず、未検証として残します。次は各OSのネイティブMRIと
-依存pinを確認したGem単体検証です。この作業のためにMacへソフトを直接導入しません。
+The native job uses official `ruby/setup-ruby` pinned to
+`b3aaceaef7e0ee231b499e7b5f49c03fc1d32199` (Node24), exact MRI 3.4.12 / 4.0.9,
+and standard hosted `macos-15-intel`, `macos-15` (Apple Silicon), `windows-2022`
+runners. Host architecture, Ruby OS/CPU and runner architecture must agree;
+Rosetta is rejected. No containers, QEMU, user-Mac installation or larger runners
+are involved. All six native jobs passed at `e0767bec2f6ab381ec222c5c94555c6081e9d2dd`:
+macOS 15.7.9 Intel, macOS 15.8.2 Apple Silicon and Windows Server 2022 X64,
+each with both exact MRI versions. See the [per-job evidence](evidence/native_platform160_validation.json).
+Every combination passed 3,905 core assertions and 75 optional long acceptance
+assertions, plus the installed examples and bilingual guides. The recorded images
+are bounded observations, not certification of every macOS/Windows version.
+
+`native-gems.sha256` pins the five existing dependency archives, published SDK and
+three optional SQLite binaries to RubyGems API SHA256 observations on 2026-11-07.
+Dependencies are installed in the disposable runner's temporary directory, outside
+the checkout, without dependency resolution. The published archive is not rebuilt.
+Core loading is checked **before SQLite is installed**, followed by seven installed
+examples and six existing installed-mode regression suites (Payment, selective
+Payment/Checkout, PISP/date policy, long Open, causal constraint negatives).
+All 68 archive/installed payloads and every loaded SDK file are compared with the
+publication record; subprocesses repeat loaded-file checks after execution.
+Reused source example fixtures must also match the published payload hashes.
+
+The optional SQLite stage uses 2.10.2 for the actual OS/CPU, runs both README
+Quick Starts and all existing published guide scenarios, then the long acceptance
+regression (including budget-only rejection and unchanged reservation state).
+Its twelve-month example checks 12 mock starts and 96,000 JPY reserved within
+100,000 JPY. Core and optional persistence outcomes must be reported separately.
+No Rails demo, native process/crash oracle or real payment is covered by these jobs.
+The original full Linux source/candidate/process-oracle coverage remains unchanged.
+
+OpenSSL compile/load versions and loaded extension SHA256 values are logged.
+This is **not** the Linux `dpkg` plus `/proc/self/maps` provider ownership/integrity
+audit and is not a security-advisory clearance. Hosted image versions and setup
+logs remain part of the evidence. Tests use synthetic inputs and make no service
+calls; unlike Linux Docker jobs, native jobs do not enforce network isolation.
+
+Each matching PR update starts one workflow run with four Linux and six native
+jobs. The maximum remains three workflow runs per PR; unexpected or failed runs
+STOP for diagnosis, with no blind rerun. Read-only contents permissions, no persisted
+checkout credentials and the 15-minute job timeout remain. Historical workflows,
+public artifact bytes, runtime API, version, release and tags are unchanged.
+
+英日ガイド・署名・選択的開示・長期Openを公開Gemで検証し、coreと任意SQLiteの結果を
+分けます。Mac本体への直接導入は行いません。Linuxコンテナの結果をmacOS検証へ
+流用せず、設定済み・未実施・失敗を合格扱いしません。OpenSSL情報の記録はLinuxの
+provider監査と同等ではなく、本番安全性・実Issuer・実決済の証明でもありません。
 
 ## Reproduce / 再現
 
@@ -104,8 +144,8 @@ continues using `pull_request`, read-only contents and no persisted credentials.
 The PR event, main branch filter, existing path filters, Ruby versions, timeout,
 network-disabled test execution, CPU2/768MiB/128 PID limits and existing test
 coverage remain. Added paths cover the new helper/platform and Quick Start docs.
-One matching PR update starts **one workflow run with four matrix jobs**, not four
-runs. No push/merge/dispatch trigger is added. Existing historical/research/one-shot
+The original Linux validation used one run with four matrix jobs. The native
+extension adds six jobs to that same workflow, not six separate workflow runs. No push/merge/dispatch trigger is added. Existing historical/research/one-shot
 workflows are untouched. Total budget remains at most three workflow runs per PR;
 failed or unexpected runs STOP, with no blind rerun. Zero added billing is required:
 these are standard Linux runners in this public repository, not larger runners.

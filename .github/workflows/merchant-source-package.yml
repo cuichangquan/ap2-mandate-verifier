@@ -26,6 +26,8 @@ on:
       - 'docs/SELECTIVE_CHECKOUT.md'
       - 'scripts/check_published_guides.rb'
       - 'scripts/check_sdk_platform.rb'
+      - 'scripts/check_native_published.rb'
+      - '.github/native-gems.sha256'
       - 'docs/PLATFORM_SUPPORT.md'
       - 'docs/QUICK_START.md'
       - 'docs/QUICK_START.ja.md'
@@ -117,3 +119,96 @@ jobs:
               timeout 30 ruby scripts/check_sdk_platform.rb /opt/ap2/published.gem
               timeout 120 ruby scripts/check_published_guides.rb
             '
+
+  native-published:
+    if: github.repository == 'cuichangquan/ap2-mandate-verifier' && !github.event.repository.private
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ['3.4.12', '4.0.9']
+        runner: [macos-15-intel, macos-15, windows-2022]
+        include:
+          - runner: macos-15-intel
+            os: macos
+            cpu: X64
+            machine: x86_64
+            sqlite: x86_64-darwin
+          - runner: macos-15
+            os: macos
+            cpu: ARM64
+            machine: arm64
+            sqlite: arm64-darwin
+          - runner: windows-2022
+            os: windows
+            cpu: X64
+            sqlite: x64-mingw-ucrt
+    env:
+      AP2_NATIVE_OS: ${{ matrix.os }}
+      AP2_NATIVE_CPU: ${{ matrix.cpu }}
+      AP2_NATIVE_RUBY: ${{ matrix.ruby }}
+      AP2_SQLITE_PLATFORM: ${{ matrix.sqlite }}
+      AP2_INSTALLED: '1'
+    steps:
+      - name: Preserve published LF bytes in checkout
+        shell: bash
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, Node.js 24
+        with:
+          persist-credentials: false
+      - name: Require native macOS hardware
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = '${{ matrix.machine }}'
+          test "$(sysctl -in sysctl.proc_translated 2>/dev/null || true)" != 1
+          sw_vers
+          uname -a
+      - name: Require native Windows X64 hardware
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString() -ne 'X64') { throw 'Native X64 Windows required' }
+          [System.Runtime.InteropServices.RuntimeInformation]::OSDescription
+          [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+      - uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # Node.js 24, exact MRI builds
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler: none
+      - name: Install hash-pinned published core outside checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$(ruby -e 'puts File.join(ENV.fetch("RUNNER_TEMP"), "ap2-native").tr("\\", "/")')"
+          mkdir -p "$root/gems" "$root/archives"
+          export GEM_HOME="$root/gems" GEM_PATH="$root/gems"
+          echo "GEM_HOME=$GEM_HOME" >> "$GITHUB_ENV"
+          echo "GEM_PATH=$GEM_PATH" >> "$GITHUB_ENV"
+          echo "AP2_PUBLISHED_GEM=$root/archives/ap2_mandate_verifier-1.6.0.gem" >> "$GITHUB_ENV"
+          for name in json-2.19.9 jwt-3.3.0 base64-0.3.0 openssl-4.0.2 digest-3.2.1 ap2_mandate_verifier-1.6.0; do
+            file="$name.gem"
+            curl --fail --silent --show-error --proto '=https' --max-time 60 --max-filesize 5242880 "https://rubygems.org/downloads/$file" -o "$root/archives/$file"
+            ruby -rdigest -e 'expected = File.readlines(ARGV[0]).map(&:split).to_h.invert.fetch(File.basename(ARGV[1])); abort "Gem SHA mismatch" unless Digest::SHA256.file(ARGV[1]).hexdigest == expected' .github/native-gems.sha256 "$root/archives/$file"
+            if [[ "$name" == openssl-* && "$RUNNER_OS" == macOS ]]; then
+              gem install --local --no-document --ignore-dependencies "$root/archives/$file" -- --with-openssl-dir="$(brew --prefix openssl@3)"
+            else
+              gem install --local --no-document --ignore-dependencies "$root/archives/$file"
+            fi
+          done
+      - name: Audit and exercise native published core without SQLite
+        shell: bash
+        run: ruby scripts/check_native_published.rb core
+      - name: Install hash-pinned optional native SQLite driver
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="sqlite3-2.10.2-${{ matrix.sqlite }}.gem"
+          target="$(dirname "$AP2_PUBLISHED_GEM")/$file"
+          curl --fail --silent --show-error --proto '=https' --max-time 60 --max-filesize 10485760 "https://rubygems.org/downloads/$file" -o "$target"
+          ruby -rdigest -e 'expected = File.readlines(ARGV[0]).map(&:split).to_h.invert.fetch(File.basename(ARGV[1])); abort "SQLite SHA mismatch" unless Digest::SHA256.file(ARGV[1]).hexdigest == expected' .github/native-gems.sha256 "$target"
+          gem install --local --no-document --ignore-dependencies "$target"
+      - name: Exercise optional persistence and published bilingual guides
+        shell: bash
+        run: ruby scripts/check_native_published.rb persistence
