@@ -7,6 +7,9 @@ Use this Gem when your app needs to check what a buyer approved, what an Agent m
 choose, and whether signed Checkout/Payment data stays within those conditions.
 No Rails dependency. **Verification success is not purchase or payment success; the SDK never executes payments.**
 
+
+**Platforms:** MRI 3.4.12 / 4.0.9; Linux ARM64 and AMD64 have separate native CI lanes. Rails demo compatibility is separate. macOS/Windows are not yet validated for this release. See [platform evidence and reproduction](docs/PLATFORM_SUPPORT.md).
+
 ## Start here
 
 ```sh

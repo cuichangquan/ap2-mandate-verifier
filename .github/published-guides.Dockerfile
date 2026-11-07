@@ -1,10 +1,13 @@
 ARG RUBY_VERSION=3.4.12
 FROM ruby:${RUBY_VERSION}-bookworm
-RUN gem install --no-document json:2.19.9 jwt:3.3.0 base64:0.3.0 openssl:4.0.2 digest:3.2.1 && \
-    curl --fail --silent --show-error --proto '=https' --max-time 60 https://rubygems.org/downloads/ap2_mandate_verifier-1.6.0.gem -o /tmp/published.gem && \
-    test "$(wc -c < /tmp/published.gem)" -eq 186368 && \
-    echo '62de85123e1379c538c9c4302b71a9c55c590162591169a4e335aaa03a8991f8  /tmp/published.gem' | sha256sum -c - && \
-    gem install --local --no-document /tmp/published.gem && rm /tmp/published.gem
+RUN gem install --no-document json:2.19.9 jwt:3.3.0 base64:0.3.0 openssl:4.0.2 digest:3.2.1 bundler:4.0.20 && \
+    mkdir -p /opt/ap2 && \
+    curl --fail --silent --show-error --proto '=https' --max-time 60 https://rubygems.org/downloads/ap2_mandate_verifier-1.6.0.gem -o /opt/ap2/published.gem && \
+    test "$(wc -c < /opt/ap2/published.gem)" -eq 186368 && \
+    echo '62de85123e1379c538c9c4302b71a9c55c590162591169a4e335aaa03a8991f8  /opt/ap2/published.gem' | sha256sum -c - && \
+    gem install --local --no-document /opt/ap2/published.gem
+# Core SDK must load with no Rails/SQLite driver installed or activated.
+RUN ruby -e 'require "ap2_mandate_verifier"; abort if defined?(Rails) || defined?(SQLite3); abort unless Gem::Specification.find_all_by_name("sqlite3").empty?; puts "PASS published core without Rails or SQLite"'
 # Optional reference persistence driver for tests/examples, not a Gem runtime dependency.
 RUN set -eu; \
     case "$(uname -m)" in \

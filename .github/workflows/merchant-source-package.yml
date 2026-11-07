@@ -25,6 +25,10 @@ on:
       - 'docs/PAYMENT_POLICY.md'
       - 'docs/SELECTIVE_CHECKOUT.md'
       - 'scripts/check_published_guides.rb'
+      - 'scripts/check_sdk_platform.rb'
+      - 'docs/PLATFORM_SUPPORT.md'
+      - 'docs/QUICK_START.md'
+      - 'docs/QUICK_START.ja.md'
       - '.github/published-guides.Dockerfile'
       - 'docs/MERCHANT_SIGNING.md'
       - 'docs/SUPPORT_CONTRACT.md'
@@ -38,17 +42,35 @@ concurrency:
 jobs:
   source-package:
     if: github.repository == 'cuichangquan/ap2-mandate-verifier' && !github.event.repository.private
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         ruby: ['3.4.12', '4.0.9']
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+        include:
+          - runner: ubuntu-24.04
+            machine: x86_64
+            docker_arch: amd64
+          - runner: ubuntu-24.04-arm
+            machine: aarch64
+            docker_arch: arm64
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, Node.js 24
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Require native runner and Docker architecture
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = '${{ matrix.machine }}'
+          case "$(docker info --format '{{.Architecture}}')" in
+            '${{ matrix.machine }}'|'${{ matrix.docker_arch }}') ;;
+            *) echo 'STOP: unexpected Docker server architecture'; exit 1 ;;
+          esac
+          echo "Native Linux runner=${{ matrix.runner }} machine=$(uname -m) Ruby=${{ matrix.ruby }}"
       - name: Identify product changes without rebuilding published documentation
         id: scope
         env:
@@ -58,14 +80,14 @@ jobs:
           set -euo pipefail
           [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
           git diff --name-only "$BASE_SHA" HEAD > "$RUNNER_TEMP/changed-paths"
-          if grep -Eq '^(examples/long_payment(_acceptance)?\.rb$|examples/recurring_payment\.rb$|examples/payment_acceptance\.rb$|examples/payment_policy\.rb$|examples/selective_checkout(_payment)?\.rb$|lib/|test/|ap2_mandate_verifier\.gemspec$|scripts/check_ruby_compatibility\.sh$|scripts/check_runtime\.rb$|scripts/check_candidate_package\.sh$|\.github/merchant-ci\.Dockerfile$)' "$RUNNER_TEMP/changed-paths"; then
+          if grep -Eq '^(examples/long_payment(_acceptance)?\.rb$|examples/recurring_payment\.rb$|examples/payment_acceptance\.rb$|examples/payment_policy\.rb$|examples/selective_checkout(_payment)?\.rb$|lib/|test/|ap2_mandate_verifier\.gemspec$|scripts/check_ruby_compatibility\.sh$|scripts/check_runtime\.rb$|scripts/check_candidate_package\.sh$|scripts/check_sdk_platform\.rb$|\.github/workflows/merchant-source-package\.yml$|\.github/merchant-ci\.Dockerfile$)' "$RUNNER_TEMP/changed-paths"; then
             echo 'product=true' >> "$GITHUB_OUTPUT"
           else
             echo 'product=false' >> "$GITHUB_OUTPUT"
           fi
       - name: Build isolated pinned Ruby dependencies
         if: steps.scope.outputs.product == 'true'
-        run: docker build --build-arg RUBY_VERSION=${{ matrix.ruby }} -t ap2-merchant-ci -f .github/merchant-ci.Dockerfile .github
+        run: docker build --platform linux/${{ matrix.docker_arch }} --build-arg RUBY_VERSION=${{ matrix.ruby }} -t ap2-merchant-ci -f .github/merchant-ci.Dockerfile .github
       - name: Source regression and ordinary candidate installation
         if: steps.scope.outputs.product == 'true'
         shell: bash
@@ -73,20 +95,25 @@ jobs:
           set -euo pipefail
           mkdir "$RUNNER_TEMP/merchant-evidence"
           docker run --rm --network=none --cpus=2 --memory=768m --pids-limit=128 \
-            -v "$GITHUB_WORKSPACE:/src:ro" -v "$RUNNER_TEMP/merchant-evidence:/out" \
+            -e EXPECTED_MACHINE=${{ matrix.machine }} -v "$GITHUB_WORKSPACE:/src:ro" -v "$RUNNER_TEMP/merchant-evidence:/out" \
             ap2-merchant-ci sh -c '
               set -eu
+              test "$(uname -m)" = "$EXPECTED_MACHINE"
               timeout 300 sh scripts/check_ruby_compatibility.sh /out/source
               gem build ap2_mandate_verifier.gemspec --output /out/candidate.gem
               timeout 300 sh scripts/check_candidate_package.sh /out/package /out/candidate.gem
               cat /out/package/merchant-installed.json
             '
       - name: Verify published Gem guides without Gem build
-        if: steps.scope.outputs.product == 'false'
         shell: bash
         run: |
           set -euo pipefail
-          docker build --build-arg RUBY_VERSION=${{ matrix.ruby }} -t ap2-published-guides -f .github/published-guides.Dockerfile .github
+          docker build --platform linux/${{ matrix.docker_arch }} --build-arg RUBY_VERSION=${{ matrix.ruby }} -t ap2-published-guides -f .github/published-guides.Dockerfile .github
           docker run --rm --network=none --cpus=2 --memory=768m --pids-limit=128 \
-            -v "$GITHUB_WORKSPACE:/src:ro" ap2-published-guides \
-            timeout 120 ruby scripts/check_published_guides.rb
+            -e EXPECTED_MACHINE=${{ matrix.machine }} -v "$GITHUB_WORKSPACE:/src:ro" ap2-published-guides \
+            sh -c 'set -eu
+              test "$(uname -m)" = "$EXPECTED_MACHINE"
+              timeout 30 ruby scripts/check_runtime.rb
+              timeout 30 ruby scripts/check_sdk_platform.rb /opt/ap2/published.gem
+              timeout 120 ruby scripts/check_published_guides.rb
+            '
