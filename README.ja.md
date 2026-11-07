@@ -8,7 +8,7 @@
 **検証成功は購入・決済成功ではなく、SDKは決済を実行しません。**
 
 
-**対応環境：** MRI 3.4.12 / 4.0.9。Linux ARM64・AMD64は別々のネイティブCIで検証します。Railsデモの対応範囲とは別です。この版のmacOS・Windows検証は未実施です。[検証範囲と再現方法](docs/PLATFORM_SUPPORT.md)を参照してください。
+**対応環境：** MRI 3.4.12 / 4.0.9。公開GemはLinux ARM64・AMD64、macOS Intel・Apple Silicon、Windows Server 2022 X64でネイティブ検証に合格しました。記録したOSイメージでの実測であり、Railsデモの対応範囲とは別です。[検証範囲と再現方法](docs/PLATFORM_SUPPORT.md)を参照してください。
 
 ## まず動かす
 

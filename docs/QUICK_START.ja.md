@@ -7,7 +7,7 @@ MRI 3.4.12または4.0.9のGem環境を用意します。Rails・アカウント
 インストール時間の保証ではありません。
 
 
-SDKはRails非依存です。Linux ARM64・AMD64の検証は、公開済みGemとsource candidateを分けます。macOS・Windowsは未検証です。[環境別の範囲](PLATFORM_SUPPORT.md)を確認してください。任意のSQLite例にはRuby・CPU・OSに合ったdriverが必要で、別CPUのnative Gemをコピーしないでください。
+SDKはRails非依存です。公開GemはLinux ARM64・AMD64、macOS Intel・Apple Silicon、Windows Server 2022 X64で両対応MRIのネイティブ検証に合格しました。公開済みGemとsource candidateの証拠を分けます。[環境別の範囲](PLATFORM_SUPPORT.md)を確認してください。任意のSQLite例にはRuby・CPU・OSに合ったdriverが必要で、別CPUのnative Gemをコピーしないでください。
 
 ## 1. 公開Gemを導入し、同梱例を探す
 

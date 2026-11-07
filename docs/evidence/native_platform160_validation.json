@@ -1,0 +1,276 @@
+{
+  "schema": 1,
+  "observed_on": "2026-11-07",
+  "scope": "Published ap2_mandate_verifier 1.6.0, native Gem core and optional SQLite reference persistence; not Rails demo",
+  "source_head": "e0767bec2f6ab381ec222c5c94555c6081e9d2dd",
+  "source_tree": "59037df4a13d5607fc345c7de288a5029ca74eaf",
+  "run_url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42320884925",
+  "run_attempt": 1,
+  "artifact": {
+    "version": "1.6.0",
+    "bytes": 186368,
+    "sha256": "62de85123e1379c538c9c4302b71a9c55c590162591169a4e335aaa03a8991f8",
+    "kind": "published, not built from checkout"
+  },
+  "dependencies": {
+    "json": "2.19.9",
+    "jwt": "3.3.0",
+    "base64": "0.3.0",
+    "openssl": "4.0.2",
+    "digest": "3.2.1"
+  },
+  "matrix": [
+    {
+      "job_id": 128244878330,
+      "url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42320884925/job/128244878330",
+      "job": "native-published (3.4.12, windows-2022)",
+      "status": "PASS",
+      "os": "Microsoft Windows Server 2022 / 10.0.20348 / Datacenter",
+      "ruby": "ruby 3.4.12 (2026-10-23 revision 366f5fdc00) +PRISM [x64-mingw-ucrt]",
+      "platform": "x64-mingw-ucrt",
+      "runner_arch": "X64",
+      "host_cpu": "x64",
+      "image_os": "win22",
+      "image_version": "20261101.353.1",
+      "compiled_openssl": "OpenSSL 3.6.5 29 Sep 2026",
+      "loaded_openssl": "OpenSSL 3.6.5 29 Sep 2026",
+      "sqlite": {
+        "version": "2.10.2",
+        "platform": "x64-mingw-ucrt",
+        "library": "3.54.1"
+      },
+      "payload_files_verified": 68,
+      "initial_loaded_sdk_files_verified": 28,
+      "core_assertions": 3905,
+      "optional_acceptance_assertions": 75,
+      "core": "PASS without SQLite",
+      "optional_persistence": "PASS",
+      "native_extension_sha256": {
+        "gems/json-2.19.9/lib/json/ext/parser.so": "c6b242e69b118280dd44ac94fc2ca9a511439cf6316cf5ad6995fc01c6682d8f",
+        "gems/digest-3.2.1/lib/digest.so": "9994761eaa57397e7624bce2404a74cac530ff59f66cd53426c6fec418b0900e",
+        "gems/openssl-4.0.2/lib/openssl.so": "199b6a0930c4424d70b775693ec34d5abb90d6847456d8cc8971df755613c3a4",
+        "gems/digest-3.2.1/lib/digest/sha2.so": "61039f1e8975620910fb5d6972313b82609c89ea0fc154874cb0be2763891fbb",
+        "gems/sqlite3-2.10.2-x64-mingw-ucrt/lib/sqlite3/3.4/sqlite3_native.so": "e23d56fc31138da124901a1aea18483c67897973b5b207dcb17ce91e3acc5086"
+      },
+      "node20_deprecation_warnings": 0
+    },
+    {
+      "job_id": 128244878343,
+      "url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42320884925/job/128244878343",
+      "job": "native-published (3.4.12, macos-15-intel)",
+      "status": "PASS",
+      "os": "macOS / 15.7.9 / 24G830",
+      "ruby": "ruby 3.4.12 (2026-10-23 revision 366f5fdc00) +PRISM [x86_64-darwin24]",
+      "platform": "x86_64-darwin24",
+      "runner_arch": "X64",
+      "host_cpu": "x86_64",
+      "image_os": "macos15",
+      "image_version": "20260824.0482.1",
+      "compiled_openssl": "OpenSSL 3.6.3 9 Jun 2026",
+      "loaded_openssl": "OpenSSL 3.6.3 9 Jun 2026",
+      "sqlite": {
+        "version": "2.10.2",
+        "platform": "x86_64-darwin",
+        "library": "3.54.1"
+      },
+      "payload_files_verified": 68,
+      "initial_loaded_sdk_files_verified": 28,
+      "core_assertions": 3905,
+      "optional_acceptance_assertions": 75,
+      "core": "PASS without SQLite",
+      "optional_persistence": "PASS",
+      "native_extension_sha256": {
+        "gems/json-2.19.9/lib/json/ext/parser.bundle": "7497e2a489cec1f559dc2a7202d37a001912e835b51042b190847d0a6d7c021a",
+        "gems/digest-3.2.1/lib/digest.bundle": "51807b302c9a692b86630d689d6cd92e12dde31242ef92a5c89a216377daa0b1",
+        "gems/openssl-4.0.2/lib/openssl.bundle": "3eba47d8d35adb207f944c95ef4398d3eb8bcf56b5aa2750bf8d24bd58b22d61",
+        "gems/digest-3.2.1/lib/digest/sha2.bundle": "10ba549cf55f533955f031e8ded78778b01077a5d532dde87734f5efeb60f3e0",
+        "gems/sqlite3-2.10.2-x86_64-darwin/lib/sqlite3/3.4/sqlite3_native.bundle": "cfa3a1aa026ba5058631551254f51a3ffaed85fc95095facea9078dae5d1854a"
+      },
+      "node20_deprecation_warnings": 0
+    },
+    {
+      "job_id": 128244878417,
+      "url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42320884925/job/128244878417",
+      "job": "native-published (4.0.9, macos-15)",
+      "status": "PASS",
+      "os": "macOS / 15.8.2 / 24H232",
+      "ruby": "ruby 4.0.9 (2026-10-23 revision 3e93b23afc) +PRISM [arm64-darwin23]",
+      "platform": "arm64-darwin23",
+      "runner_arch": "ARM64",
+      "host_cpu": "arm64",
+      "image_os": "macos15",
+      "image_version": "20261104.0514.1",
+      "compiled_openssl": "OpenSSL 3.5.9 29 Sep 2026",
+      "loaded_openssl": "OpenSSL 3.5.9 29 Sep 2026",
+      "sqlite": {
+        "version": "2.10.2",
+        "platform": "arm64-darwin",
+        "library": "3.54.1"
+      },
+      "payload_files_verified": 68,
+      "initial_loaded_sdk_files_verified": 28,
+      "core_assertions": 3905,
+      "optional_acceptance_assertions": 75,
+      "core": "PASS without SQLite",
+      "optional_persistence": "PASS",
+      "native_extension_sha256": {
+        "gems/json-2.19.9/lib/json/ext/parser.bundle": "1908ac4f00588f3d061ee51aee966146309fd9489b887dacd1667d3ca9aa3320",
+        "gems/digest-3.2.1/lib/digest.bundle": "05572466129d1515d2b4e85c4a20c6765dbd6abe0c5277098a574bba55dce86f",
+        "gems/openssl-4.0.2/lib/openssl.bundle": "9a3834689d94ce32583482f506b9446438f962c1d340128b2dbeabcc49248b7e",
+        "gems/digest-3.2.1/lib/digest/sha2.bundle": "5b4a764666d3f513f40194cc783ac148d8f26680212eabfe1a221e39b1be557a",
+        "gems/sqlite3-2.10.2-arm64-darwin/lib/sqlite3/4.0/sqlite3_native.bundle": "6b6366da9b916b414a386e4ab08352522ab401d122b50f2757825298ff15bea5"
+      },
+      "node20_deprecation_warnings": 0
+    },
+    {
+      "job_id": 128244878442,
+      "url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42320884925/job/128244878442",
+      "job": "native-published (3.4.12, macos-15)",
+      "status": "PASS",
+      "os": "macOS / 15.8.2 / 24H232",
+      "ruby": "ruby 3.4.12 (2026-10-23 revision 366f5fdc00) +PRISM [arm64-darwin23]",
+      "platform": "arm64-darwin23",
+      "runner_arch": "ARM64",
+      "host_cpu": "arm64",
+      "image_os": "macos15",
+      "image_version": "20261104.0514.1",
+      "compiled_openssl": "OpenSSL 3.5.9 29 Sep 2026",
+      "loaded_openssl": "OpenSSL 3.5.9 29 Sep 2026",
+      "sqlite": {
+        "version": "2.10.2",
+        "platform": "arm64-darwin",
+        "library": "3.54.1"
+      },
+      "payload_files_verified": 68,
+      "initial_loaded_sdk_files_verified": 28,
+      "core_assertions": 3905,
+      "optional_acceptance_assertions": 75,
+      "core": "PASS without SQLite",
+      "optional_persistence": "PASS",
+      "native_extension_sha256": {
+        "gems/json-2.19.9/lib/json/ext/parser.bundle": "c6ea3c8c951debbf4c8dcb08ec32ba68625e345df714db20aa9e0aee9947a688",
+        "gems/digest-3.2.1/lib/digest.bundle": "d09e233313f22d80d5e64878ac63ce8d83a8f0d73a3b229199c8cc5e094f77cb",
+        "gems/openssl-4.0.2/lib/openssl.bundle": "ec327589283a493303f507ece3d5cb6f442313afe2b44116a580caadf45d6ef4",
+        "gems/digest-3.2.1/lib/digest/sha2.bundle": "eeadf05842bb103eabe3947dc3c2692e2e6fde82bdbabaebbaebec8d31747231",
+        "gems/sqlite3-2.10.2-arm64-darwin/lib/sqlite3/3.4/sqlite3_native.bundle": "2f018b14027aab47d9e6f4665d43f50ae545257f0e2344dadf065e9779705fee"
+      },
+      "node20_deprecation_warnings": 0
+    },
+    {
+      "job_id": 128244878494,
+      "url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42320884925/job/128244878494",
+      "job": "native-published (4.0.9, macos-15-intel)",
+      "status": "PASS",
+      "os": "macOS / 15.7.9 / 24G830",
+      "ruby": "ruby 4.0.9 (2026-10-23 revision 3e93b23afc) +PRISM [x86_64-darwin24]",
+      "platform": "x86_64-darwin24",
+      "runner_arch": "X64",
+      "host_cpu": "x86_64",
+      "image_os": "macos15",
+      "image_version": "20260824.0482.1",
+      "compiled_openssl": "OpenSSL 3.6.3 9 Jun 2026",
+      "loaded_openssl": "OpenSSL 3.6.3 9 Jun 2026",
+      "sqlite": {
+        "version": "2.10.2",
+        "platform": "x86_64-darwin",
+        "library": "3.54.1"
+      },
+      "payload_files_verified": 68,
+      "initial_loaded_sdk_files_verified": 28,
+      "core_assertions": 3905,
+      "optional_acceptance_assertions": 75,
+      "core": "PASS without SQLite",
+      "optional_persistence": "PASS",
+      "native_extension_sha256": {
+        "gems/json-2.19.9/lib/json/ext/parser.bundle": "37c1edbcee2b25b934e883bccd4181239957274ee8732c9810ea88606b89cdad",
+        "gems/digest-3.2.1/lib/digest.bundle": "b9561e50bf575c7b363cfaa8349922276a850cf10033de55722404c615e5f4fc",
+        "gems/openssl-4.0.2/lib/openssl.bundle": "2a4b7704db92a477bb03e21d6a2b6bb36eb78e24c7d0d1d716e28e0962703608",
+        "gems/digest-3.2.1/lib/digest/sha2.bundle": "ef830dd57f22a74e6d57dc897083d362b1c390a1e4b6aeee44d5d1e65548d8e0",
+        "gems/sqlite3-2.10.2-x86_64-darwin/lib/sqlite3/4.0/sqlite3_native.bundle": "b651ee0537d3b48d3a2a037a8bf5a530b1c879e2332d1f860754b30361351380"
+      },
+      "node20_deprecation_warnings": 0
+    },
+    {
+      "job_id": 128244878633,
+      "url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42320884925/job/128244878633",
+      "job": "native-published (4.0.9, windows-2022)",
+      "status": "PASS",
+      "os": "Microsoft Windows Server 2022 / 10.0.20348 / Datacenter",
+      "ruby": "ruby 4.0.9 (2026-10-23 revision 3e93b23afc) +PRISM [x64-mingw-ucrt]",
+      "platform": "x64-mingw-ucrt",
+      "runner_arch": "X64",
+      "host_cpu": "x64",
+      "image_os": "win22",
+      "image_version": "20261101.353.1",
+      "compiled_openssl": "OpenSSL 3.6.5 29 Sep 2026",
+      "loaded_openssl": "OpenSSL 3.6.5 29 Sep 2026",
+      "sqlite": {
+        "version": "2.10.2",
+        "platform": "x64-mingw-ucrt",
+        "library": "3.54.1"
+      },
+      "payload_files_verified": 68,
+      "initial_loaded_sdk_files_verified": 28,
+      "core_assertions": 3905,
+      "optional_acceptance_assertions": 75,
+      "core": "PASS without SQLite",
+      "optional_persistence": "PASS",
+      "native_extension_sha256": {
+        "gems/json-2.19.9/lib/json/ext/parser.so": "081ac86a820c6984382addf70d551a72cb51f8b5c35bad3891efcde0dbda2155",
+        "gems/digest-3.2.1/lib/digest.so": "6930e5166b85d925e4c7ce079e9810e364065f72d0c7483429f0dd72523298a5",
+        "gems/openssl-4.0.2/lib/openssl.so": "30dc5bd5d7e8cc2f98e01c12dfed43abc3cde56b1556f6a50ab061fe661d3361",
+        "gems/digest-3.2.1/lib/digest/sha2.so": "f8f26e726a79054a30d2e4567d742149d48b81e02453ef483db098789b4b32ca",
+        "gems/sqlite3-2.10.2-x64-mingw-ucrt/lib/sqlite3/4.0/sqlite3_native.so": "bd7f99ecf5669f00ee746b02dd5de584e2ad60848604e0a7f6ca6cfbb35702b6"
+      },
+      "node20_deprecation_warnings": 0
+    }
+  ],
+  "coverage": {
+    "installed_examples": 7,
+    "core_regression_suites": 6,
+    "core_assertions_per_job": 3905,
+    "long_acceptance_assertions_per_job": 75,
+    "bilingual_guides": "PASS",
+    "long_lifecycle": "12 explicit UTC months, 12 synthetic starts, 96000 JPY reserved within 100000 JPY",
+    "budget_negative": "Valid wire with allowance exceeded rejected; reserved amount unchanged",
+    "identity": "68 archive and installed payload hashes, 28 initial SDK files, and exit-time child/grandchild loaded-file audits",
+    "native_hardware": "Runner OS/architecture, Ruby OS/CPU, macOS uname and no Rosetta, Windows OSArchitecture X64",
+    "core_assertions_by_suite": [
+      {
+        "suite": "payment",
+        "assertions": 119
+      },
+      {
+        "suite": "selective payment",
+        "assertions": 120
+      },
+      {
+        "suite": "selective checkout",
+        "assertions": 95
+      },
+      {
+        "suite": "payment policy",
+        "assertions": 136
+      },
+      {
+        "suite": "long payment",
+        "assertions": 162
+      },
+      {
+        "suite": "payment constraint regression",
+        "assertions": 3273
+      }
+    ]
+  },
+  "limitations": [
+    "Native jobs do not enforce network isolation; all tested inputs/effects are synthetic.",
+    "OpenSSL version/extension hash logging is not the Linux dpkg/mapped-library provider integrity audit or security-advisory clearance.",
+    "No native process/crash oracle, Rails demo, real Issuer, real payment or production claim.",
+    "Only the recorded OS images, CPU architectures and exact MRI versions were observed.",
+    "Documentation updates change future candidate bytes but do not alter the published artifact."
+  ],
+  "workflow_checkout_commit": "11d0d5288fd61f746e95b82ab286c33aec0890e9",
+  "workflow_checkout_tree": "59037df4a13d5607fc345c7de288a5029ca74eaf",
+  "workflow_conclusion": "success",
+  "retained_linux_jobs": "4/4 PASS"
+}

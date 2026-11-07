@@ -19,8 +19,8 @@ SQLite永続化例は、実際のOS/CPUに合った任意driverを別途使い�
 | --- | --- | --- |
 | Linux ARM64, both MRI versions | Native `ubuntu-24.04-arm`; Debian bookworm containers; SDK source/candidate and published Gem | PASS: [native run](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42314708194) |
 | Linux AMD64, both MRI versions | Native `ubuntu-24.04`; same checks; x86_64 SQLite native Gem | PASS: [native run](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42314708194) |
-| macOS 15 Intel / Apple Silicon, both MRI versions | Native standard `macos-15-intel` / `macos-15`; published core first, optional SQLite separately | NOT_RUN: workflow prepared, no passing observation yet |
-| Windows Server 2022 X64, both MRI versions | Native standard `windows-2022`; published core first, optional SQLite separately | NOT_RUN: workflow prepared, no passing observation yet |
+| macOS 15 Intel / Apple Silicon, both MRI versions | Native standard `macos-15-intel` / `macos-15`; published core first, optional SQLite separately | PASS: [native run](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42320884925) |
+| Windows Server 2022 X64, both MRI versions | Native standard `windows-2022`; published core first, optional SQLite separately | PASS: [native run](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42320884925) |
 
 Local native Linux ARM64 checks passed both MRI versions: full existing source and
 candidate suites, published guides, all 68 published payload hashes and 28 loaded
@@ -49,7 +49,12 @@ The native job uses official `ruby/setup-ruby` pinned to
 and standard hosted `macos-15-intel`, `macos-15` (Apple Silicon), `windows-2022`
 runners. Host architecture, Ruby OS/CPU and runner architecture must agree;
 Rosetta is rejected. No containers, QEMU, user-Mac installation or larger runners
-are involved. A configured job is not a PASS.
+are involved. All six native jobs passed at `e0767bec2f6ab381ec222c5c94555c6081e9d2dd`:
+macOS 15.7.9 Intel, macOS 15.8.2 Apple Silicon and Windows Server 2022 X64,
+each with both exact MRI versions. See the [per-job evidence](evidence/native_platform160_validation.json).
+Every combination passed 3,905 core assertions and 75 optional long acceptance
+assertions, plus the installed examples and bilingual guides. The recorded images
+are bounded observations, not certification of every macOS/Windows version.
 
 `native-gems.sha256` pins the five existing dependency archives, published SDK and
 three optional SQLite binaries to RubyGems API SHA256 observations on 2026-11-07.
