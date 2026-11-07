@@ -1,5 +1,5 @@
 {
-  "status": "LOCAL_NATIVE_ARM64_PASS_CI_PENDING",
+  "status": "LOCAL_NATIVE_ARM64_AND_HOSTED_NATIVE_LINUX_MATRIX_PASS",
   "tested_commit": "d53aebd4860f2efc87c5ffa9181a8ebb7ebe7306",
   "base_main": "b4a23d08c40dac3975dbd5cd6fce59c4801bcd71",
   "date_utc": "2026-11-06",
@@ -88,13 +88,40 @@
   },
   "candidate_identity_note": "Each MRI built its own non-release candidate; candidate archive hashes differ. Both published checks used the same immutable RubyGems archive SHA256.",
   "native_ci": {
-    "status": "NOT_RUN",
-    "required": [
-      "3.4.12/AMD64",
-      "4.0.9/AMD64",
-      "3.4.12/ARM64",
-      "4.0.9/ARM64"
-    ]
+    "status": "PASS",
+    "head_sha": "dd04c8ae748e981b5bc504393bd27c981c5d9c6e",
+    "run_id": 42314708194,
+    "url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42314708194",
+    "attempt": 1,
+    "conclusion": "success",
+    "observed_utc_date": "2026-11-07",
+    "jobs": [
+      {
+        "name": "source-package (4.0.9, ubuntu-24.04)",
+        "conclusion": "success",
+        "url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42314708194/job/128224382482"
+      },
+      {
+        "name": "source-package (4.0.9, ubuntu-24.04-arm)",
+        "conclusion": "success",
+        "url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42314708194/job/128224382556"
+      },
+      {
+        "name": "source-package (3.4.12, ubuntu-24.04)",
+        "conclusion": "success",
+        "url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42314708194/job/128224382569"
+      },
+      {
+        "name": "source-package (3.4.12, ubuntu-24.04-arm)",
+        "conclusion": "success",
+        "url": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42314708194/job/128224382597"
+      }
+    ],
+    "source_candidate_and_published_steps": "PASS in all four jobs",
+    "published_payload_files_each": 68,
+    "published_loaded_sdk_files_each": 28,
+    "native_architecture_assertions": 4,
+    "log_sha256": "659b4cbc41fdec165351aa18184a929f8ae788c252e770ee0515bedea51171a9"
   },
   "node24": {
     "action": "actions/checkout",
@@ -102,13 +129,18 @@
     "sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
     "manifest_runtime": "node24",
     "baseline_warning_run": "https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42135644076",
-    "updated_run_log_warning_check": "NOT_RUN"
+    "updated_run_log_warning_check": "PASS",
+    "updated_run_id": 42314708194,
+    "pinned_checkout_downloads": 4,
+    "node20_deprecation_warnings": 0,
+    "old_checkout_sha_present": false
   },
   "macos_windows": "NOT_RUN; official exact native Ruby versions exist, but OS-specific native dependency/provider checks remain unvalidated.",
   "limitations": [
     "Synthetic local single-host evidence only; not production safety, real Issuer provenance, general AP2 conformance or settlement.",
-    "Local log hashes identify retained evidence, not public downloads. Native CI run links will provide public replay logs.",
+    "Local log hashes identify retained evidence, not public downloads. Native CI run links provide public replay logs.",
     "Syntax-only preflight used a pre-existing AMD64 image under emulation; no product success is inferred from it.",
     "No Gem publication, version/tag/release modification, deployment or real payment."
-  ]
+  ],
+  "final_head_gate": "This records run 1 at its exact head. The final evidence/scheduling-only commit requires its own clean review and CI before merge; see PR 254 checks."
 }

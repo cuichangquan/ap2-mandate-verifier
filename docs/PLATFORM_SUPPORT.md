@@ -15,20 +15,22 @@ SQLite永続化例は、実際のOS/CPUに合った任意driverを別途使い�
 
 ## Matrix and evidence / マトリクスと証拠
 
-| Target | Method and scope | Status before PR CI |
+| Target | Method and scope | Observed status |
 | --- | --- | --- |
-| Linux ARM64, both MRI versions | Native `ubuntu-24.04-arm`; Debian bookworm containers; SDK source/candidate and published Gem | CI pending |
-| Linux AMD64, both MRI versions | Native `ubuntu-24.04`; same checks; x86_64 SQLite native Gem | CI pending |
+| Linux ARM64, both MRI versions | Native `ubuntu-24.04-arm`; Debian bookworm containers; SDK source/candidate and published Gem | PASS: [native run](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42314708194) |
+| Linux AMD64, both MRI versions | Native `ubuntu-24.04`; same checks; x86_64 SQLite native Gem | PASS: [native run](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42314708194) |
 | macOS / Windows | Gem-only; would require their own pinned native runtime/dependency evidence | NOT_RUN |
 
 Local native Linux ARM64 checks passed both MRI versions: full existing source and
 candidate suites, published guides, all 68 published payload hashes and 28 loaded
 SDK files. Five causal identity-negative probes passed. See the
-[validation record](evidence/platform160_validation.json). Native hosted CI is still
-pending; local source candidates are not the published archive.
+[validation record](evidence/platform160_validation.json). Native hosted CI also passed all four combinations at
+`dd04c8ae748e981b5bc504393bd27c981c5d9c6e` in the linked run. Local source
+candidates are not the published archive. Final HEAD review and CI remain merge gates.
 
 両MRIのローカルLinux ARM64検証は合格しました。公開Gemの全68ファイルと読み込んだ
-28ファイルを照合し、5種類の改変・source混入も拒否しました。ネイティブCIは実行待ちです。
+28ファイルを照合し、5種類の改変・source混入も拒否しました。リンク先のネイティブCIも
+4組すべて合格です。統合には最終HEADの独立レビューとCI成功を別途確認します。
 
 Do not read a configured matrix as a passing observation. Consult the exact PR
 commit and its Actions logs. The runner, Docker server and container architectures
@@ -109,5 +111,5 @@ failed or unexpected runs STOP, with no blind rerun. Zero added billing is requi
 these are standard Linux runners in this public repository, not larger runners.
 
 現行製品CIのみNode24版へ更新し、履歴workflowは触りません。PRあたり最大3 runは
-上限であり再試行許可ではありません。Node警告解消は更新後の実行ログで確認するまで
-未証明です。green CIだけで本番安全性・実Issuer・実決済・一般AP2適合を主張しません。
+上限であり再試行許可ではありません。[更新後の実行ログ](https://github.com/cuichangquan/ap2-mandate-verifier/actions/runs/42314708194)で、
+4 jobすべてのcheckout取得SHAが上記pinと一致し、以前のNode20非推奨警告が0件であることを確認しました。green CIだけで本番安全性・実Issuer・実決済・一般AP2適合を主張しません。
