@@ -12,6 +12,12 @@ Platform scope: the SDK is Rails-independent. Published-Gem checks passed on nat
 
 ## 1. Install and locate the published examples
 
+For an end-to-end application with persistent state, start with the
+[Docker-first Ruby integration and restart guide](RUBY_INTEGRATION.md).
+It connects InputBuilder → Checkout/Payment → acceptance → mock execution →
+Receipt and recovery in a different process. That new example requires a
+repository checkout; the examples below are packaged in published 1.6.0 unless noted.
+
 ```sh
 gem install ap2_mandate_verifier --version 1.6.0
 AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')"

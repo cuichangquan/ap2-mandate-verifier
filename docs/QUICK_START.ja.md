@@ -11,6 +11,11 @@ SDKはRails非依存です。公開GemはLinux ARM64・AMD64、macOS Intel・App
 
 ## 1. 公開Gemを導入し、同梱例を探す
 
+アプリ入力から永続化・復旧まで通して試す場合は、
+[Dockerを使うRuby組込み・再起動復旧ガイド](RUBY_INTEGRATION.ja.md)から始めてください。
+InputBuilder → Checkout／Payment → 受理 → 模擬実行 → Receiptと別プロセス復旧をつなぎます。
+新しい例にはリポジトリ取得が必要です。以下の例は特記がなければ公開1.6.0に同梱されています。
+
 ```sh
 gem install ap2_mandate_verifier --version 1.6.0
 AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')"

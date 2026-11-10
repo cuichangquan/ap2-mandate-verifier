@@ -2,6 +2,11 @@
 
 [Verified public distribution](POST_RELEASE_150.md).
 
+For a runnable application walkthrough, see [Ruby integration and restart recovery](RUBY_INTEGRATION.md)
+([日本語](RUBY_INTEGRATION.ja.md)). It keeps application and mock processor state across
+actual Ruby process termination. The older `examples/payment_acceptance.rb` reopens
+a Store in the same process with an in-memory mock result; it is not a process-restart example.
+
 This opt-in application-side coordinator separates three events: cryptographic verification, durable reservation of an approved business occurrence, and an external payment processor’s outcome. Existing1.x verifiers and their result meanings remain unchanged. The SDK does not call a processor, transfer funds or promise distributed exactly-once execution.
 
 ## Stable identity and protected approval
