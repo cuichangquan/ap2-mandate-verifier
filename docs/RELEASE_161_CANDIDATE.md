@@ -1,4 +1,7 @@
-# 1.6.1 patch release preparation
+# 1.6.1 patch release preparation (historical)
+
+**Published on 2026-11-10:** see the [publication and verification record](POST_RELEASE_161.md).
+The preparation steps and gates below describe the prepublication process, not the current release status.
 
 ## Scope and status
 
@@ -10,9 +13,9 @@ The package includes the CLI, two helpers and English/Japanese guides already re
 The sample remains synthetic and Linux/Docker-validated; it grants no production or real-payment authority.
 The legacy published examples and the public **1.6.0** archive audits remain unchanged.
 
-**Candidate, not published:** registry publication, tag and GitHub Release are pending.
-Do not infer publication from this document, a green CI run, version metadata, or a merge.
-The current public baseline remains [1.6.0](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/POST_RELEASE_160.md).
+**Historical candidate status:** publication, tag and GitHub Release were pending during preparation.
+Use the linked publication record for their verified current status; a green CI run or merge alone is not publication evidence.
+The existing platform baseline remains [1.6.0](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/POST_RELEASE_160.md).
 
 ## Required evidence and gates
 

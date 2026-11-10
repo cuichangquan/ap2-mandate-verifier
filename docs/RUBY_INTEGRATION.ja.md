@@ -8,7 +8,7 @@
 合成の登場者とSQLiteの模擬processorだけを使い、Rails・A2A・外部アカウント・実決済は不要です。
 **組込みを理解するための実装例であり、本番の認証・認可backendではありません。**
 
-## 1. Dockerと公開Gemで動かす
+## 1. Docker（1.6.0 baseline）または公開済み1.6.1 Gemで動かす
 
 Docker導入済みが前提です。ホストへのRuby・SQLiteインストールは不要です。
 新しいcheckoutから実行します：
@@ -36,24 +36,28 @@ SDKはインストール先のGemディレクトリを指す必要があり、�
 公開Gemでの実行を確認する際は`-Ilib`や`RUBYLIB`を追加しないでください。
 既存の`conditional_checkout.rb`、`payment.rb`、`payment_acceptance.rb`はGemだけで
 取得できる例です。[Quick Start](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/QUICK_START.ja.md)に同梱場所の確認手順があります。
-新CLIと補助ファイルは`1.6.1`に同梱します。公開前はsource-built **1.6.1候補**を
-意味し、registryの公開版ではありません。公開1.6.0とは出所が異なり、
-公開1.6.0のインストールだけでは新CLIを取得できません。
-公開済みと扱う前に[リリース準備記録](RELEASE_161_CANDIDATE.md)とRubyGemsの版情報を確認してください。
+新CLIと補助ファイルは**公開済み1.6.1**に同梱しています。
+公開1.6.0のインストールだけでは新CLIを取得できません。上記Docker手順は意図的に
+公開1.6.0＋リポジトリの実装例を維持しており、Gemだけの1.6.1実行とは別です。
+[1.6.1の公開記録](POST_RELEASE_161.md)を参照してください。
 
-1.6.1と任意のSQLite driverを分離したRuby環境へ導入した後は、同梱CLIの実行に
-リポジトリは不要です：
+既存の分離したRuby環境（MRI 3.4.12または4.0.9）へ、以下の公開版とSQLite driverを
+版固定で導入します。SQLiteはSDKでは任意ですが、この永続化サンプルでは必要です。
+同梱CLIの実行にリポジトリは不要です：
 
 ```sh
-AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier").full_gem_path')"
+gem install ap2_mandate_verifier --version 1.6.1 --no-document
+gem install sqlite3 --version 2.10.2 --no-document
+AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.1").full_gem_path')"
 test -f "$AP2_GEM_DIR/examples/ruby_integration.rb"
 ruby "$AP2_GEM_DIR/examples/ruby_integration.rb" init /tmp/ap2-integration-new
 ruby "$AP2_GEM_DIR/examples/ruby_integration.rb" run /tmp/ap2-integration-new success
 ```
 
 `test`は同梱確認であり、別sourceへfallbackするものではありません。新しい保存先を使い、
-`init`を通すために既存状態を削除しないでください。次版公開までは、上記Docker／リポジトリ
-経路が公開Gemを使う再現手順です。1.6.1の最終archive公開には別途Gateがあります。
+`init`を通すために既存状態を削除しないでください。リポジトリのsourceを重ねないでください。
+以下は引き続きDocker／baseline経路を示します。Gemだけの1.6.1では同じsubcommandを
+`ruby "$AP2_GEM_DIR/examples/ruby_integration.rb"`で呼び、永続的なローカル状態パスを指定します。
 
 時計はすべて仮想です。初期epochは**1,800,000,000**で、実時計を使いません。
 Mandate／challengeの期限は+60秒、遅延Receiptは独立した検証窓内の+120秒を使います。
@@ -135,7 +139,7 @@ CLIは完了したコマンドごとにJSON要約を出力します。正常系�
 
 `ticket`は有無のbooleanだけで、実行能力の値ではありません。
 `sdk_version`、`sdk_load`、`ruby`、`fixture_clock`は実行環境を示します。Docker／公開版経路では
-`1.6.0`、`installed_gem`、`4.0.9`、`1800000000`が期待値です。1.6.1候補の同梱例では
+`1.6.0`、`installed_gem`、`4.0.9`、`1800000000`が期待値です。公開済み1.6.1の同梱例では
 `sdk_version: 1.6.1`と実際に使用したRubyの版が出力されます。
 クラッシュ出力には`simulated_process_exit: 75`が付きます。照会結果がなければ
 `event: operator_reconciliation_required`、`result: unknown`となり、SDK状態は

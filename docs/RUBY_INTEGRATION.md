@@ -10,7 +10,7 @@ It uses synthetic actors and a SQLite mock processor, without Rails, A2A, extern
 accounts or real payments. It is an integration demonstrator, **not a production
 authorization backend**.
 
-## 1. Run with Docker and the published Gem
+## 1. Run with Docker (1.6.0 baseline) or the published 1.6.1 Gem
 
 Prerequisite: an existing Docker installation. No Ruby or SQLite installation on
 the host is needed. From a fresh repository checkout:
@@ -38,17 +38,19 @@ The SDK path must be the installed Gem directory, not this repository's `lib`.
 Do not add `-Ilib` or set `RUBYLIB` when claiming a published-Gem run. Existing
 `conditional_checkout.rb`, `payment.rb` and `payment_acceptance.rb` are already
 Gem-only examples. Follow the [Quick Start](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/QUICK_START.md) to locate them.
-The CLI and its helper files are packaged in `1.6.1`. Before publication, this
-means the source-built **1.6.1 candidate**, not a registry release. Its provenance
-is different from public 1.6.0; installing public 1.6.0 alone does not supply this CLI.
-Check the [release preparation](RELEASE_161_CANDIDATE.md) and RubyGems version
-record before treating an archive as published.
+The CLI and its helper files are now included in **published 1.6.1**. Installing
+public 1.6.0 alone does not supply this CLI. The Docker route above intentionally
+retains public 1.6.0 plus repository example source; it is not a Gem-only 1.6.1 run.
+See the [1.6.1 publication record](POST_RELEASE_161.md).
 
-Once 1.6.1 has been installed in an isolated Ruby environment with the
-optional SQLite driver, no repository is needed to run its packaged CLI:
+In an existing isolated Ruby environment (MRI 3.4.12 or 4.0.9), install the exact
+public version and SQLite driver below. SQLite is optional for the SDK but required
+by this durable sample. No repository is needed to run the packaged CLI:
 
 ```sh
-AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier").full_gem_path')"
+gem install ap2_mandate_verifier --version 1.6.1 --no-document
+gem install sqlite3 --version 2.10.2 --no-document
+AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.1").full_gem_path')"
 test -f "$AP2_GEM_DIR/examples/ruby_integration.rb"
 ruby "$AP2_GEM_DIR/examples/ruby_integration.rb" init /tmp/ap2-integration-new
 ruby "$AP2_GEM_DIR/examples/ruby_integration.rb" run /tmp/ap2-integration-new success
@@ -56,8 +58,9 @@ ruby "$AP2_GEM_DIR/examples/ruby_integration.rb" run /tmp/ap2-integration-new su
 
 The `test` is a packaging check, not a fallback to another source. Use a new
 destination; do not remove an old state directory to make `init` succeed.
-Until a new version is published, the Docker/repository route above is the
-reproducible public route. Publication of the exact 1.6.1 archive is a separate gate.
+Do not add a repository source overlay. The commands below continue to show the
+Docker/baseline route; for Gem-only 1.6.1, invoke the same subcommands using
+`ruby "$AP2_GEM_DIR/examples/ruby_integration.rb"` and a persistent local state path.
 
 All example time is virtual: the initial epoch is **1,800,000,000**, never the
 wall clock. Mandate/challenge expiry is +60 seconds; the delayed Receipt uses
@@ -148,7 +151,7 @@ path includes these fields (runtime metadata is omitted here):
 
 `ticket` is only a boolean, never the capability. `sdk_version`, `sdk_load`,
 `ruby` and `fixture_clock` identify the runtime. The Docker/public route reports
-`1.6.0`, `installed_gem`, `4.0.9` and `1800000000`; the bundled 1.6.1 candidate
+`1.6.0`, `installed_gem`, `4.0.9` and `1800000000`; the published 1.6.1 bundled CLI
 reports `sdk_version: 1.6.1` and the Ruby version actually used. Crash output carries
 `simulated_process_exit: 75`. Missing query results report
 `event: operator_reconciliation_required` and `result: unknown`; the SDK may
