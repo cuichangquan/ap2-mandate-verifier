@@ -109,3 +109,8 @@ done
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 AP2_GEM_VERSION=1.6.0 \
   ruby "$source_dir/test/long_payment_process_oracle.rb" > "$out_dir/long-process-installed.log"
 cat "$out_dir/long-process-installed.log"
+
+GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 \
+  AP2_EXAMPLES_ROOT="$work_dir/installed/gems/ap2_mandate_verifier-1.6.0/examples" \
+  ruby "$source_dir/test/ruby_integration_test.rb" > "$out_dir/ruby-integration-installed.log"
+cat "$out_dir/ruby-integration-installed.log"

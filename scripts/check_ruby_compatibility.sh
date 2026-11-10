@@ -20,3 +20,6 @@ cat "$out_dir/recurring-process-oracle.log"
 
 ruby -r "$source_dir/test/runtime_dependencies.rb" test/long_payment_process_oracle.rb > "$out_dir/long-process-oracle.log" 2>&1
 cat "$out_dir/long-process-oracle.log"
+
+ruby -r "$source_dir/test/runtime_dependencies.rb" test/ruby_integration_test.rb > "$out_dir/ruby-integration.log" 2>&1
+cat "$out_dir/ruby-integration.log"
