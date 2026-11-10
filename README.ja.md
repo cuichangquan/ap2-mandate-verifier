@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier — Checkout・PaymentのRuby SDK
 
-[English](README.md) · **公開済み安定版：1.6.0** · [Quick Start](docs/QUICK_START.ja.md)
+[English](README.md) · **公開済み安定版：1.6.1** · [Quick Start](docs/QUICK_START.ja.md)
 
 対応するAP2 Checkout・Payment MandateをRubyだけで発行・提示・検証できます。
 購入者が何を承認し、Agentが何を選べるか、署名済みの注文・支払いが条件を満たすかを
@@ -8,13 +8,15 @@
 **検証成功は購入・決済成功ではなく、SDKは決済を実行しません。**
 
 
-**対応環境：** MRI 3.4.12 / 4.0.9。公開GemはLinux ARM64・AMD64、macOS Intel・Apple Silicon、Windows Server 2022 X64でネイティブ検証に合格しました。記録したOSイメージでの実測であり、Railsデモの対応範囲とは別です。[検証範囲と再現方法](docs/PLATFORM_SUPPORT.md)を参照してください。
+**対応環境：** MRI 3.4.12 / 4.0.9。既存の公開Gemネイティブ検証は**1.6.0**のLinux ARM64・AMD64、macOS Intel・Apple Silicon、Windows Server 2022 X64が対象で、新CLIの検証ではありません。[既存の検証範囲と再現方法](docs/PLATFORM_SUPPORT.md)と[1.6.1のLinux公開後検証](docs/POST_RELEASE_161.md)を分けて参照してください。Railsデモの対応範囲も別です。
 
 ## まず動かす
 
+この最小SDK手順は**公開済み1.6.1**を使います。新CLIは[Gemだけで動かす組込み手順](docs/RUBY_INTEGRATION.ja.md)を使ってください。
+
 ```sh
-gem install ap2_mandate_verifier --version 1.6.0
-AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')"
+gem install ap2_mandate_verifier --version 1.6.1
+AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.1").full_gem_path')"
 ruby "$AP2_GEM_DIR/examples/conditional_checkout.rb"
 ruby "$AP2_GEM_DIR/examples/payment.rb"
 ```
@@ -24,7 +26,7 @@ Gem同梱例で合成鍵・承認を作り、Mandateの発行・提示・検証�
 アカウント・認証情報・DB・Railsは不要です。対応Ruby導入済みなら約10分が目安です。
 依存buildやDockerの初回取得には追加時間がかかる場合があります。
 
-**次へ：** [手順と期待出力を示すQuick Start](docs/QUICK_START.ja.md)で、
+**次へ：** [手順と期待出力を示すQuick Start（1.6.0 baseline）](docs/QUICK_START.ja.md)で、
 12のUTC月と累計JPY予算超過の拒否まで試せます。
 [Dockerデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)も公開済み**1.6.0**を使用し、
 ローカルのCheckout画面とRuby単体のPayment例を用意しています。
@@ -33,8 +35,9 @@ Gem同梱例で合成鍵・承認を作り、Mandateの発行・提示・検証�
 
 **アプリへ組み込む場合：** [Ruby組込み・プロセス終了後の復旧ガイド](docs/RUBY_INTEGRATION.ja.md)で、
 保護されたアプリ入力、模擬結果の永続化、別プロセス復旧、安全な再送判断を確認してください。
-リポジトリ取得＋公開1.6.0、または1.6.1候補の同梱CLIで実行します。
-公開1.6.0には新CLIは含まれません。候補をregistry公開版と扱う前に1.6.1の公開状態を確認してください。
+リポジトリ取得＋公開1.6.0、または**公開済み1.6.1**の同梱CLIで実行します。
+1.6.1のCLIにはリポジトリ取得が不要です。公開1.6.0には新CLIは含まれません。
+[1.6.1の配布物と検証記録](docs/POST_RELEASE_161.md)を参照してください。
 
 Checkoutは注文内容、Checkout Mandateはその承認・委任を表します。
 Payment MandateはCheckout承認を参照し、支払い条件を追加します。

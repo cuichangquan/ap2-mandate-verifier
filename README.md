@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier — Ruby SDK for Checkout and Payment
 
-[日本語](README.ja.md) · **Published stable: 1.6.0** · [Quick Start](docs/QUICK_START.md)
+[日本語](README.ja.md) · **Published stable: 1.6.1** · [Quick Start](docs/QUICK_START.md)
 
 Issue, present and verify supported AP2 Checkout and Payment Mandates in plain Ruby.
 Use this Gem when your app needs to check what a buyer approved, what an Agent may
@@ -8,13 +8,15 @@ choose, and whether signed Checkout/Payment data stays within those conditions.
 No Rails dependency. **Verification success is not purchase or payment success; the SDK never executes payments.**
 
 
-**Platforms:** MRI 3.4.12 / 4.0.9; native published-Gem checks passed on Linux ARM64/AMD64, macOS Intel/Apple Silicon and Windows Server 2022 X64. These observations cover the recorded OS images; Rails demo compatibility is separate. See [platform evidence and reproduction](docs/PLATFORM_SUPPORT.md).
+**Platforms:** MRI 3.4.12 / 4.0.9. Existing native published-Gem checks cover **1.6.0** on Linux ARM64/AMD64, macOS Intel/Apple Silicon and Windows Server 2022 X64, not the new CLI. See [platform evidence and reproduction](docs/PLATFORM_SUPPORT.md) and the separate [1.6.1 Linux publication checks](docs/POST_RELEASE_161.md). Rails demo compatibility is separate.
 
 ## Start here
 
+This minimal SDK quick start uses **published 1.6.1**. For its integration CLI, use the [Gem-only integration instructions](docs/RUBY_INTEGRATION.md).
+
 ```sh
-gem install ap2_mandate_verifier --version 1.6.0
-AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')"
+gem install ap2_mandate_verifier --version 1.6.1
+AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.1").full_gem_path')"
 ruby "$AP2_GEM_DIR/examples/conditional_checkout.rb"
 ruby "$AP2_GEM_DIR/examples/payment.rb"
 ```
@@ -25,7 +27,7 @@ Error Receipt reports failure. No account, credentials, database or Rails requir
 Allow about ten minutes with a supported Ruby already installed; dependency builds
 and Docker's first download can take longer.
 
-**Next:** [step-by-step Quick Start and expected output](docs/QUICK_START.md),
+**Next:** [step-by-step Quick Start and expected output (1.6.0 baseline)](docs/QUICK_START.md),
 including twelve UTC months and a cumulative JPY budget rejection.
 [Docker demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)
 uses published **1.6.0**, with local Checkout screens and Ruby Payment examples.
@@ -35,9 +37,9 @@ uses published **1.6.0**, with local Checkout screens and Ruby Payment examples.
 **Integrating a real application?** Start with the [Ruby integration and restart
 recovery guide](docs/RUBY_INTEGRATION.md): protected application inputs, persistent
 mock results, separate-process recovery and safe retry decisions. Use this repository
-with published 1.6.0, or the bundled CLI in the 1.6.1 candidate. Public 1.6.0 does
-not include this CLI; verify the 1.6.1 publication status before treating a candidate
-as a registry release.
+with published 1.6.0, or install **published 1.6.1** for the bundled CLI without a
+repository checkout. Public 1.6.0 does not include this CLI. See the
+[exact 1.6.1 distribution and verification](docs/POST_RELEASE_161.md).
 
 Checkout describes the order; a Checkout Mandate records approval/delegation for it.
 A Payment Mandate adds payment conditions and references the Checkout approval.
