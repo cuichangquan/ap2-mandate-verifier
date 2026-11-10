@@ -62,7 +62,12 @@ All example time is virtual: the initial epoch is **1,800,000,000**, never the
 wall clock. Mandate/challenge expiry is +60 seconds; the delayed Receipt uses
 +120 seconds within a separately pinned Receipt window. Re-running in a later
 calendar year does not unexpectedly expire the happy path. Production must use
-an independent current trusted clock.
+an independent current trusted clock. Each command selects its scenario time
+independently: `run`/`retry` use the initial epoch and `recover` uses +120.
+Commands do not advance a persistent clock. Retries shown after recovery model
+still-valid retransmission, not acceptance after expiry; use lookup/reconciliation
+for an actually expired original Mandate. The new CLI is validated on Linux
+Docker; broader SDK platform coverage does not certify this sample on native Windows.
 
 Expected happy-path meaning: acceptance produces the first Ticket; fresh `start`
 allows one mock dispatch; the authenticated Success Receipt finalizes
