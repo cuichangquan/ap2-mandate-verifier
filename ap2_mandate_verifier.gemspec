@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name = "ap2_mandate_verifier"
-  spec.version = "1.6.0"
+  spec.version = "1.6.1"
   spec.summary = "Ruby SDK for supported AP2 Checkout and Payment Mandates"
   spec.description = "Framework-independent Ruby SDK for supported AP2 Checkout profiles: Merchant JWT signing, Direct and conditional Mandate issuance and presentation, full verification with immutable Evidence, Checkout Receipts, Direct and conditional Payment Mandates, and Payment Receipts. Adds selective Checkout/Payment, PISP/date constraints opt-in transactional Payment acceptance/idempotency support and explicit bounded JPY/ON_DEMAND quotas and separate long Open UTC-monthly JPY profiles with protected current authority and Root/key continuity. Requires independently trusted application inputs; verification does not grant purchase or payment permission."
   spec.authors = ["AP2 Mandate Verifier contributors"]
@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.files += %w[docs/PAYMENT_POLICY.md docs/RELEASE_140_CANDIDATE.md examples/payment_policy.rb]
   spec.files += %w[docs/PAYMENT_ACCEPTANCE.md docs/RELEASE_150_CANDIDATE.md examples/payment_acceptance.rb]
   spec.files += %w[docs/RECURRING_PAYMENT.md docs/RELEASE_160_CANDIDATE.md examples/recurring_payment.rb docs/LONG_PAYMENT.md examples/long_payment.rb examples/long_payment_acceptance.rb]
-  spec.files += %w[examples/ruby_integration.rb examples/integration/inputs.rb examples/integration/processor.rb docs/RUBY_INTEGRATION.md docs/RUBY_INTEGRATION.ja.md]
+  spec.files += %w[examples/ruby_integration.rb examples/integration/inputs.rb examples/integration/processor.rb docs/RUBY_INTEGRATION.md docs/RUBY_INTEGRATION.ja.md docs/RELEASE_161_CANDIDATE.md]
   spec.require_paths = ["lib"]
   spec.required_ruby_version = [">= 3.4.12", "< 4.1"]
   spec.add_runtime_dependency "json", "= 2.19.9"

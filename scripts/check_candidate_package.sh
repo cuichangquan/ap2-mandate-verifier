@@ -1,6 +1,8 @@
 #!/bin/sh
 # Run in an isolated Linux container. Build once, then pass the same Gem to both MRI runs.
 set -eu
+# Candidate expectation is independent of the public 1.6.0 baseline jobs.
+export AP2_GEM_VERSION=1.6.1
 source_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 out_dir=${1:?output directory required}
 artifact=${2:?absolute candidate Gem path required}
@@ -13,7 +15,7 @@ cd "$source_dir"
 dependency_path=$(ruby -e 'puts Gem.path.join(File::PATH_SEPARATOR)')
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
   gem install --local --no-document "$artifact" > "$out_dir/install.log" 2>&1
-ruby -r "$source_dir/test/runtime_dependencies.rb" test/package_contents_audit.rb "$artifact" "$work_dir/extracted" "$work_dir/installed/gems/ap2_mandate_verifier-1.6.0" > "$out_dir/package.json"
+ruby -r "$source_dir/test/runtime_dependencies.rb" test/package_contents_audit.rb "$artifact" "$work_dir/extracted" "$work_dir/installed/gems/ap2_mandate_verifier-$AP2_GEM_VERSION" > "$out_dir/package.json"
 mkdir "$work_dir/detached"
 cd "$work_dir/detached"
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
@@ -38,21 +40,21 @@ GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
   ruby "$source_dir/examples/direct_checkout.rb" > "$out_dir/direct-installed.log"
 cat "$out_dir/direct-installed.log"
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
-  ruby "$work_dir/installed/gems/ap2_mandate_verifier-1.6.0/examples/conditional_checkout.rb" > "$out_dir/conditional-installed.log"
+  ruby "$work_dir/installed/gems/ap2_mandate_verifier-$AP2_GEM_VERSION/examples/conditional_checkout.rb" > "$out_dir/conditional-installed.log"
 cat "$out_dir/conditional-installed.log"
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 \
   ruby -r "$source_dir/test/runtime_dependencies.rb" "$source_dir/test/conditional_checkout_test.rb" > "$out_dir/conditional-installed-tests.log"
 cat "$out_dir/conditional-installed-tests.log"
 
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
-  ruby "$work_dir/installed/gems/ap2_mandate_verifier-1.6.0/examples/payment.rb" > "$out_dir/payment-installed.log"
+  ruby "$work_dir/installed/gems/ap2_mandate_verifier-$AP2_GEM_VERSION/examples/payment.rb" > "$out_dir/payment-installed.log"
 cat "$out_dir/payment-installed.log"
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 \
   ruby -r "$source_dir/test/runtime_dependencies.rb" "$source_dir/test/payment_test.rb" > "$out_dir/payment-installed-tests.log"
 cat "$out_dir/payment-installed-tests.log"
 
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
-  ruby "$work_dir/installed/gems/ap2_mandate_verifier-1.6.0/examples/selective_payment.rb" > "$out_dir/selective-payment-installed.log"
+  ruby "$work_dir/installed/gems/ap2_mandate_verifier-$AP2_GEM_VERSION/examples/selective_payment.rb" > "$out_dir/selective-payment-installed.log"
 cat "$out_dir/selective-payment-installed.log"
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 \
   ruby -r "$source_dir/test/runtime_dependencies.rb" "$source_dir/test/selective_payment_test.rb" > "$out_dir/selective-payment-installed-tests.log"
@@ -60,7 +62,7 @@ cat "$out_dir/selective-payment-installed-tests.log"
 
 for example in selective_checkout selective_checkout_payment; do
   GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
-    ruby "$work_dir/installed/gems/ap2_mandate_verifier-1.6.0/examples/${example}.rb" > "$out_dir/${example}-installed.log"
+    ruby "$work_dir/installed/gems/ap2_mandate_verifier-$AP2_GEM_VERSION/examples/${example}.rb" > "$out_dir/${example}-installed.log"
   cat "$out_dir/${example}-installed.log"
 done
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 \
@@ -68,37 +70,37 @@ GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" A
 cat "$out_dir/selective-checkout-installed-tests.log"
 
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
-  ruby "$work_dir/installed/gems/ap2_mandate_verifier-1.6.0/examples/payment_policy.rb" > "$out_dir/payment-policy-installed.log"
+  ruby "$work_dir/installed/gems/ap2_mandate_verifier-$AP2_GEM_VERSION/examples/payment_policy.rb" > "$out_dir/payment-policy-installed.log"
 cat "$out_dir/payment-policy-installed.log"
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 \
   ruby -r "$source_dir/test/runtime_dependencies.rb" "$source_dir/test/payment_policy_test.rb" > "$out_dir/payment-policy-installed-tests.log"
 cat "$out_dir/payment-policy-installed-tests.log"
 
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
-  ruby "$work_dir/installed/gems/ap2_mandate_verifier-1.6.0/examples/payment_acceptance.rb" > "$out_dir/payment-acceptance-installed.log"
+  ruby "$work_dir/installed/gems/ap2_mandate_verifier-$AP2_GEM_VERSION/examples/payment_acceptance.rb" > "$out_dir/payment-acceptance-installed.log"
 cat "$out_dir/payment-acceptance-installed.log"
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 \
   ruby -r "$source_dir/test/runtime_dependencies.rb" "$source_dir/test/payment_acceptance_test.rb" > "$out_dir/payment-acceptance-installed-tests.log"
 cat "$out_dir/payment-acceptance-installed-tests.log"
-GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 AP2_GEM_VERSION=1.6.0 \
+GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 AP2_GEM_VERSION="$AP2_GEM_VERSION" \
   ruby "$source_dir/test/replay_process_oracle.rb" > "$out_dir/replay-process-installed.log"
 cat "$out_dir/replay-process-installed.log"
 
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
-  ruby "$work_dir/installed/gems/ap2_mandate_verifier-1.6.0/examples/recurring_payment.rb" > "$out_dir/recurring-example.log"
+  ruby "$work_dir/installed/gems/ap2_mandate_verifier-$AP2_GEM_VERSION/examples/recurring_payment.rb" > "$out_dir/recurring-example.log"
 cat "$out_dir/recurring-example.log"
 for suite in recurring_payment recurring_acceptance; do
   GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 \
     ruby -r "$source_dir/test/runtime_dependencies.rb" "$source_dir/test/${suite}_test.rb" > "$out_dir/${suite}-installed.log"
   cat "$out_dir/${suite}-installed.log"
 done
-GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 AP2_GEM_VERSION=1.6.0 \
+GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 AP2_GEM_VERSION="$AP2_GEM_VERSION" \
   ruby "$source_dir/test/recurring_process_oracle.rb" > "$out_dir/recurring-process-installed.log"
 cat "$out_dir/recurring-process-installed.log"
 
 for example in long_payment long_payment_acceptance; do
   GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" \
-    ruby "$work_dir/installed/gems/ap2_mandate_verifier-1.6.0/examples/${example}.rb" > "$out_dir/${example}-example.log"
+    ruby "$work_dir/installed/gems/ap2_mandate_verifier-$AP2_GEM_VERSION/examples/${example}.rb" > "$out_dir/${example}-example.log"
   cat "$out_dir/${example}-example.log"
 done
 for suite in long_payment long_payment_acceptance payment_constraint_regression; do
@@ -106,11 +108,11 @@ for suite in long_payment long_payment_acceptance payment_constraint_regression;
     ruby -r "$source_dir/test/runtime_dependencies.rb" "$source_dir/test/${suite}_test.rb" > "$out_dir/${suite}-installed.log"
   cat "$out_dir/${suite}-installed.log"
 done
-GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 AP2_GEM_VERSION=1.6.0 \
+GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 AP2_GEM_VERSION="$AP2_GEM_VERSION" \
   ruby "$source_dir/test/long_payment_process_oracle.rb" > "$out_dir/long-process-installed.log"
 cat "$out_dir/long-process-installed.log"
 
 GEM_HOME="$work_dir/installed" GEM_PATH="$work_dir/installed:$dependency_path" AP2_INSTALLED=1 \
-  AP2_EXAMPLES_ROOT="$work_dir/installed/gems/ap2_mandate_verifier-1.6.0/examples" \
+  AP2_EXAMPLES_ROOT="$work_dir/installed/gems/ap2_mandate_verifier-$AP2_GEM_VERSION/examples" \
   ruby "$source_dir/test/ruby_integration_test.rb" > "$out_dir/ruby-integration-installed.log"
 cat "$out_dir/ruby-integration-installed.log"

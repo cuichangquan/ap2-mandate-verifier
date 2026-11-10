@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.1 candidate — bundled Ruby integration and restart recovery
+
+- Package the end-to-end Ruby CLI, protected application inputs and separate durable mock processor, with English/Japanese integration and recovery guides.
+- Demonstrate actual process interruption, restart with the same SQLite state, original-wire/processor-key preservation, and fail-closed recovery without automatic re-execution.
+- Preserve SDK implementation, public APIs, pinned runtime dependencies and Ruby requirements. This is a packaging/documentation patch, not production payment authorization.
+- Keep public 1.6.0 provenance checks separate from candidate installation tests. Publication remains gated on the final exact archive; see [release preparation](docs/RELEASE_161_CANDIDATE.md).
+
 ## 1.6.0 — 2026-11-05 — explicit long Open and UTC-monthly JPY acceptance
 
 - Explicit complete/selective JPY integer / ON_DEMAND finite recurrence/budget profiles.

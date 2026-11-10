@@ -1,6 +1,6 @@
 # Rubyアプリ組込みとプロセス終了後の復旧
 
-[English](RUBY_INTEGRATION.md) · [Quick Start](QUICK_START.ja.md) · [受理契約](PAYMENT_ACCEPTANCE.md)
+[English](RUBY_INTEGRATION.md) · [Quick Start](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/QUICK_START.ja.md) · [受理契約](PAYMENT_ACCEPTANCE.md)
 
 アプリの正本データ、条件付きCheckout、Payment、永続的な受理、元取引に結合したReceiptを
 つなぐ入口です。実行ファイルは[`examples/ruby_integration.rb`](../examples/ruby_integration.rb)、
@@ -35,12 +35,13 @@ docker run --rm --network none --entrypoint ruby ap2-ruby-integration -rap2_mand
 SDKはインストール先のGemディレクトリを指す必要があり、リポジトリの`lib`ではありません。
 公開Gemでの実行を確認する際は`-Ilib`や`RUBYLIB`を追加しないでください。
 既存の`conditional_checkout.rb`、`payment.rb`、`payment_acceptance.rb`はGemだけで
-取得できる例です。[Quick Start](QUICK_START.ja.md)に同梱場所の確認手順があります。
-新CLIと補助ファイルは次版向けsource-built Gem候補に同梱します。
-リリース判断前の候補が`1.6.0`と表示されても、公開archiveとは別のartifactです。
-公開1.6.0のインストールだけで新CLIを取得できるとは扱わないでください。
+取得できる例です。[Quick Start](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/QUICK_START.ja.md)に同梱場所の確認手順があります。
+新CLIと補助ファイルは`1.6.1`に同梱します。公開前はsource-built **1.6.1候補**を
+意味し、registryの公開版ではありません。公開1.6.0とは出所が異なり、
+公開1.6.0のインストールだけでは新CLIを取得できません。
+公開済みと扱う前に[リリース準備記録](RELEASE_161_CANDIDATE.md)とRubyGemsの版情報を確認してください。
 
-候補Gemと任意のSQLite driverを分離したRuby環境へ導入した後は、同梱CLIの実行に
+1.6.1と任意のSQLite driverを分離したRuby環境へ導入した後は、同梱CLIの実行に
 リポジトリは不要です：
 
 ```sh
@@ -52,7 +53,7 @@ ruby "$AP2_GEM_DIR/examples/ruby_integration.rb" run /tmp/ap2-integration-new su
 
 `test`は同梱確認であり、別sourceへfallbackするものではありません。新しい保存先を使い、
 `init`を通すために既存状態を削除しないでください。次版公開までは、上記Docker／リポジトリ
-経路が公開Gemを使う再現手順です。公開と次の版番号は別途判断します。
+経路が公開Gemを使う再現手順です。1.6.1の最終archive公開には別途Gateがあります。
 
 時計はすべて仮想です。初期epochは**1,800,000,000**で、実時計を使いません。
 Mandate／challengeの期限は+60秒、遅延Receiptは独立した検証窓内の+120秒を使います。
@@ -133,8 +134,9 @@ CLIは完了したコマンドごとにJSON要約を出力します。正常系�
 ```
 
 `ticket`は有無のbooleanだけで、実行能力の値ではありません。
-`sdk_version`、`sdk_load`、`ruby`、`fixture_clock`は実行環境を示し、上記経路では
-`1.6.0`、`installed_gem`、`4.0.9`、`1800000000`が期待値です。
+`sdk_version`、`sdk_load`、`ruby`、`fixture_clock`は実行環境を示します。Docker／公開版経路では
+`1.6.0`、`installed_gem`、`4.0.9`、`1800000000`が期待値です。1.6.1候補の同梱例では
+`sdk_version: 1.6.1`と実際に使用したRubyの版が出力されます。
 クラッシュ出力には`simulated_process_exit: 75`が付きます。照会結果がなければ
 `event: operator_reconciliation_required`、`result: unknown`となり、SDK状態は
 `pending`のままの場合があります。この区別を再実行の許可にしないでください。

@@ -45,7 +45,7 @@ module RubyIntegrationTest
     result = JSON.parse(output)
     unless exit_code == 75
       check(result.fetch("sdk_load") == (ENV["AP2_INSTALLED"] == "1" ? "installed_gem" : "repository_lib"), "actual load route")
-      check(result.fetch("sdk_version") == "1.6.0", "actual version") if ENV["AP2_INSTALLED"] == "1"
+      check(result.fetch("sdk_version") == ENV.fetch("AP2_GEM_VERSION", "1.6.0"), "actual version") if ENV["AP2_INSTALLED"] == "1"
     end
     result
   end
