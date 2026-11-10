@@ -53,8 +53,7 @@ module PaymentAcceptanceExample
       mock_processor[execution.processor_key] ||= "synthetic-processor-result"
       service.unknown(ticket: first.ticket) # Simulated response loss after dispatch.
       store.close
-      # A new service/store in this SAME Ruby process opens the existing ledger.
-      # See ruby_integration.rb for actual process exit/restart. No create/reset fallback.
+      # New process/service opens the SAME existing ledger. No create/reset fallback.
       reopened = A::SQLiteStore.new(path: path)
       recovered = A::Service.new(store: reopened)
       pending = recovered.lookup(**scope)
