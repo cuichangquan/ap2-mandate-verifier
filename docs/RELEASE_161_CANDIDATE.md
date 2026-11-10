@@ -12,7 +12,7 @@ The legacy published examples and the public **1.6.0** archive audits remain unc
 
 **Candidate, not published:** registry publication, tag and GitHub Release are pending.
 Do not infer publication from this document, a green CI run, version metadata, or a merge.
-The current public baseline remains [1.6.0](POST_RELEASE_160.md).
+The current public baseline remains [1.6.0](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/POST_RELEASE_160.md).
 
 ## Required evidence and gates
 

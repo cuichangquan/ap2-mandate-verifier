@@ -1,6 +1,6 @@
 # Ruby application integration and restart recovery
 
-[日本語](RUBY_INTEGRATION.ja.md) · [Quick Start](QUICK_START.md) · [Acceptance contract](PAYMENT_ACCEPTANCE.md)
+[日本語](RUBY_INTEGRATION.ja.md) · [Quick Start](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/QUICK_START.md) · [Acceptance contract](PAYMENT_ACCEPTANCE.md)
 
 Start here to connect application records, conditional Checkout, Payment, durable
 acceptance and an original-bound Receipt. The runnable entry is
@@ -37,7 +37,7 @@ docker run --rm --network none --entrypoint ruby ap2-ruby-integration -rap2_mand
 The SDK path must be the installed Gem directory, not this repository's `lib`.
 Do not add `-Ilib` or set `RUBYLIB` when claiming a published-Gem run. Existing
 `conditional_checkout.rb`, `payment.rb` and `payment_acceptance.rb` are already
-Gem-only examples. Follow the [Quick Start](QUICK_START.md) to locate them.
+Gem-only examples. Follow the [Quick Start](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/QUICK_START.md) to locate them.
 The CLI and its helper files are packaged in `1.6.1`. Before publication, this
 means the source-built **1.6.1 candidate**, not a registry release. Its provenance
 is different from public 1.6.0; installing public 1.6.0 alone does not supply this CLI.
@@ -147,8 +147,9 @@ path includes these fields (runtime metadata is omitted here):
 ```
 
 `ticket` is only a boolean, never the capability. `sdk_version`, `sdk_load`,
-`ruby` and `fixture_clock` identify the runtime; the route above should report
-`1.6.0`, `installed_gem`, `4.0.9` and `1800000000`. Crash output carries
+`ruby` and `fixture_clock` identify the runtime. The Docker/public route reports
+`1.6.0`, `installed_gem`, `4.0.9` and `1800000000`; the bundled 1.6.1 candidate
+reports `sdk_version: 1.6.1` and the Ruby version actually used. Crash output carries
 `simulated_process_exit: 75`. Missing query results report
 `event: operator_reconciliation_required` and `result: unknown`; the SDK may
 still say `pending`. That distinction does not authorize dispatch.

@@ -34,8 +34,10 @@ uses published **1.6.0**, with local Checkout screens and Ruby Payment examples.
 
 **Integrating a real application?** Start with the [Ruby integration and restart
 recovery guide](docs/RUBY_INTEGRATION.md): protected application inputs, persistent
-mock results, separate-process recovery and safe retry decisions. The new example
-requires this repository with published 1.6.0; it is not in that Gem archive.
+mock results, separate-process recovery and safe retry decisions. Use this repository
+with published 1.6.0, or the bundled CLI in the 1.6.1 candidate. Public 1.6.0 does
+not include this CLI; verify the 1.6.1 publication status before treating a candidate
+as a registry release.
 
 Checkout describes the order; a Checkout Mandate records approval/delegation for it.
 A Payment Mandate adds payment conditions and references the Checkout approval.

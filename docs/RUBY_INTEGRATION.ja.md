@@ -1,6 +1,6 @@
 # Rubyアプリ組込みとプロセス終了後の復旧
 
-[English](RUBY_INTEGRATION.md) · [Quick Start](QUICK_START.ja.md) · [受理契約](PAYMENT_ACCEPTANCE.md)
+[English](RUBY_INTEGRATION.md) · [Quick Start](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/QUICK_START.ja.md) · [受理契約](PAYMENT_ACCEPTANCE.md)
 
 アプリの正本データ、条件付きCheckout、Payment、永続的な受理、元取引に結合したReceiptを
 つなぐ入口です。実行ファイルは[`examples/ruby_integration.rb`](../examples/ruby_integration.rb)、
@@ -35,7 +35,7 @@ docker run --rm --network none --entrypoint ruby ap2-ruby-integration -rap2_mand
 SDKはインストール先のGemディレクトリを指す必要があり、リポジトリの`lib`ではありません。
 公開Gemでの実行を確認する際は`-Ilib`や`RUBYLIB`を追加しないでください。
 既存の`conditional_checkout.rb`、`payment.rb`、`payment_acceptance.rb`はGemだけで
-取得できる例です。[Quick Start](QUICK_START.ja.md)に同梱場所の確認手順があります。
+取得できる例です。[Quick Start](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/QUICK_START.ja.md)に同梱場所の確認手順があります。
 新CLIと補助ファイルは`1.6.1`に同梱します。公開前はsource-built **1.6.1候補**を
 意味し、registryの公開版ではありません。公開1.6.0とは出所が異なり、
 公開1.6.0のインストールだけでは新CLIを取得できません。
@@ -134,8 +134,9 @@ CLIは完了したコマンドごとにJSON要約を出力します。正常系�
 ```
 
 `ticket`は有無のbooleanだけで、実行能力の値ではありません。
-`sdk_version`、`sdk_load`、`ruby`、`fixture_clock`は実行環境を示し、上記経路では
-`1.6.0`、`installed_gem`、`4.0.9`、`1800000000`が期待値です。
+`sdk_version`、`sdk_load`、`ruby`、`fixture_clock`は実行環境を示します。Docker／公開版経路では
+`1.6.0`、`installed_gem`、`4.0.9`、`1800000000`が期待値です。1.6.1候補の同梱例では
+`sdk_version: 1.6.1`と実際に使用したRubyの版が出力されます。
 クラッシュ出力には`simulated_process_exit: 75`が付きます。照会結果がなければ
 `event: operator_reconciliation_required`、`result: unknown`となり、SDK状態は
 `pending`のままの場合があります。この区別を再実行の許可にしないでください。
