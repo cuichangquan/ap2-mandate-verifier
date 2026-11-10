@@ -17,10 +17,10 @@ expected = (expected + %w[docs/SELECTIVE_CHECKOUT.md docs/RELEASE_130_CANDIDATE.
 expected = (expected + %w[docs/PAYMENT_POLICY.md docs/RELEASE_140_CANDIDATE.md examples/payment_policy.rb]).sort
 expected = (expected + %w[docs/PAYMENT_ACCEPTANCE.md docs/RELEASE_150_CANDIDATE.md examples/payment_acceptance.rb]).sort
 expected = (expected + %w[docs/RECURRING_PAYMENT.md docs/RELEASE_160_CANDIDATE.md examples/recurring_payment.rb docs/LONG_PAYMENT.md examples/long_payment.rb examples/long_payment_acceptance.rb]).sort
-expected = (expected + %w[examples/ruby_integration.rb examples/integration/inputs.rb examples/integration/processor.rb docs/RUBY_INTEGRATION.md docs/RUBY_INTEGRATION.ja.md]).sort
+expected = (expected + %w[examples/ruby_integration.rb examples/integration/inputs.rb examples/integration/processor.rb docs/RUBY_INTEGRATION.md docs/RUBY_INTEGRATION.ja.md docs/RELEASE_161_CANDIDATE.md]).sort
 raise "package whitelist" unless files == expected && spec.extensions.empty?
 versions = {"base64"=>"= 0.3.0","json"=>"= 2.19.9","jwt"=>"= 3.3.0","openssl"=>"= 4.0.2","digest"=>"= 3.2.1"}
-raise "package metadata" unless spec.name == "ap2_mandate_verifier" && spec.version.to_s == "1.6.0" &&
+raise "package metadata" unless spec.name == "ap2_mandate_verifier" && spec.version.to_s == "1.6.1" &&
   spec.required_ruby_version == Gem::Requirement.new(">= 3.4.12", "< 4.1") && spec.license == "MIT" &&
   spec.runtime_dependencies.to_h { |d| [d.name, d.requirement.to_s] } == versions
 package.extract_files(ARGV.fetch(1))

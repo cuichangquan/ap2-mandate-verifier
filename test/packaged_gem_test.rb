@@ -16,7 +16,7 @@ def deep_frozen(value)
 end
 spec = Gem.loaded_specs.fetch("ap2_mandate_verifier")
 need(!Gem.loaded_specs.key?("sqlite3"), "optional SQLite driver not eagerly loaded")
-need(spec.version.to_s == "1.6.0" && %w[3.4.12 4.0.9].include?(RUBY_VERSION) && RUBY_ENGINE == "ruby", "candidate runtime")
+need(spec.version.to_s == ENV.fetch("AP2_GEM_VERSION", "1.6.0") && %w[3.4.12 4.0.9].include?(RUBY_VERSION) && RUBY_ENGINE == "ruby", "candidate runtime")
 versions = {"json"=>"2.19.9","jwt"=>"3.3.0","base64"=>"0.3.0","openssl"=>"4.0.2","digest"=>"3.2.1"}
 need(versions.all? { |k,v| Gem.loaded_specs.fetch(k).version.to_s == v }, "runtime dependencies")
 root = File.realpath(spec.full_gem_path)
