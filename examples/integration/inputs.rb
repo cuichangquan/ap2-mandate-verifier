@@ -126,13 +126,16 @@ module RubyIntegration
     end
 
     def verification(data, now:)
+      # Presentation restores exact saved bytes; it does NOT authenticate them.
+      payment = M::Payment.present(open_sd_jwt: data.fetch("wires").fetch("payment_open"),
+        closed_sd_jwt: data.fetch("wires").fetch("payment_closed"))
       checkout_inputs = M::InputBuilder.inputs(**host_inputs(data, now: now),
         saved_challenge: M::InputBuilder.restore(saved_challenge: data.fetch("saved_challenge")),
         terminal_jws: data.fetch("wires").fetch("checkout_terminal"),
         expected_challenge_issuer_id: data.fetch("challenge_issuer"),
         clock_source_id: "synthetic-clock", verified_at: now)
-      {open_sd_jwt: data.fetch("wires").fetch("payment_open"),
-        closed_sd_jwt: data.fetch("wires").fetch("payment_closed"), checkout_mode: :conditional,
+      {open_sd_jwt: payment.open_sd_jwt,
+        closed_sd_jwt: payment.closed_sd_jwt, checkout_mode: :conditional,
         checkout_inputs: checkout_inputs, expected_payment: expected_payment(data),
         trusted_provider_public_key_pem: public_key(data, "issuer"),
         expected_agent_public_key_pem: public_key(data, "agent"),

@@ -126,7 +126,8 @@ The synthetic bootstrap supplies both sides only to make this example standalone
 `InputBuilder.prepare` creates the saved challenge. At verification/start the
 example reloads the protected fixture records, selects trust, calls `restore`
 and `inputs`, then passes complete raw verification inputs to the existing SDK.
-Restoring a record or loading a stored Result/Evidence is **not current
+`Payment.present` restores the saved Payment bytes before verification; it does
+not authenticate them. Restoring a record or loading a stored Result/Evidence is **not current
 verification**. The coordinator verifies again; the real application must also
 recheck authoritative current authorization and consume nonce/order state atomically.
 

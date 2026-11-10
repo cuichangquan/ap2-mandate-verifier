@@ -139,6 +139,9 @@ CLIは完了したコマンドごとにJSON要約を出力します。正常系�
 `event: operator_reconciliation_required`、`result: unknown`となり、SDK状態は
 `pending`のままの場合があります。この区別を再実行の許可にしないでください。
 
+`Payment.present`は保存したPayment原文を提示用に復元するだけで、真正性の検証ではありません。
+後続の完全な検証と、アプリ側の現在の実行判断が必要です。
+
 ## 4. 状態遷移と復旧判断
 
 ```text
