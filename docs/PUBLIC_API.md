@@ -229,3 +229,14 @@ For the explicit selective Checkout profile, Evidence `original_root_graph_closu
 ## 1.6.0 candidate: explicit long content / short proof
 
 `LongPayment` opts into separate long complete Checkout/Payment profiles while preserving existing defaults. `issue_checkout_open/issue_checkout_closed/present_checkout` and `details/issue_open/issue_closed/present/verify` follow existing role-separated inputs. `approved_pair!`, `current_authority!` and `authority!` are protected-backend helpers; none enrolls consent by itself. `PaymentAcceptance::LongSQLiteStore` adds explicit schema3 authority/period state, `authorize_series!`, CAS `update_authority!/invalidate_authority!/replace_root!/revoke_root!`, inherited permanent `revoke_series!` and current `usage`. `Execution.valid_until` exposes the checked short start deadline, including on existing acceptance results; it does not make an external processor call atomic or revoke an already returned handle. See [exact profile, UTC windows, trust duties, migration and SDK differences](LONG_PAYMENT.md).
+
+### Payment diagnostics (1.7.0 candidate)
+
+`Payment::Verification#diagnostic` (including Selective/Long results),
+`PaymentReceipt::Verification#diagnostic`, and `PaymentAcceptance::Result#diagnostic`
+are optional immutable `Diagnostic` objects. `PaymentAcceptance::Service#start_with_diagnostic`
+accepts the same keywords as `start`, runs the same single attempt, and returns an
+immutable `StartResult` with `execution` (Execution or nil) and `diagnostic`.
+Existing `start` retains Execution/nil, with unchanged exception normalization.
+`Diagnostic.payment_flow(stage, reason)` restores a known catalog pair or nil;
+this is not evidence or permission to execute. See [diagnostic limits](DIAGNOSTICS.md#payment-flow-170-candidate-not-published-by-this-change).

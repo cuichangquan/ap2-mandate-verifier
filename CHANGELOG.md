@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.0 candidate (unreleased)
+
+- Add bounded English/Japanese Payment, Receipt and acceptance diagnostics without changing existing decisions, codes, statuses or store formats.
+- Add call-local `Service#start_with_diagnostic`; existing `start` still returns Execution or nil. Diagnostics do not authorize retries or quota release.
+- Preserve authentic Error Receipt semantics and document partial diagnostic coverage.
+
+
 ## 1.6.1 — 2026-11-10 — bundled Ruby integration and restart recovery
 
 - Package the end-to-end Ruby CLI, protected application inputs and separate durable mock processor, with English/Japanese integration and recovery guides.

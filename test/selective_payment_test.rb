@@ -92,6 +92,8 @@ module SelectivePaymentTest
       checkout_inputs: checkout_inputs, expected_payment: details, trusted_provider_public_key_pem: provider.public_to_pem,
       expected_agent_public_key_pem: agent.public_to_pem, expected_audience: "credential-provider", expected_nonce: "payment-nonce", verified_at: NOW}
     checked = S.verify(**args)
+    assert(checked.diagnostic.nil?, "selective success diagnostic absent")
+    assert(S.verify(**args.merge(expected_audience: "other")).diagnostic.reason == :payment_binding_mismatch, "selective proof binding diagnostic")
     assert(checked.verified? && checked.payment.slice(*M::Payment::FIELDS) == details && checked.payment.frozen?, "complete public verification")
     secrets.each { |secret| assert(!checked.inspect.include?(secret) && !checked.payment.inspect.include?(secret), "result privacy") }
     assert(!S.verify(**args.merge(open_presentation: full)).verified?, "full issuance is not a selected presentation")

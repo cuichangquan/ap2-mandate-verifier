@@ -20,7 +20,7 @@ expected = (expected + %w[docs/RECURRING_PAYMENT.md docs/RELEASE_160_CANDIDATE.m
 expected = (expected + %w[examples/ruby_integration.rb examples/integration/inputs.rb examples/integration/processor.rb docs/RUBY_INTEGRATION.md docs/RUBY_INTEGRATION.ja.md docs/RELEASE_161_CANDIDATE.md]).sort
 raise "package whitelist" unless files == expected && spec.extensions.empty?
 versions = {"base64"=>"= 0.3.0","json"=>"= 2.19.9","jwt"=>"= 3.3.0","openssl"=>"= 4.0.2","digest"=>"= 3.2.1"}
-raise "package metadata" unless spec.name == "ap2_mandate_verifier" && spec.version.to_s == "1.6.1" &&
+raise "package metadata" unless spec.name == "ap2_mandate_verifier" && spec.version.to_s == "1.7.0" &&
   spec.required_ruby_version == Gem::Requirement.new(">= 3.4.12", "< 4.1") && spec.license == "MIT" &&
   spec.runtime_dependencies.to_h { |d| [d.name, d.requirement.to_s] } == versions
 package.extract_files(ARGV.fetch(1))

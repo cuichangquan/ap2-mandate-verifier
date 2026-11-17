@@ -4,7 +4,11 @@ module AP2MandateVerifier
   # Authenticity and reported outcome are separate. No automatic success/retry.
   module PaymentReceipt
     class Invalid < ArgumentError
-      def initialize = super("invalid payment receipt information")
+      attr_reader :diagnostic_reason
+      def initialize
+        @diagnostic_reason = :undetermined
+        super("invalid payment receipt information")
+      end
     end
     class Signed
       attr_reader :jwt, :reference
@@ -15,9 +19,10 @@ module AP2MandateVerifier
       private_class_method :new
     end
     class Verification
-      attr_reader :code, :outcome, :payment_id, :psp_confirmation_id, :network_confirmation_id, :error, :error_description
-      def initialize(claims = nil)
+      attr_reader :diagnostic, :code, :outcome, :payment_id, :psp_confirmation_id, :network_confirmation_id, :error, :error_description
+      def initialize(claims = nil, reason: :undetermined)
         @code = claims ? :payment_receipt_verified : :payment_receipt_verification_failed
+        @diagnostic = PaymentDiagnostics.build(:payment_receipt_verification, claims ? :reported_error : reason) if !claims || claims["status"] == "Error"
         if claims
           @outcome, @payment_id, @psp_confirmation_id, @network_confirmation_id, @error, @error_description =
             claims.values_at("status", "payment_id", "psp_confirmation_id", "network_confirmation_id", "error", "error_description").map { |s| s&.freeze }
@@ -44,18 +49,18 @@ module AP2MandateVerifier
     def self.verify(jwt:, closed_sd_jwt:, trusted_public_key_pem:, expected_issuer:, expected_payment_id:,
                     not_before:, not_after:, verified_at:, profile_ref: Payment::PROFILE_REF)
       [not_before, not_after, verified_at].each { |t| CheckoutReceipt.send(:epoch!, t) }
-      raise Invalid unless not_before <= verified_at && verified_at <= not_after
+      raise PaymentDiagnostics.invalid(Invalid, :receipt_time_mismatch) unless not_before <= verified_at && verified_at <= not_after
       expected = InputValidator.snapshot!(expected_issuer, max_bytes: 512)
       id = InputValidator.snapshot!(expected_payment_id, max_bytes: 512)
       text!(expected, 512); text!(id, 512)
       ref = reference(closed_sd_jwt: closed_sd_jwt, profile_ref: profile_ref)
       claims = RootSignature.verified_payload!(jwt, trusted_public_key_pem, expected_typ: "JWT", max_bytes: 16_384)
       validate!(claims)
-      raise Invalid unless claims["iss"] == expected && claims["payment_id"] == id && claims["reference"] == ref &&
-        claims["iat"].between?(not_before, verified_at)
+      raise PaymentDiagnostics.invalid(Invalid, :receipt_reference_mismatch) unless claims["iss"] == expected && claims["payment_id"] == id && claims["reference"] == ref
+      raise PaymentDiagnostics.invalid(Invalid, :receipt_time_mismatch) unless claims["iat"].between?(not_before, verified_at)
       Verification.send(:new, claims)
-    rescue StandardError, LoadError
-      Verification.send(:new)
+    rescue StandardError, LoadError => error
+      Verification.send(:new, reason: PaymentDiagnostics.reason(error))
     end
     def self.validate!(claims)
       fields = %w[iss status iat reference payment_id] + case claims["status"]
@@ -75,7 +80,7 @@ module AP2MandateVerifier
       fields = implementation.parameters.map(&:last).freeze
       define_singleton_method(name) do |**args|
         unless (required - args.keys).empty? && (args.keys - fields).empty?
-          next Verification.send(:new) if name == :verify
+          next Verification.send(:new, reason: :invalid_arguments) if name == :verify
           raise Invalid
         end
         implementation.call(**args)

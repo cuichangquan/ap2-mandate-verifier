@@ -168,3 +168,10 @@ end
 
 
 </details>
+
+### 次の候補：Payment以降の診断
+
+1.7.0候補ではPayment・Receipt・受理結果の任意の診断と、呼び出しごとの
+`start_with_diagnostic`を追加します。従来の`start`のExecution／nil契約は維持します。
+この変更では未公開です。[診断ガイド](docs/DIAGNOSTICS.ja.md)に英日ヒント、真正なError Receipt、
+結果不明の扱いと限界をまとめています。診断は再決済や利用枠解放の許可ではありません。

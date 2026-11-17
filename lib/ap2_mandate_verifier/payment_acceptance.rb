@@ -5,7 +5,11 @@ module AP2MandateVerifier
   module PaymentAcceptance
     SCOPE = %w[tenant_id merchant_id operation_id approval_id occurrence_id order_id].freeze
     class Invalid < ArgumentError
-      def initialize = super("invalid payment acceptance information")
+      attr_reader :diagnostic_reason
+      def initialize
+        @diagnostic_reason = :undetermined
+        super("invalid payment acceptance information")
+      end
     end
     class Unavailable < StandardError
       def initialize = super("payment acceptance storage unavailable")
@@ -23,9 +27,12 @@ module AP2MandateVerifier
       private_class_method :new
     end
     class Result
-      attr_reader :status, :ticket, :closed_sd_jwt, :reference, :receipt_jwt, :processor_key, :signed_wires
-      def initialize(status, record = nil, ticket = nil)
+      attr_reader :diagnostic, :status, :ticket, :closed_sd_jwt, :reference, :receipt_jwt, :processor_key, :signed_wires
+      def initialize(status, record = nil, ticket = nil, reason: nil)
         @status, @ticket = status, ticket
+        unless %i[reserved receipt_success].include?(status)
+          @diagnostic = PaymentDiagnostics.build(:payment_acceptance, reason || (%i[conflict unavailable pending unknown receipt_error].include?(status) ? status : :undetermined))
+        end
         if record
           @closed_sd_jwt, @reference, @receipt_jwt = record.values_at("closed_sd_jwt", "reference", "receipt_jwt").map { |v| v&.freeze }
           @processor_key = record.fetch("processor_key").freeze
@@ -48,6 +55,18 @@ module AP2MandateVerifier
       private_class_method :new
     end
 
+    # Per-call immutable observation; never an authorization or retry instruction.
+    class StartResult
+      attr_reader :execution, :diagnostic
+      def initialize(execution, reason = :undetermined)
+        @execution = execution
+        @diagnostic = PaymentDiagnostics.build(:payment_execution, reason) unless execution
+        freeze
+      end
+      def inspect = "#<AP2MandateVerifier::PaymentAcceptance::StartResult>"
+      private_class_method :new
+    end
+
     class Service
       def initialize(**arguments)
         raise Invalid.new, cause: nil unless arguments.keys == [:store]
@@ -64,14 +83,24 @@ module AP2MandateVerifier
         Result.send(:new, :conflict)
       rescue Unavailable
         Result.send(:new, :unavailable)
+      rescue Invalid => error
+        Result.send(:new, :rejected, reason: error.diagnostic_reason)
       rescue StandardError, LoadError
         Result.send(:new, :rejected)
       end
 
       def start(ticket:, verification_inputs:)
+        start_observation(ticket: ticket, verification_inputs: verification_inputs).execution
+      end
+
+      def start_with_diagnostic(ticket:, verification_inputs:)
+        start_observation(ticket: ticket, verification_inputs: verification_inputs)
+      end
+
+      def start_observation(ticket:, verification_inputs:)
         old = @store.ticket_record!(ticket: ticket)
         fresh = verified_record(old.fetch("mode").to_sym, verification_inputs, old.fetch("scope"))
-        raise Invalid unless old.fetch("instruction") == fresh.fetch("instruction") && old.fetch("signed_wires") == fresh.fetch("signed_wires")
+        raise PaymentDiagnostics.invalid(Invalid, :saved_binding_mismatch) unless old.fetch("instruction") == fresh.fetch("instruction") && old.fetch("signed_wires") == fresh.fetch("signed_wires")
         record = if LongPayment.profile?(old.fetch("profile_ref"))
           @store.start_long!(ticket: ticket, verified_at: fresh.fetch("accepted_at"),
             instruction: fresh.fetch("instruction"), signed_wires: fresh.fetch("signed_wires"),
@@ -84,11 +113,21 @@ module AP2MandateVerifier
           # Existing adapters retain their public signature. The returned handle
           # must still expose the freshly verified shorter Host deadline.
           record = record.merge("valid_until" => [record.fetch("valid_until"), fresh.fetch("valid_until")].min)
-          Execution.send(:new, record)
+          StartResult.send(:new, Execution.send(:new, record))
+        else
+          StartResult.send(:new, nil)
         end
+      rescue Unavailable
+        StartResult.send(:new, nil, :unavailable)
+      rescue Conflict
+        StartResult.send(:new, nil, :conflict)
+      rescue Invalid => error
+        StartResult.send(:new, nil, error.diagnostic_reason)
       rescue StandardError, LoadError
-        nil # An uncertain commit NEVER produces an execution handle.
+        StartResult.send(:new, nil) # An uncertain commit NEVER produces a handle.
       end
+
+      private :start_observation
 
       private
       def verified_record(mode, verification_inputs, scope)
@@ -102,7 +141,7 @@ module AP2MandateVerifier
         when :selective then SelectivePayment.verify(**args)
         else raise Invalid
         end
-        raise Invalid unless result.verified?
+        raise PaymentDiagnostics.invalid(Invalid, :payment_not_verified) unless result.verified?
         checkout_args = args.fetch(:checkout_inputs)
         if mode == :direct
           checkout = Buyer.verify(**checkout_args)
@@ -150,6 +189,8 @@ module AP2MandateVerifier
         Result.send(:new, :conflict)
       rescue Unavailable
         Result.send(:new, :unavailable)
+      rescue Invalid => error
+        Result.send(:new, :rejected, reason: error.diagnostic_reason)
       rescue StandardError, LoadError
         Result.send(:new, :rejected)
       end
@@ -172,6 +213,8 @@ module AP2MandateVerifier
         Result.send(:new, :conflict)
       rescue Unavailable
         Result.send(:new, :unavailable)
+      rescue Invalid => error
+        Result.send(:new, :rejected, reason: error.diagnostic_reason)
       rescue StandardError, LoadError
         Result.send(:new, :rejected)
       end
@@ -194,12 +237,12 @@ module AP2MandateVerifier
         receipt = PaymentReceipt.verify(jwt: jwt, closed_sd_jwt: record.fetch("closed_sd_jwt"),
           profile_ref: record.fetch("profile_ref") == SelectivePayment::PROFILE_REF ? Payment::PROFILE_REF : record.fetch("profile_ref"),
           verified_at: verified_at, **context)
-        raise Invalid unless receipt.verified?
+        raise PaymentDiagnostics.invalid(Invalid, :receipt_not_verified) unless receipt.verified?
         status = receipt.payment_succeeded? ? "receipt_success" : "receipt_error"
         @store.finish!(scope: record.fetch("scope"), ticket: ticket, receipt_jwt: jwt, status: status)
       end
 
-      %i[accept start finish unknown reconcile lookup].each do |name|
+      %i[accept start start_with_diagnostic finish unknown reconcile lookup].each do |name|
         implementation = instance_method(name)
         required = implementation.parameters.filter_map { |kind, key| key if kind == :keyreq }.freeze
         allowed = implementation.parameters.filter_map { |kind, key| key if %i[keyreq key].include?(kind) }.freeze
@@ -208,7 +251,13 @@ module AP2MandateVerifier
           raise Invalid unless (required - arguments.keys).empty? && (rest || (arguments.keys - allowed).empty?)
           implementation.bind_call(self, **arguments)
         rescue StandardError, LoadError
-          name == :start ? nil : Result.send(:new, :rejected)
+          if name == :start
+            nil
+          elsif name == :start_with_diagnostic
+            StartResult.send(:new, nil)
+          else
+            Result.send(:new, :rejected)
+          end
         end
         public name
       end
