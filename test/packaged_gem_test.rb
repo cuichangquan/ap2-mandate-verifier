@@ -23,7 +23,21 @@ root = File.realpath(spec.full_gem_path)
 prohibited = File.realpath(ARGV.fetch(3)) + "/"
 need(!root.start_with?(prohibited), "candidate loaded from repository")
 loaded = $LOADED_FEATURES.select { |f| f.include?("/ap2_mandate_verifier") && f.end_with?(".rb") }
-need(loaded.size == 28 && loaded.all? { |f| File.realpath(f).start_with?(root + "/") }, "ordinary installed entry")
+# Exact load closure, independently listed rather than accepting a count or
+# deriving expected paths from the observed features. Every loaded byte is still
+# matched to the audited package manifest below.
+expected_loaded = ["lib/ap2_mandate_verifier.rb"] + %w[
+  result diagnostic input_validator root_signature root_disclosures purchase_binding
+  scoped_constraints trust_context host_binding research_result input_builder
+  merchant_signature checkout_jwt checkout_receipt buyer conditional_checkout
+  payment payment_receipt selective_payment selective_checkout payment_policy
+  recurring_payment long_payment payment_acceptance payment_acceptance/sqlite_store
+  payment_acceptance/recurring_sqlite_store payment_acceptance/long_sqlite_store
+].map { |name| "lib/ap2_mandate_verifier/#{name}.rb" }
+expected_loaded << "lib/ap2_mandate_verifier/payment_diagnostics.rb" if spec.version.to_s == "1.7.0"
+need(loaded.all? { |f| File.realpath(f).start_with?(root + "/") }, "ordinary installed entry")
+loaded_relative = loaded.map { |f| File.realpath(f).delete_prefix(root + "/") }
+need(loaded_relative.sort == expected_loaded.sort, "exact installed load closure")
 package = JSON.parse(File.read(ARGV.fetch(2)))
 need(loaded.all? { |f| rel=File.realpath(f).delete_prefix(root+"/"); Digest::SHA256.file(f).hexdigest == package.fetch("files_sha256").fetch(rel) }, "installed source identity")
 input_raw = File.binread(ARGV.fetch(0)); expected_raw = File.binread(ARGV.fetch(1))

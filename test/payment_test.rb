@@ -278,6 +278,60 @@ module PaymentTest
       assert(!R.verify(**rargs.merge(jwt: JWT.encode(bad_receipt, merchant, "ES256", {"typ" => "JWT"}))).verified?, "signed wrong receipt reference")
     end
   end
+  # Enabled explicitly by the source/candidate lanes, never the published 1.6.0 lane.
+  if ENV.fetch("AP2_PAYMENT_DIAGNOSTICS_TESTS", "1") != "0"
+    # Supplemental diagnostics use fixed catalog reasons without changing decisions.
+    assert(P.verify(**direct_args).diagnostic.nil?, "success has no failure diagnostic")
+    expired_content = closed_content.merge("iat" => NOW - 61, "exp" => NOW - 1)
+    expired_wire = sign_claims(original.merge("delegate_payload" => [expired_content]), provider, "example+sd-jwt")
+    timed = P.verify(**direct_args.merge(closed_sd_jwt: expired_wire))
+    assert(!timed.verified? && timed.code == :payment_verification_failed && timed.diagnostic.reason == :payment_time_mismatch,
+      "valid signature and valid Checkout reach Payment time check")
+    changed = P.verify(**direct_args.merge(expected_payment: details.merge("transaction_id" => "A" * 43)))
+    assert(changed.diagnostic.reason == :checkout_binding_mismatch, "Checkout binding reason")
+    signed_other = sign_claims(original.merge("delegate_payload" => [closed_content.merge("payment_instrument" => {"id" => "other", "type" => "card"})]), provider, "example+sd-jwt")
+    assert(P.verify(**direct_args.merge(closed_sd_jwt: signed_other)).diagnostic.reason == :payment_binding_mismatch, "signed differing payment reaches final binding")
+    # A valid signature over an out-of-range conditional amount reaches conditions.
+    conditional_claims = payload(closed.closed_sd_jwt)
+    conditional_body = conditional_claims.fetch("delegate_payload").first
+    conditioned = conditional_claims.merge("delegate_payload" => [conditional_body.merge("payment_amount" => {"amount" => 301, "currency" => "USD"})])
+    assert(P.verify(**args.merge(closed_sd_jwt: sign_claims(conditioned, agent, "kb+sd-jwt"))).diagnostic.reason == :payment_conditions_mismatch,
+      "signed amount reaches conditions without substituting signature failure")
+    good_receipt = receipts.first
+    valid_claims = JWT.decode(good_receipt.fetch(:jwt), nil, false).first
+    wrong_ref = JWT.encode(valid_claims.merge("reference" => "A" * 43), merchant, "ES256", {"typ" => "JWT"})
+    assert(R.verify(**good_receipt).diagnostic.nil?, "success receipt has no failure diagnostic")
+    assert(R.verify(**good_receipt.merge(jwt: wrong_ref)).diagnostic.reason == :receipt_reference_mismatch, "signed Receipt reference check")
+    wrong_time = JWT.encode(valid_claims.merge("iat" => NOW - 1), merchant, "ES256", {"typ" => "JWT"})
+    assert(R.verify(**good_receipt.merge(jwt: wrong_time)).diagnostic.reason == :receipt_time_mismatch, "signed Receipt time check")
+    error_result = R.verify(**receipts[1])
+    assert(error_result.verified? && error_result.payment_rejected? && !error_result.payment_succeeded? && error_result.diagnostic.reason == :reported_error,
+      "authentic Error is not verification failure")
+    [timed.diagnostic, changed.diagnostic, error_result.diagnostic].each do |diagnostic|
+      assert(diagnostic.frozen? && diagnostic.to_h.frozen? && diagnostic.hint(locale: :ja) != diagnostic.hint,
+        "immutable localized catalog")
+      assert(!diagnostic.to_h.to_s.include?(issued.closed_sd_jwt) && !diagnostic.to_h.to_s.include?("synthetic-card"), "no raw payment data")
+    end
+    assert(M::Diagnostic.payment_flow(:untrusted_stage, :undetermined).nil? && M::Diagnostic.payment_flow(:payment_verification, "secret-input").nil?, "closed catalog")
+    original_catalog = M::Diagnostic.method(:payment_flow)
+    M::Diagnostic.define_singleton_method(:payment_flow) { |*| raise "secret-diagnostic-error" }
+    begin
+      no_diagnostic = P.verify(**direct_args.merge(closed_sd_jwt: expired_wire))
+      assert(no_diagnostic.code == timed.code && !no_diagnostic.verified? && no_diagnostic.diagnostic.nil?, "diagnostic failure preserves rejection")
+      authentic_error = R.verify(**receipts[1])
+      assert(authentic_error.verified? && authentic_error.payment_rejected? && authentic_error.diagnostic.nil?, "diagnostic failure preserves authentic Error")
+    ensure
+      M::Diagnostic.define_singleton_method(:payment_flow, original_catalog)
+    end
+    original_signature = M::RootSignature.method(:verified_payload!)
+    M::RootSignature.define_singleton_method(:verified_payload!) { |*_, **_| raise M::RootSignature::Unavailable.new(:signature_dependency_unavailable) }
+    begin
+      unavailable = R.verify(**good_receipt)
+      assert(!unavailable.verified? && unavailable.diagnostic.reason == :verification_unavailable, "Unavailable subclass is not signed-input rejection")
+    ensure
+      M::RootSignature.define_singleton_method(:verified_payload!, original_signature)
+    end
+  end
   if ENV["PAYMENT_EXPORT"]
     File.write(ENV.fetch("PAYMENT_EXPORT"), JSON.generate(direct: direct_args, conditional: args,
       open_content: content, receipts: receipts))

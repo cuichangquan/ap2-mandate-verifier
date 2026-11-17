@@ -26,7 +26,7 @@ module NativePublishedAudit
     paths.size
   end
   def self.run(path, *args)
-    output, error, status = Open3.capture3({"AP2_NATIVE_CHILD" => "1", "AP2_INSTALLED" => "1"},
+    output, error, status = Open3.capture3({"AP2_NATIVE_CHILD" => "1", "AP2_INSTALLED" => "1", "AP2_PAYMENT_DIAGNOSTICS_TESTS" => "0"},
       Gem.ruby, "-r", File.expand_path(__FILE__), path, *args)
     puts output
     warn error unless error.empty?

@@ -179,3 +179,11 @@ Do not call `prepare` again during verification or update saved hashes/reference
 
 
 </details>
+
+### Next candidate: Payment diagnostics
+
+The 1.7.0 candidate adds optional Payment/Receipt/acceptance diagnostics and a
+call-local `start_with_diagnostic` API while preserving `start`'s Execution/nil
+contract. It is not published by this change. See [diagnostics](docs/DIAGNOSTICS.md)
+for English/Japanese hints, authentic Error Receipt semantics and unknown-result
+limits. Diagnostics never authorize a payment retry or quota release.

@@ -8,7 +8,11 @@ module AP2MandateVerifier
     FIELDS = %w[transaction_id payee payment_amount payment_instrument].freeze
     MAX_LIFETIME = 600
     class Invalid < ArgumentError
-      def initialize = super("invalid payment information")
+      attr_reader :diagnostic_reason
+      def initialize
+        @diagnostic_reason = :undetermined
+        super("invalid payment information")
+      end
     end
     class Presentation
       attr_reader :open_sd_jwt, :closed_sd_jwt
@@ -20,9 +24,10 @@ module AP2MandateVerifier
       private_class_method :new
     end
     class Verification
-      attr_reader :code, :payment, :reference, :expires_at
-      def initialize(payment = nil, wire = nil)
+      attr_reader :code, :payment, :reference, :expires_at, :diagnostic
+      def initialize(payment = nil, wire = nil, reason: :undetermined)
         @code = payment ? :payment_verified : :payment_verification_failed
+        @diagnostic = PaymentDiagnostics.build(:payment_verification, reason) unless payment
         if payment
           @payment = ResearchEvidence.send(:copy_frozen, payment)
           @reference = Payment.send(:digest, wire).freeze
@@ -174,53 +179,54 @@ module AP2MandateVerifier
       when :direct
         raise Invalid if open_sd_jwt || expected_agent_public_key_pem || expected_audience || expected_nonce
         checked = Buyer.verify(**checkout_inputs)
-        raise Invalid unless checked.verified? && expected.fetch("transaction_id") == checked.checkout_hash
+        raise PaymentDiagnostics.invalid(Invalid, :checkout_not_verified) unless checked.verified?
+        raise PaymentDiagnostics.invalid(Invalid, :checkout_binding_mismatch) unless expected.fetch("transaction_id") == checked.checkout_hash
         bind_checkout!(expected, checked.checkout)
         claims, wire = verified_root!(closed_sd_jwt, trusted_provider_public_key_pem, profile_ref: profile_ref)
       when :conditional
         checked = AP2MandateVerifier.verify_checkout(**checkout_inputs)
-        raise Invalid unless checked.success?
+        raise PaymentDiagnostics.invalid(Invalid, :checkout_not_verified) unless checked.success?
         checkout = checkout_inputs.fetch(:host_checkout_jws)
-        raise Invalid unless expected.fetch("transaction_id") == digest(checkout)
+        raise PaymentDiagnostics.invalid(Invalid, :checkout_binding_mismatch) unless expected.fetch("transaction_id") == digest(checkout)
         # Fully verified Host evidence binds independent Merchant order state.
         binding = checked.evidence["checkout_binding"]
         amount = expected.fetch("payment_amount")
-        raise Invalid unless expected.fetch("payee").fetch("id") == binding.fetch("merchant_id") &&
+        raise PaymentDiagnostics.invalid(Invalid, :checkout_binding_mismatch) unless expected.fetch("payee").fetch("id") == binding.fetch("merchant_id") &&
           amount.fetch("currency") == binding.fetch("currency") && amount.fetch("amount") == binding.fetch("expected_total")
         # Full Checkout verifier already authenticated these exact JWT bytes.
         payload = jwt_payload!(checkout, "JWT")
         bind_checkout!(expected, payload)
         opening, root = verified_root!(open_sd_jwt, trusted_provider_public_key_pem, profile_ref: profile_ref)
         open!(opening, profile_ref: profile_ref); valid_now!(opening, verified_at)
-        raise Invalid unless opening.fetch("cnf") == {"jwk" => RootSignature.public_jwk!(expected_agent_public_key_pem)}
+        raise PaymentDiagnostics.invalid(Invalid, :payment_binding_mismatch) unless opening.fetch("cnf") == {"jwk" => RootSignature.public_jwk!(expected_agent_public_key_pem)}
         terminal, wire = final!(closed_sd_jwt, conditional: true, profile_ref: profile_ref)
         RootSignature.verified_payload!(wire.split("~", -1).first, expected_agent_public_key_pem,
           expected_typ: "kb+sd-jwt", max_bytes: 32_768)
         expected_audience = InputValidator.snapshot!(expected_audience, max_bytes: 512)
         expected_nonce = InputValidator.snapshot!(expected_nonce, max_bytes: 512)
         text!(expected_audience, 512); text!(expected_nonce, 512)
-        raise Invalid unless terminal.fetch("aud") == expected_audience && terminal.fetch("nonce") == expected_nonce &&
+        raise PaymentDiagnostics.invalid(Invalid, :payment_binding_mismatch) unless terminal.fetch("aud") == expected_audience && terminal.fetch("nonce") == expected_nonce &&
           terminal.fetch("sd_hash") == digest(root) && terminal.fetch("iat") <= verified_at &&
           verified_at - terminal.fetch("iat") <= 300
         claims = terminal.fetch("delegate_payload").first
         closed!(claims, profile_ref: profile_ref); valid_now!(claims, verified_at)
         if PaymentPolicy.long?(profile_ref)
-          raise Invalid unless %w[iat exp].all? { |f| claims.fetch(f) == opening.fetch(f) }
+          raise PaymentDiagnostics.invalid(Invalid, :payment_binding_mismatch) unless %w[iat exp].all? { |f| claims.fetch(f) == opening.fetch(f) }
         else
-          raise Invalid unless terminal.fetch("iat") == claims.fetch("iat") && claims.fetch("iat") >= opening.fetch("iat") &&
+          raise PaymentDiagnostics.invalid(Invalid, :payment_binding_mismatch) unless terminal.fetch("iat") == claims.fetch("iat") && claims.fetch("iat") >= opening.fetch("iat") &&
             claims.fetch("exp") <= opening.fetch("exp")
         end
         conditions!(opening, claims, profile_ref: profile_ref)
         reference = opening.fetch("constraints").find { |c| c["type"] == "payment.reference" }
-        raise Invalid unless reference.fetch("conditional_transaction_id") == digest(checkout_inputs.fetch(:root_presentation))
+        raise PaymentDiagnostics.invalid(Invalid, :checkout_binding_mismatch) unless reference.fetch("conditional_transaction_id") == digest(checkout_inputs.fetch(:root_presentation))
       else raise Invalid
       end
       closed!(claims, profile_ref: profile_ref); valid_now!(claims, verified_at)
       PaymentPolicy.bind_context!(claims, context) if context
-      raise Invalid unless claims.slice(*PaymentPolicy.fields(profile_ref)) == expected
+      raise PaymentDiagnostics.invalid(Invalid, :payment_binding_mismatch) unless claims.slice(*PaymentPolicy.fields(profile_ref)) == expected
       Verification.send(:new, claims, wire)
-    rescue StandardError, LoadError
-      Verification.send(:new)
+    rescue StandardError, LoadError => error
+      Verification.send(:new, reason: PaymentDiagnostics.reason(error))
     end
 
     def self.reference(closed_sd_jwt:, profile_ref: PROFILE_REF)
@@ -313,14 +319,14 @@ module AP2MandateVerifier
         conditions!(base, closed)
         return nil
       end
-      FIELDS.drop(1).each { |f| raise Invalid if opening.key?(f) && opening[f] != closed[f] }
+      FIELDS.drop(1).each { |f| raise PaymentDiagnostics.invalid(Invalid, :payment_conditions_mismatch) if opening.key?(f) && opening[f] != closed[f] }
       opening.fetch("constraints").each do |c|
         case c["type"]
-        when "payment.allowed_payees" then raise Invalid unless c["allowed"].include?(closed["payee"])
-        when "payment.allowed_payment_instruments" then raise Invalid unless c["allowed"].include?(closed["payment_instrument"])
+        when "payment.allowed_payees" then raise PaymentDiagnostics.invalid(Invalid, :payment_conditions_mismatch) unless c["allowed"].include?(closed["payee"])
+        when "payment.allowed_payment_instruments" then raise PaymentDiagnostics.invalid(Invalid, :payment_conditions_mismatch) unless c["allowed"].include?(closed["payment_instrument"])
         when "payment.amount_range"
           a = closed.fetch("payment_amount")
-          raise Invalid unless a["currency"] == c["currency"] && a["amount"].between?(c.fetch("min", 0), c["max"])
+          raise PaymentDiagnostics.invalid(Invalid, :payment_conditions_mismatch) unless a["currency"] == c["currency"] && a["amount"].between?(c.fetch("min", 0), c["max"])
         when "payment.reference" # Checked against the verified Checkout chain in verify.
         else raise Invalid
         end
@@ -346,7 +352,7 @@ module AP2MandateVerifier
     end
     def self.valid_now!(v, now)
       CheckoutReceipt.send(:epoch!, now)
-      raise Invalid unless v.fetch("iat") <= now && now < v.fetch("exp")
+      raise PaymentDiagnostics.invalid(Invalid, :payment_time_mismatch) unless v.fetch("iat") <= now && now < v.fetch("exp")
     end
     def self.checkout_open!(wire, profile_ref: ScopedConstraints::MULTI_PROFILE_REF)
       wire = InputValidator.snapshot!(wire)
@@ -447,7 +453,7 @@ module AP2MandateVerifier
       fields = implementation.parameters.map(&:last).freeze
       define_singleton_method(name) do |**args|
         unless (required - args.keys).empty? && (args.keys - fields).empty?
-          next Verification.send(:new) if name == :verify
+          next Verification.send(:new, reason: :invalid_arguments) if name == :verify
           raise Invalid
         end
         implementation.call(**args)

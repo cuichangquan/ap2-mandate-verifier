@@ -9,7 +9,11 @@ module AP2MandateVerifier
     MAX_DISCLOSURES = 17
     AXES = {"payment.allowed_payees" => "payee", "payment.allowed_payment_instruments" => "payment_instrument"}.freeze
     class Invalid < ArgumentError
-      def initialize = super("invalid selective payment information")
+      attr_reader :diagnostic_reason
+      def initialize
+        @diagnostic_reason = :undetermined
+        super("invalid selective payment information")
+      end
     end
 
     # All candidates and their exact Cartesian authorization come from a
@@ -133,32 +137,32 @@ module AP2MandateVerifier
       raise Invalid unless inputs.size == fields.size && fields.all? { |f| inputs.key?(f) } && inputs[:verified_at] == verified_at
       expected = Payment.send(:copy_details!, expected_payment, profile_ref: profile_ref)
       checkout = AP2MandateVerifier.verify_checkout(**inputs)
-      raise Invalid unless checkout.success?
-      raise Invalid unless expected.fetch("transaction_id") == digest(inputs.fetch(:host_checkout_jws))
+      raise PaymentDiagnostics.invalid(Payment::Invalid, :checkout_not_verified) unless checkout.success?
+      raise PaymentDiagnostics.invalid(Payment::Invalid, :checkout_binding_mismatch) unless expected.fetch("transaction_id") == digest(inputs.fetch(:host_checkout_jws))
       binding = checkout.evidence["checkout_binding"]
       amount = expected.fetch("payment_amount")
-      raise Invalid unless expected.fetch("payee").fetch("id") == binding.fetch("merchant_id") &&
+      raise PaymentDiagnostics.invalid(Payment::Invalid, :checkout_binding_mismatch) unless expected.fetch("payee").fetch("id") == binding.fetch("merchant_id") &&
         amount.fetch("currency") == binding.fetch("currency") && amount.fetch("amount") == binding.fetch("expected_total")
       Payment.send(:bind_checkout!, expected, Payment.send(:jwt_payload!, inputs.fetch(:host_checkout_jws), "JWT"))
       parsed = authenticated!(open_presentation, provider, profile_ref: profile_ref)
       opening = parsed.fetch(:opening)
       Payment.send(:valid_now!, opening, verified_at)
-      raise Invalid unless opening.fetch("cnf") == {"jwk" => RootSignature.public_jwk!(agent)}
+      raise PaymentDiagnostics.invalid(Payment::Invalid, :payment_binding_mismatch) unless opening.fetch("cnf") == {"jwk" => RootSignature.public_jwk!(agent)}
       terminal, wire = Payment.send(:final!, closed_sd_jwt, conditional: true, profile_ref: profile_ref)
       RootSignature.verified_payload!(wire.split("~", -1).first, agent,
         expected_typ: "kb+sd-jwt", max_bytes: 32_768)
       Payment.send(:text!, aud, 512); Payment.send(:text!, nonce, 512)
-      raise Invalid unless terminal.fetch("aud") == aud && terminal.fetch("nonce") == nonce &&
+      raise PaymentDiagnostics.invalid(Payment::Invalid, :payment_binding_mismatch) unless terminal.fetch("aud") == aud && terminal.fetch("nonce") == nonce &&
         terminal.fetch("iat") <= verified_at && verified_at - terminal.fetch("iat") <= 300
       closed = terminal.fetch("delegate_payload").first
       bind_terminal!(parsed, terminal, closed, profile_ref: profile_ref)
       Payment.send(:valid_now!, closed, verified_at)
       ref = constraint!(opening, "payment.reference").fetch("conditional_transaction_id")
       PaymentPolicy.bind_context!(closed, context) if context
-      raise Invalid unless ref == digest(inputs.fetch(:root_presentation)) && closed.slice(*PaymentPolicy.fields(profile_ref)) == expected
+      raise PaymentDiagnostics.invalid(Payment::Invalid, :payment_binding_mismatch) unless ref == digest(inputs.fetch(:root_presentation)) && closed.slice(*PaymentPolicy.fields(profile_ref)) == expected
       Payment::Verification.send(:new, closed, wire)
-    rescue StandardError, LoadError
-      Payment::Verification.send(:new)
+    rescue StandardError, LoadError => error
+      Payment::Verification.send(:new, reason: PaymentDiagnostics.reason(error))
     end
 
     def self.bind_terminal!(root, terminal, closed, profile_ref: PROFILE_REF)
@@ -256,7 +260,7 @@ module AP2MandateVerifier
       fields = implementation.parameters.map(&:last).freeze
       define_singleton_method(name) do |**args|
         unless (required - args.keys).empty? && (args.keys - fields).empty?
-          next Payment::Verification.send(:new) if name == :verify
+          next Payment::Verification.send(:new, reason: :invalid_arguments) if name == :verify
           raise Invalid
         end
         implementation.call(**args)
