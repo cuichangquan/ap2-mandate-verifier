@@ -1,6 +1,8 @@
 #!/bin/sh
 # Run in an isolated Linux container. Build once, then pass the same Gem to both MRI runs.
 set -eu
+# Candidate-only API assertions are mandatory here; published 1.6.0 runs keep the legacy suite.
+export AP2_PAYMENT_DIAGNOSTICS_TESTS=1
 # Candidate expectation is independent of the public 1.6.0 baseline jobs.
 export AP2_GEM_VERSION=1.7.0
 source_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)

@@ -1,6 +1,8 @@
 #!/bin/sh
 # Existing suites run separately and sequentially. Output directory must be outside source.
 set -eu
+# Candidate-only API assertions are mandatory here; published 1.6.0 runs keep the legacy suite.
+export AP2_PAYMENT_DIAGNOSTICS_TESTS=1
 source_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 out_dir=${1:?output directory required}
 mkdir -p "$out_dir"

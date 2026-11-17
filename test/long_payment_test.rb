@@ -49,8 +49,8 @@ module LongPaymentTest
   months.each do |month|
     args=month[:verify_inputs]
     assert(L.verify(**args).verified?,"all12 current-month wire verification")
-    assert(L.verify(**args).diagnostic.nil?, "Long success diagnostic absent")
-    assert(L.verify(**args.merge(expected_audience: "other")).diagnostic.reason == :payment_binding_mismatch, "Long proof binding diagnostic")
+    assert(L.verify(**args).diagnostic.nil?, "Long success diagnostic absent") if ENV.fetch("AP2_PAYMENT_DIAGNOSTICS_TESTS", "1") != "0"
+    assert(L.verify(**args.merge(expected_audience: "other")).diagnostic.reason == :payment_binding_mismatch, "Long proof binding diagnostic") if ENV.fetch("AP2_PAYMENT_DIAGNOSTICS_TESTS", "1") != "0"
     assert(args[:open_sd_jwt]==fixture.payment_open && args[:checkout_inputs][:root_presentation]==fixture.checkout_open,"exact shared Open pair")
     [month[:checkout_closed],month[:payment_closed]].each do |wire|
       assert(content(wire).values_at("iat","exp")==[E::T0,E::EXP],"shared content time unchanged")

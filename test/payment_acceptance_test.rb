@@ -77,7 +77,7 @@ module PaymentAcceptanceTest
     assert(first.status == :reserved && first.ticket, "one new reservation")
     assert(!first.inspect.include?(payment.closed_sd_jwt) && !first.ticket.inspect.include?("fence"), "capability inspection redacted")
     replay = accept.call
-    assert(replay.diagnostic.reason == :pending, "existing pending state catalog")
+    assert(replay.diagnostic.reason == :pending, "existing pending state catalog") if ENV.fetch("AP2_PAYMENT_DIAGNOSTICS_TESTS", "1") != "0"
     assert(replay.status == :pending && replay.ticket.nil? && replay.closed_sd_jwt == payment.closed_sd_jwt, "replay no new fence")
     changed = copy(raw); changed[:expected_payment]["payment_instrument"]["id"] = "other"
     assert(accept.call(scope, changed).status == :rejected, "raw verifier result cannot be bypassed")
@@ -90,25 +90,31 @@ module PaymentAcceptanceTest
     swap_args = copy(raw).merge(closed_sd_jwt: swap.closed_sd_jwt)
     assert(M::Payment.verify(**swap_args).verified?, "fresh swapped proof is cryptographically valid")
     assert(service.start(ticket: first.ticket, verification_inputs: swap_args).nil?, "dispatch requires exact first signed proof despite equivalent re-sign")
-    start_calls = 0
-    original_start = store.method(:start!)
-    store.define_singleton_method(:start!) do |**kwargs|
-      start_calls += 1
-      original_start.call(**kwargs)
+    if ENV.fetch("AP2_PAYMENT_DIAGNOSTICS_TESTS", "1") != "0"
+      start_calls = 0
+      original_start = store.method(:start!)
+      store.define_singleton_method(:start!) do |**kwargs|
+        start_calls += 1
+        original_start.call(**kwargs)
+      end
+      observed_start = service.start_with_diagnostic(ticket: first.ticket, verification_inputs: raw)
+      execution = observed_start.execution
+      assert(observed_start.frozen? && observed_start.diagnostic.nil? && start_calls == 1, "diagnostic start calls store once")
+    else
+      execution = service.start(ticket: first.ticket, verification_inputs: raw)
     end
-    observed_start = service.start_with_diagnostic(ticket: first.ticket, verification_inputs: raw)
-    execution = observed_start.execution
-    assert(observed_start.frozen? && observed_start.diagnostic.nil? && start_calls == 1, "diagnostic start calls store once")
     assert(execution && execution.closed_sd_jwt == payment.closed_sd_jwt && execution.processor_key.bytesize == 64, "first start only")
-    duplicate = service.start_with_diagnostic(ticket: first.ticket, verification_inputs: raw)
-    assert(duplicate.execution.nil? && duplicate.diagnostic.reason == :undetermined && start_calls == 2,
-      "nil store result remains undetermined, no extra read or start")
+    if ENV.fetch("AP2_PAYMENT_DIAGNOSTICS_TESTS", "1") != "0"
+      duplicate = service.start_with_diagnostic(ticket: first.ticket, verification_inputs: raw)
+      assert(duplicate.execution.nil? && duplicate.diagnostic.reason == :undetermined && start_calls == 2,
+        "nil store result remains undetermined, no extra read or start")
+    end
     assert(service.start(ticket: first.ticket, verification_inputs: raw).nil?, "no duplicate start")
     assert(!execution.inspect.include?(execution.processor_key), "execution inspect redacted")
     assert(replay.processor_key == execution.processor_key && replay.signed_wires.frozen? && replay.signed_wires["payment"].frozen?, "read-only reconciliation key and first proof")
     assert(service.unknown(ticket: first.ticket).status == :unknown, "uncertain external attempt held")
     assert(accept.call.status == :unknown && accept.call.ticket.nil?, "unknown never reacquires")
-    assert(accept.call.diagnostic.reason == :unknown, "existing unknown status has factual diagnostic")
+    assert(accept.call.diagnostic.reason == :unknown, "existing unknown status has factual diagnostic") if ENV.fetch("AP2_PAYMENT_DIAGNOSTICS_TESTS", "1") != "0"
     assert(service.start(ticket: first.ticket, verification_inputs: raw).nil?, "old fence cannot restart unknown")
     assert(service.reconcile(**scope, receipt_jwt: "bad", verified_at: NOW).status == :rejected, "invalid receipt cannot reconcile")
     success = receipt.call(payment.closed_sd_jwt, "Success", NOW + 121)
@@ -294,29 +300,31 @@ module PaymentAcceptanceTest
     assert(bad_row.status == :unavailable && bad_row.ticket.nil?, "oversized persistent row unavailable")
     all_store.close
   end
-  # Call-local outcomes on one shared service, with no mutable last-diagnostic slot.
-  failing_store = Object.new
-  failing_store.define_singleton_method(:ticket_record!) do |ticket:|
-    Thread.pass
-    raise A::Unavailable.new if ticket == :storage
-    raise RuntimeError, "secret store detail"
-  end
-  failing_service = A::Service.new(store: failing_store)
-  outputs = %i[storage unexpected].map do |ticket|
-    Thread.new { failing_service.start_with_diagnostic(ticket: ticket, verification_inputs: {}) }
-  end.map(&:value)
-  assert(outputs.map { |outcome| outcome.diagnostic.reason } == %i[unavailable undetermined], "parallel outcomes do not mix")
-  assert(outputs.all? { |outcome| outcome.execution.nil? && !outcome.diagnostic.to_h.to_s.include?("secret") }, "store exceptions remain redacted")
-  assert(failing_service.start(ticket: :storage, verification_inputs: {}).nil?, "legacy start remains nil")
-  original_catalog = M::Diagnostic.method(:payment_flow)
-  M::Diagnostic.define_singleton_method(:payment_flow) { |*| raise "diagnostic failure" }
-  begin
-    observation = failing_service.start_with_diagnostic(ticket: :storage, verification_inputs: {})
-    assert(observation.execution.nil? && observation.diagnostic.nil?, "start diagnostic failure preserves nil handle")
-    result = failing_service.accept(**scope, mode: :direct, verification_inputs: {})
-    assert(result.status == :rejected && result.diagnostic.nil?, "accept diagnostic failure preserves status")
-  ensure
-    M::Diagnostic.define_singleton_method(:payment_flow, original_catalog)
+  if ENV.fetch("AP2_PAYMENT_DIAGNOSTICS_TESTS", "1") != "0"
+    # Call-local outcomes on one shared service, with no mutable last-diagnostic slot.
+    failing_store = Object.new
+    failing_store.define_singleton_method(:ticket_record!) do |ticket:|
+      Thread.pass
+      raise A::Unavailable.new if ticket == :storage
+      raise RuntimeError, "secret store detail"
+    end
+    failing_service = A::Service.new(store: failing_store)
+    outputs = %i[storage unexpected].map do |ticket|
+      Thread.new { failing_service.start_with_diagnostic(ticket: ticket, verification_inputs: {}) }
+    end.map(&:value)
+    assert(outputs.map { |outcome| outcome.diagnostic.reason } == %i[unavailable undetermined], "parallel outcomes do not mix")
+    assert(outputs.all? { |outcome| outcome.execution.nil? && !outcome.diagnostic.to_h.to_s.include?("secret") }, "store exceptions remain redacted")
+    assert(failing_service.start(ticket: :storage, verification_inputs: {}).nil?, "legacy start remains nil")
+    original_catalog = M::Diagnostic.method(:payment_flow)
+    M::Diagnostic.define_singleton_method(:payment_flow) { |*| raise "diagnostic failure" }
+    begin
+      observation = failing_service.start_with_diagnostic(ticket: :storage, verification_inputs: {})
+      assert(observation.execution.nil? && observation.diagnostic.nil?, "start diagnostic failure preserves nil handle")
+      result = failing_service.accept(**scope, mode: :direct, verification_inputs: {})
+      assert(result.status == :rejected && result.diagnostic.nil?, "accept diagnostic failure preserves status")
+    ensure
+      M::Diagnostic.define_singleton_method(:payment_flow, original_catalog)
+    end
   end
   puts "payment acceptance: #{@count} assertions passed"
 end
