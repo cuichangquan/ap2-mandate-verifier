@@ -7,22 +7,22 @@ MRI 3.4.12または4.0.9のGem環境を用意します。Rails・アカウント
 インストール時間の保証ではありません。
 
 
-SDKはRails非依存です。公開GemはLinux ARM64・AMD64、macOS Intel・Apple Silicon、Windows Server 2022 X64で両対応MRIのネイティブ検証に合格しました。公開済みGemとsource candidateの証拠を分けます。[環境別の範囲](PLATFORM_SUPPORT.md)を確認してください。任意のSQLite例にはRuby・CPU・OSに合ったdriverが必要で、別CPUのnative Gemをコピーしないでください。
+SDKはRails非依存です。過去の公開1.6.0 GemはLinux ARM64・AMD64、macOS Intel・Apple Silicon、Windows Server 2022 X64で両対応MRIのネイティブ検証に合格しました。公開済みGemとsource candidateの証拠を分けます。[環境別の範囲](PLATFORM_SUPPORT.md)を確認してください。任意のSQLite例にはRuby・CPU・OSに合ったdriverが必要で、別CPUのnative Gemをコピーしないでください。
 
 ## 1. 公開Gemを導入し、同梱例を探す
 
 アプリ入力から永続化・復旧まで通して試す場合は、
 [Dockerを使うRuby組込み・再起動復旧ガイド](RUBY_INTEGRATION.ja.md)から始めてください。
 InputBuilder → Checkout／Payment → 受理 → 模擬実行 → Receiptと別プロセス復旧をつなぎます。
-新しい例にはリポジトリ取得が必要です。以下の例は特記がなければ公開1.6.0に同梱されています。
+組込みCLIは公開1.7.0に同梱されています。Docker手順は別の1.6.0 baselineです。以下の例は特記がなければ公開1.7.0を使います。
 
 ```sh
-gem install ap2_mandate_verifier --version 1.6.0
-AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')"
+gem install ap2_mandate_verifier --version 1.7.0
+AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.7.0").full_gem_path')"
 ```
 
 導入と実行には同じRubyを使います。既存Bundlerアプリでは
-`gem "ap2_mandate_verifier", "= 1.6.0"`を指定して`bundle install`し、
+`gem "ap2_mandate_verifier", "= 1.7.0"`を指定して`bundle install`し、
 Rubyコマンドに`bundle exec`を付けます。異なる版を要求するGemfileと混ぜないでください。
 
 ## 2. Checkoutを発行・提示・検証する（約2分）
@@ -44,7 +44,7 @@ Receipt Error: authentic=true; purchase_succeeded=false
 成功と拒否は代替の模擬結果です。真正性と業務上の成功通知は別で、Receipt不在・結果不明は照合待ちです。
 確定注文のDirect承認は[source専用例](../examples/direct_checkout.rb)を使います。
 このリポジトリをcloneし、Gem導入済みの環境で`ruby examples/direct_checkout.rb`を実行してください。
-1.6.0 Gemには同梱されていません。[Direct API](BUYER_DIRECT_CHECKOUT.md)。
+1.7.0 Gemには同梱されていません。[Direct API](BUYER_DIRECT_CHECKOUT.md)。
 
 ## 3. Paymentを追加してReceiptを確認する（約2分）
 
@@ -81,11 +81,13 @@ ruby "$AP2_GEM_DIR/examples/long_payment_acceptance.rb"
 一時DBは終了時に削除します。本番の永続保存として再利用する構成ではありません。
 
 **予算だけによる拒否**の比較には、このリポジトリをcloneして新しい補足例を実行します。
-インストール済みGemを使用し、この補足例自体は公開1.6.0 archiveには含まれません：
+この補足は保持した**1.6.0 baseline**専用です。別のGem環境で1.6.0を導入してください。
+コードは1.6.0を明示的に選択し、1.7.0には同梱されません。1.7.0の手順・検証とは別です：
 
 ```sh
 git clone https://github.com/cuichangquan/ap2-mandate-verifier.git
 cd ap2-mandate-verifier
+gem install ap2_mandate_verifier --version 1.6.0
 ruby examples/long_payment_limits.rb
 ```
 
@@ -96,7 +98,7 @@ ruby examples/long_payment_limits.rb
 
 **ローカルにRuby／SQLiteを導入したくない場合：**
 [デモの公開Gem Docker手順](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)を使ってください。
-記載imageはLinux ARM64向けで、他環境の対応を証明しません。
+デモ独自の固定版と検証済み環境は、デモのREADMEを確認してください。
 
 ## 次に試してから組み込む
 

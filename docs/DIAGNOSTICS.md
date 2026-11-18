@@ -1,6 +1,6 @@
 # Diagnostics
 
-Checkout/InputBuilder introduced in 0.4.0; Payment flow added in the 1.7.0 candidate.
+Checkout/InputBuilder introduced in 0.4.0; Payment flow added in the published 1.7.0.
 
 Diagnostics help you inspect a failed check without reading gem internals. They
 are supplemental: existing calls, status/code, fixed profile, Fail Closed and
@@ -89,7 +89,7 @@ reasons `missing_required_field`, `invalid_type`, `unknown_field` and
 Gem availability does not imply real Issuer interoperability, production
 authorization or Phase 2-B GO.
 
-## Payment flow (1.7.0 candidate; not published by this change)
+## Payment flow (published 1.7.0)
 
 The original 0.4.0 sections above describe Checkout/InputBuilder diagnostics and
 historical evidence, not the version to install for this addition. Payment and
