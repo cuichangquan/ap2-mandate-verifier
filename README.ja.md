@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier — Checkout・PaymentのRuby SDK
 
-[English](README.md) · **公開済み安定版：1.6.1** · [Quick Start](docs/QUICK_START.ja.md)
+[English](README.md) · **公開済み安定版：1.7.0** · [Quick Start](docs/QUICK_START.ja.md)
 
 対応するAP2 Checkout・Payment MandateをRubyだけで発行・提示・検証できます。
 購入者が何を承認し、Agentが何を選べるか、署名済みの注文・支払いが条件を満たすかを
@@ -12,11 +12,11 @@
 
 ## まず動かす
 
-この最小SDK手順は**公開済み1.6.1**を使います。新CLIは[Gemだけで動かす組込み手順](docs/RUBY_INTEGRATION.ja.md)を使ってください。
+この最小SDK手順は**公開済み1.7.0**を使います。新CLIは[Gemだけで動かす組込み手順](docs/RUBY_INTEGRATION.ja.md)を使ってください。
 
 ```sh
-gem install ap2_mandate_verifier --version 1.6.1
-AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.1").full_gem_path')"
+gem install ap2_mandate_verifier --version 1.7.0
+AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.7.0").full_gem_path')"
 ruby "$AP2_GEM_DIR/examples/conditional_checkout.rb"
 ruby "$AP2_GEM_DIR/examples/payment.rb"
 ```
@@ -26,18 +26,18 @@ Gem同梱例で合成鍵・承認を作り、Mandateの発行・提示・検証�
 アカウント・認証情報・DB・Railsは不要です。対応Ruby導入済みなら約10分が目安です。
 依存buildやDockerの初回取得には追加時間がかかる場合があります。
 
-**次へ：** [手順と期待出力を示すQuick Start（1.6.0 baseline）](docs/QUICK_START.ja.md)で、
+**次へ：** [手順と期待出力を示すQuick Start（1.7.0）](docs/QUICK_START.ja.md)で、
 12のUTC月と累計JPY予算超過の拒否まで試せます。
-[Dockerデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)も公開済み**1.6.0**を使用し、
-ローカルのCheckout画面とRuby単体のPayment例を用意しています。
+[Dockerデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)は独自のGem固定版・検証範囲を持ち、
+ローカルのCheckout・Payment画面の手順はデモのREADMEを参照してください。
 
 ## 利用方式を選ぶ
 
 **アプリへ組み込む場合：** [Ruby組込み・プロセス終了後の復旧ガイド](docs/RUBY_INTEGRATION.ja.md)で、
 保護されたアプリ入力、模擬結果の永続化、別プロセス復旧、安全な再送判断を確認してください。
-リポジトリ取得＋公開1.6.0、または**公開済み1.6.1**の同梱CLIで実行します。
-1.6.1のCLIにはリポジトリ取得が不要です。公開1.6.0には新CLIは含まれません。
-[1.6.1の配布物と検証記録](docs/POST_RELEASE_161.md)を参照してください。
+リポジトリ取得＋公開1.6.0、または**公開済み1.7.0**の同梱CLIで実行します。
+1.7.0のCLIにはリポジトリ取得が不要です。公開1.6.0には新CLIは含まれません。
+[公開済み1.7.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.7.0)を参照してください。
 
 Checkoutは注文内容、Checkout Mandateはその承認・委任を表します。
 Payment MandateはCheckout承認を参照し、支払い条件を追加します。
@@ -81,7 +81,7 @@ Direct／条件付きCheckoutは明示的な複数明細profileで1販売者・�
 ## 導入と対応環境
 
 正式対応は**MRI 3.4.12と4.0.9**です。今回の手順をGemfileで使う場合は
-`gem "ap2_mandate_verifier", "= 1.6.0"`を指定します。
+`gem "ap2_mandate_verifier", "= 1.7.0"`を指定します。
 安定1.xを追うアプリでは`"~> 1.0"`を使いlockfile更新を確認できます。
 `~> 0.8.0`は1.xを選択しません。[移行案内](docs/RELEASE_100.md)に互換性の詳細を残しています。
 
@@ -169,9 +169,11 @@ end
 
 </details>
 
-### 次の候補：Payment以降の診断
+### Payment以降の診断（公開済み1.7.0）
 
-1.7.0候補ではPayment・Receipt・受理結果の任意の診断と、呼び出しごとの
+公開済み1.7.0ではPayment・Receipt・受理結果の任意の診断と、呼び出しごとの
 `start_with_diagnostic`を追加します。従来の`start`のExecution／nil契約は維持します。
-この変更では未公開です。[診断ガイド](docs/DIAGNOSTICS.ja.md)に英日ヒント、真正なError Receipt、
+[診断ガイド](docs/DIAGNOSTICS.ja.md)に英日ヒント、真正なError Receipt、
 結果不明の扱いと限界をまとめています。診断は再決済や利用枠解放の許可ではありません。
+
+この公開後の文書更新は公開済み1.7.0 Gemの再build・置換ではありません。公開原本は`f519247ddceca81971f887da8c194e894d4119e8`であり、後続の文書commitは公開原本ではありません。

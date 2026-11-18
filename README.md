@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier — Ruby SDK for Checkout and Payment
 
-[日本語](README.ja.md) · **Published stable: 1.6.1** · [Quick Start](docs/QUICK_START.md)
+[日本語](README.ja.md) · **Published stable: 1.7.0** · [Quick Start](docs/QUICK_START.md)
 
 Issue, present and verify supported AP2 Checkout and Payment Mandates in plain Ruby.
 Use this Gem when your app needs to check what a buyer approved, what an Agent may
@@ -12,11 +12,11 @@ No Rails dependency. **Verification success is not purchase or payment success; 
 
 ## Start here
 
-This minimal SDK quick start uses **published 1.6.1**. For its integration CLI, use the [Gem-only integration instructions](docs/RUBY_INTEGRATION.md).
+This minimal SDK quick start uses **published 1.7.0**. For its integration CLI, use the [Gem-only integration instructions](docs/RUBY_INTEGRATION.md).
 
 ```sh
-gem install ap2_mandate_verifier --version 1.6.1
-AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.1").full_gem_path')"
+gem install ap2_mandate_verifier --version 1.7.0
+AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.7.0").full_gem_path')"
 ruby "$AP2_GEM_DIR/examples/conditional_checkout.rb"
 ruby "$AP2_GEM_DIR/examples/payment.rb"
 ```
@@ -27,19 +27,19 @@ Error Receipt reports failure. No account, credentials, database or Rails requir
 Allow about ten minutes with a supported Ruby already installed; dependency builds
 and Docker's first download can take longer.
 
-**Next:** [step-by-step Quick Start and expected output (1.6.0 baseline)](docs/QUICK_START.md),
+**Next:** [step-by-step Quick Start and expected output (1.7.0)](docs/QUICK_START.md),
 including twelve UTC months and a cumulative JPY budget rejection.
 [Docker demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)
-uses published **1.6.0**, with local Checkout screens and Ruby Payment examples.
+has its own pinned Gem and verification scope; follow its README for local Checkout and Payment screens.
 
 ## Choose a workflow
 
 **Integrating a real application?** Start with the [Ruby integration and restart
 recovery guide](docs/RUBY_INTEGRATION.md): protected application inputs, persistent
 mock results, separate-process recovery and safe retry decisions. Use this repository
-with published 1.6.0, or install **published 1.6.1** for the bundled CLI without a
+with published 1.6.0, or install **published 1.7.0** for the bundled CLI without a
 repository checkout. Public 1.6.0 does not include this CLI. See the
-[exact 1.6.1 distribution and verification](docs/POST_RELEASE_161.md).
+[published 1.7.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.7.0).
 
 Checkout describes the order; a Checkout Mandate records approval/delegation for it.
 A Payment Mandate adds payment conditions and references the Checkout approval.
@@ -85,7 +85,7 @@ Evidence. [Exact APIs and result/error conventions](docs/PUBLIC_API.md).
 ## Install and support
 
 Formal support: **MRI 3.4.12 and 4.0.9**. For this walkthrough use
-`gem "ap2_mandate_verifier", "= 1.6.0"` in a Gemfile. Applications following stable
+`gem "ap2_mandate_verifier", "= 1.7.0"` in a Gemfile. Applications following stable
 1.x may use `"~> 1.0"` and review lockfile updates. `~> 0.8.0` excludes 1.x;
 [upgrade notes](docs/RELEASE_100.md) retain the compatibility details.
 
@@ -180,10 +180,12 @@ Do not call `prepare` again during verification or update saved hashes/reference
 
 </details>
 
-### Next candidate: Payment diagnostics
+### Payment diagnostics (published 1.7.0)
 
-The 1.7.0 candidate adds optional Payment/Receipt/acceptance diagnostics and a
+Published 1.7.0 adds optional Payment/Receipt/acceptance diagnostics and a
 call-local `start_with_diagnostic` API while preserving `start`'s Execution/nil
-contract. It is not published by this change. See [diagnostics](docs/DIAGNOSTICS.md)
+contract. See [diagnostics](docs/DIAGNOSTICS.md)
 for English/Japanese hints, authentic Error Receipt semantics and unknown-result
 limits. Diagnostics never authorize a payment retry or quota release.
+
+These post-release repository docs do not rebuild or replace the published 1.7.0 Gem. Its source is `f519247ddceca81971f887da8c194e894d4119e8`; later documentation commits are not release sources.

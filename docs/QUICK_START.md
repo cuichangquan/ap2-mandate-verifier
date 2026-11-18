@@ -8,23 +8,23 @@ clocks; they do not contact a processor. Ten minutes is a walkthrough target aft
 Ruby/dependencies are ready, not an installation-time guarantee.
 
 
-Platform scope: the SDK is Rails-independent. Published-Gem checks passed on native Linux ARM64/AMD64, macOS Intel/Apple Silicon and Windows Server 2022 X64 with both supported MRIs. Published and source-candidate evidence remain separate. See [platform support](PLATFORM_SUPPORT.md). The optional SQLite examples require the driver for your Ruby/CPU/OS; do not copy a native Gem from another architecture.
+Platform scope: the SDK is Rails-independent. Historical published 1.6.0 checks passed on native Linux ARM64/AMD64, macOS Intel/Apple Silicon and Windows Server 2022 X64 with both supported MRIs. Published and source-candidate evidence remain separate. See [platform support](PLATFORM_SUPPORT.md). The optional SQLite examples require the driver for your Ruby/CPU/OS; do not copy a native Gem from another architecture.
 
 ## 1. Install and locate the published examples
 
 For an end-to-end application with persistent state, start with the
 [Docker-first Ruby integration and restart guide](RUBY_INTEGRATION.md).
 It connects InputBuilder → Checkout/Payment → acceptance → mock execution →
-Receipt and recovery in a different process. That new example requires a
-repository checkout; the examples below are packaged in published 1.6.0 unless noted.
+Receipt and recovery in a different process. The integration CLI is packaged in published 1.7.0; its Docker route remains a
+separate 1.6.0 baseline. The examples below use published 1.7.0 unless noted.
 
 ```sh
-gem install ap2_mandate_verifier --version 1.6.0
-AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')"
+gem install ap2_mandate_verifier --version 1.7.0
+AP2_GEM_DIR="$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.7.0").full_gem_path')"
 ```
 
 Use the same Ruby for installation and execution. In an existing Bundler app,
-pin `gem "ap2_mandate_verifier", "= 1.6.0"`, run `bundle install`, and prefix the
+pin `gem "ap2_mandate_verifier", "= 1.7.0"`, run `bundle install`, and prefix the
 Ruby commands with `bundle exec`. Do not use a Gemfile requiring another version.
 
 ## 2. Issue, present and verify Checkout (about 2 minutes)
@@ -47,7 +47,7 @@ Success and Error are alternative simulated outcomes. Authenticity is separate
 from reported business success. Missing Receipt/uncertain effect remains pending.
 For exact-order Direct approval, use the [source-only Direct example](../examples/direct_checkout.rb)
 with an installed Gem: clone this repository, then `ruby examples/direct_checkout.rb`.
-It is not packaged in 1.6.0. [Direct API](BUYER_DIRECT_CHECKOUT.md).
+It is not packaged in 1.7.0. [Direct API](BUYER_DIRECT_CHECKOUT.md).
 
 ## 3. Add Payment and authenticate its Receipt (about 2 minutes)
 
@@ -85,12 +85,14 @@ schedule jobs. One Open pair, twelve fresh proofs, protected authority updates,
 8,000 JPY per month, original-Receipt recovery. Temporary databases are deleted
 when the process finishes. They are teaching fixtures, not durable production storage.
 
-To compare a **budget-only rejection**, clone this repository and run its new
-supplement against the installed Gem (it is not in the published 1.6.0 archive):
+To compare a **budget-only rejection**, use the retained **1.6.0 baseline**
+supplement in a separate Gem environment. It explicitly activates 1.6.0 and is
+not packaged in 1.7.0; this is not a 1.7.0 walkthrough or validation:
 
 ```sh
 git clone https://github.com/cuichangquan/ap2-mandate-verifier.git
 cd ap2-mandate-verifier
+gem install ap2_mandate_verifier --version 1.6.0
 ruby examples/long_payment_limits.rb
 ```
 
@@ -102,7 +104,7 @@ processor. Stateless verification alone cannot enforce historical usage.
 
 **Prefer Docker if you do not want local Ruby/SQLite installation:** follow the
 [demo's published-Gem Docker route](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme).
-Its documented image is Linux ARM64; other environments are not certified by it.
+Follow the demo README for its own pinned versions and tested platforms.
 
 ## Explore, then integrate
 

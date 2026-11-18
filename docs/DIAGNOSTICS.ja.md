@@ -1,6 +1,6 @@
 # 診断
 
-Checkout・InputBuilderは0.4.0で導入。Payment以降は1.7.0候補で追加。
+Checkout・InputBuilderは0.4.0で導入。Payment以降は公開済み1.7.0で追加。
 
 Gem内部を追わず、失敗した検査と次の確認候補を取得できます。診断は補助情報です。
 既存呼び出し、status/code、固定profile、Fail Closed、非成功時のEvidenceなし契約は不変です。
@@ -77,10 +77,10 @@ unknown_field、unsupported_saved_formatになります。合成fixtureの固定
 業務データの対応・保存責務は[InputBuilderガイド](INPUT_BUILDER.ja.md)を参照してください。
 Gemの公開は、実Issuer接続、本番購入許可、Phase 2-B移行を意味しません。
 
-## Payment以降の診断（1.7.0候補、この変更では未公開）
+## Payment以降の診断（公開済み1.7.0）
 
 上記0.4.0の説明はCheckout・InputBuilderの導入時期と過去の検証記録です。
-今回の追加は1.7.0候補です。Payment・Receiptのcode、述語、例外契約は維持します。
+今回の追加は公開済み1.7.0で利用できます。Payment・Receiptのcode、述語、例外契約は維持します。
 Direct・条件付き・Selective・Longの結果で`diagnostic`を取得できます。
 成功したPaymentはnil。真正で参照が一致するError Receiptは**検証成功**であり、
 `payment_rejected? == true`、`payment_succeeded? == false`、診断は`reported_error`です。

@@ -1,6 +1,12 @@
 # Changelog
 
-## 1.7.0 candidate (unreleased)
+## 1.7.0 — 2026-11-17 UTC — Payment diagnostics
+
+Published on RubyGems at 23:38:25.035 UTC (November 18 JST). The immutable
+208,384-byte archive has SHA256 `2a3da0706313fd6ef6bf05dd0aed2f05899a5690b42568b3ebd814b41ad17140`
+and source `f519247ddceca81971f887da8c194e894d4119e8`.
+Post-release repository documentation does not rebuild or replace this archive.
+[Published version](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.7.0).
 
 - Add bounded English/Japanese Payment, Receipt and acceptance diagnostics without changing existing decisions, codes, statuses or store formats.
 - Add call-local `Service#start_with_diagnostic`; existing `start` still returns Execution or nil. Diagnostics do not authorize retries or quota release.
