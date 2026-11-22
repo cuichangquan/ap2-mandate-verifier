@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier — Checkout・PaymentのRuby SDK
 
-[English](README.md) · **公開済み安定版：1.7.0** · [Quick Start](docs/QUICK_START.ja.md)
+[English](README.md) · **公開済み安定版：1.7.0** · [Quick Start](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/QUICK_START.ja.md)
 
 対応するAP2 Checkout・Payment MandateをRubyだけで発行・提示・検証できます。
 購入者が何を承認し、Agentが何を選べるか、署名済みの注文・支払いが条件を満たすかを
@@ -8,9 +8,11 @@
 **検証成功は購入・決済成功ではなく、SDKは決済を実行しません。**
 
 
-**対応環境：** MRI 3.4.12 / 4.0.9。既存の公開Gemネイティブ検証は**1.6.0**のLinux ARM64・AMD64、macOS Intel・Apple Silicon、Windows Server 2022 X64が対象で、新CLIの検証ではありません。[既存の検証範囲と再現方法](docs/PLATFORM_SUPPORT.md)と[1.6.1のLinux公開後検証](docs/POST_RELEASE_161.md)を分けて参照してください。Railsデモの対応範囲も別です。
+**対応環境：** MRI 3.4.12 / 4.0.9。既存の公開Gemネイティブ検証は**1.6.0**のLinux ARM64・AMD64、macOS Intel・Apple Silicon、Windows Server 2022 X64が対象で、新CLIの検証ではありません。[既存の検証範囲と再現方法](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/PLATFORM_SUPPORT.md)と[1.6.1のLinux公開後検証](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/POST_RELEASE_161.md)を分けて参照してください。Railsデモの対応範囲も別です。
 
 ## まず動かす
+
+インストール済みGemでは、READMEの相対リンクは同梱ファイルを指します。GitHubへのリンクは、リポジトリのガイド・過去の記録・ソース専用例を開きます。
 
 この最小SDK手順は**公開済み1.7.0**を使います。新CLIは[Gemだけで動かす組込み手順](docs/RUBY_INTEGRATION.ja.md)を使ってください。
 
@@ -26,7 +28,7 @@ Gem同梱例で合成鍵・承認を作り、Mandateの発行・提示・検証�
 アカウント・認証情報・DB・Railsは不要です。対応Ruby導入済みなら約10分が目安です。
 依存buildやDockerの初回取得には追加時間がかかる場合があります。
 
-**次へ：** [手順と期待出力を示すQuick Start（1.7.0）](docs/QUICK_START.ja.md)で、
+**次へ：** [手順と期待出力を示すQuick Start（1.7.0）](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/QUICK_START.ja.md)で、
 12のUTC月と累計JPY予算超過の拒否まで試せます。
 [Dockerデモ](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)は独自のGem固定版・検証範囲を持ち、
 ローカルのCheckout・Payment画面の手順はデモのREADMEを参照してください。
@@ -83,7 +85,7 @@ Direct／条件付きCheckoutは明示的な複数明細profileで1販売者・�
 正式対応は**MRI 3.4.12と4.0.9**です。今回の手順をGemfileで使う場合は
 `gem "ap2_mandate_verifier", "= 1.7.0"`を指定します。
 安定1.xを追うアプリでは`"~> 1.0"`を使いlockfile更新を確認できます。
-`~> 0.8.0`は1.xを選択しません。[移行案内](docs/RELEASE_100.md)に互換性の詳細を残しています。
+`~> 0.8.0`は1.xを選択しません。[移行案内](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/RELEASE_100.md)に互換性の詳細を残しています。
 
 runtime依存はJSON 2.19.9、JWT 3.3.0、base64 0.3.0、OpenSSL gem 4.0.2、Digest 3.2.1に固定。
 導入時に依存取得・native buildを伴う場合があります。衝突回避のために固定条件を緩めないでください。
@@ -104,13 +106,13 @@ Receipt不在・不正・結果不明は照合待ちとし、timeout／Errorで�
 未知・非対応形式は拒否します。例外・unavailable・結果なしは実行許可になりません。
 秘密鍵・Mandate／nonce原文をログに出さず、保存したEvidenceを認証済み資格情報として扱わないでください。
 一般AP2／全Schema準拠、実Issuer互換性、本番GOは主張しません。
-[Issuer／Host責務](docs/ISSUER_HOST_MINIMUM_CONTRACT.md)、[安全性](SECURITY.md)、[受理支援の限界](docs/PAYMENT_ACCEPTANCE.md)。
+[Issuer／Host責務](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/ISSUER_HOST_MINIMUM_CONTRACT.md)、[安全性](SECURITY.md)、[受理支援の限界](docs/PAYMENT_ACCEPTANCE.md)。
 
 ## 詳細と保持した検証記録
 
-- [公開API](docs/PUBLIC_API.md)、[InputBuilder](docs/INPUT_BUILDER.ja.md)、[診断](docs/DIAGNOSTICS.ja.md)。
-- [1.6.0公開照合](docs/POST_RELEASE_160.md)、[変更履歴](CHANGELOG.md)、[公開・撤回履歴](docs/PROJECT_STATUS.md)、[保守方針](docs/POST_RELEASE_MAINTENANCE.md)。
-- [販売者署名](docs/MERCHANT_SIGNING.md)、[複数明細](docs/MULTI_ITEM_CHECKOUT.md)、[Python差分](docs/MULTI_ITEM_INTEROP.md)。
+- [公開API](docs/PUBLIC_API.md)、[InputBuilder](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/INPUT_BUILDER.ja.md)、[診断](docs/DIAGNOSTICS.ja.md)。
+- [1.6.0公開照合](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/POST_RELEASE_160.md)、[変更履歴](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/CHANGELOG.md)、[公開・撤回履歴](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/PROJECT_STATUS.md)、[保守方針](docs/POST_RELEASE_MAINTENANCE.md)。
+- [販売者署名](docs/MERCHANT_SIGNING.md)、[複数明細](docs/MULTI_ITEM_CHECKOUT.md)、[Python差分](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MULTI_ITEM_INTEROP.md)。
 
 過去版・研究文書は当時の証拠として保持し、現在の導入経路とは区別します。
 リポジトリの文書更新は公開済み1.6.0 Gemの再build・置換ではありません。
@@ -120,7 +122,7 @@ Receipt不在・不正・結果不明は照合待ちとし、timeout／Errorで�
 
 ## InputBuilderの最小例
 
-導入後、このリポジトリをcheckoutし、以下をルートの `quick_start.rb` として保存して `ruby quick_start.rb` を実行します。[`examples/input_builder/`](examples/input_builder/)のJSONファイルは、明示された合成注文・公開鍵登録情報と署名原文Stringです。インストール済みGemには含まれません。保存署名には期限があるため固定の合成時計を使います。実登録や本番の現在情報として再利用しないでください。
+導入後、このリポジトリをcheckoutし、以下をルートの `quick_start.rb` として保存して `ruby quick_start.rb` を実行します。[`examples/input_builder/`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/main/examples/input_builder)のJSONファイルは、明示された合成注文・公開鍵登録情報と署名原文Stringです。インストール済みGemには含まれません。保存署名には期限があるため固定の合成時計を使います。実登録や本番の現在情報として再利用しないでください。
 
 ```ruby
 require "ap2_mandate_verifier"
@@ -164,7 +166,7 @@ end
 
 変更していない合成入力の期待値は `verified_research/scoped_research_verified; evidence=true` です。準備・保存・後の検証を1プロセス内で示す例であり、実発行や原子的消費を実装していません。実連携では、認証済みの登録・注文情報を明示的に対応付け、署名原文を保持します。構造化業務入力にはStringキーの通常のRuby値を使い、ActiveRecordオブジェクトそのものは渡しません。
 
-検証時に `prepare` をやり直したり、保存hash／参照を現在値に合わせて更新したりしないでください。注文・信頼情報・署名原文の変化は検出できるままにします。保存済みtrust JSONは `restore_trust` で再シリアライズせず読み戻せます。[完全例](examples/input_builder.rb)には正常・改ざん・期限切れがあり、[利用案内](docs/INPUT_BUILDER.ja.md)に業務field・原文復元・Railsモデル対応付けを示しています。
+検証時に `prepare` をやり直したり、保存hash／参照を現在値に合わせて更新したりしないでください。注文・信頼情報・署名原文の変化は検出できるままにします。保存済みtrust JSONは `restore_trust` で再シリアライズせず読み戻せます。[完全例](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/examples/input_builder.rb)には正常・改ざん・期限切れがあり、[利用案内](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/INPUT_BUILDER.ja.md)に業務field・原文復元・Railsモデル対応付けを示しています。
 
 
 </details>
