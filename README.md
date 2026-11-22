@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier — Ruby SDK for Checkout and Payment
 
-[日本語](README.ja.md) · **Published stable: 1.7.0** · [Quick Start](docs/QUICK_START.md)
+[日本語](README.ja.md) · **Published stable: 1.7.0** · [Quick Start](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/QUICK_START.md)
 
 Issue, present and verify supported AP2 Checkout and Payment Mandates in plain Ruby.
 Use this Gem when your app needs to check what a buyer approved, what an Agent may
@@ -8,9 +8,11 @@ choose, and whether signed Checkout/Payment data stays within those conditions.
 No Rails dependency. **Verification success is not purchase or payment success; the SDK never executes payments.**
 
 
-**Platforms:** MRI 3.4.12 / 4.0.9. Existing native published-Gem checks cover **1.6.0** on Linux ARM64/AMD64, macOS Intel/Apple Silicon and Windows Server 2022 X64, not the new CLI. See [platform evidence and reproduction](docs/PLATFORM_SUPPORT.md) and the separate [1.6.1 Linux publication checks](docs/POST_RELEASE_161.md). Rails demo compatibility is separate.
+**Platforms:** MRI 3.4.12 / 4.0.9. Existing native published-Gem checks cover **1.6.0** on Linux ARM64/AMD64, macOS Intel/Apple Silicon and Windows Server 2022 X64, not the new CLI. See [platform evidence and reproduction](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/PLATFORM_SUPPORT.md) and the separate [1.6.1 Linux publication checks](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/POST_RELEASE_161.md). Rails demo compatibility is separate.
 
 ## Start here
+
+In an installed Gem, relative README links point to bundled files. Links to GitHub open repository guides, historical records or source-only examples.
 
 This minimal SDK quick start uses **published 1.7.0**. For its integration CLI, use the [Gem-only integration instructions](docs/RUBY_INTEGRATION.md).
 
@@ -27,7 +29,7 @@ Error Receipt reports failure. No account, credentials, database or Rails requir
 Allow about ten minutes with a supported Ruby already installed; dependency builds
 and Docker's first download can take longer.
 
-**Next:** [step-by-step Quick Start and expected output (1.7.0)](docs/QUICK_START.md),
+**Next:** [step-by-step Quick Start and expected output (1.7.0)](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/QUICK_START.md),
 including twelve UTC months and a cumulative JPY budget rejection.
 [Docker demo](https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme)
 has its own pinned Gem and verification scope; follow its README for local Checkout and Payment screens.
@@ -87,7 +89,7 @@ Evidence. [Exact APIs and result/error conventions](docs/PUBLIC_API.md).
 Formal support: **MRI 3.4.12 and 4.0.9**. For this walkthrough use
 `gem "ap2_mandate_verifier", "= 1.7.0"` in a Gemfile. Applications following stable
 1.x may use `"~> 1.0"` and review lockfile updates. `~> 0.8.0` excludes 1.x;
-[upgrade notes](docs/RELEASE_100.md) retain the compatibility details.
+[upgrade notes](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/RELEASE_100.md) retain the compatibility details.
 
 Runtime pins: JSON 2.19.9, JWT 3.3.0, base64 0.3.0, OpenSSL gem 4.0.2,
 Digest 3.2.1. Installation may download/build native dependencies. Do not loosen
@@ -113,14 +115,14 @@ Unknown/unsupported forms fail closed. Exceptions, unavailable results and missi
 results never authorize an operation. Do not log private keys, raw Mandates/nonces
 or treat serialized Evidence as an authenticated credential. General AP2/all-Schema
 conformance, real-Issuer interoperability and production GO are not claimed.
-[Issuer/Host responsibilities](docs/ISSUER_HOST_MINIMUM_CONTRACT.md),
+[Issuer/Host responsibilities](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/ISSUER_HOST_MINIMUM_CONTRACT.md),
 [security policy](SECURITY.md), [acceptance boundaries](docs/PAYMENT_ACCEPTANCE.md).
 
 ## Reference and retained evidence
 
 - [Public API](docs/PUBLIC_API.md), [InputBuilder guide](docs/INPUT_BUILDER.md), [diagnostics](docs/DIAGNOSTICS.md).
-- [1.6.0 publication verification](docs/POST_RELEASE_160.md), [changelog](CHANGELOG.md), [project/publication history](docs/PROJECT_STATUS.md), [maintenance policy](docs/POST_RELEASE_MAINTENANCE.md).
-- [Merchant signing](docs/MERCHANT_SIGNING.md), [multiple items](docs/MULTI_ITEM_CHECKOUT.md), [Python differences](docs/MULTI_ITEM_INTEROP.md).
+- [1.6.0 publication verification](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/POST_RELEASE_160.md), [changelog](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/CHANGELOG.md), [project/publication history](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/PROJECT_STATUS.md), [maintenance policy](docs/POST_RELEASE_MAINTENANCE.md).
+- [Merchant signing](docs/MERCHANT_SIGNING.md), [multiple items](docs/MULTI_ITEM_CHECKOUT.md), [Python differences](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MULTI_ITEM_INTEROP.md).
 
 Historical release and research documents remain evidence for their recorded
 versions, not the current onboarding path. Repository documentation changes do
@@ -131,7 +133,7 @@ not rebuild or replace the already published 1.6.0 Gem.
 
 ## A small InputBuilder example
 
-After installation, use a checkout of this repository. Save the following as `quick_start.rb` in its root and run `ruby quick_start.rb`. The JSON files under [`examples/input_builder/`](examples/input_builder/) contain explicit synthetic order/registration records and original signed Strings; they are not part of the installed Gem. Their fixed clock is intentional because the saved signatures expire. These are test inputs, not real enrollment or current production data.
+After installation, use a checkout of this repository. Save the following as `quick_start.rb` in its root and run `ruby quick_start.rb`. The JSON files under [`examples/input_builder/`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/main/examples/input_builder) contain explicit synthetic order/registration records and original signed Strings; they are not part of the installed Gem. Their fixed clock is intentional because the saved signatures expire. These are test inputs, not real enrollment or current production data.
 
 ```ruby
 require "ap2_mandate_verifier"
@@ -175,7 +177,7 @@ end
 
 Expected for these unchanged synthetic inputs: `verified_research/scoped_research_verified; evidence=true`. This example models preparation, persistence and later verification in one process; it does not implement real issuance or atomic consumption. In an application, map authenticated registry/order records explicitly and preserve the original signed bytes. Structured business inputs use plain Ruby values with String keys, not ActiveRecord objects.
 
-Do not call `prepare` again during verification or update saved hashes/references to match current values. Changed orders, trust or signed bytes must remain detectable. Persisted trust JSON can be loaded with `restore_trust` without reserializing it. The [complete example](examples/input_builder.rb) includes normal/tampered/expired cases; the [input guide](docs/INPUT_BUILDER.md) explains the business fields, exact restoration and Rails model mapping.
+Do not call `prepare` again during verification or update saved hashes/references to match current values. Changed orders, trust or signed bytes must remain detectable. Persisted trust JSON can be loaded with `restore_trust` without reserializing it. The [complete example](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/examples/input_builder.rb) includes normal/tampered/expired cases; the [input guide](docs/INPUT_BUILDER.md) explains the business fields, exact restoration and Rails model mapping.
 
 
 </details>

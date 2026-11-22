@@ -4,6 +4,8 @@ require "fileutils"
 gem "json", "= 2.19.9"
 require "json"
 require "digest"
+require "pathname"
+require "uri"
 package = Gem::Package.new(ARGV.fetch(0))
 package.verify
 spec = package.spec
@@ -24,6 +26,23 @@ raise "package metadata" unless spec.name == "ap2_mandate_verifier" && spec.vers
   spec.required_ruby_version == Gem::Requirement.new(">= 3.4.12", "< 4.1") && spec.license == "MIT" &&
   spec.runtime_dependencies.to_h { |d| [d.name, d.requirement.to_s] } == versions
 package.extract_files(ARGV.fetch(1))
+# The two README files are installed entry points. Check their inline links and
+# images against the package, not against files only available in the checkout.
+# External destinations and same-page anchors do not require an archive entry.
+%w[README.md README.ja.md].each do |name|
+  readme = File.read(File.join(ARGV[1], name), encoding: "UTF-8")
+  readme.scan(/\]\(\s*(?:<([^>]+)>|([^\s)]+))/).each do |angled, plain|
+    link = angled || plain
+    next if link.start_with?("#") || link.match?(/\A(?:https?:\/\/|mailto:)/i)
+
+    path = URI::DEFAULT_PARSER.unescape(link.split(/[?#]/, 2).first)
+    target = Pathname.new(path).cleanpath.to_s
+    inside = !path.start_with?("/") && !path.include?("\\") &&
+      target != ".." && !target.start_with?("../")
+    present = files.include?(target) || files.any? { |file| file.start_with?("#{target}/") }
+    raise "missing packaged README link: #{name}: #{link}" unless inside && present
+  end
+end
 hashes = files.to_h { |name| [name, Digest::SHA256.file(File.join(ARGV[1], name)).hexdigest] }
 files.each do |name|
   raise "source/archive mismatch" unless hashes[name] == Digest::SHA256.file(name).hexdigest
@@ -34,4 +53,5 @@ end
 puts JSON.pretty_generate(version:spec.version.to_s, required_ruby:spec.required_ruby_version.to_s,
   dependencies:versions, files:files, files_sha256:hashes,
   artifact_sha256:Digest::SHA256.file(ARGV[0]).hexdigest, artifact_bytes:File.size(ARGV[0]),
-  native_extensions:spec.extensions, source_archive_installed_all_files_match:true)
+  native_extensions:spec.extensions, source_archive_installed_all_files_match:true,
+  packaged_readme_relative_links_match:true)
