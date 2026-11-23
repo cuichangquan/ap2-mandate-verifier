@@ -4,7 +4,7 @@
 require_relative "../lib/ap2_mandate_verifier"
 require "json"
 
-raise "unexpected Ruby version" unless %w[3.4.12 4.0.9].include?(RUBY_VERSION)
+raise "unexpected Ruby version" unless %w[3.4.12 3.4.13 4.0.9 4.0.10].include?(RUBY_VERSION)
 raise "unexpected JSON version" unless JSON::VERSION == "2.19.9"
 
 module BoundaryTest

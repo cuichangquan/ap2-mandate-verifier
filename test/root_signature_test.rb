@@ -6,7 +6,7 @@ require "openssl"
 require "jwt"
 require_relative "../lib/ap2_mandate_verifier"
 
-raise "unexpected runtime" unless %w[3.4.12 4.0.9].include?(RUBY_VERSION) &&
+raise "unexpected runtime" unless %w[3.4.12 3.4.13 4.0.9 4.0.10].include?(RUBY_VERSION) &&
   JSON::VERSION == "2.19.9" && Gem.loaded_specs.fetch("jwt").version.to_s == "3.3.0"
 
 # Keys exist only in this process. No private-key files, output or fixtures.
